@@ -9,18 +9,12 @@ FUNCTION(LOAD_PROFILE ARCH PLATFORM)
 	# Load flags
 	include("${ARCHPATH}/cmake/flags.cmake")
 
-	# now export our output variables
-	set(PLATFORM_LAYOUT "${ARCHPATH}/${PLATFORM}/layout.ld")
+	# Now export our output variables
+	set(PLATFORM_LAYOUT "${ARCHPATH}/${PLATFORM}/layout.ld" PARENT_SCOPE)
+	set(ARCH_SRCS "${ARCH_SRCS}" PARENT_SCOPE)
+	set(PLATFORM_SRCS "${PLATFORM_SRCS}" PARENT_SCOPE)
 
-
-	message(STATUS "Architecture sources: ${ARCH_SRCS}, Platform specifics: ${PLATFORM_SRCS}")
-	message(STATUS "Memory layout: ${PLATFORM_LAYOUT}")
-	add_executable(${ELFFILE} ${PLATFORM_SRCS} ${ARCH_SRCS})
-#target_link_libraries(${ELFFILE} TODO)
-
-	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
-			"-Wl,-T ${PLATFORM_LAYOUT} -Wl,-nostdlib -m32 -nostdlib -ffreestanding -O2" )
 
   # Platform specific custom targets/commands.
-	include(${ARCHPATH}/${PLATFORM}/targets.cmake)
+	set(ADDITINOAL_TARGETS ${ARCHPATH}/${PLATFORM}/targets.cmake PARENT_SCOPE)
 ENDFUNCTION(LOAD_PROFILE)
