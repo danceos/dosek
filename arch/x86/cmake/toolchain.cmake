@@ -1,16 +1,21 @@
 # Generic system
 # removes -rdynamic from the linker, which llvm-ld does not support.
 set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_C_FLAGS "-ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti" CACHE STRING "CFLAGS")
+set(CMAKE_CXX_FLAGS "-ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti" CACHE STRING "CFLAGS")
+set(CMAKE_EXE_LINKER_FLAGS -nostartfiles CACHE STRING "LDFLAGS")
 
 # Disable compiler checks
 include(CMakeForceCompiler)
 
-set(CCDIR "/proj/i4ezs/tools/gnutools/")
-set(CMAKE_C_COMPILER  ${CCDIR}/bin/i386-elf-gcc)
-set(CMAKE_CXX_COMPILER ${CCDIR}/bin/i386-elf-g++)
-set(CMAKE_RANLIB ${CCDIR}/bin/i386-elf-ranlib)
-set(CMAKE_AR ${CCDIR}/bin/i386-elf-ar)
-set(CMAKE_LINKER ${CCDIR}/bin/i386-elf-ld)
+set(CCDIR "/proj/i4ezs/tools/gnutools/i386-elf")
+set(CMAKE_C_COMPILER  ${CCDIR}/bin/gcc)
+#CMAKE_FORCE_C_COMPILER(${CCDIR}/bin/i386-elf-gcc GNU)
+set(CMAKE_CXX_COMPILER ${CCDIR}/bin/g++)
+#CMAKE_FORCE_CXX_COMPILER(${CCDIR}/bin/i386-elf-g++ GNU)
+set(CMAKE_RANLIB ${CCDIR}/bin/ranlib)
+set(CMAKE_AR ${CCDIR}/bin/ar)
+set(CMAKE_LINKER ${CCDIR}/bin/ld)
 
 
 #set(CMAKE_C_COMPILER clang)

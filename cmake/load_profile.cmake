@@ -1,7 +1,7 @@
 FUNCTION(LOAD_PROFILE ARCH PLATFORM)
 	# Obtain sources
 	set(ARCHPATH "${PROJECT_SOURCE_DIR}/arch/${ARCH}")
-	file(GLOB ARCH_SRCS "${ARCHPATH}/*.cc" "${ARCHPATH}/*.S")
+	file(GLOB ARCH_SRCS "${ARCHPATH}/*.cc" "${ARCHPATH}/*.s")
 	file(GLOB PLATFORM_SRCS "${ARCHPATH}/${PLATFORM}/*.cc")
 
 	# Load platform specific custom targets, if present
@@ -19,7 +19,7 @@ FUNCTION(LOAD_PROFILE ARCH PLATFORM)
 #target_link_libraries(${ELFFILE} TODO)
 
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
-			"-Wl,-T -m32 ${PLATFORM_LAYOUT} -Wl,-nostdlib -nostdlib -ffreestanding -O2" )
+			"-Wl,-T ${PLATFORM_LAYOUT} -Wl,-nostdlib -m32 -nostdlib -ffreestanding -O2" )
 
   # Platform specific custom targets/commands.
 	include(${ARCHPATH}/${PLATFORM}/targets.cmake)
