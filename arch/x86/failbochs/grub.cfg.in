@@ -1,0 +1,3 @@
+menuentry "CoRedOS" {
+	multiboot /boot/@ELFFILE@
+}
