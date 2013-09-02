@@ -8,6 +8,10 @@ set(ELFFILE "coredos.elf" CACHE INTERNAL STRING)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(load_profile)
 
+	## setup compiler flags
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -nostdlib -fno-builtin")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ")# -fno-exception")
+
 ### Setup target architecture and platform ###
 LOAD_PROFILE("x86" "failbochs")
 ##############################################
