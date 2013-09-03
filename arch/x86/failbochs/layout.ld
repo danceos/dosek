@@ -1,44 +1,55 @@
-/* The bootloader will look at this image and start execution at the symbol
-   designated as the entry point. */
 ENTRY(_start)
 
-/* Tell where the various sections of the object files will be put in the final
-   kernel image. */
-SECTIONS
-{
-	/* Begin putting sections at 1 MiB, a conventional place for kernels to be
-	   loaded at by the bootloader. */
-	. = 1M;
+OUTPUT_FORMAT(elf32-i386)
 
-	/* First put the multiboot header, as it is required to be put very early
-	   early in the image or the bootloader won't recognize the file format.
-	   Next we'll put the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
+SECTIONS {
+   /* The kernel will live at 3GB + 1MB in the virtual
+      address space, which will be mapped to 1MB in the
+      physical address space. */
+   . = 0x100000;
+
+  /* standard segments */
+   .ctors : ALIGN(4)
+   {
+     PROVIDE(__CTORS_START = .);
+     KEEP (*(.ctors*))
+     KEEP (*(.init_array*))
+     PROVIDE(__CTORS_END = .);
+   }
+
+   .text : {
+      *(".text.startup")
+      *(".text")
+      *(".rodata*")
+   }
+
+   /* Startcode fuer die APs, wird von SMPSystem::copyStartAPtoLowMem() reloziert */
+   .setup_ap_seg ALIGN(0x10) :
+    {
+      PROVIDE(___SETUP_AP_START__ = .);
+      KEEP(*(.setup_ap_seg*))
+      KEEP(*(.setup_ap*))
+      PROVIDE(___SETUP_AP_END__ = .);
+    }
+
+   .data ALIGN (0x1000) :  {
+       *(".data")
+   }
+
+   .bss : {
+       _sbss = .;
+       *(COMMON)
+       *(".bss")
+       _ebss = .;
+   }
+
+	/*
+	 * Get rid of unnecessary GCC bits.
+	 */
+	/DISCARD/ :
 	{
-		*(.multiboot)
-		*(.text)
+		*(.comment)
+		*(.eh_frame)
+		*(.note.gnu.build-id)
 	}
-
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
-		*(.rodata)
-	}
-
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
-		*(.data)
-	}
-
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
-		*(COMMON)
-		*(.bss)
-		*(.bootstrap_stack)
-	}
-
-	/* The compiler may produce other sections, by default it will put them in
-	   a segment with the same name. Simply add stuff here as needed. */
 }

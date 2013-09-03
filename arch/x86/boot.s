@@ -2,7 +2,8 @@
 # Declare constants used for creating a multiboot header.
 .set ALIGN,    1<<0             # align loaded modules on page boundaries
 .set MEMINFO,  1<<1             # provide memory map
-.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
+#.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
+.set FLAGS,    0  # this is the Multiboot 'flag' field
 .set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
 .set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
 
@@ -11,7 +12,7 @@
 # You don't need to understand all these details as it is just magic values that
 # is documented in the multiboot standard. The bootloader will search for this
 # magic sequence and recognize us as a multiboot kernel.
-.section .multiboot
+.section .text.startup
 .align 4
 .long MAGIC
 .long FLAGS
@@ -29,7 +30,7 @@ stack_top:
 # The linker script specifies _start as the entry point to the kernel and the
 # bootloader will jump to this position once the kernel has been loaded. It
 # doesn't make sense to return from this function as the bootloader is gone.
-.section .text
+.section .text.startup
 .global _start
 .type _start, @function
 _start:

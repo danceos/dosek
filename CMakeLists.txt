@@ -32,7 +32,7 @@ add_executable(${ELFFILE} ${PLATFORM_SRCS} ${ARCH_SRCS})
 #target_link_libraries(${ELFFILE} TODO)
 
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
-			"-Wl,-T ${PLATFORM_LAYOUT} -Wl,-nostdlib ${ISA_LD_FLAGS} -nostdlib -ffreestanding -O2" )
+			"-Wl,-T ${PLATFORM_LAYOUT} -Wl,-nostdlib ${ISA_LD_FLAGS} -nostdlib -ffreestanding" )
 
 
 
