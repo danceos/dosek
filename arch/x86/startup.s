@@ -40,7 +40,7 @@ _start:
 	movl $stack_top, %esp
 
 	# We are now ready to actually execute C code. (see kernel.c)
-	call kernel_main
+	call init_generic
 
 	# In case the function returns, we'll want to put the computer into an
 	# infinite loop. To do that, we use the clear interrupt ('cli') instruction

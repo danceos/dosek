@@ -109,23 +109,20 @@ struct globalConstructorTest {
 	int foo;
 
 	globalConstructorTest() {
-		//terminal_initialize();
-	  //terminal_writestring("Global Constructor called!");
+		terminal_initialize();
+	  terminal_writestring("Global Constructor called!");
 		foo = 1;
 	}
 };
 
 globalConstructorTest tester;
 
-#if defined(__cplusplus)
-extern "C" /* Use C linkage for kernel_main. */
-#endif
-void kernel_main()
+void arch_startup()
 {
-	terminal_initialize();
+//	terminal_initialize();
 	tester.foo += 1;
 	/* Since there is no support for newlines in terminal_putchar yet, \n will
 	   produce some VGA specific character instead. This is normal. */
-	//terminal_writestring("CoRedOS - Combined Redundancy Operating System!\n");
+	terminal_writestring("CoRedOS - Combined Redundancy Operating System!\n");
 	terminal_putchar('a'+tester.foo);
 }

@@ -21,15 +21,21 @@ LOAD_PROFILE("x86" "failbochs")
 
 #	## setup compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ISA_C_FLAGS} -nostdlib -fno-builtin")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-exception")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-exceptions")
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
+
+## add further libraries
+add_subdirectory(arch)
+add_subdirectory(os)
+
+
 
 # The actual executable
 message(STATUS "Architecture sources: ${ARCH_SRCS}, Platform specifics: ${PLATFORM_SRCS}")
 message(STATUS "Linker script: ${LINKER_SCRIPT}")
 
 add_executable(${ELFFILE} ${PLATFORM_SRCS} ${ARCH_SRCS})
-#target_link_libraries(${ELFFILE} TODO)
+target_link_libraries(${ELFFILE} arch_generic os)
 
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
 			"-Wl,-T ${LINKER_SCRIPT} -Wl,-nostdlib ${ISA_LD_FLAGS} -nostdlib -ffreestanding" )
