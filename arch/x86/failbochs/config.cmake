@@ -14,3 +14,4 @@ set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker sc
 ##   physical address space.
 set(LD_KERNEL_START_ADDRESS 0x100000 CACHE INTERNAL "Start address of the first section.")
 
+

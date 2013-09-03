@@ -1,10 +1,20 @@
 
+set(BASEDIR "${PROJECT_SOURCE_DIR}/arch/x86/failbochs")
+
+set(ISOFILE "${PROJECT_BINARY_DIR}/${ELFFILE}.iso")
+
+set(BOCHS_BIOS "${BASEDIR}/BIOS-bochs-latest")
+set(BOCHS_GUEST_RAM 32)
+set(BOCHS_HOST_RAM 32)
+set(BOCHS_VGA_IMAGE "${BASEDIR}/vgabios.bin")
+set(BOCHS_ISO_IMAGE "${ISOFILE}")
+
+configure_file("${BASEDIR}/bochsrc.in" "${PROJECT_BINARY_DIR}/bochsrc")
+
 #set(GRUB_MKRESCUE "grub-mkrescue")
 find_program(GRUB_MKRESCUE "grub-mkrescue")
 if(GRUB_MKRESCUE)
 		set(ISODIR "${PROJECT_BINARY_DIR}/grub_iso")
-
-		set(ISOFILE "${ELFFILE}.iso")
 
 		message(STATUS "Building bootable ISO for ${ELFFILE} in ${ISODIR}")
 
@@ -14,7 +24,7 @@ if(GRUB_MKRESCUE)
 
 		file(MAKE_DIRECTORY ${GRUBDIR})
 		# Copy and configure grub configuration file
-		configure_file("arch/x86/failbochs/grub.cfg.in" "${GRUBDIR}/grub.cfg")
+		configure_file("${BASEDIR}/grub.cfg.in" "${GRUBDIR}/grub.cfg")
 
 		add_custom_command(
 			SOURCE ${ELFFILE}
@@ -32,3 +42,4 @@ if(GRUB_MKRESCUE)
 else()
 		message(FATAL_ERROR "grub-mkrescue not found, cannot create bootable iso :(")
 endif()
+
