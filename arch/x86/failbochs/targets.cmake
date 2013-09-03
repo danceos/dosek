@@ -22,12 +22,12 @@ if(GRUB_MKRESCUE)
 			COMMAND ${GRUB_MKRESCUE}
 			ARGS -o ${ISOFILE} ${ISODIR}
 			OUTPUT ${ISOFILE} ${BOOTDIR}/${ELFFILE}
-			COMMAND qemu-system-i386 -cdrom ${ISOFILE}
 		)
 
 		add_custom_target(run
-				DEPENDS ${ELFFILE} ${ISOFILE}
+				DEPENDS ${ISOFILE} ${ELFFILE}
 				COMMAND echo "Running ${ISOFILE}..."
+			  COMMAND qemu-system-i386 -cdrom ${ISOFILE}
 		)
 else()
 		message(FATAL_ERROR "grub-mkrescue not found, cannot create bootable iso :(")

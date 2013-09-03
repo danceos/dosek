@@ -1,12 +1,10 @@
 ENTRY(_start)
 
-OUTPUT_FORMAT(elf32-i386)
+OUTPUT_FORMAT(@LD_OUTPUT_FORMAT@)
 
 SECTIONS {
-   /* The kernel will live at 3GB + 1MB in the virtual
-      address space, which will be mapped to 1MB in the
-      physical address space. */
-   . = 0x100000;
+  . = @LD_KERNEL_START_ADDRESS@;
+
 
   /* standard segments */
    .ctors : ALIGN(4)
@@ -22,15 +20,6 @@ SECTIONS {
       *(".text")
       *(".rodata*")
    }
-
-   /* Startcode fuer die APs, wird von SMPSystem::copyStartAPtoLowMem() reloziert */
-   .setup_ap_seg ALIGN(0x10) :
-    {
-      PROVIDE(___SETUP_AP_START__ = .);
-      KEEP(*(.setup_ap_seg*))
-      KEEP(*(.setup_ap*))
-      PROVIDE(___SETUP_AP_END__ = .);
-    }
 
    .data ALIGN (0x1000) :  {
        *(".data")
