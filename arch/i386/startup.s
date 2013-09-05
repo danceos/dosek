@@ -12,7 +12,7 @@
 # You don't need to understand all these details as it is just magic values that
 # is documented in the multiboot standard. The bootloader will search for this
 # magic sequence and recognize us as a multiboot kernel.
-.section .text.startup
+.section .text.multiboot
 .align 4
 .long MAGIC
 .long FLAGS

@@ -6,6 +6,10 @@ SECTIONS {
   . = @LD_KERNEL_START_ADDRESS@;
 
 
+   .multiboot : {
+      *(".text.multiboot")
+   }
+
   /* standard segments */
    .ctors : ALIGN(4)
    {
