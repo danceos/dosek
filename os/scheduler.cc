@@ -308,15 +308,6 @@ public:
 		idle_id(0, 0),
 		idle_prio(0, 0) {}
 
-	void init() {
-		task1.encode(0,0);
-		task2.encode(0,0);
-		task3.encode(0,0);
-		task4.encode(0,0);
-		idle_id.encode(0,0);
-		idle_prio.encode(0,0);
-	}
-
 	template<typename T, typename S>
 	value_coded_t set(const T id, const S prio) {
         volatile value_coded_t signature;
@@ -522,14 +513,12 @@ bool start(TaskList &tl, const Task &t) {
 
 TaskList tlist;
 
-
-void setup() {
 Task t1(1,1);
 Task t2(2,2);
 Task t3(3,3);
 Task t4(4,4);
-	tlist.init();
 
+void setup() {
 	start(tlist, t1);
 	start(tlist, t2);
 	start(tlist, t3);
@@ -540,10 +529,6 @@ Task t4(4,4);
 
 /* Tests */
 bool test1() {
-Task t1(1,1);
-Task t2(2,2);
-Task t3(3,3);
-Task t4(4,4);
 	//assert( schedule(tlist) == 4 );
 	Encoded_Static<A0, 3> next;
 	Encoded_Static<A0, 2> prio;
@@ -567,10 +552,6 @@ bool test2() {
 }
 
 bool test3() {
-Task t1(1,1);
-Task t2(2,2);
-Task t3(3,3);
-Task t4(4,4);
 	start(tlist, t3);
 	start(tlist, t2);
 	
