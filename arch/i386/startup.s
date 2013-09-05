@@ -24,7 +24,7 @@
 # then allocating 16384 bytes for it, and finally creating a symbol at the top.
 .section .bootstrap_stack
 stack_bottom:
-.skip 16384 # 16 KiB
+.skip 131072 # 16 KiB
 stack_top:
 
 # The linker script specifies _start as the entry point to the kernel and the
@@ -38,9 +38,10 @@ _start:
 	# To set up a stack, we simply set the esp register to point to the top of
 	# our stack (as it grows downwards).
 	movl $stack_top, %esp
-
-	# We are now ready to actually execute C code. (see kernel.c)
-	call init_generic
+	push %eax		# store multiboot magic number
+	push %ebx	  # address of multiboot structure
+	# We are now ready to actually execute C code. (see ./startup.cc)
+	call arch_startup
 
 	# In case the function returns, we'll want to put the computer into an
 	# infinite loop. To do that, we use the clear interrupt ('cli') instruction

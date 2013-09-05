@@ -17,8 +17,11 @@ struct globalConstructorTest {
 	}
 };
 
+extern void init_generic();
+
 globalConstructorTest tester;
 
-void arch_startup()
+extern "C" void arch_startup(uint32_t magic_number, void* p_multiboot)
 {
+	init_generic();
 }
