@@ -1,7 +1,7 @@
 # Generic system
 # removes -rdynamic from the linker, which llvm-ld does not support.
 set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_C_FLAGS "-ffreestanding  -m32 -Wall -Wextra" CACHE STRING "CFLAGS")
+set(CMAKE_C_FLAGS "-march=i386 -ffreestanding  -m32 -Wall -Wextra" CACHE STRING "CFLAGS")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
 
 set(CMAKE_EXE_LINKER_FLAGS  "-nostartfiles" CACHE STRING "LDFLAGS")

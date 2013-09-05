@@ -34,7 +34,7 @@ fi
 if [ $ARCH ]
 then
 	echo "Setting up build environment [$ARCH]:"
-	cmake $REPODIR -DCMAKE_TOOLCHAIN_FILE="$REPODIR/toolchain/$ARCH.cmake" -DCMAKE_BUILD_TYPE=Debug -G "${GENERATOR}"
+	cmake $REPODIR -DCMAKE_TOOLCHAIN_FILE="$REPODIR/toolchain/$ARCH.cmake" -DCMAKE_BUILD_TYPE=RelWithDebInfo -G "${GENERATOR}"
 # We call cmake twice, as the crosscompiler linking does not work otherwise. Don't know why yet..
 #	cmake $REPODIR
 else
