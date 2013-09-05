@@ -5,27 +5,25 @@ OUTPUT_FORMAT(@LD_OUTPUT_FORMAT@)
 SECTIONS {
   . = @LD_KERNEL_START_ADDRESS@;
 
-
-   .multiboot : {
-      *(".text.multiboot")
-   }
+	 .multiboot_header : {
+	 }
 
   /* standard segments */
-   .ctors : ALIGN(4)
+	 .text : {
+      KEEP (*(".multiboot"))
+      *(".text.startup")
+      *(".text")
+      *(".rodata*")
+   }
+
+   .ctors :
    {
      PROVIDE(__CTORS_START = .);
      KEEP (*(.ctors*))
      KEEP (*(.init_array*))
      PROVIDE(__CTORS_END = .);
    }
-
-   .text : {
-      *(".text.startup")
-      *(".text")
-      *(".rodata*")
-   }
-
-   .data ALIGN (0x1000) :  {
+   .data :  {
        *(".data")
    }
 
