@@ -46,7 +46,7 @@ void os_main(void) {
 	subexperiment_marker_1();
 	correct_action = test3();
 	subexperiment_end();
-	
+
     	trace_end_marker();
 
 	printf("\n\nEND");

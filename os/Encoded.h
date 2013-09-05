@@ -166,7 +166,7 @@ public:
         assert((x*T::B + y*_B) < _A) ; // DEBUG
 
         uint64_t result = (uint64_t) vc * (uint64_t) t.vc;
-        
+
         /*
         uint64_t tmp1 = (result / _A % _A) * _A;
         uint32_t tmp2 = result % _A;
@@ -207,11 +207,11 @@ public:
     RET operator<=(const T& t) const {
         TAssert(T::B > B);
         RET r;
-        
+
         // unencoded comparison
         //r.vc = (vc - B - D) <= (t.vc - T::B - t.D);
         r.vc = (vc - B) <= (t.vc - T::B);
-        
+
         // encoded check of comparison
         value_coded_t diff = t.vc - vc; // this>t  => diff = 2^m - (vc - t.vc)
                                         // this<=t => diff = t.vc - vc
@@ -246,11 +246,11 @@ public:
     RET leq(const T& t) const {
         TAssert(T::B > B);
         RET r;
-        
+
         // unencoded comparison
         //r.vc = (vc - B - D) <= (t.vc - T::B - t.D);
         r.vc = (vc - B) <= (t.vc - T::B);
-        
+
         // encoded check of comparison
         value_coded_t diff = t.vc - vc; // this>t  => diff = 2^m - (vc - t.vc)
                                         // this<=t => diff = t.vc - vc
