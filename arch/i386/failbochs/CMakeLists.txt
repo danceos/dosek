@@ -1,15 +1,13 @@
-
-set(BASEDIR "${PROJECT_SOURCE_DIR}/arch/x86/failbochs")
-
+# Set additional custom targets.
 set(ISOFILE "${PROJECT_BINARY_DIR}/${ELFFILE}.iso")
 
-set(BOCHS_BIOS "${BASEDIR}/BIOS-bochs-latest")
+set(BOCHS_BIOS "${CMAKE_CURRENT_SOURCE_DIR}/BIOS-bochs-latest")
 set(BOCHS_GUEST_RAM 32)
 set(BOCHS_HOST_RAM 32)
-set(BOCHS_VGA_IMAGE "${BASEDIR}/vgabios.bin")
+set(BOCHS_VGA_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/vgabios.bin")
 set(BOCHS_ISO_IMAGE "${ISOFILE}")
 
-configure_file("${BASEDIR}/bochsrc.in" "${PROJECT_BINARY_DIR}/bochsrc")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bochsrc.in" "${PROJECT_BINARY_DIR}/bochsrc")
 
 #set(GRUB_MKRESCUE "grub-mkrescue")
 find_program(GRUB_MKRESCUE "grub-mkrescue")
@@ -24,11 +22,11 @@ if(GRUB_MKRESCUE)
 
 		file(MAKE_DIRECTORY ${GRUBDIR})
 		# Copy and configure grub configuration file
-		configure_file("${BASEDIR}/grub.cfg.in" "${GRUBDIR}/grub.cfg")
+		configure_file("${CMAKE_CURRENT_SOURCE_DIR}/grub.cfg.in" "${GRUBDIR}/grub.cfg")
 
 		add_custom_command(
 			SOURCE ${ELFFILE}
-			COMMAND ${CMAKE_COMMAND} -E copy ${ELFFILE} ${BOOTDIR}
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${ELFFILE}> ${BOOTDIR}
 			COMMAND ${GRUB_MKRESCUE}
 			ARGS -o ${ISOFILE} ${ISODIR}
 			OUTPUT ${ISOFILE} ${BOOTDIR}/${ELFFILE}
