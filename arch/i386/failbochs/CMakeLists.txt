@@ -7,7 +7,10 @@ set(BOCHS_HOST_RAM 32)
 set(BOCHS_VGA_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/vgabios.bin")
 set(BOCHS_ISO_IMAGE "${ISOFILE}")
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bochsrc.in" "${PROJECT_BINARY_DIR}/bochsrc")
+set(BOCHSRC "${PROJECT_BINARY_DIR}/bochsrc")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bochsrc.in" ${BOCHSRC} )
+
+set(FAIL_BINARY "Fail binary not set yet :(" CACHE STRING "Fail binary")
 
 #set(GRUB_MKRESCUE "grub-mkrescue")
 find_program(GRUB_MKRESCUE "grub-mkrescue")
@@ -31,6 +34,13 @@ if(GRUB_MKRESCUE)
 			ARGS -o ${ISOFILE} ${ISODIR}
 			OUTPUT ${ISOFILE} ${BOOTDIR}/${ELFFILE}
 		)
+
+
+    add_custom_target( fail
+      COMMAND FAIL_ELF_PATH=$<TARGET_FILE:${ELFFILE}> ${FAIL_BINARY} -f ${BOCHSRC} -q
+      DEPENDS ${ISOFILE}
+      COMMENT "Starting Fail*"
+  )
 
 		add_custom_target(run
 				DEPENDS ${ISOFILE} ${ELFFILE}
