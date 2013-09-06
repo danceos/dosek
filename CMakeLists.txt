@@ -29,3 +29,12 @@ add_subdirectory(os)
 add_subdirectory(arch)
 
 
+
+
+
+# Find all sources for code cccc metrics.
+file(GLOB_RECURSE ALLSRCS RELATVIVE ${PROJECT_SOURCE_DIR}	*.cc *.h )
+set(CCCC_SOURCES ${ALLSRCS} CACHE INTERNAL STRING)
+#message(STATUS "ALLSRCS: ${ALLSRCS}")
+
+add_subdirectory(static_analysis)
