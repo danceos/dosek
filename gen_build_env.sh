@@ -15,8 +15,12 @@ echo ""
 
 # Get repository base dir from script location
 REPODIR=$(dirname $0)/
-GENERATOR="Eclipse CDT4 - Unix Makefiles"
+GENERATOR="Unix Makefiles"
 
+if [ "$2" == "eclipse" ]
+then
+	GENERATOR="Eclipse CDT4 - Unix Makefiles"
+fi
 
 if [ "$2" == "ninja" ]
 then
