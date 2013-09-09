@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6.0)
+cmake_minimum_required(VERSION 2.6.2)
 
 PROJECT(CoRedOS)
 enable_language(ASM)
