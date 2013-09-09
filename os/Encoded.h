@@ -12,8 +12,13 @@
 #include <limits.h>
 #include "Assert.h"
 
-//#define UINT16_MAX 0xffff
-//#define UINT32_MAX 0xffffffff
+#ifndef UINT16_MAX
+#define UINT16_MAX 0xffff
+#endif
+
+#ifndef UINT32_MAX
+#define UINT32_MAX 0xffffffff
+#endif
 
 #define __NUM_PRIMES 6542
 #define __V_MAX UINT16_MAX
