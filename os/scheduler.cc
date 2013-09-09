@@ -68,6 +68,7 @@ static const TaskID INVALID_TASK_ID = 0;
 
 
 /* Binary tree based task queue */
+/*
 class TaskTree {
 	Encoded_Static<A0, 17> task1;
 	Encoded_Static<A0, 16> task2;
@@ -102,54 +103,53 @@ public:
 		return task1234 == 0;
 	}
 
-	/*
-	template<typename T, typename S>
-	void set(T id, S prio) {
-        volatile value_coded_t signature;
-
-		if(id == 1) {
-			task1 = prio;
-
-			if(task1 >= task2) {
-				task12 = task1;
-			} else {
-				task12 = task2;
-			}
-		} else if(id == 2) {
-			task2 = prio;
-
-			if(task1 >= task2) {
-				task12 = task1;
-			} else {
-				task12 = task2;
-			}
-		} else if(id == 3) {
-			task3 = prio;
-
-			if(task3 >= task4) {
-				task34 = task3;
-			} else {
-				task34 = task4;
-			}
-		} else if(id == 4) {
-			task4 = prio;
-
-			if(task3 >= task4) {
-				task34 = task3;
-			} else {
-				task34 = task4;
-			}
-		} else {
-			assert(false);
-		}
-
-		if(task12 >= task34) {
-			task1234 = task12;
-		} else {
-			task1234 = task34;;
-		}
-	}
-	*/
+	
+//	template<typename T, typename S>
+//	void set(T id, S prio) {
+//        volatile value_coded_t signature;
+//
+//		if(id == 1) {
+//			task1 = prio;
+//
+//			if(task1 >= task2) {
+//				task12 = task1;
+//			} else {
+//				task12 = task2;
+//			}
+//		} else if(id == 2) {
+//			task2 = prio;
+//
+//			if(task1 >= task2) {
+//				task12 = task1;
+//			} else {
+//				task12 = task2;
+//			}
+//		} else if(id == 3) {
+//			task3 = prio;
+//
+//			if(task3 >= task4) {
+//				task34 = task3;
+//			} else {
+//				task34 = task4;
+//			}
+//		} else if(id == 4) {
+//			task4 = prio;
+//
+//			if(task3 >= task4) {
+//				task34 = task3;
+//			} else {
+//				task34 = task4;
+//			}
+//		} else {
+//			assert(false);
+//		}
+//
+//		if(task12 >= task34) {
+//			task1234 = task12;
+//		} else {
+//			task1234 = task34;;
+//		}
+//	}
 
 	template<typename T, typename S>
 	void set(T id, S prio) {
@@ -285,9 +285,7 @@ public:
 		printf("(%d,%d) (%d,%d)  (%d,%d) (%d,%d)\n", t1.getID(), t1.getPrio(), t2.getID(), t2.getPrio(), t3.getID(), t3.getPrio(), t4.getID(), t4.getPrio());
 	}
 };
-
-/**************************************************/
-
+*/
 
 /* Simpler array based task queue */
 class TaskList {
@@ -310,7 +308,7 @@ public:
 
 	template<typename T, typename S>
 	value_coded_t set(const T id, const S prio) {
-        volatile value_coded_t signature;
+        	//volatile value_coded_t signature;
 		if(id == 1) {
 			task1 = prio;
 			return (task1 - prio).getCodedValue();
@@ -325,6 +323,7 @@ public:
 			return (task4 - prio).getCodedValue();
 		} else {
 			assert(false);
+			return 0;
 		}
 	}
 
@@ -393,26 +392,24 @@ public:
 
 	template<typename T, typename S>
 	value_coded_t head(T& id, S& prio) const {
-        volatile value_coded_t signature = 10;
+        	volatile value_coded_t signature = 10;
 
-        id = idle_id;
-        prio = idle_prio;
+	        id = idle_id;
+        	prio = idle_prio;
 
-        volatile value_coded_t s1,s2,s3,s4;
+	        signature += updateMax<11>(prio, task1, id, EC(41, 1));
+	        assert(signature % T::A == 51);
 
-        signature += updateMax<11>(prio, task1, id, EC(41, 1));
-        assert(signature % T::A == 51);
+	        signature += updateMax<12>(prio, task2, id, EC(42, 2));
+	        assert(signature % T::A == 91);
 
-        signature += updateMax<12>(prio, task2, id, EC(42, 2));
-        assert(signature % T::A == 91);
+	        signature += updateMax<13>(prio, task3, id, EC(43, 3));
+	        assert(signature % T::A == 130);
 
-        signature += updateMax<13>(prio, task3, id, EC(43, 3));
-        assert(signature % T::A == 130);
+	        signature += updateMax<14>(prio, task4, id, EC(44, 4));
+        	assert(signature % T::A == 168);
 
-        signature += updateMax<14>(prio, task4, id, EC(44, 4));
-        assert(signature % T::A == 168);
-
-        return signature;
+	        return signature;
 	}
 
 	template<typename T, typename S>
@@ -436,7 +433,9 @@ public:
 
 	template<typename T, typename S>
 	bool dequeue(T& id, S& prio) {
-		value_coded_t sig = head(id, prio);
+		// TODO: check control flow
+		//value_coded_t sig = head(id, prio);
+		head(id, prio);
 
 		remove(id);
 
@@ -456,10 +455,6 @@ public:
 
 
 /* Test functions */
-void dispatch(TaskID t) {
-	printf(">>> Dispatching task %d\n", t);
-}
-
 TaskID schedule(TaskList &tl) {
 	Encoded_Static<A0, 3> next;
 	Encoded_Static<A0, 2> prio;
@@ -467,7 +462,7 @@ TaskID schedule(TaskList &tl) {
 	tl.dequeue(next, prio);
 
 	if((EC(1, 1) <= prio).decode()) {
-		dispatch(next.decode());
+		printf(">>> Dispatching task %d\n", next.decode());
 		return next.decode();
 	} else {
 		printf("... Entering idle\n");
@@ -488,25 +483,25 @@ bool start(TaskList &tl, const Task &t) {
 			i1.setCodedValue(res);
 			assert(i1 == 0);
 			return (i1 == 0);
-			break;
 
 		case 2:
 			i2.setCodedValue(res);
 			assert(i2 == 0);
 			return (i2 == 0);
-			break;
 
 		case 3:
 			i3.setCodedValue(res);
 			assert(i3 == 0);
 			return (i3 == 0);
-			break;
 
 		case 4:
 			i4.setCodedValue(res);
 			assert(i4 == 0);
 			return (i4 == 0);
-			break;
+
+		default:
+			assert(false);
+			return false;
 	}
 }
 
@@ -542,6 +537,7 @@ bool test1() {
 	
 bool test2() {
 	bool right = true;
+
 	right &= ( schedule(tlist) == 3 );
 	right &= ( schedule(tlist) == 2 );
 	right &= ( schedule(tlist) == 1 );
@@ -557,24 +553,18 @@ bool test3() {
 	
 	tlist.promote( EC(5, t2.getID()), EC(6, 4) );
 
-	//tlist.print();
 	bool right = true;
 
 	right &= ( schedule(tlist) == 2 );
-	//tlist.print();
-
 	right &= ( schedule(tlist) == 3 );
-	//tlist.print();
-
 	right &= ( schedule(tlist) == 0 );
 	right &= ( schedule(tlist) == 0 );
 
-
-	return true; // TODO
+	return right;
 }
 	
+/* Arithmetic tests */
 bool test_arith() {
-	/* Arithmetic tests */
 	Encoded_Static<A0, 11> x(44 ,0);
 	Encoded_Static<A0, 17> y(55, 0);
 	Encoded_Static<A0, 1700> yb(5, 0);
