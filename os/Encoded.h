@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <limits.h>
-#include <stdio.h>
 #include "Assert.h"
 
 //#define UINT16_MAX 0xffff
@@ -62,7 +61,7 @@ public:
     static const A_t A = _A;
     static const B_t B = _B;
 
-    Encoded_Static() {
+    Encoded_Static() : D(0) {
     	TAssert(_B > 0); // 0 Ist der RŸckgabewert des Voters falls kein Quorum mšglich war!
     	TAssert(_A > _B); // Sonst funktioniert der Trick mit dem % bei extractB() nicht!
     };
@@ -101,11 +100,11 @@ public:
         vc = v;
     };
 
-    constexpr const A_t getA() const {
+    constexpr A_t getA() const {
     	return _A;
     }
 
-    constexpr const B_t getB() const {
+    constexpr B_t getB() const {
     	return _B;
     }
 
@@ -115,19 +114,19 @@ public:
 
     // Equality operators
     template<class T, B_t Bx = T::B>
-    bool const  operator==(const T& rhs) const
+    bool operator==(const T& rhs) const
     {
                                        /* \/ Compile Time constant!\/ */
         return (static_cast<int16_t>(vc - rhs.getCodedValue()) ==  _B - rhs.getB());
     };
 
     template<class T>
-    bool const  operator!=(const T& rhs) const
+    bool operator!=(const T& rhs) const
     {
         return !(*this == rhs);
     };
 
-    bool const operator==(const value_coded_t rhs) const {
+    bool operator==(const value_coded_t rhs) const {
         return vc - _B - D == _A * rhs;
     }
 
