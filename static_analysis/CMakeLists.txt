@@ -26,16 +26,11 @@ find_program(OCLINT_JSON oclint-json-compilation-database
 		PATHS /proj/i4danceos/tools/oclint/bin)
 
 if(OCLINT_JSON)
-	set(COMPILE_COMMANDS "${PROJECT_SOURCE_DIR}/compile_commands.json")
 	set(OCLINT_OUTPUT "${PROJECT_BINARY_DIR}/oclint.html")
 
-	add_custom_command(OUTPUT ${COMPILE_COMMANDS}
-			COMMAND ${CMAKE_COMMAND} -E create_symlink ${PROJECT_BINARY_DIR}/compile_commands.json ${COMPILE_COMMANDS}
-	)
-
 	add_custom_target( oclint
-			COMMAND ${OCLINT_JSON} -- -report-type html -o ${OCLINT_OUTPUT} -enable-clang-static-analyzer
-		  DEPENDS ${COMPILE_COMMANDS}
+			COMMAND ${OCLINT_JSON} -- -p ${PROJECT_BINARY_DIR} -report-type html -o ${OCLINT_OUTPUT} -enable-clang-static-analyzer
+			DEPENDS "${PROJECT_BINARY_DIR}/compile_commands.json"
 			WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 	)
 
