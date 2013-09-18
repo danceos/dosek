@@ -9,8 +9,6 @@
 //#error "You are not using a cross-compiler, you will most certainly run into trouble"
 #endif
 
-#include "MemoryInfo.h"
-
 struct globalConstructorTest {
 	int foo;
 
@@ -19,16 +17,12 @@ struct globalConstructorTest {
 	}
 };
 
-MemoryInfo meminfo;
-
 
 extern void init_generic();
 
 globalConstructorTest tester;
 
-extern "C" void arch_startup(multiboot_info_t* p_mb, unsigned int multiboot_magic)
+extern "C" void arch_startup()
 {
-	meminfo.setup(p_mb);
-
 	init_generic();
 }

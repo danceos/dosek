@@ -38,8 +38,6 @@ _start:
 	# To set up a stack, we simply set the esp register to point to the top of
 	# our stack (as it grows downwards).
 	movl $stack_top, %esp
-	push %eax		# store multiboot magic number
-	push %ebx	  # address of multiboot structure
 	# We are now ready to actually execute C code. (see ./startup.cc)
 	call arch_startup
 
