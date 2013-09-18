@@ -1,4 +1,4 @@
-#include "terminal.h"
+#include "cga.h"
 
 char experiment_number;
 char correct_action;
@@ -24,9 +24,10 @@ void (*trace_end_marker)() = _trace_end_marker;
 #define debug(...) do {} while(0)
 #endif
 
+CGA kout;
+
 void os_main(void) {
-	terminal_initialize();
-	printf("START\n\n");
+	kout << "START\n\n";
 
 	setup();
 
@@ -47,9 +48,9 @@ void os_main(void) {
 	correct_action = test3();
 	subexperiment_end();
 
-    	trace_end_marker();
+	trace_end_marker();
 
-	printf("\n\nEND");
+	kout << "\n\nEND";
 
 	for(;;) {}
 }

@@ -1,8 +1,9 @@
 
 set(SRCS
 		main.cc
-		terminal.cc
+		cga.cc
 		scheduler.cc
+		ostream.cc
 )
 
 add_library(os ${SRCS})

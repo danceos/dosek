@@ -1,7 +1,6 @@
-//#include <stdio.h>
 #include <stdint.h>
-//#include <assert.h>
 #include "Assert.h"
+#include "cga.h"
 
 #define assert(...) do {} while(0)
 //#define assert(x) (void)(((x)==0)? printf("ASSERT %s (%s:%u %s)\n", #x,__FILE__,__LINE__,__func__):0)
@@ -514,6 +513,7 @@ Task t3(3,3);
 Task t4(4,4);
 
 void setup() {
+	kout << "SETUP" << endl;
 	start(tlist, t1);
 	start(tlist, t2);
 	start(tlist, t3);
