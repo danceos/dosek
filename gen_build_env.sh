@@ -31,7 +31,9 @@ if [ "$1" == "i386" ]
 then
 	ARCH=i386
 else
-	echo "Variant not set."
+	# Default Architecture i386
+	ARCH=i386
+	echo "Default architecture: $ARCH"
 fi
 
 # Call cmake appropriately
