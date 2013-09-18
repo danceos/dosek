@@ -8,9 +8,9 @@
 # author: Martin Hoffmann, Peter Ulbrich
 #
 #set -x
-echo "================================================================"
-echo "Generating Build Environment (including Eclipse .project files)."
-echo "================================================================"
+echo "============================"
+echo "Generating Build Environment"
+echo "============================"
 echo ""
 
 # Get repository base dir from script location
