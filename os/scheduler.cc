@@ -2,19 +2,22 @@
 #include "Assert.h"
 #include "cga.h"
 
+// TODO
+#define DEBUG 0
+
+#if DEBUG
+#define assert(x) if((x)==0) (kout << "ASSERT " << __FILE__ << ":" << __LINE__ << " " << __func__ << endl)
+#else
 #define assert(...) do {} while(0)
-//#define assert(x) (void)(((x)==0)? printf("ASSERT %s (%s:%u %s)\n", #x,__FILE__,__LINE__,__func__):0)
+#endif
 
 #include "Encoded.h"
 
-#define printf(...) do {} while(0)
 // the one A we use for now
 static const A_t A0 = 58659;
 
 // encoded constant
 #define EC(b, v) Encoded_Static<A0, b>(v)
-
-
 
 /* Simple task class */
 class Task {
@@ -413,7 +416,7 @@ public:
 
 	template<typename T, typename S>
 	value_coded_t insert(const T& id, const S& prio) {
-		printf("+++ Task %d with priority %d is ready\n", id.decode(), prio.decode());
+		if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
 
 		return set(id, prio);
 	}
@@ -425,7 +428,7 @@ public:
 
 	template<typename T, typename S>
 	void promote(const T& id, const S& newprio) {
-		printf("^^^ Promoting task %d to priority %d\n", id.decode(), newprio.decode());
+		if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
 		
 		set(id, newprio);
 	}
@@ -444,10 +447,10 @@ public:
 	
 	// DEBUGGING
 	void print() const {
-		printf("(%d), ", task1.decode());
-		printf("(%d), ", task2.decode());
-		printf("(%d), ", task3.decode());
-		printf("(%d)\n", task4.decode());
+		kout << "(" << task1.decode() << "), ";
+		kout << "(" << task2.decode() << "), ";
+		kout << "(" << task3.decode() << "), ";
+		kout << "(" << task4.decode() << ")" << endl;
 	}
 };
 
@@ -461,10 +464,10 @@ TaskID schedule(TaskList &tl) {
 	tl.dequeue(next, prio);
 
 	if((EC(1, 1) <= prio).decode()) {
-		printf(">>> Dispatching task %d\n", next.decode());
+		if(DEBUG) kout << ">>> Dispatching task " << next.decode() << endl;	
 		return next.decode();
 	} else {
-		printf("... Entering idle\n");
+		if(DEBUG) kout << "... Entering idle" << endl;
 		return 0;
 	}
 
@@ -502,83 +505,5 @@ bool start(TaskList &tl, const Task &t) {
 			assert(false);
 			return false;
 	}
-}
-
-
-TaskList tlist;
-
-Task t1(1,1);
-Task t2(2,2);
-Task t3(3,3);
-Task t4(4,4);
-
-void setup() {
-	kout << "SETUP" << endl;
-	start(tlist, t1);
-	start(tlist, t2);
-	start(tlist, t3);
-	start(tlist, t4);
-
-	tlist.print();
-}
-
-/* Tests */
-bool test1() {
-	//assert( schedule(tlist) == 4 );
-	Encoded_Static<A0, 3> next;
-	Encoded_Static<A0, 2> prio;
-
-	tlist.dequeue(next, prio);
-	printf("DEBUG %u\n", t1.getID());
-	printf("%u == 4 : %u\n", next.decode(), next == 4);
-
-	return (next == 4);
-}
-	
-bool test2() {
-	bool right = true;
-
-	right &= ( schedule(tlist) == 3 );
-	right &= ( schedule(tlist) == 2 );
-	right &= ( schedule(tlist) == 1 );
-	right &= ( schedule(tlist) == 0 );
-	right &= ( schedule(tlist) == 0 );
-
-	return right;
-}
-
-bool test3() {
-	start(tlist, t3);
-	start(tlist, t2);
-	
-	tlist.promote( EC(5, t2.getID()), EC(6, 4) );
-
-	bool right = true;
-
-	right &= ( schedule(tlist) == 2 );
-	right &= ( schedule(tlist) == 3 );
-	right &= ( schedule(tlist) == 0 );
-	right &= ( schedule(tlist) == 0 );
-
-	return right;
-}
-	
-/* Arithmetic tests */
-bool test_arith() {
-	Encoded_Static<A0, 11> x(44 ,0);
-	Encoded_Static<A0, 17> y(55, 0);
-	Encoded_Static<A0, 1700> yb(5, 0);
-	Encoded_Static<A0, 45> z(35, 0);
-
-	assert( (z-x+y).decode() == 46 );
-	assert( y.geqz() == 1 );
-	assert( (z >= y) == 0 );
-	assert( (y >= x) == 1 );
-	assert( (x <= y) == 1 );
-	assert( (x <= yb) == 0 );
-	assert( x.leq<42>(yb) == 0 );
-	assert( (y*x) == 2420 );
-
-	return true;
 }
 

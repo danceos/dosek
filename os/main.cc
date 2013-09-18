@@ -1,7 +1,10 @@
 #include "cga.h"
 
+extern "C" {
+
 char experiment_number;
-char correct_action;
+//char detected_error;
+//uint32_t result;
 
 void _subexperiment_end() { };
 void (*subexperiment_end)() = _subexperiment_end;
@@ -15,7 +18,9 @@ void (*trace_start_marker)() = _trace_start_marker;
 void _trace_end_marker() { };
 void (*trace_end_marker)() = _trace_end_marker;
 
-#include "scheduler.h"
+}
+
+#include "tests.h"
 
 #define DEBUG
 #ifdef DEBUG
@@ -35,9 +40,10 @@ void os_main(void) {
 
 	experiment_number = 1;
 	subexperiment_marker_1();
-	correct_action = test1();
+	test1();
 	subexperiment_end();
 
+/*
 	experiment_number = 2;
 	subexperiment_marker_1();
 	correct_action = test2();
@@ -47,6 +53,7 @@ void os_main(void) {
 	subexperiment_marker_1();
 	correct_action = test3();
 	subexperiment_end();
+*/
 
 	trace_end_marker();
 

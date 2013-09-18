@@ -90,7 +90,6 @@ public:
 
     value_t decode() const
     {
-        // printf("D"); // DEBUG
         assert(check());
         return (vc - _B - D) / _A;
     };
@@ -200,8 +199,9 @@ public:
         } else if(vc % _A == B + D + (__VC_MAX % _A) + 1) {
             return false;
         } else {
-            printf("%d != %d + %d + %d", vc % _A, B, D, (__VC_MAX % _A) +1);
+            if(DEBUG) kout << (vc % _A) << " != " << B << " + " << D << " + " << (__VC_MAX % _A)+1;
             assert(false);
+	    return false;
         }
     }
 
