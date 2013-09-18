@@ -15,7 +15,7 @@ message(STATUS "Linker script: ${LINKER_SCRIPT}")
 
 # The actual executable
 add_executable(${ELFFILE} ${SRCS})
-target_link_libraries(${ELFFILE} arch os)
+target_link_libraries(${ELFFILE} arch os gcc)
 
 # Set custom linker script
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
