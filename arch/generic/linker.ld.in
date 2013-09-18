@@ -27,11 +27,16 @@ SECTIONS {
        *(".data")
    }
 
+
    .bss : {
        _sbss = .;
        *(COMMON)
        *(".bss")
        _ebss = .;
+   }
+
+   .stack :  {
+       *(".bootstrap_stack")
    }
 
 	/*
