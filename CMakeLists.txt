@@ -25,18 +25,20 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
 message(STATUS "ISA_ASM_FLAGS: ${ISA_ASM_FLAGS}")
 
-# Hardware independent kernel code
-add_subdirectory(os)
+# Include source directory
+include_directories(${PROJECT_SOURCE_DIR})
 
 # Hardware dependent code
+set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories")
 add_subdirectory(arch)
+include_directories(${ARCH_INCLUDE_DIRS})
 
-
-
-
+# Hardware independent kernel code
+include_directories("${PROJECT_SOURCE_DIR}/os")
+add_subdirectory(os)
 
 # Find all sources for code cccc metrics.
-file(GLOB_RECURSE ALLSRCS RELATVIVE ${PROJECT_SOURCE_DIR}	*.cc *.h )
+file(GLOB_RECURSE ALLSRCS RELATVIVE ${PROJECT_SOURCE_DIR} *.cc *.h )
 set(CCCC_SOURCES ${ALLSRCS} CACHE INTERNAL STRING)
 #message(STATUS "ALLSRCS: ${ALLSRCS}")
 

@@ -3,9 +3,24 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "ostream.h"
+#include "arch/generic/ostream.h"
 
 class CGA : public O_Stream {
+	static const size_t WIDTH = 80;
+	static const size_t HEIGHT = 24;
+
+	static uint16_t* const BUFFER;
+	
+	size_t row;
+	size_t column;
+	uint8_t color;
+
+protected:
+	uint16_t vgaentry(char c, uint8_t color);
+	void check_bounds();
+	void scroll();
+
+public:
 	/** CGA colors */
 	enum color {
 		BLACK = 0,
@@ -26,21 +41,6 @@ class CGA : public O_Stream {
 		WHITE = 15,
 	};
 
-	static const size_t WIDTH = 80;
-	static const size_t HEIGHT = 24;
-
-	static uint16_t* const BUFFER;
-	
-	size_t row;
-	size_t column;
-	uint8_t color;
-
-protected:
-	uint16_t vgaentry(char c, uint8_t color);
-	void check_bounds();
-	void scroll();
-
-public:
 	CGA();
 
 	void clear();

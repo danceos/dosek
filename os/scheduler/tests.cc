@@ -1,13 +1,35 @@
-#include "scheduler.cc" // FIXME
+#include "output.h"
+#include "tasklist.h"
+
+output_t kout;
 
 extern "C" {
 
+// globals
+char experiment_number = 0;
+char detected_error = false;
+char result = -1;
+uint32_t& encoded_result = TaskList::id.vc;
+
 TaskList tlist;
 
-const Task t1(1,1);
-const Task t2(2,2);
-const Task t3(3,3);
-const Task t4(4,4);
+// markers
+void _subexperiment_end() { };
+void (*subexperiment_end)() = _subexperiment_end;
+
+void _subexperiment_marker_1() { };
+void (*subexperiment_marker_1)() = _subexperiment_marker_1;
+
+void _trace_start_marker() { };
+void (*trace_start_marker)() = _trace_start_marker;
+
+void _trace_end_marker() { };
+void (*trace_end_marker)() = _trace_end_marker;
+
+static const Task t1(1,1);
+static const Task t2(2,2);
+static const Task t3(3,3);
+static const Task t4(4,4);
 
 
 void setup() {
@@ -19,22 +41,15 @@ void setup() {
 	if(DEBUG) tlist.print();
 }
 
-Encoded_Static<A0, 3> next;
-Encoded_Static<A0, 2> prio;
-
-uint32_t& encoded_result = next.vc;
-char result = -1;
-char detected_error = false;
-
 /* Tests */
-void test1() {
-	tlist.dequeue(next, prio);
-	
-	detected_error = !next.check();
-	result = next.decode();
-}
+void test_dequeue() {
+	tlist.dequeue();
 
-};
+	subexperiment_marker_1();
+	
+	detected_error = !TaskList::id.check();
+	result = TaskList::id.decode();
+}
 
 /*
 bool test2() {
@@ -84,4 +99,21 @@ bool test_arith() {
 	return true;
 }
 */
+};
+
+void os_main(void) {
+	kout << "CoRedOS start" << endl;
+
+	setup();
+
+	trace_start_marker();
+
+	experiment_number = 1;
+	test1();
+	subexperiment_end();
+
+	kout << "CoRedOS halt" << endl;
+
+	for(;;) {}
+}
 

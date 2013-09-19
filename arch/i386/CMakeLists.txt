@@ -11,7 +11,9 @@ endif()
 set(SRCS
 		startup.cc
 		startup.s
+		cga.cc
 )
 
-
 add_library(arch ${SRCS})
+
+set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)

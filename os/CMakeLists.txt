@@ -1,11 +1,9 @@
 
 set(SRCS
 		main.cc
-		cga.cc
-		scheduler.cc
-		cga.cc
-		tests.cc
-		ostream.cc
 )
 
 add_library(os ${SRCS})
+
+add_subdirectory(scheduler)
+target_link_libraries(os scheduler)
