@@ -4,6 +4,9 @@ PROJECT(CoRedOS)
 enable_language(ASM)
 set(PROJECT_VERSION "0.1" CACHE STRING "Project version number")
 
+# Enable CTest
+enable_testing()
+
 # Verbose make
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE_MAKE})
