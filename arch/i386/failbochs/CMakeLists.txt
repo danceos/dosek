@@ -38,12 +38,17 @@ if(GRUB_MKRESCUE)
 			OUTPUT ${ISOFILE} ${BOOTDIR}/${ELFFILE}
 		)
 
+	  add_custom_target( grubiso
+		DEPENDS ${ISOFILE}
+		COMMENT "Generating bootable grub iso."
+		)
 
-    add_custom_target( fail
-      COMMAND FAIL_ELF_PATH=$<TARGET_FILE:${ELFFILE}> ${FAIL_BINARY} -f ${BOCHSRC} -q
-      DEPENDS ${ISOFILE}
-      COMMENT "Starting Fail*"
-  )
+
+	  add_custom_target( fail
+		COMMAND FAIL_ELF_PATH=$<TARGET_FILE:${ELFFILE}> ${FAIL_BINARY} -f ${BOCHSRC} -q
+		DEPENDS ${ISOFILE}
+		COMMENT "Starting Fail*"
+		)
 
 		add_custom_target(run-qemu
 				DEPENDS ${ISOFILE} ${ELFFILE}
