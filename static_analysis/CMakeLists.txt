@@ -27,9 +27,16 @@ find_program(OCLINT_JSON oclint-json-compilation-database
 
 if(OCLINT_JSON)
 	set(OCLINT_OUTPUT "${PROJECT_BINARY_DIR}/oclint.html")
+	set(OCLINT_OUTPUT_PMD "${PROJECT_BINARY_DIR}/oclint.xml")
 
 	add_custom_target( oclint
 			COMMAND ${OCLINT_JSON} -- -p ${PROJECT_BINARY_DIR} -report-type html -o ${OCLINT_OUTPUT} -enable-clang-static-analyzer
+			DEPENDS "${PROJECT_BINARY_DIR}/compile_commands.json"
+			WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+	)
+
+	add_custom_target( oclint-jenkins
+		COMMAND ${OCLINT_JSON} -- -p ${PROJECT_BINARY_DIR} -report-type pmd -o ${OCLINT_OUTPUT_PMD}
 			DEPENDS "${PROJECT_BINARY_DIR}/compile_commands.json"
 			WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 	)
