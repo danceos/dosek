@@ -1,7 +1,9 @@
+#include "serial.h"
 #include "output.h"
 #include "os/encoded.h"
 
 output_t kout;
+Serial serial(Serial::COM1);
 
 extern "C" {
 
@@ -39,6 +41,13 @@ void run_test(void (*test)(void), T& result_var, value_t expected)
 	experiment_number++;
 	expected_result = expected;
 	encoded_result = 0;
+
+	serial << "Test " << (unsigned) experiment_number << ": ";
+	#ifdef DEBUG
+	kout.setcolor(CGA::WHITE, CGA::BLACK);
+	kout << "[Test " << (unsigned) experiment_number << "]" << endl;
+	kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
+	#endif
 	
 	// run the test
 	test();
@@ -54,28 +63,33 @@ void run_test(void (*test)(void), T& result_var, value_t expected)
 	// mark end of test
 	subexperiment_end();
 
+	// output success/failure
+	if(detected_error || result == expected_result) {
+		serial << "SUCCESS" << endl;
+
+		#ifdef DEBUG
+		kout.setcolor(CGA::GREEN, CGA::BLACK);
+		kout << "[SUCCESS]" << endl << endl;
+		#endif
+	} else {
+		serial << "FAIL" << endl;
+		#ifdef DEBUG
+		kout.setcolor(CGA::RED, CGA::BLACK);
+		kout << "[FAIL]" << endl << endl;
+		#endif
+	}
+
 	#ifdef DEBUG
-		kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
-		kout << "Test " << (unsigned) experiment_number << ": ";
-
-		if(detected_error || result == expected_result) {
-			kout.setcolor(CGA::GREEN, CGA::BLACK);
-			kout << "SUCCESS" << endl;
-		} else {
-			kout.setcolor(CGA::RED, CGA::BLACK);
-			kout << "FAIL" << endl;
-		}
-
-		kout.setcolor(CGA::WHITE, CGA::BLACK);
+	kout.setcolor(CGA::WHITE, CGA::BLACK);
 	#endif
 }
 
 void os_main(void)
 {
 	#ifdef DEBUG	
-		kout.setcolor(CGA::RED, CGA::WHITE);
-		kout << "CoRedOS start" << endl;
-		kout.setcolor(CGA::WHITE, CGA::BLACK);
+	kout.setcolor(CGA::RED, CGA::WHITE);
+	kout << "CoRedOS start" << endl;
+	kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
 	#endif
 
 	// prepare tests
@@ -91,10 +105,13 @@ void os_main(void)
 	trace_end_marker();
 	
 	#ifdef DEBUG
-		kout.setcolor(CGA::RED, CGA::WHITE);
-		kout << "CoRedOS halt" << endl;
+	kout.setcolor(CGA::RED, CGA::WHITE);
+	kout << "CoRedOS halt" << endl;
 	#endif
 
+	#ifndef DEBUG // not when debugging
 	asm("int $0x03"); // triple fault, exit emulator
+	#endif
+
 	for(;;) {}
 }

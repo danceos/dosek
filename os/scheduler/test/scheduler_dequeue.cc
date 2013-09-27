@@ -1,4 +1,4 @@
-#define DEBUG 1
+//#define DEBUG 1
 
 #include "test/test.h"
 #include "../tasklist.h"

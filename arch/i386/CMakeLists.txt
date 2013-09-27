@@ -12,6 +12,7 @@ set(SRCS
 		startup.cc
 		startup.s
 		cga.cc
+		serial.cc
 )
 
 add_library(arch ${SRCS})
