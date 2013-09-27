@@ -7,6 +7,8 @@ Serial serial(Serial::COM1);
 
 extern "C" {
 
+bool all_ok = true;
+
 // FAIL* interface variables
 char experiment_number = 0;
 char detected_error = false;
@@ -72,6 +74,7 @@ void run_test(void (*test)(void), T& result_var, value_t expected)
 		kout << "[SUCCESS]" << endl << endl;
 		#endif
 	} else {
+		all_ok = false;
 		serial << "FAIL" << endl;
 		#ifdef DEBUG
 		kout.setcolor(CGA::RED, CGA::BLACK);
@@ -103,6 +106,10 @@ void os_main(void)
 
 	// done, tracing can end here
 	trace_end_marker();
+
+	serial << "Tests finished: ";
+	serial << (all_ok ? "ALL OK" : "some tests failed");
+	serial << endl;
 	
 	#ifdef DEBUG
 	kout.setcolor(CGA::RED, CGA::WHITE);
