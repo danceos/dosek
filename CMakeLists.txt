@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6.2)
 
 PROJECT(CoRedOS)
 enable_language(ASM)
+enable_testing()
 set(PROJECT_VERSION "0.1" CACHE STRING "Project version number")
 
 # Enable CTest
@@ -27,6 +28,9 @@ message(STATUS "ISA_ASM_FLAGS: ${ISA_ASM_FLAGS}")
 
 # Include source directory
 include_directories(${PROJECT_SOURCE_DIR})
+
+# Tests
+add_subdirectory(test)
 
 # Hardware dependent code
 set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories")

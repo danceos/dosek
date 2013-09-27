@@ -15,5 +15,6 @@ set(SRCS
 )
 
 add_library(arch ${SRCS})
+target_link_libraries(arch generic)
 
 set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)

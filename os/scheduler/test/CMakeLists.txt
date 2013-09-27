@@ -1,0 +1,1 @@
+coredos_test(scheduler_dequeue)

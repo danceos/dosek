@@ -4,3 +4,5 @@ set(SRCS
 )
 
 add_library(scheduler ${SRCS})
+
+add_subdirectory(test)
