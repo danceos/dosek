@@ -1,6 +1,6 @@
 //#define DEBUG 1
 
-#include "test/test.h"
+#include "test/test_fail.h"
 #include "../tasklist.h"
 
 extern "C" {
@@ -35,7 +35,7 @@ void prepare(void)
 }
 
 // run tests
-void test(void)
+void do_test(void)
 {
 	// dequeue everything
 	run_test(&test_dequeue, id, 4);
