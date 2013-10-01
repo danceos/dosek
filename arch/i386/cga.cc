@@ -35,21 +35,24 @@ void CGA::putentryat(char c, uint8_t color, size_t x, size_t y) {
 void CGA::check_bounds() {
 	if(column >= WIDTH ) {
 		column = 0;
-		if(row >= HEIGHT) {
-			scroll();
-		}
+		row++;
+	}
+	if(row >= HEIGHT) {
+		scroll();
+		row = HEIGHT-1;
+		column = 0;
 	}
 }
 
 void CGA::scroll() {
 	// move lines up
-	for(unsigned int i=0; i<2*WIDTH*(HEIGHT-1); i++) {
-		BUFFER[i] = BUFFER[i + 2*WIDTH];
+	for(unsigned int i=0; i<WIDTH*HEIGHT; i++) {
+		BUFFER[i] = BUFFER[i + WIDTH];
 	}
 
 	// clear last line
 	for(unsigned int i=0; i<WIDTH; i++) {
-		putentryat(' ', color, i, HEIGHT);
+		putentryat(' ', 0x0000, i, HEIGHT-1);
 	}
 }
 
