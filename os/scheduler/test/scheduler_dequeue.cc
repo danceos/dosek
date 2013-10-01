@@ -14,9 +14,12 @@ static const Task t2(2,2);
 static const Task t3(3,3);
 static const Task t4(4,4);
 
+Encoded_Static<A0, 3> id;
+Encoded_Static<A0, 2> prio;
+
 // test a single dequeue
 void test_dequeue() {
-	tlist.dequeue();
+	tlist.dequeue(id, prio);
 }
 
 // prepare tests
@@ -35,11 +38,11 @@ void prepare(void)
 void test(void)
 {
 	// dequeue everything
-	run_test(&test_dequeue, TaskList::id, 4);
-	run_test(&test_dequeue, TaskList::id, 3);
-	run_test(&test_dequeue, TaskList::id, 2);
-	run_test(&test_dequeue, TaskList::id, 1);
-	run_test(&test_dequeue, TaskList::id, 0);
+	run_test(&test_dequeue, id, 4);
+	run_test(&test_dequeue, id, 3);
+	run_test(&test_dequeue, id, 2);
+	run_test(&test_dequeue, id, 1);
+	run_test(&test_dequeue, id, 0);
 }
 
 };
