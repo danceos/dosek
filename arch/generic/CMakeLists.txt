@@ -29,7 +29,7 @@ macro(coredos_executable ELFFILE SRCS )
 	# Set custom linker script
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
 				"-Wl,-T ${PROJECT_BINARY_DIR}/linker.ld -Wl,-nostdlib ${ISA_LD_FLAGS} -nostdlib -ffreestanding" )
-	
+
 	set(EXECUTABLES ${EXECUTABLES} ${ELFFILE} CACHE INTERNAL STRING)
 endmacro()
 

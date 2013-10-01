@@ -50,13 +50,13 @@ void run_test(void (*test)(void), T& result_var, value_t expected)
 	kout << "[Test " << (unsigned) experiment_number << "]" << endl;
 	kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
 	#endif
-	
+
 	// run the test
 	test();
 
 	// mark test completion
 	subexperiment_marker_1();
-	
+
 	// analyze result
 	detected_error = !result_var.check();
 	encoded_result = result_var.vc;
@@ -89,7 +89,7 @@ void run_test(void (*test)(void), T& result_var, value_t expected)
 
 void os_main(void)
 {
-	#ifdef DEBUG	
+	#ifdef DEBUG
 	kout.setcolor(CGA::RED, CGA::WHITE);
 	kout << "CoRedOS start" << endl;
 	kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
@@ -110,7 +110,7 @@ void os_main(void)
 	serial << "Tests finished: ";
 	serial << (all_ok ? "ALL OK" : "some tests failed");
 	serial << endl;
-	
+
 	#ifdef DEBUG
 	kout.setcolor(CGA::RED, CGA::WHITE);
 	kout << "CoRedOS halt" << endl;

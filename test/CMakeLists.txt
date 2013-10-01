@@ -38,7 +38,7 @@ add_custom_command(
 macro(coredos_test TEST)
     set(TESTELF "test-${TEST}.elf")
     coredos_executable(${TESTELF} "${TEST}.cc")
-    add_test(${TESTELF} qemu-system-i386 -no-reboot -nographic -kernel "${PROJECT_BINARY_DIR}/test-${TEST}.elf")
+    add_test(${TESTELF} qemu-system-i386 -no-reboot -nographic -kernel "${PROJECT_BINARY_DIR}/${TESTELF}")
     set_tests_properties(${TESTELF} PROPERTIES PASS_REGULAR_EXPRESSION "ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
     add_dependencies( build_and_test ${TESTELF} )
     add_dependencies( ctest2jenkins ${TESTELF} )
