@@ -5,7 +5,7 @@
 #if DEBUG
 #define assert(x) { if((x)==0) { \
     kout << "ASSERT " << __FILE__ << ":" << __LINE__ << " " << __func__ << endl; \
-    __asm__("ud2"); }}
+    __asm__("hlt");}}
 #else
 #define assert(x) { if((x)==0) __asm__("ud2"); }
 #endif

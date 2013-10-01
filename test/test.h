@@ -116,7 +116,9 @@ void os_main(void)
 	kout << "CoRedOS halt" << endl;
 	#endif
 
-	#ifndef DEBUG // not when debugging
+	#ifdef DEBUG
+	asm("hlt"); // stop emulator, don't exit
+	#else
 	asm("int $0x03"); // triple fault, exit emulator
 	#endif
 
