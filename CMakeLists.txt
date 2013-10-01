@@ -41,9 +41,5 @@ include_directories(${ARCH_INCLUDE_DIRS})
 include_directories("${PROJECT_SOURCE_DIR}/os")
 add_subdirectory(os)
 
-# Find all sources for code cccc metrics.
-file(GLOB_RECURSE ALLSRCS RELATVIVE ${PROJECT_SOURCE_DIR} *.cc *.h )
-set(CCCC_SOURCES ${ALLSRCS} CACHE INTERNAL STRING)
-#message(STATUS "ALLSRCS: ${ALLSRCS}")
-
+# Static analysis (oclint/clang-static-analyzer
 add_subdirectory(static_analysis)
