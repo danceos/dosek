@@ -32,6 +32,9 @@ include_directories(${PROJECT_SOURCE_DIR})
 # Tests
 add_subdirectory(test)
 
+# List of executables
+set(EXECUTABLES "" CACHE INTERNAL "List of executables")
+
 # Hardware dependent code
 set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories")
 add_subdirectory(arch)
@@ -40,6 +43,15 @@ include_directories(${ARCH_INCLUDE_DIRS})
 # Hardware independent kernel code
 include_directories("${PROJECT_SOURCE_DIR}/os")
 add_subdirectory(os)
+
+# Platform specific custom targets/commands.
+# Must be included after add_executable, as they depend on the main target.
+if(ADDITIONAL_TARGETS)
+	message(STATUS "Preparing addtional targets: ${ADDITIONAL_TARGETS}")
+	add_subdirectory(${ADDITIONAL_TARGETS})
+else()
+	message(STATUS "No additional targets found.")
+endif()
 
 # Static analysis (oclint/clang-static-analyzer
 add_subdirectory(static_analysis)
