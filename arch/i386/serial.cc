@@ -11,11 +11,14 @@ Serial::Serial(ports port) : PORT((uint16_t) port) {
 	outb(PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
 }
 
-void Serial::putchar(char c) {
-	// wait while transmit not empty
-	while((inb(PORT + 5) & 0x20) == 0);
+void Serial::putchar(char character) {
+    // wait while transmit not empty
+    bool empty;
+    do {
+        empty = (inb(PORT + 5) & 0x20);
+    } while(!empty);
 
-	outb(PORT, c);
+	outb(PORT, character);
 }
 
 void Serial::puts(const char* data) {

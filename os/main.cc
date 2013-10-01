@@ -12,6 +12,8 @@ void os_main(void) {
 	kout.setcolor(CGA::RED, CGA::WHITE);
 	kout << "CoRedOS halt" << endl;
 
-	for(;;) {}
+	for(;;) {
+        __asm__ ("nop");
+    }
 }
 

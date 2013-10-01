@@ -17,19 +17,19 @@ void CGA::clear() {
 	}
 }
 
-uint16_t CGA::vgaentry(char c, uint8_t color) {
-	uint16_t c16 = c;
+uint16_t CGA::vgaentry(char character, uint8_t color) {
+	uint16_t c16 = character;
 	uint16_t color16 = color;
 	return c16 | color16 << 8;
 }
 
-void CGA::setcolor(enum color fg, enum color bg) {
-	color = fg | bg << 4;
+void CGA::setcolor(enum color foreground, enum color background) {
+	color = foreground | background << 4;
 }
 
-void CGA::putentryat(char c, uint8_t color, size_t x, size_t y) {
-	const size_t index = y * WIDTH + x;
-	BUFFER[index] = vgaentry(c, color);
+void CGA::putentryat(char character, uint8_t color, size_t x_coord, size_t y_coord) {
+	const size_t index = y_coord * WIDTH + x_coord;
+	BUFFER[index] = vgaentry(character, color);
 }
 
 void CGA::check_bounds() {
@@ -56,8 +56,8 @@ void CGA::scroll() {
 	}
 }
 
-void CGA::putchar(char c) {
-	switch(c) {
+void CGA::putchar(char character) {
+	switch(character) {
 	case '\n':
 		column = 0;
 		row++;
@@ -82,9 +82,10 @@ void CGA::putchar(char c) {
 		break;
 
 	default:
-		putentryat(c, color, column, row);
+		putentryat(character, color, column, row);
 		column++;
 		check_bounds();
+        break;
 	}
 }
 

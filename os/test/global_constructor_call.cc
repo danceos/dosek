@@ -13,8 +13,8 @@ public:
     GlobalConstructorTester() : test(23) {
     }
 
-    GlobalConstructorTester( int x) {
-        test = x;
+    GlobalConstructorTester(int testvalue) {
+        test = testvalue;
     }
 
     int getValue() {
@@ -60,6 +60,8 @@ void os_main(void)
     asm("int $0x03"); // triple fault, exit emulator
     #endif
 
-    for(;;) {}
+    for(;;) {
+        __asm__("nop");
+    }
 }
 

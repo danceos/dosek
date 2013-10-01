@@ -2,7 +2,7 @@
 
 O_Stream& O_Stream::operator << (char value) {
     putchar(value);
-  
+
     return *this;
 }
 
@@ -15,13 +15,13 @@ O_Stream& O_Stream::operator << (unsigned char value) {
 O_Stream& O_Stream::operator << (char* value) {
     while (*value != 0)
     	putchar(*value++);
-  
+
     return *this;
 }
 
 O_Stream& O_Stream::operator << (const char* value) {
     *this << const_cast<char*> (value);
-    
+
     return *this;
 }
 
@@ -84,20 +84,20 @@ O_Stream& O_Stream::operator << (void* value) {
     return *this;
 }
 
-O_Stream& O_Stream::operator << (O_Stream& (*f) (O_Stream&)) {
-    return (*f)(*this);
+O_Stream& O_Stream::operator << (O_Stream& (*stream) (O_Stream&)) {
+    return (*stream)(*this);
 }
 
 O_Stream& endl(O_Stream &out) {
     out << '\n';
     return out;
 }
- 
+
 O_Stream& bin(O_Stream &out) {
     out.base = 2;
     return out;
 }
- 
+
 O_Stream& oct(O_Stream &out) {
     out.base = 8;
     return out;
