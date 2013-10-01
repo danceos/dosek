@@ -20,11 +20,15 @@ foreach(ELF ${EXECUTABLES})
 	set(BOCHS_VGA_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/vgabios.bin")
 	set(BOCHS_ISO_IMAGE "${ISOFILE}")
 
-	set(BOCHSRC "${PROJECT_BINARY_DIR}/bochsrc${DSUFFIX}")
+    set(STARTUP_SCRIPTS ${PROJECT_BINARY_DIR}/startup_scripts)
+    file(MAKE_DIRECTORY ${STARTUP_SCRIPTS})
+    set(BOCHSRC "${STARTUP_SCRIPTS}/bochsrc${DSUFFIX}")
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bochsrc.in" ${BOCHSRC} )
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bochsrc-gdb.in" "${BOCHSRC}-gdb" )
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/bochsrc-term.in" "${BOCHSRC}-term" )
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gdbinit.in" "${PROJECT_BINARY_DIR}/${SUFFIX}.gdbinit" )
+
+    set(GDBINITFILE ${STARTUP_SCRIPTS}/${SUFFIX}.gdbinit)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gdbinit.in" ${GDBINITFILE})
 
 	# Grub
 	find_program(GRUB_MKRESCUE "grub-mkrescue")
@@ -66,14 +70,14 @@ foreach(ELF ${EXECUTABLES})
 			COMMENT "Starting Fail*"
 			)
 
-	# Start qemu 
+	# Start qemu
 	add_custom_target(qrun${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
 			COMMAND echo "Running ${ISOFILE}..."
 			COMMAND qemu-system-i386 -cdrom ${ISOFILE} -no-reboot
 			)
 
-	# Start qemu in terminal (for ssh) 
+	# Start qemu in terminal (for ssh)
 	add_custom_target(qrunterm${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
 			COMMAND echo "Running ${ISOFILE}..."
@@ -106,14 +110,14 @@ foreach(ELF ${EXECUTABLES})
 	add_custom_target(runterm${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
 			COMMAND echo "Running ${ISOFILE}..."
-			COMMAND bochs -f ${BOCHSRC}-term 
+			COMMAND bochs -f ${BOCHSRC}-term
 			)
 
 	# Start bochs with GDB stub for debugging
 	add_custom_target(debug${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
 			COMMAND echo "Running ${ISOFILE}..."
-			COMMAND bochs -f ${BOCHSRC}-gdb 
+			COMMAND bochs -f ${BOCHSRC}-gdb
 			)
 
 	# Start GDB and attach to bochs
@@ -121,6 +125,6 @@ foreach(ELF ${EXECUTABLES})
 			DEPENDS ${ISOFILE} ${ELF}
 			COMMAND echo "Starting gdb for ${ISOFILE}..."
 			WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-			COMMAND gdb -n -x ${SUFFIX}.gdbinit 
+            COMMAND gdb -n -x ${GDBINITFILE}
 			)
 endforeach()
