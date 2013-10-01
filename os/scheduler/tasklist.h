@@ -1,7 +1,9 @@
 #ifndef __TASKLIST_H__
 #define __TASKLIST_H__
 
-#define DEBUG 1
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 
 #include <stdint.h>
 #include "assert.h"
@@ -47,7 +49,7 @@ public:
 	template<typename T, typename S>
 	inline value_coded_t set(const T id, const S prio) {
 	//inline value_coded_t set() {
-        	//volatile value_coded_t signature;
+		//volatile value_coded_t signature;
 		if(id == 1) {
 			task1 = prio;
 			return (task1 - prio).getCodedValue();
@@ -67,39 +69,46 @@ public:
 	}
 
 	// Effect: (a,x) = max{((a,x), (b,y)} with (a,x) <= (b,y) <=> a <= b
-	template<B_t B, typename T, typename S, typename U, typename V>
+	// subtracts signature B0 from a,x and adds signature B1 to catch lost updates
+	template<B_t B0, B_t B1, typename T, typename S, typename U, typename V>
 	inline value_coded_t updateMax(T& a, const S& b, U& x, const V& y) const {
+		TAssert(S::B > T::B);
+
 		// control flow signature
 		value_coded_t result;
 
+		// check correct a,x after subtracting signature B0
+		assert((a.vc - B0 - T::B - a.D) % T::A == 0);
+		assert((x.vc - B0 - U::B - x.D) % U::A == 0);
+
 		// unencoded comparison
-		result = (a.vc - T::B) <= (b.vc - S::B);
+		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
 		
 		// encoded check of comparison
-		value_coded_t diff = b.vc - a.vc; // this>t  => diff = 2^m - (vc - t.vc)
+		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
 						// this<=t => diff = t.vc - vc
 		value_coded_t sigCond = diff % T::A;
 		const value_coded_t sigPos = S::B - T::B;
 		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;
 
-		// check correct a,x after subtracting signature B-1
-		assert((a.vc - (B-1) - T::B - a.D) % T::A == 0);
-		assert((x.vc - (B-1) - U::B - x.D) % U::A == 0);
-		
 		if(result) {
-			// a=b, x=y with added signature B
-			a.vc = b.vc + (T::B - S::B) + B;
-			x.vc = y.vc + (U::B - V::B) + B;
+			if(DEBUG) kout << "< ";
+
+			// a=b, x=y with added signature B1
+			a.vc = b.vc + (T::B - S::B) + B1;
+			x.vc = y.vc + (U::B - V::B) + B1;
 
 			// set control flow signature (expected: sigCond == sigPos)
-			result += (T::A - 1) + (S::B - T::B) + B;
+			result += (T::A - 1) + B1; // + (S::B - T::B);
 		} else {
+			if(DEBUG) kout << "> ";
+
 			// remove old B-1, add new B signature to "unmodified" a,x
-			a.vc = a.vc - (B-1) + B;
-			x.vc = x.vc - (B-1) + B;
+			a.vc = a.vc - B0 + B1;
+			x.vc = x.vc - B0 + B1;
 
 			// set control flow signature (expected: sigCond == sigNeg)
-			result += (sigPos - sigNeg) + (S::B - T::B) + B;
+			result += (sigPos - sigNeg) + B1; // + (S::B - T::B);
 		}
 
 		// return finished control flow signature
@@ -107,35 +116,41 @@ public:
 		return result;
 	}
 
+	/** Get highest-priority task.
+	  * Saves result ID in TaskList::id,
+	  * and result priority in TaskList::prio.
+	  * If no task is ready, TaskList::prio == TaskList::idle_prio
+	  * and TaskList::id is undefined.
+	  */
 	//template<typename T, typename S>
 	//inline value_coded_t head(T& id, S& prio) const {
 	inline value_coded_t head() const {
 		// initialize control flow signature
-        	volatile value_coded_t signature = 10;
+		volatile value_coded_t signature = 10;
 
 		// start with idle id/priority
-	        id = idle_id;
-        	prio = idle_prio;
+		id = idle_id;
+		prio = idle_prio;
 
 		// add initial signature
 		id.vc += 10;
 		prio.vc += 10;
 
 		// task1 > prio?
-	        signature += updateMax<11>(prio, task1, id, EC(41, 1));
-		assert(signature % A0 == 41);
+		signature += updateMax<10, 11>(prio, task1, id, EC(41, 1));
+		assert(signature % A0 == 36);
 
 		// task2 > prio?
-	        signature += updateMax<12>(prio, task2, id, EC(42, 2));
-	        assert(signature % A0 == 70);
+		signature += updateMax<11, 12>(prio, task2, id, EC(42, 2));
+		assert(signature % A0 == 62);
 
 		// task3 > prio?
-	        signature += updateMax<13>(prio, task3, id, EC(43, 3));
-	        assert(signature % A0 == 97);
+		signature += updateMax<12, 13>(prio, task3, id, EC(43, 3));
+		assert(signature % A0 == 88);
 
 		// task4 > prio?
-	        signature += updateMax<14>(prio, task4, id, EC(44, 4));
-        	assert(signature % A0 == 122);
+		signature += updateMax<13, 14>(prio, task4, id, EC(44, 4));
+		assert(signature % A0 == 114);
 
 		// subtract last signature
 		id.vc -= 14;
@@ -145,7 +160,9 @@ public:
 		assert(id.check());
 		assert(prio.check());
 
-	        return signature;
+		if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
+
+		return signature;
 	}
 
 	template<typename T, typename S>
@@ -173,7 +190,13 @@ public:
 	inline value_coded_t dequeue() {
 		value_coded_t sig1 = head();
 
-		value_coded_t sig2 = remove();
+		value_coded_t sig2;
+		if(prio != idle_prio) {
+			sig2 = remove();
+		} else {
+			id = idle_id;
+			sig2 = 42;
+		}
 
 		// TODO: check control flow
 		// assert(...)

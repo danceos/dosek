@@ -39,7 +39,7 @@ void test(void)
 	run_test(&test_dequeue, TaskList::id, 3);
 	run_test(&test_dequeue, TaskList::id, 2);
 	run_test(&test_dequeue, TaskList::id, 1);
-	//run_test(&test_dequeue, TaskList::id, 0); // TODO
+	run_test(&test_dequeue, TaskList::id, 0);
 }
 
 };
