@@ -21,7 +21,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/toolchain")
 
 ## Setup platform independent compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ISA_C_FLAGS} -ffunction-sections -nostdlib -fno-builtin")
+# ffunction/data-sections needed to link functions/data into different sections based on name(space)
+# fno-zero-initialized-in-bss puts all variables into data instead of bss section (for data-section grouping)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ISA_C_FLAGS} -ffunction-sections -fdata-sections -fno-zero-initialized-in-bss -nostdlib -fno-builtin")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-exceptions -std=c++11")
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
 message(STATUS "ISA_ASM_FLAGS: ${ISA_ASM_FLAGS}")

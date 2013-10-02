@@ -3,16 +3,19 @@
 #include "test/test.h"
 #include "../tasklist.h"
 
-extern "C" {
+using namespace os::scheduler;
+
+// errors are injected in this namespace
+namespace fail {
 
 // the task list
 TaskList tlist;
 
 // constant task identifiers
-static const Task t1(1,1);
-static const Task t2(2,2);
-static const Task t3(3,3);
-static const Task t4(4,4);
+const Task t1(1,1);
+const Task t2(2,2);
+const Task t3(3,3);
+const Task t4(4,4);
 
 Encoded_Static<A0, 3> id;
 Encoded_Static<A0, 2> prio;
@@ -21,6 +24,10 @@ Encoded_Static<A0, 2> prio;
 void test_dequeue() {
 	tlist.dequeue(id, prio);
 }
+
+};
+
+using namespace fail;
 
 // prepare tests
 void test_prepare(void)
@@ -45,4 +52,3 @@ void test(void)
 	run_checkable_function(&test_dequeue, id, 0);
 }
 
-};

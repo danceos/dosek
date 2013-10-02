@@ -1,6 +1,9 @@
 #ifndef __TASK_H__
 #define __TASK_H__
 
+namespace os {
+namespace scheduler {
+
 /* Simple task class */
 class Task {
 public:
@@ -48,5 +51,8 @@ typedef Task::ID TaskID;
 typedef Task::Prio TaskPrio;
 static const Task INVALID_TASK = Task(0,0);
 static const TaskID INVALID_TASK_ID = 0;
+
+}; // namespace scheduler
+}; // namespace os
 
 #endif // __TASK_H__

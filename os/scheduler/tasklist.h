@@ -11,6 +11,9 @@
 #include "task.h"
 #include "encoded.h"
 
+namespace os {
+namespace scheduler {
+
 // the one A we use for now
 static const A_t A0 = 58659;
 
@@ -276,5 +279,8 @@ bool start(TaskList &tl, const Task &t) {
 	}
 }
 */
+
+}; // namespace scheduler
+}; // namespace os
 
 #endif // __TASKLIST_H__
