@@ -1,6 +1,6 @@
 //#define DEBUG 1
 
-#include "test/test_fail.h"
+#include "test/test.h"
 #include "../tasklist.h"
 
 extern "C" {
@@ -23,7 +23,7 @@ void test_dequeue() {
 }
 
 // prepare tests
-void prepare(void)
+void test_prepare(void)
 {
 	// start all tasks
 	tlist.insert(EC(3, t1.getID()), EC(4, t1.getPrio()));
@@ -35,14 +35,14 @@ void prepare(void)
 }
 
 // run tests
-void do_test(void)
+void test(void)
 {
 	// dequeue everything
-	run_test(&test_dequeue, id, 4);
-	run_test(&test_dequeue, id, 3);
-	run_test(&test_dequeue, id, 2);
-	run_test(&test_dequeue, id, 1);
-	run_test(&test_dequeue, id, 0);
+	run_checkable_function(&test_dequeue, id, 4);
+	run_checkable_function(&test_dequeue, id, 3);
+	run_checkable_function(&test_dequeue, id, 2);
+	run_checkable_function(&test_dequeue, id, 1);
+	run_checkable_function(&test_dequeue, id, 0);
 }
 
 };

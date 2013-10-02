@@ -25,14 +25,17 @@ GlobalConstructorTester g_consttest_23;
 // run tests
 void test(void)
 {
-	bool res;
+	test_start();
+	unsigned int result = g_consttest_23.getValue();
+	test_start_check();
+	test_eq(result, 23);
+	test_positive_tests_eq(1);
+
 
 	test_start();
-	res = g_consttest_23.getValue() == 23;
-	test_result(res);
-
-	test_start();
-	res = g_consttest_42.getValue() == 42;
-	test_result(res);
+	result = g_consttest_42.getValue();
+	test_start_check();
+	test_eq(result, 42);
+	test_positive_tests_eq(1);
 }
 
