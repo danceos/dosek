@@ -18,7 +18,7 @@ if(CPPCHECK)
     endforeach()
 
     add_custom_target( cppcheck
-        COMMAND ${CPPCHECK} --enable=all -q --verbose --template=gcc --std=c++11 --max-configs=32 ${PROJECT_SOURCE_DIR} --includes-file=${CPPINCLUDES}
+        COMMAND ${CPPCHECK} --enable=all -q --enable=all --xml --std=c++11 ${PROJECT_SOURCE_DIR} --includes-file=${CPPINCLUDES} -i ${PROJECT_BINARY_DIR} 2> ${PROJECT_BINARY_DIR}/cppcheck-result.xml
     )
 else()
       message(STATUS "cppcheck executable not found, code quality not checked.")
