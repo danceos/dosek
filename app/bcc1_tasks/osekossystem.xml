@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<oseksystem xmlns              = "http://www4.informatik.uni-erlangen.de/RTSC"
+	    xmlns:xsi          = "http://www.w3.org/2001/XMLSchema-instance">
+
+  <OS>
+    <name>TestSystem</name>
+    <STATUS>STANDARD</STATUS>
+    <ERRORHOOK>FALSE</ERRORHOOK>
+    <STARTUPHOOK>FALSE</STARTUPHOOK>
+    <SHUTDOWNHOOK>FALSE</SHUTDOWNHOOK>
+    <PRETASKHOOK>FALSE</PRETASKHOOK>
+    <POSTTASKHOOK>FALSE</POSTTASKHOOK>
+  </OS>
+
+  <TASK>
+    <name>Handler11</name>
+    <TYPE>BASIC</TYPE>
+    <SCHEDULE>FULL</SCHEDULE>
+    <PRIORITY>5</PRIORITY>
+    <ACTIVATION>1</ACTIVATION>
+    <AUTOSTART>TRUE</AUTOSTART>
+  </TASK>
+
+  <TASK>
+    <name>Handler12</name>
+    <TYPE>BASIC</TYPE>
+    <SCHEDULE>FULL</SCHEDULE>
+    <PRIORITY>4</PRIORITY>
+    <ACTIVATION>1</ACTIVATION>
+    <AUTOSTART>TRUE</AUTOSTART>
+  </TASK>
+
+  <TASK>
+    <name>Handler13</name>
+    <TYPE>BASIC</TYPE>
+    <SCHEDULE>FULL</SCHEDULE>
+    <PRIORITY>4</PRIORITY>
+    <ACTIVATION>1</ACTIVATION>
+    <AUTOSTART>TRUE</AUTOSTART>
+  </TASK>
+</oseksystem>
