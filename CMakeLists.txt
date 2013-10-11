@@ -63,5 +63,6 @@ file(GLOB_RECURSE ALLSRCS RELATIVE ${PROJECT_SOURCE_DIR} *.cc *.h )
 set(CCCC_SOURCES ${ALLSRCS} CACHE INTERNAL STRING)
 
 add_subdirectory(static_analysis)
+add_subdirectory(generator)
 add_subdirectory(app)
 
