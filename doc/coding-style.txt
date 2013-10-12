@@ -1,4 +1,4 @@
-Coding Style for Fail*
+Coding Style for CoRedOS
 ======================
 
 You may violate/break any of the following rules if you have a good reason to
@@ -14,7 +14,7 @@ The following style rules apply to C/C++/AspectC++ code:
    (without exception)
 
  - Naming conventions:
-    * Source files: .cc (Source), .hpp (Header), .ah (Aspect Header), MixedCase
+    * Source files: .cc (Source), .h (Header), .ah (Aspect Header), MixedCase
     * Namespaces: lowercase
     * Classes, (global) functions: MixedCase, starting with uppercase letter
     * Public members: MixedCase, starting with lowercase letter
@@ -26,6 +26,7 @@ The following style rules apply to C/C++/AspectC++ code:
     * (no convention for local variables)
     * typedefs: lowercase, underscores (good_name_t)
     * abbreviations (even in identifiers): uppercase
+    * A variable name must have at least 2 characters
 
  - Comments:
     * Doxygen comments:

@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @ingroup i386
+ * @brief CGA output
+ */
 #include "cga.h" 
 
 uint16_t* const CGA::BUFFER = reinterpret_cast<uint16_t*>(0xB8000);

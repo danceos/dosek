@@ -1,0 +1,54 @@
+/**
+ * @page osekspec OSEK Specification
+ * @brief List of all OSEK requirements to be implemented
+ *
+ * Requirement tracing:
+ * - @subpage satisfy 
+ * - @subpage verify 
+ * 
+ * Based on the OSEK-VDX specification v.2.2.3
+ *
+ * Minimal requirements                                   | BCC1           | BCC2    
+ * ------------------------------------------------------ | :------------: | :----------:
+ * Multpiple requesting of task activation                | no             | yes
+ * Number of tasks which are not in the *suspended* state | 8              | 8
+ * More than one task per priority                        | no             | yes
+ * Number of events per task                              | -              | -
+ * Number of task priorities                              | 8              | 8
+ * Resources                                              | *RES_SCHEDULER* | 8 
+ * Internal resources                                     | 2              | 2
+ * Alarm                                                  | 1              | 1 
+ * Application Mode                                       | 1              | 1
+ *
+ * ## 13.2.1 Common Data Types
+ * - @reqdef{13,1,49,Common Data Types}
+ * - @reqdef{13,2,1,49, Data Types}
+ *
+ * ## 13.2.2 Constructional elements
+ * - @reqdef{13,2,2,1,50, DeclareTask}
+ *
+ * ## 13.2.3 System services
+ * - @reqdef{13,2,3,1,50, ActivateTask}
+ * - @reqdef{13,2,3,2,51, TerminateTask}
+ * - @reqdef{13,2,3,3,51, ChainTask}
+ * - @reqdef{13,2,3,4,52, Schedule}
+ * - @reqdef{13,2,3,5,53, GetTaskID}
+ * - @reqdef{13,2,3,6,53, GetTaskState}
+ * - @reqdef{13,2,4,54, Constants}
+ * - @reqdef{13,2,5,54, Naming Conventions}
+ * 
+ */
+
+
+/**
+ * @page satisfy Satisfied Requirements
+ * @brief All implemented requirements are listed below
+ * @par
+ */
+
+/**
+ * @page verify Tested Requirements
+ * @brief List of tested requirements
+ * 
+ * These are mainly the conformance and unit test cases.
+ */

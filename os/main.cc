@@ -1,5 +1,11 @@
-#include "output.h"
 
+/**
+ * @file
+ * @brief The os startup code.
+ *
+ * After all hardware is initialized the OS starts from here.
+ */
+#include "output.h"
 output_t kout;
 
 void os_main(void) {

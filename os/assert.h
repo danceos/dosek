@@ -1,6 +1,13 @@
 #ifndef __ASSERT_H__
 #define __ASSERT_H__
 
+
+/**
+ * @file
+ * @ingroup os
+ * @brief Static and runtime asserts
+ */
+
 #include "machine.h"
 
 //! Runtime assert, print assertion if debugging, else causes trap

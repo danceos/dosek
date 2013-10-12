@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @ingroup i386
+ * @brief Architecture-specific startup code
+ */
+
 #if !defined(__cplusplus)
 #include <stdbool.h> /* C doesn't have booleans by default. */
 #endif
@@ -9,20 +15,14 @@
 //#error "You are not using a cross-compiler, you will most certainly run into trouble"
 #endif
 
-struct globalConstructorTest {
-	int foo;
-
-	globalConstructorTest() {
-		foo = 1;
-	}
-};
-
-
+/** Initialisation stub for generic startup code */
 extern void init_generic();
 
-globalConstructorTest tester;
-
+//!< i386 specific startup code
 extern "C" void arch_startup()
 {
+    // do some hw init here.
+    
+    // Proceed to generic initialisation
 	init_generic();
 }

@@ -1,5 +1,12 @@
 #!/usr/bin/python
 
+"""
+    @file 
+    @ingroup primitives
+    @brief Builds a source line.
+"""
+
+
 class SourceElement:
     def __init__(self):
         self.__indent = 0

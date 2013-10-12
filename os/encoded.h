@@ -1,6 +1,12 @@
 #ifndef ENCODED_H_
 #define ENCODED_H_
 
+/**
+ * @file
+ * @ingroup os
+ * @brief The EAN Encoding Data Type
+ */
+
 #include <stdint.h>
 #include <limits.h>
 #include "assert.h"

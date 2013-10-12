@@ -18,10 +18,10 @@ if(CPPCHECK)
     endforeach()
 
     add_custom_target( cppcheck
-        COMMAND ${CPPCHECK} --enable=all -q --enable=all --xml --std=c++11 ${PROJECT_SOURCE_DIR} --includes-file=${CPPINCLUDES} -i ${PROJECT_BINARY_DIR} 2> ${PROJECT_BINARY_DIR}/cppcheck-result.xml
-    )
+        COMMAND ${CPPCHECK} --check-config --enable=all -q --enable=all --xml --std=c++11 ${PROJECT_SOURCE_DIR} --includes-file=${CPPINCLUDES} -i ${PROJECT_BINARY_DIR} 2> ${PROJECT_BINARY_DIR}/cppcheck-result.xml
+        )
 else()
-      message(STATUS "cppcheck executable not found, code quality not checked.")
+  message(STATUS "[${PROJECT_NAME}] cppcheck executable not found, code quality not checked.")
 endif()
 
 # CCCC Code metrics
@@ -89,6 +89,6 @@ if(OCLINT_JSON)
     endif()
 
 else()
-    message(STATUS "oclint executable not found, static analysis not available.")
+  message(STATUS "[${PROJECT_NAME}] oclint executable not found")
 endif()
 

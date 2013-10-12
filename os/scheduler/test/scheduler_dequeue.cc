@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @ingroup unit_tests
+ * @test Test the tasklist behaviour
+ */
+
 //#define DEBUG 1
 
 #include "test/test.h"
@@ -41,11 +47,13 @@ void test_prepare(void)
 	if(DEBUG) tlist.print();
 }
 
-// run tests
+/**
+ * @brief Runs dequeue tests
+ */
 void test(void)
 {
-	// dequeue everything
-	run_checkable_function(&test_dequeue, id, 4);
+	//! @test Dequeue everything
+    run_checkable_function(&test_dequeue, id, 4);
 	run_checkable_function(&test_dequeue, id, 3);
 	run_checkable_function(&test_dequeue, id, 2);
 	run_checkable_function(&test_dequeue, id, 1);

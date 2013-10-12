@@ -1,3 +1,13 @@
+/**
+ * @defgroup apps Applications
+ * @brief The applications...
+ */
+
+/**
+ * @file
+ * @ingroup apps
+ * @brief Just a simple test application
+ */
 #include "os.h"
 
 DeclareTask(Handler11);

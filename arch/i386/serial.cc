@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @ingroup i386
+ * @brief RS232 driver implementation
+ */
 #include "serial.h" 
 #include "ioport.h"
 

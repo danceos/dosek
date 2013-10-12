@@ -1,6 +1,14 @@
 #ifndef __TERMINAL_H__
 #define __TERMINAL_H__
 
+/**
+ * @file
+ *
+ * @ingroup i386
+ *
+ * \brief CGA output
+ */
+
 #include <stddef.h>
 #include <stdint.h>
 #include "arch/generic/ostream.h"

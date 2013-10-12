@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+"""
+    @file 
+    @ingroup primitives
+    @brief Building include statements
+"""
 import unittest
 
 from SourceElement import CPPStatement, Comment

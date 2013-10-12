@@ -1,3 +1,9 @@
+/**
+ * @file
+ * @ingroup unit_tests
+ * @test Test the execution of global constructors.
+ */
+
 #include "test/test.h"
 
 class GlobalConstructorTester {

@@ -1,11 +1,25 @@
 #!/usr/bin/python
+"""
+    @ingroup generator
+    @defgroup primitives Source file primitives generation
+    @{
+    Generation of simple primitives
+    @}
+"""
 
+"""
+    @file 
+    @ingroup generator
+    @brief Data object cook.
+"""
 import unittest
 import tools
 from SourceElement import Block, Statement, ForRange
 
 
 class DataObject:
+    """Manages a variable"""
+
     def __init__(self, typename, variable, static_initializer = None, dynamic_initializer = False):
         self.typename = typename;
         self.variable = variable;
@@ -14,14 +28,31 @@ class DataObject:
         self.data_object_manager = None
 
     def source_elements_declaration(self):
+        """Builds an extern declaration of the data object"""
         return Statement("extern " + self.typename + " " + self.variable)
 
     def source_elements_allocation(self):
+        """Builds an allocation statement for the object.
+
+            If a static_initializer is set, the object
+            is initialized accordingly.
+
+            Example: typename = 'int', variable = 'x', static_initializer = 23
+            emits:
+
+                int x = 23;
+
+            @return A Statement comprising the C allocation code 
+        """
         if self.static_initializer != None:
             return Statement(self.typename + " " + self.variable + " = " + str(self.static_initializer));
         return Statement(self.typename + " " + self.variable);
 
     def source_elements_initializer(self):
+        """Builds a dynamic initialization statement.
+            
+            :returns: A Statement invoking the init() method of the object
+        """
         if self.dynamic_initializer:
             return Statement(self.data_object_manager.get_namespace() + "::" + self.variable + ".init()")
         return []

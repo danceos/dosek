@@ -1,6 +1,15 @@
 #ifndef __IOPORT_H__
 #define __IOPORT_H__
 
+
+/**
+ * @file
+ *
+ * @ingroup i386
+ *
+ * \brief RS232 output
+ * */
+
 static inline
 void outb( unsigned short port, unsigned char val )
 {

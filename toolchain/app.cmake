@@ -16,7 +16,7 @@ MACRO(COREDOS_BINARY)
 	  -I${RTSC_SOURCE_DIR}/data/SystemSupport/OSEKOS/include/
 	  ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
 	  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${src}
-	  COMMENT "Compiling application ${src} with clang")
+      COMMENT "[${PROJECT_NAME}] Compiling application ${src} with clang")
 	
 
 	list(APPEND COREDOS_BINARY_LLVM_BYTECODE ${llvm_bytecode})
@@ -34,7 +34,7 @@ MACRO(COREDOS_BINARY)
 	   -march=${CMAKE_C_ARCH} 
 	   -analyze-tasks -dump-source-system
 	   ${COREDOS_BINARY_LLVM_BYTECODE}
-	   COMMENT "Analyzing application with RTSC")
+       COMMENT "[${PROJECT_NAME}] Analyzing application with RTSC")
 	 
 
   # Add Target for the analysis step

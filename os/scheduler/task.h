@@ -1,10 +1,24 @@
 #ifndef __TASK_H__
 #define __TASK_H__
+/**
+ *  @ingroup os
+ *  @defgroup scheduler The Scheduler
+ *  @brief This module provides scheduling functions
+ */
+
+
+/**
+ * @file 
+ * @ingroup scheduler
+ * @brief The task handler
+ */
 
 namespace os {
 namespace scheduler {
 
-/* Simple task class */
+/** 
+ * The basic task class 
+ * */
 class Task {
 public:
 	typedef uint8_t ID;
@@ -30,10 +44,16 @@ public:
 		fields.prio = p;
 	} 
 
+    /**
+     * @brief Get task ID
+     */
 	ID getID() const {
 		return fields.id;
 	}
 
+    /**
+     * @brief Get task priority
+     */
 	Prio getPrio() const {
 		return fields.prio;
 	}

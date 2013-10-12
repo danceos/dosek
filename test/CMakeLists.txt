@@ -7,13 +7,13 @@
 add_custom_target(build_and_test
     ${CMAKE_CTEST_COMMAND} -V
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Building testcases (only) and running CTest"
+    COMMENT "[${PROJECT_NAME}] Building testcases (only) and running CTest"
 )
 
 
 # Convert ctest output to xUnit format for jenkins
-set(CONVERTPY ${CMAKE_CURRENT_SOURCE_DIR}/ctest2jenkins/convert.py)
-set(CONVXSL   ${CMAKE_CURRENT_SOURCE_DIR}/ctest2jenkins/conv.xsl)
+set(CONVERTPY ${PROJECT_SOURCE_DIR}/toolchain/ctest2jenkins/convert.py)
+set(CONVXSL   ${PROJECT_SOURCE_DIR}/toolchain/ctest2jenkins/conv.xsl)
 set(XUNITOUTPUT ${PROJECT_BINARY_DIR}/BaseTest.xml)
 
 
@@ -21,7 +21,7 @@ set(XUNITOUTPUT ${PROJECT_BINARY_DIR}/BaseTest.xml)
 add_custom_target( ctest2jenkins
     DEPENDS ${XUNITOUTPUT}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating xUnit output of CTest results"
+    COMMENT "[${PROJECT_NAME}] Generating xUnit output of CTest results"
 )
 
 # Generate ExperimentalTest results and convert to xUnit xml output

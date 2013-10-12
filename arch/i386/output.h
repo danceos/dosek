@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @ingroup i386
+ * @brief Print output to CGA
+ */
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 

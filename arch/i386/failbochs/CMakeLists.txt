@@ -38,7 +38,7 @@ foreach(ELF ${EXECUTABLES})
 
 	set(ISODIR "${PROJECT_BINARY_DIR}/grub_iso")
 
-	message(STATUS "Building bootable ISO for ${ELF}")
+    message(STATUS "[${PROJECT_NAME}] Building bootable ISO for ${ELF}")
 
 	# Generate build directory for grub-mkrescue
 	set(BOOTDIR "${ISODIR}/boot/")
@@ -60,41 +60,41 @@ foreach(ELF ${EXECUTABLES})
 	# Create bootable ISO
 	add_custom_target( grubiso${DSUFFIX}
 			DEPENDS ${ISOFILE}
-			COMMENT "Generating bootable grub iso."
+            COMMENT "[${PROJECT_NAME}] Generating bootable grub iso."
 			)
 
 	# Start FAIL
 	add_custom_target( fail${DSUFFIX}
 			COMMAND FAIL_ELF_PATH=$<TARGET_FILE:${ELF}> ${FAIL_BINARY} -f ${BOCHSRC}${DSUFFIX} -q
 			DEPENDS ${ISOFILE}
-			COMMENT "Starting Fail*"
+            COMMENT "[${PROJECT_NAME}] Starting Fail*"
 			)
 
 	# Start qemu
 	add_custom_target(qrun${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386"
 			COMMAND qemu-system-i386 -cdrom ${ISOFILE} -no-reboot
 			)
 
 	# Start qemu in terminal (for ssh)
 	add_custom_target(qrunterm${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 curses mode"
 			COMMAND qemu-system-i386 -cdrom ${ISOFILE} -display curses -no-reboot
 			)
 
 	# Start qemu for tests (only serial console)
 	add_custom_target(qtest${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 no  graphic mode."
 			COMMAND qemu-system-i386 -cdrom ${ISOFILE} -nographic -no-reboot
 			)
 
 	# Start qemu and attach debugger
 	add_custom_target(qdebug${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 debug mode. "
 			COMMAND qemu-system-i386 -cdrom ${ISOFILE} -s -S -no-reboot &
 			ddd $<TARGET_FILE:${ELF}>
 			)
@@ -102,28 +102,28 @@ foreach(ELF ${EXECUTABLES})
 	# Start bochs
 	add_custom_target(run${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in Bochs."
 			COMMAND bochs -f ${BOCHSRC}
 			)
 
 	# Start bochs in terminal (for ssh)
 	add_custom_target(runterm${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in Bochs term mode"
 			COMMAND bochs -f ${BOCHSRC}-term
 			)
 
 	# Start bochs with GDB stub for debugging
 	add_custom_target(debug${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Running ${ISOFILE}..."
+            COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in Bochs with gdb"
 			COMMAND bochs -f ${BOCHSRC}-gdb
 			)
 
 	# Start GDB and attach to bochs
 	add_custom_target(gdb${DSUFFIX}
 			DEPENDS ${ISOFILE} ${ELF}
-			COMMAND echo "Starting gdb for ${ISOFILE}..."
+            COMMENT "Starting gdb for ${ISOFILE}..."
 			WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
             COMMAND gdb -n -x ${GDBINITFILE}
 			)

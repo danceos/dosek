@@ -1,7 +1,17 @@
 #ifndef __OSTREAM_H__
 #define __OSTREAM_H__
 
-/** Output stream **/
+/**
+ * \file
+ *
+ * \ingroup generic
+ *
+ * \brief C++ style output stream.
+ */
+
+/** 
+ * @brief C++ style output stream
+ */
 class O_Stream {
 protected:
   virtual void putchar(char c);
@@ -25,22 +35,18 @@ public:
    **/
   O_Stream& operator<< (char c);
 
+  /**
+   * \name Display numbers
+   * \param ival The number to be displayed
+   **/
+  //@{
   O_Stream& operator<<(unsigned short ival);
   O_Stream& operator<<(short ival);
   O_Stream& operator<<(unsigned int ival);
   O_Stream& operator<<(int ival);
-
-  /**
-   * \brief Display numbers
-   * \param ival The number to be displayed
-   **/
   O_Stream& operator<<(long ival);
-
-  /**
-   * \brief Display numbers
-   * \param ival The number to be displayed
-   **/
   O_Stream& operator<<(unsigned long ival);
+  // @}
 
   /**
    * \brief Display a pointer
@@ -49,17 +55,19 @@ public:
   O_Stream& operator<<(void* ptr);
 
   /**
-   * \brief Display a zero terminated string
+   * \name Display a zero terminated string
    * \param string The string to be displayed
    **/
+  //@{
   O_Stream& operator<<(char* string);
   O_Stream& operator<<(const char* string);
+  // @}
 
   /**
    * \brief Call an appropriate manipulatpor function
    **/
   O_Stream& operator<<(O_Stream& (*f) (O_Stream&));
-    
+
 };
 
 /* Manipulators */

@@ -1,5 +1,12 @@
 #!/usr/bin/python
 
+"""
+    @file 
+    @ingroup primitives
+    @brief Constructs the source file.
+"""
+
+
 from IncludeManager import IncludeManager
 from DataObjectManager import DataObjectManager
 

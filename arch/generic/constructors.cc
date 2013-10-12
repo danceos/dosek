@@ -1,14 +1,24 @@
+/**
+ * @file
+ * @ingroup generic
+ * @brief Invoke global objects' constructors
+ */
+
 #include "constructors.h"
 
 extern "C" {
-    extern void (*__CTORS_START)();
-    extern void (*__CTORS_END)();
+    //! Address of the first global constructor (Defined by the linker script)
+    extern void (*__CTORS_START)(void);
+    //! Address of the last global constructor (Defined by the linker script)
+    extern void (*__CTORS_END)(void);
 
-    void run_constructors() {
-        // Call constructors of all global object instances.
+    void run_constructors(void) {
+        //! Call constructors of all global object instances.
+        //! @note Ensure that your linker script places 
+        //!       all `CTORS` between `__CTORS_START` and `__CTORS_END`
         for( void (**ctor)() = &__CTORS_START; ctor != &__CTORS_END; ++ctor )
         {
             (*ctor)();
-        }
     }
+        }
 }

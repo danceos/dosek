@@ -4,6 +4,7 @@ PROJECT(CoRedOS)
 enable_language(ASM)
 enable_testing()
 set(PROJECT_VERSION "0.1" CACHE STRING "Project version number")
+set(PROJECT_RELEASE "alpha" CACHE STRING "Project release")
 
 # Enable CTest
 enable_testing()
@@ -26,7 +27,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/toolchain")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ISA_C_FLAGS} -ffunction-sections -fdata-sections -fno-zero-initialized-in-bss -nostdlib -fno-builtin")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-exceptions -std=c++11")
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
-message(STATUS "ISA_ASM_FLAGS: ${ISA_ASM_FLAGS}")
+message(STATUS "[${PROJECT_NAME}] Assembler flags: ${ISA_ASM_FLAGS}")
 
 include(helpers)
 
@@ -35,6 +36,9 @@ coredos_include_dir(${PROJECT_SOURCE_DIR})
 
 # Tests
 add_subdirectory(test)
+
+# Documentation
+add_subdirectory(doc)
 
 # List of executables
 set(EXECUTABLES "" CACHE INTERNAL "List of executables")
@@ -51,10 +55,10 @@ add_subdirectory(os)
 # Platform specific custom targets/commands.
 # Must be included after add_executable, as they depend on the main target.
 if(ADDITIONAL_TARGETS)
-	message(STATUS "Preparing addtional targets: ${ADDITIONAL_TARGETS}")
+  message(STATUS "[${PROJECT_NAME}] Preparing addtional targets: ${ADDITIONAL_TARGETS}")
 	add_subdirectory(${ADDITIONAL_TARGETS})
 else()
-	message(STATUS "No additional targets found.")
+	message(STATUS "[${PROJECT_NAME}]No additional targets found.")
 endif()
 
 # Static analysis (oclint/clang-static-analyzer
@@ -65,4 +69,3 @@ set(CCCC_SOURCES ${ALLSRCS} CACHE INTERNAL STRING)
 add_subdirectory(static_analysis)
 add_subdirectory(generator)
 add_subdirectory(app)
-

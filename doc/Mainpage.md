@@ -1,0 +1,17 @@
+CoRedOS - Combined Redundancy Operating System                        {#mainpage}
+============
+
+Recent automotive systems exhibit an increased susceptibility
+against transient hardware faults. As a consequence,
+dependability measures are mandatory to provide appropriate
+fault detection or masking properties fulfilling the required
+safety standards. On the other hand, production costs are
+still a crucial factor in this domain, which leads to hardware
+consolidation and therefore mixed-criticality systems. An existing
+dependability approach, supporting such systems, combines triple
+modular redundancy with encoded operations, but still leaves the
+operating system as single point of failure. We intend to close
+this gap by extending the encoded operations throughout the
+kernel execution, and additionally integrate the analyzed system
+behavior into the code.
+  

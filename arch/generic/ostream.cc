@@ -1,3 +1,8 @@
+/**
+ * @file
+ * @ingroup generic
+ * @brief  C++ style output stream
+ */
 #include "ostream.h"
 
 O_Stream& O_Stream::operator << (char value) {

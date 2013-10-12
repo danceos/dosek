@@ -1,66 +1,106 @@
+/**
+ *  @defgroup test Testing
+ *  @brief Testing
+ */
+
+/**
+ * @ingroup test
+ * @defgroup unit_tests Unit Tests
+ * @brief Small unit tests
+ */
+
+
+/**
+ * @file
+ * @ingroup unit_tests
+ * @brief Basic functions for unit testing
+ *
+ * How to use test.h for unit tests
+ * ================================
+ *
+ * A testcase can be defined by including the test.h header.
+ * You can define `void test_prepare()` to do work before the experiment
+ * (won't be traced).
+ * 
+ * The `void test(void)` function is called by the operating systems
+ * main function. Everything that happens there will be included in
+ * the fail trace afterwards.
+ *
+ * @warning This "header" file instantiates global objects.
+ *          Do not include this header in multiple files!
+ * 
+ * Each testcase in the test functions has the following form:
+ * 
+ * * *Optionally* store dynamic test result:
+ *   ~~~~~~~~~~~~~~{.c}
+ *    // Store expected results (if dynamic)
+ *    test_expect_store(0, expected_a);
+ *    test_expect_store(1, exptected_b);
+ *   ~~~~~~~~~~~~~~
+ *
+ * * Run test case:
+ *   ~~~~~~~~~~~~~~{.c}
+ *   // Start the testcase (injecting from here)
+ *   test_start();
+ *   run_my_super_dupper_test_function(&a, &b)
+ *   // finish the testcase (injecting till here)
+ *   int result = test_start_check();
+ *   
+ *   // Run n tests on the result:
+ *   test_eq(result, 123);
+ *   test_expect_eq(0, a);
+ *   test_expect_eq(1, b);
+ *   
+ *   // Testcase is only positive when more than one condition holds
+ *   test_positive_tests_gt(1);
+ *   ~~~~~~~~~~~~~~
+ */
+
 #include "serial.h"
 #include "output.h"
 #include "os/encoded.h"
 
 output_t kout;
-Serial serial(Serial::COM1);
 
-#define EXPECTED_VALUES_MAX 10
+/**
+ *
+ * @brief Serial output device
+ * @todo Make hardware independent!
+ */
+Serial serial(Serial::COM1); 
+
+#define EXPECTED_VALUES_MAX 10 
 typedef unsigned int expected_value_t;
 
-/** A testcase can be defined by including the test.h header. You can
-	define the "void test_prepare()" to do work before the experiment
-	(won't be traced).
-
-	The "void test(void)" function is called by the operating systems
-	main function. Everything that happens there will be included in
-	the fail trace afterwards.
-
-	Each testcase in the test functions has the following form:
-
-	[optional]
-	// Store expected results (if dynamic)
-	test_expect_store(0, expected_a);
-	test_expect_store(1, exptected_b);
-	[/optional]
-
-	// Start the testcase (injecting from here)
-	test_start();
-	run_my_super_dupper_test_function(&a, &b)
-	// finish the testcase (injecting till here)
-	int result = test_start_check();
-
-	// Run n tests on the result:
-	test_eq(result, 123);
-	test_expect_eq(0, a);
-	test_expect_eq(1, b);
-
-	// Testcase is only positive when more than one condition holds
-	test_positive_tests_gt(1);
-
-*/
 
 extern "C" {
 
-	/* All variables in this structures will be protected by fail
-	   during an fault injection experiment. Therefore it can't be
-	   written by during the injection time */
-	struct {
-		bool global_all_ok;
-		int  positive_tests;
-		int experiment_number;
-		value_t encoded_storage;
-		expected_value_t expected_values[EXPECTED_VALUES_MAX];
-	} test_data;
+	/**
+     * @brief Untouched memory to store expected dynamic results.
+     *
+     * All variables in this structures will be protected by fail
+	 *  during an fault injection experiment. Therefore it can't be
+	 *  written by during the injection time
+     */
+	struct test_data_t {
+		bool global_all_ok;     //!< If true on test exit, all tests passed
+		int  positive_tests;    //!< Number of successful tests
+		int experiment_number;  //!< Experiment number
+		value_t encoded_storage; //!< ??
+		expected_value_t expected_values[EXPECTED_VALUES_MAX]; //!< Expected values can be placed here.
+	} test_data; //!< global instantiation
 
 
-	// user-supplied prepare function
+      //! user-supplied prepare function
 	void test_prepare(void);
 
-	// user-supplied test functions
+	//! user-supplied test functions
 	void test(void);
 
-	// FAIL* markers
+	/**
+     * @name FAIL* markers
+     */
+    //@{
 	void _marker_start() { };
 	void (*marker_start)() = _marker_start;
 
@@ -75,6 +115,7 @@ extern "C" {
 
 	void _trace_end_marker() { };
 	void (*trace_end_marker)() = _trace_end_marker;
+    // @}
 }
 
 

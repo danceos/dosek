@@ -1,5 +1,11 @@
 #include "tasklist.h"
 
+/**
+ * @file
+ * @ingroup scheduler
+ * @brief Object instantiation
+ */
+
 using namespace os::scheduler;
 
 constexpr Encoded_Static<A0, 13> TaskList::idle_id;
