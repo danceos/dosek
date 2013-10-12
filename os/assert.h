@@ -1,16 +1,18 @@
-#ifndef ASSERT_H_
-#define ASSERT_H_
+#ifndef __ASSERT_H__
+#define __ASSERT_H__
 
-// runtime assert, print assertion if debugging, cause trap
+#include "machine.h"
+
+//! Runtime assert, print assertion if debugging, else causes trap
 #if DEBUG
 #define assert(x) { if((x)==0) { \
     kout << "ASSERT " << __FILE__ << ":" << __LINE__ << " " << __func__ << endl; \
-    __asm__("hlt");}}
+    Machine::halt();}}
 #else
-#define assert(x) { if((x)==0) __asm__("ud2"); }
+#define assert(x) { if((x)==0) Machine::debug_trap(); }
 #endif
 
-// template assert for compile-time checks
+//! Static assert for compile-time checks
 template <bool B>
 struct tAssert
 {
@@ -23,4 +25,4 @@ template<> struct tAssert<true>
 
 #define TAssert(a) {const bool b = (const bool) (a); tAssert<b>::Assert();}
 
-#endif /* ASSERT_H_ */
+#endif /* __ASSERT_H__ */
