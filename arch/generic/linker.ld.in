@@ -12,11 +12,16 @@ SECTIONS {
 	.text : {
 		KEEP (*(".multiboot"))
 		*(".text.startup")
+
 		_stext_fail = .;
 		*(".text._Z*2os*")
 		*(".text._Z*4fail*")
 		_etext_fail = .;
+		*(".text.test")
+		_etext_fail_allowed = .;
+
 		*(".text")
+
 		_srodata = .;
 		*(".rodata*")
 		_erodata = .;
@@ -29,11 +34,13 @@ SECTIONS {
 		KEEP (*(.init_array*))
 		PROVIDE(__CTORS_END = .);
 	}
+
 	.data :  {
 		_sdata_fail = .;
 		*(".data._Z*2os*")
 		*(".data._Z*4fail*")
 		_edata_fail = .;
+
 		*(".data")
 	}
 

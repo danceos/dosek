@@ -4,8 +4,6 @@
  * @test Test the tasklist behaviour
  */
 
-//#define DEBUG 1
-
 #include "test/test.h"
 #include "../tasklist.h"
 
