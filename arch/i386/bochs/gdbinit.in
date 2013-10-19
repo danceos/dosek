@@ -1,6 +1,6 @@
 file @ELF@
 set archi i386:x64-32:intel
-target remote localhost:1234
+target remote localhost:@DEBUG_PORT@
 
 define pe
   printf "[vc] %u - [B] %u - [D] %u %% [A] %u = %u (rem %u)\n", $arg0.vc, $arg0.B, $arg0.D, $arg0.A, (($arg0.vc - $arg0.B - $arg0.D) / $arg0.A), (($arg0.vc - $arg0.B - $arg0.D) % $arg0.A)

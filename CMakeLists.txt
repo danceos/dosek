@@ -29,6 +29,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
 message(STATUS "[${PROJECT_NAME}] Assembler flags: ${ISA_ASM_FLAGS}")
 
+# Find python
+find_program(PYTHON "python")
+if(NOT PYTHON)
+	message(ERROR "[${PROJECT_NAME}] Python not found!")
+endif()
+
+# Variable for additional targets
+set(ADDITIONAL_TARGETS "" CACHE INTERNAL STRING)
+
 include(helpers)
 
 # Include source directory
@@ -54,12 +63,10 @@ add_subdirectory(os)
 
 # Platform specific custom targets/commands.
 # Must be included after add_executable, as they depend on the main target.
-if(ADDITIONAL_TARGETS)
-  message(STATUS "[${PROJECT_NAME}] Preparing addtional targets: ${ADDITIONAL_TARGETS}")
-	add_subdirectory(${ADDITIONAL_TARGETS})
-else()
-	message(STATUS "[${PROJECT_NAME}]No additional targets found.")
-endif()
+foreach(TARGETS ${ADDITIONAL_TARGETS})
+	message(STATUS "[${PROJECT_NAME}] Preparing addtional targets: ${TARGETS}")
+	add_subdirectory(${TARGETS})
+endforeach()
 
 # Static analysis (oclint/clang-static-analyzer
 # Find all sources for code cccc metrics.
