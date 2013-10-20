@@ -43,6 +43,15 @@ class CPPStatement(SourceElement):
     def generate(self):
         return "#" + self.indent_spaces() + self.cmd + " " + self.arg + "\n"
 
+class Statement(SourceElement):
+    def __init__(self, statment):
+        SourceElement.__init__(self)
+        self.statement = statement
+
+    def generate(self):
+        return self.indent_spaces() + self.statement + ";"
+
+
 class Block(SourceElement):
     def __init__(self, static_guard = ""):
         SourceElement.__init__(self)
@@ -88,3 +97,10 @@ class Statement(SourceElement):
         self.statement = statement
     def generate(self):
         return self.indent_spaces() + self.statement + ";\n";
+
+
+class Newline(SourceElement):
+    def __init__(self):
+        SourceElement.__init__(self)
+    def generate(self):
+        return "\n"

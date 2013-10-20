@@ -50,6 +50,5 @@ TASK(Handler13) {
   a++;
   a++;
   a++;
-
   TerminateTask();
 }

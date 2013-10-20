@@ -4,3 +4,5 @@ SET(RTSC_BINARY_DIR "/proj/i4danceos/tools/rtsc/rtscbuild" CACHE STRING "Build d
 SET(RTSC_LLVM_BINARY_DIR "/proj/i4danceos/tools/rtsc/llvmbuild" CACHE STRING "Build directory of the LLVM (used for RTSC)")
 
 SET(RTSC_BINARY "${RTSC_BINARY_DIR}/bin/RTSC")
+SET(CLANG_BINARY "${RTSC_LLVM_BINARY_DIR}/bin/clang")
+SET(LLVM_NM_BINARY "${RTSC_LLVM_BINARY_DIR}/bin/llvm-nm")

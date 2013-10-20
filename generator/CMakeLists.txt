@@ -1,12 +1,16 @@
 set(PYTHON_MODULES_TEST
   primitives/IncludeManager
   primitives/DataObjectManager
+  primitives/FunctionManager
   SystemDescription
 )
 
 foreach(module ${PYTHON_MODULES_TEST})
-  get_filename_component(basedir ${CMAKE_CURRENT_SOURCE_DIR}/${module} PATH)
   add_test(NAME generator/${module}
-	WORKING_DIRECTORY ${basedir}
-	COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/${module}.py)
+	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	  COMMAND env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../ python ${CMAKE_CURRENT_SOURCE_DIR}/${module}.py)
 endforeach(module)
+
+SET(COREDOS_GENERATOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "")
+SET(COREDOS_GENERATOR "${CMAKE_CURRENT_SOURCE_DIR}/main.py" CACHE INTERNAL "")
+

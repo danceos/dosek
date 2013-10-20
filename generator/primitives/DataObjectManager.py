@@ -27,11 +27,11 @@ class DataObject:
         self.dynamic_initializer = dynamic_initializer
         self.data_object_manager = None
 
-    def source_elements_declaration(self):
+    def source_element_declaration(self):
         """Builds an extern declaration of the data object"""
         return Statement("extern " + self.typename + " " + self.variable)
 
-    def source_elements_allocation(self):
+    def source_element_allocation(self):
         """Builds an allocation statement for the object.
 
             If a static_initializer is set, the object
@@ -48,9 +48,9 @@ class DataObject:
             return Statement(self.typename + " " + self.variable + " = " + str(self.static_initializer));
         return Statement(self.typename + " " + self.variable);
 
-    def source_elements_initializer(self):
+    def source_element_initializer(self):
         """Builds a dynamic initialization statement.
-            
+
             :returns: A Statement invoking the init() method of the object
         """
         if self.dynamic_initializer:
@@ -62,10 +62,10 @@ class DataObjectArray(DataObject):
         DataObject.__init__(self, typename, variable, None, dynamic_initializer)
         self.elements = elements
 
-    def source_elements_declaration(self):
+    def source_element_declaration(self):
         return Statement("extern " + self.typename + " " + self.variable + "[" + self.elements + "]")
 
-    def source_elements_initializer(self):
+    def source_element_initializer(self):
         if self.dynamic_initializer:
             loop = ForRange(0, self.elements)
             loop.add(Statement("%s::%s[%s].init()"%(self.data_object_manager.get_namespace(),
@@ -73,7 +73,7 @@ class DataObjectArray(DataObject):
             return loop
         return []
 
-    def source_elements_allocation(self):
+    def source_element_allocation(self):
         if self.static_initializer != None:
             init = "{" + ", ".join(self.static_initializer) + "}"
             return Statement("%s %s[%s] = %s" %(self.typename, self.variable, self.elements,
@@ -97,22 +97,22 @@ class DataObjectManager:
         obj.data_object_manager = self
         self.__objects.append([phase, obj])
 
-    def source_elements_declaration(self):
+    def source_element_declaration(self):
         ns = Block("namespace " + self.__namespace)
         for [phase, o] in self.__objects:
-            ns.add(o.source_elements_declaration())
+            ns.add(o.source_element_declaration())
         return ns
 
-    def source_elements_allocation(self):
+    def source_element_allocation(self):
         ns = Block("namespace " + self.__namespace)
         for [phase, o] in self.__objects:
-            ns.add(o.source_elements_allocation())
+            ns.add(o.source_element_allocation())
         return ns
 
-    def source_elements_initializer(self):
+    def source_element_initializer(self):
         b = Block("void init_" + self.__namespace + "()")
         for [phase, o] in sorted(self.__objects, key = lambda x: x[0]):
-            b.inner.append(o.source_elements_initializer())
+            b.inner.append(o.source_element_initializer())
         return b
 
 
@@ -130,7 +130,7 @@ class TestDataObjectManager(unittest.TestCase):
         m.add(DataObject("int", "count", 42))
 
 
-        text = tools.format_source_tree(m.source_elements_declaration())
+        text = tools.format_source_tree(m.source_element_declaration())
         self.assertEqual(text, """namespace data {
     extern FooBar foobar;
     extern int count;
@@ -144,7 +144,7 @@ class TestDataObjectManager(unittest.TestCase):
         m.add(DataObject("int", "count", 42))
 
 
-        text = tools.format_source_tree(m.source_elements_allocation())
+        text = tools.format_source_tree(m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     FooBar foobar;
     int count = 42;
@@ -155,13 +155,13 @@ class TestDataObjectManager(unittest.TestCase):
         m = DataObjectManager()
         m.add(DataObject("Scheduler", "scheduler", dynamic_initializer = True))
 
-        text = tools.format_source_tree(m.source_elements_allocation())
+        text = tools.format_source_tree(m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     Scheduler scheduler;
 }
 """)
 
-        text = tools.format_source_tree(m.source_elements_initializer())
+        text = tools.format_source_tree(m.source_element_initializer())
         self.assertEqual(text, """void init_data() {
     data::scheduler.init();
 }
@@ -173,13 +173,13 @@ class TestDataObjectManager(unittest.TestCase):
         ForRange.count = 0
         m.add(DataObjectArray("Task", "tasks", "MAX_TASKS", dynamic_initializer = True))
 
-        text = tools.format_source_tree(m.source_elements_allocation())
+        text = tools.format_source_tree(m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     Task tasks[MAX_TASKS];
 }
 """)
 
-        text = tools.format_source_tree(m.source_elements_initializer())
+        text = tools.format_source_tree(m.source_element_initializer())
         self.assertEqual(text, """void init_data() {
     for (int for_range_0 = 0; for_range_0 < MAX_TASKS; for_range_0++) {
         data::tasks[for_range_0].init();
@@ -194,7 +194,7 @@ class TestDataObjectManager(unittest.TestCase):
         m.add(DataObject("C", "c", dynamic_initializer = True), 3)
         m.add(DataObject("B", "b", dynamic_initializer = True), 2)
 
-        text = tools.format_source_tree(m.source_elements_initializer())
+        text = tools.format_source_tree(m.source_element_initializer())
         self.assertEqual(text, """void init_data() {
     data::a.init();
     data::b.init();
@@ -211,7 +211,7 @@ class TestDataObjectManager(unittest.TestCase):
         tasks.add_static_initializer("{0, 3, 1}")
 
 
-        text = tools.format_source_tree(m.source_elements_allocation())
+        text = tools.format_source_tree(m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     Task tasks[MAX_TASKS] = {/* 0 */ {0, 1, 2}, /* 1 */ {0, 3, 1}};
 }
