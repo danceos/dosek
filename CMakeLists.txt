@@ -57,6 +57,9 @@ set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories"
 add_subdirectory(arch)
 coredos_include_dir(${ARCH_INCLUDE_DIRS})
 
+# FAIL* targets
+add_subdirectory(fail)
+
 # Hardware independent kernel code
 coredos_include_dir("${PROJECT_SOURCE_DIR}/os")
 add_subdirectory(os)
