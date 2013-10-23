@@ -3,6 +3,7 @@ set(PYTHON_MODULES_TEST
   primitives/DataObjectManager
   primitives/FunctionManager
   SystemDescription
+  RTSCAnalysis
 )
 
 foreach(module ${PYTHON_MODULES_TEST})

@@ -19,6 +19,7 @@ if __name__ == "__main__":
 
     import optparse
     import SystemDescription
+    import RTSCAnalysis
     import ObjectFile
     import Generator
     from generator.rules import *
@@ -28,6 +29,8 @@ if __name__ == "__main__":
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("", "--system-xml",
                       metavar="SYSTEM_XML", help="the system description file")
+    parser.add_option("", "--rtsc-analyze-xml",
+                      metavar="RTSC_ANALYZE_XML", help="the RTSC Analyze file")
     parser.add_option("", "--app-object",
                       metavar="APP", help="the application's .o file")
     parser.add_option("", "--nm",
@@ -44,8 +47,10 @@ if __name__ == "__main__":
 
     system_description = SystemDescription.SystemDescription(options.system_xml)
     app_object = ObjectFile.ObjectFile(options.nm, options.app_object)
+    rtsc_analysis = RTSCAnalysis.RTSCAnalysis(options.rtsc_analyze_xml)
 
-    generator = Generator.Generator(system_description, app_object)
+
+    generator = Generator.Generator(system_description, app_object, rtsc_analysis)
     generator.load_rules(posix_rules())
     generator.load_rules(base_rules())
     generator.generate_into(options.output)

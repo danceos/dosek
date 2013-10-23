@@ -10,9 +10,3 @@ class SystemCall(Atom):
         self.abb      = abb
         self.rettype  = rettype
         self.arguments = arguments
-
-    def generate_into(self, generator, function_block):
-        raise "Must lower System calls"
-        argument_names = [x[0] for x in self.arguments]
-        statement = "return %s(%s)" % (self.function, ",".join(argument_names))
-        function_block.add(Statement(statement))

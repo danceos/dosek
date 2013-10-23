@@ -47,8 +47,17 @@ class SystemDescription:
         def isAutostart(self):
             return str(self.xml.AUTOSTART) == "TRUE"
 
+        def __str__(self):
+            return "<SystemDescription.Task \"%s\" prio:%d basic:%s>"%(self.getName(), self.getStaticPriority(), self.isBasicTask())
+
     def getTasks(self):
         return dict([(str(x.name), self.Task(x)) for x in self.osek_dom.TASK])
+
+    def getTask(self, name):
+        for task in self.osek_dom.TASK:
+            if task.name == name:
+                return self.Task(task)
+
 
 
 ################################################################

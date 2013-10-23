@@ -15,40 +15,55 @@ DeclareTask(Handler12);
 DeclareTask(Handler13);
 
 TASK(Handler11) {
-  unsigned int a = 0;
+	unsigned int a = 0;
 
-  a++;
-  a++;
+	a++;
+	a++;
 
 
-  ActivateTask(Handler12);
+	ActivateTask(Handler12);
 
-  a++;
-  a++;
+	a++;
+	a++;
 
-  ActivateTask(Handler13);
+	ActivateTask(Handler13);
 
-  a++;
-  a++;
+	a++;
+	a++;
 
-  TerminateTask();
+	TerminateTask();
 }
 
 TASK(Handler12) {
-  unsigned int a = 0;
+	unsigned int a = 0;
 
-  a++;
-  a++;
-  a++;
+	a++;
+	a++;
+	a++;
 
-  TerminateTask();
+	TerminateTask();
 }
 
 TASK(Handler13) {
-  unsigned int a = 0;
+	unsigned int a = 0;
 
-  a++;
-  a++;
-  a++;
-  TerminateTask();
+	a++;
+	a++;
+	a++;
+	ShutdownOS(E_OK);
 }
+
+int main() { OSEKOS_TASK_Handler11();};
+
+StatusType OSEKOS_TerminateTask() {
+	return E_OK;
+};
+
+#include <stdio.h>
+
+StatusType OSEKOS_ActivateTask(TaskType t) {
+	printf("ActivateTask %p\n", t);
+	return E_OK;
+}
+
+

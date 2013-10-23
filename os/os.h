@@ -35,8 +35,308 @@ enum TaskStateType {
 };
 
 
+#ifdef __cplusplus__
+#define __cpluplus
+#endif
+
+
+/******************************************************************************
+ *                                                                            *
+ * Data Type Definitions                                                      *
+ *                                                                            *
+ ******************************************************************************/
+
+struct TASKStruct {
+};
+
+typedef struct TASKStruct* TaskType;
+
+struct RESOURCEStruct {
+};
+
+typedef struct RESOURCEStruct* ResourceType;
+
+struct EVENTStruct {
+};
+
+typedef struct EVENTStruct* EVENT;
+typedef unsigned long EventMaskType;
+
+struct ALARMStruct {
+};
+
+typedef struct ALARMStruct* AlarmType;
+
+typedef struct {
+  unsigned long maxallowedvalue;
+  unsigned long ticksperbase;
+  unsigned long mincycle;
+} AlarmBaseType;
+
+typedef AlarmBaseType* AlarmBaseRefType;
+
+struct COUNTERStruct {
+};
+
+typedef struct COUNTERStruct* CounterType;
+
+struct MESSAGEStruct {
+};
+
+typedef struct MESSAGEStruct* MessageIdentifier;
+
+/******************************************************************************
+ *                                                                            *
+ * Macro Definitions                                                          *
+ *                                                                            *
+ ******************************************************************************/
+
+#define ISR(x)					\
+  void OSEKOS_ISR_##x()
+
+#define DeclareTask(x)				\
+  struct TASKStruct OSEKOS_TASK_Struct_##x
+
 /**
  * @satisfies{13,2,5}
- * @todo This is just a stub for testing doxygen
  */
-#define TASK(taskname) void start_##taskname (void)
+#define TASK(x)					\
+  void OSEKOS_TASK_##x()
+
+#define ActivateTask(x)				\
+  OSEKOS_ActivateTask(&OSEKOS_TASK_Struct_##x)
+
+#define ChainTask(x)				\
+  OSEKOS_ChainTask(&OSEKOS_TASK_Struct_##x)
+
+#define TerminateTask()				\
+  OSEKOS_TerminateTask()
+
+#define Schedule()				\
+  OSEKOS_Schedule()
+
+#define DeclareResource(x)				\
+  struct RESOURCEStruct OSEKOS_RESOURCE_Struct_##x
+
+#define GetResource(x)					\
+  OSEKOS_GetResource(&OSEKOS_RESOURCE_Struct_##x)
+
+#define ReleaseResource(x)				\
+  OSEKOS_ReleaseResource(&OSEKOS_RESOURCE_Struct_##x)
+
+#define DeclareEvent(x)				\
+  extern EventMaskType x
+
+#define SetEvent(task,event)						\
+  OSEKOS_SetEvent(&OSEKOS_TASK_Struct_##task,event)
+
+#define GetEvent(task,event)						\
+  OSEKOS_GetEvent(&OSEKOS_TASK_Struct_##task,event)
+
+#define ClearEvent(event)				\
+  OSEKOS_ClearEvent(event)
+
+#define WaitEvent(event)				\
+  OSEKOS_WaitEvent(event)
+
+#define DeclareAlarm(x)				\
+  struct ALARMStruct OSEKOS_ALARM_Struct_##x
+
+#define ALARMCALLBACK(x)				\
+  void OSEKOS_ALARMCALLBACK_##x()
+
+#define GetAlarm(x,tick)				\
+  OSEKOS_GetAlarm(&OSEKOS_ALARM_Struct_##x,tick)
+
+#define SetRelAlarm(x,inc,period)				\
+  OSEKOS_SetRelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
+
+#define SetAbsAlarm(x,inc,period)				\
+  OSEKOS_SetRelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
+
+#define CancelAlarm(x)						\
+  OSEKOS_CancelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
+
+#define GetAlarmBase(x,b)				\
+  OSEKOS_GetAlarmBase(&OSEKOS_ALARM_Struct_##x,b)
+
+#define DeclareCounter(x)			\
+  struct COUNTERStruct OSEKOS_MESSAGE_Struct_##x
+
+#define AdvanceCounter(x)			\
+  OSEKOS_AdvanceCounter(&OSEKOS_MESSAGE_Struct_##x)
+
+#define IncrementCounter(x)			\
+  OSEKOS_AdvanceCounter(&OSEKOS_MESSAGE_Struct_##x)
+
+#define DeclareMessage(x)				\
+  struct MESSAGEStruct OSEKOS_MESSAGE_Struct_##x
+
+#define SendMessage(MSG,DATA)				\
+  OSEKOS_SendMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA)
+
+#define ReceiveMessage(MSG,DATA)				\
+  OSEKOS_ReceiveMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA)
+
+#define SendDynamicMessage(MSG,DATA,LENGTH)				\
+  OSEKOS_SendDynamicMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA,LENGTH)
+
+#define ReceiveDynamicMessage(MSG,DATA,LENGTH)				\
+  OSEKOS_ReceiveDynamicMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA,LENGTH)
+
+#define SendZeroMessage(MSG)				\
+  OSEKOS_SendZeroMessage(&OSEKOS_MESSAGE_Struct_##MSG)
+
+#define ShutdownOS(STATUS)			\
+  OSEKOS_ShutdownOS(STATUS)
+
+/******************************************************************************
+ *                                                                            *
+ * API Definitions                                                            *
+ *                                                                            *
+ ******************************************************************************/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * \brief Activate a TASK
+ * \param t The TASK to be activated
+ **/
+extern StatusType OSEKOS_ActivateTask(TaskType t);
+
+/**
+ * \brief Terminate the calling TASK and immediately activate another TASK
+ * \param t The TASK to be activated
+ **/
+extern StatusType OSEKOS_ChainTask(TaskType t);
+
+/**
+ * \brief Terminate the current TASK
+ **/
+extern StatusType OSEKOS_TerminateTask();
+
+extern StatusType OSEKOS_Schedule();
+
+/**
+ * \brief Acquire a RESOURCE
+ * \param r The RESOURCE to be locked
+ **/
+extern StatusType OSEKOS_GetResource(ResourceType r);
+
+/**
+ * \brief Release the given RESOURCE again
+ * \param r The RESOURCE to be released
+ **/
+extern StatusType OSEKOS_ReleaseResource(ResourceType r);
+
+/**
+ * \brief Set an EVENT
+ * \param t The TASK owning the EVENT
+ * \param e The EVENT the will be set
+ **/
+extern StatusType OSEKOS_SetEvent(TaskType t,EventMaskType e);
+
+/**
+ * \brief Get the event mask of the given TASK
+ * \param t The TASK owning the EVENT
+ * \param e The EVENT the will be set
+ **/
+extern StatusType OSEKOS_GetEvent(TaskType t,EventMaskType e);
+
+/**
+ * \brief Clear the given EVENT from the TASKs event mask
+ * \param e The EVENT to be cleared
+ **/
+extern StatusType OSEKOS_ClearEvent(EventMaskType e);
+
+/**
+ * \brief Wait for the given event
+ **/
+extern StatusType OSEKOS_WaitEvent(EventMaskType e);
+
+/**
+ * \brief Get the ticks until the next expiration
+ **/
+extern StatusType OSEKOS_GetAlarm(AlarmType a,unsigned int* ticks);
+
+/**
+ * \brief Trigger the given Alarm to expire in certain amount of time
+ * \param a The ALARM to be triggered
+ * \param inc The relative offset for the first expiration of the given ALARM
+ * \param cycle The ALARM will periodically expire every cycle time units
+ **/
+extern StatusType OSEKOS_SetRelAlarm(AlarmType a,unsigned int inc,unsigned int cycle);
+
+/**
+ * \brief Trigger the given Alarm to expire in certain amount of time
+ * \param a The ALARM to be triggered
+ * \param inc The absolute offset for the first expiration of the given ALARM
+ * \param cycle The ALARM will periodically expire every cycle time units
+ **/
+extern StatusType OSEKOS_SetRelAlarm(AlarmType a,unsigned int inc,unsigned int cycle);
+
+/**
+ * \brief Reset the given ALARM
+ **/
+extern StatusType OSEKOS_CancelAlarm(AlarmType a);
+
+/**
+ * \brief Get the AlarmBase
+ **/
+extern StatusType OSEKOS_GetAlarmBase(AlarmType a,AlarmBaseRefType ab);
+
+/**
+ * \brief Advance the given UserCounter c by one tick
+ **/
+extern StatusType OSEKOS_AdvanceCounter(CounterType c);
+
+/**
+ * \brief Send the given Message
+ * \param m The MESSAGE to be sent.
+ * \param data The content of the message
+ **/
+extern StatusType OSEKOS_SendMessage(MessageIdentifier m,void *data);
+
+/**
+ * \brief Receive the given Message
+ * \param m The MESSAGE to be received.
+ * \param data The content of the message is stored here.
+ **/
+extern StatusType OSEKOS_ReceiveMessage(MessageIdentifier m,void *data);
+
+/**
+ * \brief Send the given Message of statical unknown lenght
+ * \param m The MESSAGE to be sent.
+ * \param data The content of the message
+ * \param length The lenght of the content in bytes
+ **/
+extern StatusType OSEKOS_SendDynamicMessage(MessageIdentifier m,void *data,unsigned int length);
+
+/**
+ * \brief Receive the given Message
+ * \param m The MESSAGE to be received.
+ * \param data The content of the message is stored here
+ * \param length The lenght of the content in bytes
+ **/
+extern StatusType OSEKOS_ReceiveDynamicMessage(MessageIdentifier m,void *data,unsigned int length);
+
+/**
+ * \brief Send a message without content
+ **/
+extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
+
+/******************************************************************************
+ *                                                                            *
+ * API Definitions (not supported, not creating any dependencies              *
+ *                                                                            *
+ ******************************************************************************/
+
+extern void OSEKOS_ShutdownOS(StatusType status);
+
+
+#ifdef __cplusplus
+}
+#endif
+

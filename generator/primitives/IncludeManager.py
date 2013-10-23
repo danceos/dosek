@@ -8,7 +8,7 @@
 import unittest
 
 from SourceElement import CPPStatement, Comment
-import tools
+from generator import tools
 
 class Include:
     def __init__(self, filename, system_include=False, comment = None):
@@ -32,6 +32,11 @@ class IncludeManager:
         self.included_files = []
 
     def add(self, include):
+        # Filter out duplicate includes
+        for inc in self.included_files:
+            if inc.filename == include.filename and \
+               inc.system_include == include.system_include:
+                return
         self.included_files.append(include)
 
     def source_elements(self):

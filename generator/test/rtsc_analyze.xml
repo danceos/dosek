@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<RTSCAnalyze xmlns="http://www4.informatik.uni-erlangen.de/RTSC">
+
+  <systemcall name="OSEKOS_ActivateTask">
+    <calling abb="0">
+      <event>Event1</event>
+      <task>Event1</task>
+      <subtask>Handler11</subtask>
+    </calling>
+  </systemcall>
+
+  <systemcall name="OSEKOS_ActivateTask">
+    <calling abb="1">
+      <event>Event1</event>
+      <task>Event1</task>
+      <subtask>Handler11</subtask>
+    </calling>
+  </systemcall>
+
+  <systemcall name="OSEKOS_TerminateTask">
+    <calling abb="2">
+      <event>Event1</event>
+      <task>Event1</task>
+      <subtask>Handler11</subtask>
+    </calling>
+  </systemcall>
+
+  <systemcall name="OSEKOS_TerminateTask">
+    <calling abb="3">
+      <event>Event1</event>
+      <task>Event1</task>
+      <subtask>Handler12</subtask>
+    </calling>
+  </systemcall>
+
+  <systemcall name="OSEKOS_TerminateTask">
+    <calling abb="4">
+      <event>Event1</event>
+      <task>Event1</task>
+      <subtask>Handler13</subtask>
+    </calling>
+  </systemcall>
+
+</RTSCAnalyze>

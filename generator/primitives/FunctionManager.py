@@ -3,14 +3,15 @@ import unittest
 
 from generator.types import *
 from SourceElement import Block, Statement, Newline
-import tools
+from generator import  tools
 
 class Function:
-    def __init__(self, name, rettype, argstype):
+    def __init__(self, name, rettype, argstype, extern_c = False):
         self.name = name
         self.rettype = rettype
         self.argstype = argstype
         self.statements = []
+        self.extern_c = extern_c
 
     def add(self, statement):
         self.statements.append(statement)
@@ -19,6 +20,8 @@ class Function:
         decl = "%s %s(%s)" %( self.rettype.generate(self.rettype),
                               self.name,
                               ",".join([x.generate(x) for x in self.argstype]))
+        if self.extern_c:
+            decl = 'extern "C" %s' % decl
         return Statement(decl);
 
     def source_element_definitions(self):
@@ -27,6 +30,9 @@ class Function:
         guard = "%s %s(%s)" %( self.rettype.generate(self.rettype),
                                self.name,
                                ",".join(args))
+        if self.extern_c:
+            guard = 'extern "C" %s' % guard
+
         block = Block(guard)
         for stmt in self.statements:
             block.add(stmt)

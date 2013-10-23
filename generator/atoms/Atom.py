@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import generator.tools
+from generator import tools
 from generator.types import void
 from generator.primitives import *
 
@@ -10,7 +10,7 @@ class Atom:
         pass
 
     def generate_into(self, generator, function_block):
-        pass
+        raise ("generate into not defined for " + self.__class__.__name__)
 
 
 class FunctionCall(Atom):

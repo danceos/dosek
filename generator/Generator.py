@@ -1,13 +1,19 @@
 from generator.primitives import *
 from generator.atoms import *
 from generator.types import *
+import re
+
+""" The debug comments for each replacement rule is only for rules which
+classname, that re.match any of these regular expressions"""
+trace_rule_patterns = ['.*']
 
 class Generator:
 
     """Base class of all generators"""
-    def __init__(self, system_description, object_file):
+    def __init__(self, system_description, object_file, analysis):
         self.system_description = system_description
         self.object_file = object_file
+        self.analysis = analysis
         self.rules = []
 
     OSEK_CALLS = {
@@ -49,11 +55,14 @@ class Generator:
         """Generate into output file"""
         self.source_file = SourceFile()
 
+        #include "os.h"
+        self.source_file.includes.add(Include("os.h"))
+
         # find all
         for symbol in self.object_file.get_undefined_symbols():
             for system_call in self.OSEK_CALLS:
                 if symbol.startswith(system_call):
-                    tmp = symbol.split("__")
+                    tmp = symbol.split("__ABB")
                     assert len(tmp) == 2
 
                     rettype = self.OSEK_CALLS[system_call][0]
@@ -64,7 +73,8 @@ class Generator:
                     # Generate all atoms into a function block
                     function = Function(symbol,
                                         rettype,
-                                        argtypes)
+                                        argtypes,
+                                        extern_c = True)
 
                     seed_atom = {'token': SystemCall,
                                  'syscall': syscall,
@@ -74,7 +84,7 @@ class Generator:
 
                     atoms = self.run_rules(seed_atom)
                     # instanciate all atoms
-                    atoms = [self.instanciate_atom(x) for x in atoms]
+                    atoms = [self.instantiate_atom(x) for x in atoms]
 
 
                     for atom in atoms:
@@ -91,7 +101,7 @@ class Generator:
         fd.write(self.source_file.generate())
         fd.close()
 
-    def instanciate_atom(self, atom):
+    def instantiate_atom(self, atom):
         cls = atom['token']
         args = dict([(k, v) for (k,v) in atom.items()
                     if k != "token"])
@@ -103,6 +113,15 @@ class Generator:
         # Sort rules by priority
         self.rules = list(sorted(self.rules, key= lambda x: x.prio))
 
+
+    @staticmethod
+    def is_rule_traced(rule):
+        global trace_rule_patterns
+        for pattern in trace_rule_patterns:
+            if re.match(pattern, rule.__class__.__name__):
+                return True
+        return False
+
     def run_rules(self, seed_atom):
         seq = [seed_atom]
 
@@ -111,8 +130,8 @@ class Generator:
 
             for rule in self.rules:
                 for idx in range(0, len(seq)):
-                    if rule.matches(seq, idx):
-                        seq = rule.replace(seq, idx)
+                    if rule.matches(self, seq, idx):
+                        seq = rule.replace(self, seq, idx)
                         # We changed something. Restart replacement process
                         changed = True
                         break

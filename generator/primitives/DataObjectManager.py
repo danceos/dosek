@@ -13,7 +13,7 @@
     @brief Data object cook.
 """
 import unittest
-import tools
+from generator import tools
 from SourceElement import Block, Statement, ForRange
 
 

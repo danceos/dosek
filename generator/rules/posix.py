@@ -10,12 +10,17 @@ class ReplaceShutdownByExit(Rule):
     def __init__(self):
         Rule.__init__(self, RULE_PRIO_SYSTEM)
 
-    def matches(self, seq, idx):
+    def matches(self, generator, seq, idx):
         if seq[idx]['token'] == SystemCall:
-            #FIXME
-            return seq[idx]['syscall'] == "OSEKOS_TerminateTask"
-    def replace(self, seq, idx):
-        newtoken = {'token': Comment, 'text': "Hier war ein exit"}
+            return seq[idx]['syscall'] == "OSEKOS_ShutdownOS"
+    def replace(self, generator, seq, idx):
+        #include "<stdlib.h>
+        generator.source_file.includes.add(Include("stdlib.h", system_include=True))
+
+        newtoken = {'token': FunctionCall,
+                    'name': 'exit',
+                    'rettype': void,
+                    'arguments': seq[idx]['arguments']}
         return self.replace_with(seq, idx, newtoken)
 
 def posix_rules():
