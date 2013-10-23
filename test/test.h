@@ -269,6 +269,26 @@ void test_positive_tests_gt(int positive_tests) {
 }
 
 
+// run one test with unencoded result
+// forceinline used to inline this into test() function to stay within allowed text region
+// volatile used to prevent inlining of testfunction, which should stay separate
+forceinline void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected) {
+	test_expect_store(0, expected);
+	encoded_storage = 0;
+	detected_error = false;
+
+	/* Start the testcase (including marker_start() */
+	test_start();
+	testfun();
+	test_start_check();
+	encoded_storage = result_var;
+
+	/* Chcek if result value is equal to expected */
+	test_expect_eq(0, result_var);
+	/* Check has to succeed */
+	test_positive_tests_gt(0);
+}
+
 // run one test with encoded result
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
