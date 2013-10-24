@@ -92,3 +92,21 @@ else()
   message(STATUS "[${PROJECT_NAME}] oclint executable not found")
 endif()
 
+find_program(PYLINT pylint)
+if(PYLINT)
+  add_custom_command(
+    #COMMAND ${PYLINT} --generate-rcfile > ${CMAKE_CURRENT_BINARY_DIR}/.pylint
+    COMMAND find ${PROJECT_SOURCE_DIR}/generator -iname "*.py" | xargs ${PYLINT} -f parseable > ${PROJECT_BINARY_DIR}/pylint.txt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/.pylint ${PROJECT_BINARY_DIR}/pylint.txt
+  )
+
+  add_custom_target(pylint
+    DEPENDS ${PROJECT_BINARY_DIR}/pylint.txt
+  )
+
+else()
+  message(STATUS "[${PROJECT_NAME}] pylint executable not found")
+
+endif()
+
