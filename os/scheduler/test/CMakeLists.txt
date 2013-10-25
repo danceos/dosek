@@ -1,1 +1,1 @@
-coredos_fail_test(scheduler_dequeue)
+coredos_fail_test(scheduler_tasklist)

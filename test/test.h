@@ -270,9 +270,10 @@ void test_positive_tests_gt(int positive_tests) {
 
 
 // run one test with unencoded result
+// detectable can be set if the result value is known and error could be detected to set detected_error
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
-forceinline void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected) {
+forceinline void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected, bool detectable=false) {
 	test_expect_store(0, expected);
 	encoded_storage = 0;
 	detected_error = false;
@@ -285,6 +286,10 @@ forceinline void run_checkable_function(void (* volatile testfun)(void), expecte
 
 	/* Chcek if result value is equal to expected */
 	test_expect_eq(0, result_var);
+
+	/* If the result value is known and the error would be detected set detected_error */
+	if(detectable) detected_error = (result_var != expected);
+
 	/* Check has to succeed */
 	test_positive_tests_gt(0);
 }
