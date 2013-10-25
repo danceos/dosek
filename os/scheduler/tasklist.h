@@ -92,7 +92,8 @@ public:
 		// encoded check of comparison
 		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
 						// this<=t => diff = t.vc - vc
-		value_coded_t sigCond = diff % T::A;
+		static volatile A_t ta = T::A;
+		value_coded_t sigCond = diff % ta;
 		const value_coded_t sigPos = S::B - T::B;
 		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;
 
@@ -142,25 +143,29 @@ public:
 		id.vc += 10;
 		prio.vc += 10;
 
-		// task1 > prio?
+		// task1 >= prio?
 		signature += updateMax<10, 11>(prio, task1, id, EC(41, 1));
 		assert(signature % S::A == 36);
 
-		// task2 > prio?
+		// task2 >= prio?
 		signature += updateMax<11, 12>(prio, task2, id, EC(42, 2));
 		assert(signature % S::A == 62);
 
-		// task3 > prio?
+		// task3 >= prio?
 		signature += updateMax<12, 13>(prio, task3, id, EC(43, 3));
 		assert(signature % S::A == 88);
 
-		// task4 > prio?
+		// task4 >= prio?
 		signature += updateMax<13, 14>(prio, task4, id, EC(44, 4));
 		assert(signature % S::A == 114);
 
+		// restore idle_id if idle_id >= prio
+		signature += updateMax<14, 15>(prio, idle_prio, id, idle_id);
+		assert(signature % S::A == 139);
+
 		// subtract last signature
-		id.vc -= 14;
-		prio.vc -= 14;
+		id.vc -= 15;
+		prio.vc -= 15;
 
 		// check signatures
 		assert(id.check());
@@ -186,10 +191,10 @@ public:
 	}
 
 	template<typename T, typename S>
-	forceinline void promote(const T& id, const S& newprio) {
+	forceinline value_coded_t promote(const T& id, const S& newprio) {
 		if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
 		
-		set(id, newprio);
+		return set(id, newprio);
 	}
 
 	template<typename T, typename S>
@@ -201,44 +206,13 @@ public:
 		value_coded_t sig2;
 		if(prio != idle_prio) {
 			sig2 = remove(id);
+			// IDEA: set id.vc += sig2 + X; ?
 		} else {
-			id = idle_id;
+			// IDEA: set id.vc = sig2 + X; ?
 			sig2 = 42;
 		}
 
-		// TODO: check control flow
-		// assert(...)
-		/*
-		Encoded_Static<A0, 13> i1;
-		Encoded_Static<A0, 12> i2;
-		Encoded_Static<A0, 11> i3;
-		Encoded_Static<A0, 10> i4;
-		switch(id.decode()) {
-			case 1:
-				i1.setCodedValue(sig2);
-				assert(i1 == 0);
-				return (i1 == 0);
-
-			case 2:
-				i2.setCodedValue(sig2);
-				assert(i2 == 0);
-				return (i2 == 0);
-
-			case 3:
-				i3.setCodedValue(sig2);
-				assert(i3 == 0);
-				return (i3 == 0);
-
-			case 4:
-				i4.setCodedValue(sig2);
-				assert(i4 == 0);
-				return (i4 == 0);
-
-			default:
-				assert(false);
-				return false;
-		}
-		*/
+		// TODO: more control flow checks?
 
 		return sig1+sig2;
 	}
@@ -252,7 +226,7 @@ public:
 	}
 };
 
-/*
+/* old example how to check for correct control flow by caller
 bool start(TaskList &tl, const Task &t) {
 	value_coded_t res = tl.insert(EC(3, t.getID()), EC(4, t.getPrio()));
 
