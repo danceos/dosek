@@ -16,6 +16,7 @@ SECTIONS {
 		_stext_fail = .;
 		*(".text._Z*2os*")
 		*(".text._Z*4fail*")
+		"*libgcc*.a:" ( ".text" )
 		_etext_fail = .;
 		*(".text.test")
 		_etext_fail_allowed = .;
