@@ -1,5 +1,5 @@
 CoRedOS - Combined Redundancy Operating System                        {#mainpage}
-============
+==============================================
 
 Recent automotive systems exhibit an increased susceptibility
 against transient hardware faults. As a consequence,
