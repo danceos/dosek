@@ -1,4 +1,9 @@
-CoRedOS - Combined Redundancy Operating System                        {#mainpage}
+/**
+ * @mainpage
+
+
+
+CoRedOS - Combined Redundancy Operating System
 ==============================================
 
 Recent automotive systems exhibit an increased susceptibility
@@ -14,4 +19,11 @@ operating system as single point of failure. We intend to close
 this gap by extending the encoded operations throughout the
 kernel execution, and additionally integrate the analyzed system
 behavior into the code.
-  
+
+*/
+
+/**
+ * @subpage concept_overview
+ * @subpage osekspec
+ * @subpage osektestspec
+ */

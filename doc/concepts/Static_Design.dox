@@ -1,0 +1,64 @@
+/**
+ * @page static_design Static Design Concept
+ * @brief We claim that a static design is the logical choice for a robust RTOS.
+
+## 1. Prove the inherent robustness of static system designs ##
+Starting Point: COTS embedded OS having a "large" attack surface in terms of vulnerable OS data. (PxROS, __eCos__, (Safe)RTOS)
+
+### Research Question ###
+- Which influence has the operating system *design* (static. vs. dynamic) on the robustness?
+
+### Test candidates ###
+Static CiAO (bitmap scheduler) vs. dynamic eCOS (MLQ and bitmap variant)
+
+### Test scenario ###
+Recent I4Copter task system
+
+### Fault Injection ###
+Full fault space fault injection of single-bit memory faults.
+Tooling: Fail* Fault Injection Framework. (@ref evaluation)
+
+### First Evaluation of Unhardened Systems -> [SOBRES'13 [1]](http://danceos.org/sobres/2013/papers/SOBRES-550-Hoffmann.pdf) ###
+- Advantages of a Tailored Static Design
+ - The speed and size optimized dCiAO reduces the attack surface
+ - Refinement of the tailoring by separating dynamic and static data fields.
+ - Advantage of tailoring from a __dependability__ perspective: Obviously, such a statically configured system looses flexibility, nevertheless, most embedded systems in the targeted domain (OSEK!) are static.
+ - Of course, the remaining unhardened data are still susceptible to faults.
+- Comparing Memory Usage and Consumption
+ - Highly tailored static CiAO system outperforms dynamic eCos.
+- Fault Injection Results
+ - *Dynamic* systems suffer from a high amount of invalid memory accesses
+ - Remaining faults in condensed *static* kernel state often result in differing task activations
+ - In total, a static system show a significanlty higher inherent robustness compared to a dynamic system design!
+
+## 2. Extending the Systems with Fault-detection Mechanisms (ISORC'14?) ##
+Application of CRC-based fault-detection mechanisms.
+### Research questions ###
+- Can the application of proven dependability measures on a dynamic system help to reach the level of inherent robustness of a static system design?
+- Can the extension of a condensed static system with additional measures further increase its robustness, considering the increased usage of susceptible memory?
+
+TODO: Present results from the ISORC'14 paper.
+
+
+## 3. Lessons Learned ##
+- A carefully __tailored static system__ design shows a __high inherent robustness__.
+- A __dynamic system__ can reach this level of robustness by appliyng __extremely expensive dependability measures__.
+  Here, in particular hardware-based measures in terms of Watchdog and MPU mechanisms are relevant.
+  But: Dynamic system profit much more from such features than a static design!
+- Faults within the __highly condensed kernel__ state have a direct __influence__ on the evaluated __system behaviour__:
+  The remaining silent data corruptions within the static system mainly lead to differing task activations.
+
+### Consequences ###
+A static design provides high inherent robustness against memory/data faults.
+
+But: Care must be taken, to detect the __remaining faults__ which mainly show up as __control-flow errors__ resp. alterations of the __overall system behaviour__!
+-> @ref control_flow_hardening
+
+- - -
+
+### Publications ###
+[1] M. Hoffmann, C. Dietrich, and D. Lohmann. Failure by design: *Influence of the RTOS interface on memory fault resilience.* In Proceedings of the 2nd GI Workshop on Software-Based Methods for Robust Embedded Systems (SOBRES '13), Lecture Notes in Informatics. German Society of Informatics, Sept. 2013.
+
+Hopefully at ISORC
+
+*/

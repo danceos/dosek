@@ -1,0 +1,10 @@
+/**
+ * @page concept_overview Design Concept
+ * @brief __CoRedOS maxim: Use all (a priori) knowledge of the behaviour of a OSEK system to leverage effective dependability measures.__
+ *
+ * We claim a static system design is the right choice for a dependable RTOS: @subpage static_design
+ *
+ * Evaluation Results have shown the remaining silent data corruptions to be tackled: @subpage control_flow_hardening
+ *
+ * For our evaluations we chose a common evaluation and fault injection scenario: @subpage evaluation
+*/

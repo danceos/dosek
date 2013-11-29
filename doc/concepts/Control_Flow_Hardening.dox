@@ -1,0 +1,49 @@
+/**
+ * @page control_flow_hardening Control-Flow Hardening
+
+## Phase 2: Hardening the OS system call ##
+Control flow, data integrity and application knowledge might be condensed into a tailored sort of AN-Code.
+
+After hardening the OS kernel data, a closer look on the control-flow is necessary.
+Here, we can also make use of the a priori knowledge about the static OSEK system.
+The stringent OSEK specification allows us to build a complete space of reachable OS states.
+This, potentially huge, state space can be reduced by introducing the actual application behavior: "Tailored" to the application.
+
+A system call is seen as some kind of "transaction" opening a "Sphere of Redundancy (SoR)":
+Each operation/data within the transaction is realized through encoded operations.
+Also the input data to the SoR -- that is the parameters of the system call -- are encoded, the signature might help to check the
+validity of the call according to the analyzed application.
+
+The call is executed on a copy of the kernel state.
+Committing the changes, according to the transactional memory rules, also checks the validity of the data regarding the AN-code.
+
+After the whole system analysis a considerable amount of system call might be fully inlinable into the application code.
+Memory isolation of the task code then allows to detect unwanted system calls resulting from a control flow error.
+When inlining is not applicable, the system call parameter may still include the signature according to the system analysis.
+
+Note: Integrate the cpu state into the code validation, for example the Interrupt enable bit etc.
+
+Hardening of OS calls:
+ 1. When entering the kernel: Start a transaction
+ 2. Store the (small) OS state as a working copy
+ 3. Execute system call -> state transition
+ 4. Transaction commit:
+  - Check AN code
+  - Check if the resulting state is allowed according to the state model
+  - Check data validity according to transactional memory rules
+ 5. On error: Fail Stop. Graceful degradation possible?
+  - Restore system state and re-try.
+  - Find an alternative safe successor state, to keep the system running
+  - Fail-Stop / Reset
+
+Stuff:
+ - Enforce coding guideline (e.g., JSF C++)
+ - Introduction of pre- and postconditions, invariants (via Aspects?)
+ - Keep use to pointers to a minimum, enforce use of references
+ - Everything should be as ''const'' as possible
+ - Language: C++, D (<- fancy compile time features, DbC, documentation)?
+ - Full documentation via doxygen
+ - Code reviewing with gerrit, testing with jenkins, ctest
+
+
+*/
