@@ -173,7 +173,7 @@ SEPARATE_MEMBER_PAGES  = NO
 TAB_SIZE               = 8
 
 # Add OSEK Specs to documentation
-HTML_EXTRA_FILES = @OSEK_SPEC_PATH@/@OSEK_SPEC_PDF@ @OSEK_SPEC_PATH@/@OSEK_TESTSPEC_PDF@
+HTML_EXTRA_FILES = @OSEK_SPEC_PATH@/@OSEK_SPEC_PDF@ @OSEK_SPEC_PATH@/@OSEK_TESTSPEC_PDF@ @DOC_CONCEPTS_PATH@/@CONCEPT_FIG@
 
 # This tag can be used to specify a number of aliases that acts
 # as commands in the documentation. An alias has the form "name=value".

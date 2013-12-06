@@ -47,7 +47,7 @@ coredos_include_dir(${PROJECT_SOURCE_DIR})
 add_subdirectory(test)
 
 # Documentation
-add_subdirectory(doc)
+add_subdirectory(toolchain/doxygen)
 
 # List of executables
 set(EXECUTABLES "" CACHE INTERNAL "List of executables")

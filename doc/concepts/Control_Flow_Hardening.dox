@@ -2,12 +2,12 @@
  * @page control_flow_hardening Control-Flow Hardening
 
 ## Phase 2: Hardening the OS system call ##
-Control flow, data integrity and application knowledge might be condensed into a tailored sort of AN-Code.
+###Control flow, data integrity and application knowledge are condensed into a tailored ANBD-Code.###
 
-After hardening the OS kernel data, a closer look on the control-flow is necessary.
-Here, we can also make use of the a priori knowledge about the static OSEK system.
-The stringent OSEK specification allows us to build a complete space of reachable OS states.
-This, potentially huge, state space can be reduced by introducing the actual application behavior: "Tailored" to the application.
+After hardening the OS kernel data, a closer look on the control-flow is necessary.  
+Here, we can also make use of the __a priori knowledge__ about the __static OSEK__ system.
+The stringent OSEK specification allows us to build a complete __space of reachable OS states__.
+This, potentially huge, state space can be __reduced__ by introducing the actual application behavior: __Tailored to the application.__
 
 A system call is seen as some kind of "transaction" opening a "Sphere of Redundancy (SoR)":
 Each operation/data within the transaction is realized through encoded operations.

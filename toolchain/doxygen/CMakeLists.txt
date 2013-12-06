@@ -18,9 +18,14 @@ set(DOXY_EXCLUDE_PATTERNS "${PROJECT_SOURCE_DIR}/build ${PROJECT_SOURCE_DIR}/too
 
 file(MAKE_DIRECTORY ${DOXY_OUTPUT})
 
-set(OSEK_SPEC_PATH ${PROJECT_SOURCE_DIR}/doc/osek)
+# Additional files regarding OSEK
+set(OSEK_SPEC_PATH ${PROJECT_SOURCE_DIR}/doc/osek/osek)
 set(OSEK_SPEC_PDF os223.pdf)
 set(OSEK_TESTSPEC_PDF ostestplan20.pdf)
+
+# Additional doc files regarding concepts
+set(DOC_CONCEPTS_PATH ${PROJECT_SOURCE_DIR}/doc/concepts)
+set(CONCEPT_FIG concepts.png)
 
 set(DOXY_PY ${CMAKE_CURRENT_SOURCE_DIR}/doxypy.py)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
@@ -31,6 +36,7 @@ set(line0 "[${PROJECT_NAME}] Generating CoRedOS documentation with Doxygen")
 set(line1 "       Directories: ${DOXY_SOURCE}")
 set(line2 "       Excluded patterns: ${DOXY_EXCLUDE_PATTERNS}")
 set(line3 "       HTML output: ${DOXY_OUTPUT}/${DOXY_HTML_OUTPUT}")
+
 add_custom_target(doc
   ${DOXYGEN_EXECUTABLE} ${DOXYFILE}
   DEPENDS ${DOXYFILE}
