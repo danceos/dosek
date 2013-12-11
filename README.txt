@@ -7,6 +7,4 @@ Requirements:
  * cmake
  * python
  * doxygen
- * sphinx
- * breathe (pip install breathe)
 

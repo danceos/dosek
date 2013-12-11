@@ -871,6 +871,9 @@ HTML_HEADER            =
 # standard footer.
 
 HTML_FOOTER            =
+HTML_COLORSTYLE_HUE    = 199
+HTML_COLORSTYLE_SAT    = 93
+#HTML_COLORSTYLE_GAMMA  = 37
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading
 # style sheet that is used by each HTML page. It can be used to
