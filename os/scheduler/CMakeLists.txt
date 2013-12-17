@@ -1,6 +1,7 @@
 
 set(SRCS
-		tasklist.cc	
+	tasklist.cc
+	scheduler.cc
 )
 
 add_library(scheduler ${SRCS})

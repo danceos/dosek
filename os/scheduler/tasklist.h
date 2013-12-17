@@ -14,21 +14,16 @@
 #endif
 
 #include <stdint.h>
-#include "assert.h"
 #include "output.h"
 #include "task.h"
-#include "encoded.h"
+#include "util/assert.h"
+#include "util/encoded.h"
 
 namespace os {
 namespace scheduler {
 
-// the one A we use for now
-static const A_t A0 = 58659;
-
 // encoded constant
 #define EC(b, v) Encoded_Static<A0, b>(v)
-
-#define forceinline __inline__ __attribute__((always_inline))
 
 /* Simpler array based task queue */
 class TaskList {
@@ -91,8 +86,8 @@ public:
 		
 		// encoded check of comparison
 		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
-						// this<=t => diff = t.vc - vc
-		static volatile A_t ta = T::A;
+		                                         // this<=t => diff = t.vc - vc
+		static volatile A_t ta = T::A; // prevent % -> *,>>,+ optimization
 		value_coded_t sigCond = diff % ta;
 		const value_coded_t sigPos = S::B - T::B;
 		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;

@@ -32,6 +32,9 @@ typedef uint8_t D_t;
 
 static const A_t superAs[5] = {58659, 59665, 63157, 63859, 63877};
 
+// the one A we use for now
+static const A_t A0 = 58659;
+
 class Encoded
 {
 public:
@@ -127,6 +130,23 @@ public:
 	{
 		                                                 /* \/ Compile Time constant!\/ */
 		return (static_cast<int16_t>(vc - rhs.getCodedValue()) ==  _B - rhs.getB());
+	};
+
+	template<typename T, class RET = Encoded_Static<_A, B - T::B> >
+	RET eq(const T& t) const
+	{
+		RET r;
+		//r.vc = vc - t.vc;
+		r.vc = (this == t); // unencoded comparison
+		if(r.vc) {
+			//r.vc -= (vc - t.vc) - (Beq - eq);
+			r.vc += (vc - t.vc) + (B - T::B - 1);
+		} else {
+			//r.vc -= (Beq - eq);
+			r.vc += (B - T::B);
+		}
+		r.D = D - t.D; // TODO
+		return r;
 	};
 
 	template<class T>

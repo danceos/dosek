@@ -58,10 +58,8 @@
 
 #include "serial.h"
 #include "output.h"
-#include "os/encoded.h"
-#include "os/os.h"
-
-#define forceinline __inline__ __attribute__((always_inline))
+#include "util/encoded.h"
+#include "util/inline.h"
 
 #ifdef DEBUG
 /**
@@ -72,14 +70,14 @@
 output_t kout;
 #endif
 
-#ifndef FAIL
+//#ifndef FAIL
 /**
  * @brief Serial output device
  * Used for CTest, but not FAIL to reduce binary
  * @todo Make hardware independent!
  */
 Serial serial(Serial::COM1); 
-#endif
+//#endif
 
 #define EXPECTED_VALUES_MAX 10
 typedef unsigned int expected_value_t;
@@ -120,7 +118,7 @@ extern "C" {
 	void test_prepare(void);
 
 	//! user-supplied test function
-	void test(void);
+	noinline void test(void);
 	// @}
 
 	/**
@@ -145,8 +143,7 @@ extern "C" {
 }
 
 
-inline
-void test_start()
+forceinline void test_start()
 {
 	// update global status variables
 	experiment_number++;
@@ -165,8 +162,7 @@ void test_start()
 	marker_start();
 }
 
-inline
-void test_start_check() {
+forceinline void test_start_check() {
 	marker_start_check();
 }
 
@@ -322,7 +318,7 @@ forceinline void run_checkable_function(void (* volatile testfun)(void), T& resu
 __attribute__((weak_import))
 extern void test_prepare();
 
-void os_main(void)
+extern "C" void os_main(void)
 {
 	#ifdef DEBUG
 	kout.setcolor(CGA::RED, CGA::WHITE);

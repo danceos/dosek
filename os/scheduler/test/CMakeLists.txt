@@ -1,1 +1,2 @@
 coredos_fail_test(scheduler_tasklist)
+coredos_fail_test(dispatch)

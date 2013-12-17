@@ -12,65 +12,43 @@
  * @ingroup scheduler
  * @brief The task handler
  */
+#include "util/encoded.h"
+#include "util/inline.h"
 
 namespace os {
 namespace scheduler {
+
+#define TASK(taskname) noinline void os::tasks::start_##taskname (void)
 
 /** 
  * The basic task class 
  * */
 class Task {
 public:
-	typedef uint8_t ID;
-	typedef uint8_t Prio;
+	typedef uint8_t id_t;
+	typedef uint8_t prio_t;
+	typedef void (* const fptr_t)(void);
 
-protected:
-	union {
-		struct {
-			ID id;
-			Prio prio;
-
-		} fields;
-		uint16_t combined;
-	};
-
-public:
-	Task() : combined(0) {}
-
-	Task(uint16_t comb) : combined(comb) {};
-
-	Task(ID tid, Prio p) {
-		fields.id = tid;
-		fields.prio = p;
-	} 
-
-    /**
-     * @brief Get task ID
-     */
-	ID getID() const {
-		return fields.id;
+	const id_t id;
+	template<typename T> constexpr T enc_id() const {
+		return T(id);
+	}
+	template<B_t B> constexpr Encoded_Static<A0, B> enc_id() const {
+		return Encoded_Static<A0, B>(id);
 	}
 
-    /**
-     * @brief Get task priority
-     */
-	Prio getPrio() const {
-		return fields.prio;
+	const prio_t prio;
+	template<typename T> constexpr T enc_prio() const {
+		return T(prio);
+	}
+	template<B_t B> constexpr Encoded_Static<A0, B> enc_prio() const {
+		return Encoded_Static<A0, B>(prio);
 	}
 
-	uint16_t getCombined() const {
-		return combined;
-	}
+	fptr_t fun;
 
-	void setPrio(Prio newprio) {
-		fields.prio = newprio;
-	}
+	constexpr Task(id_t _id, prio_t _prio, void (*f)(void)) : id(_id), prio(_prio), fun(f) {}
 };
-
-typedef Task::ID TaskID;
-typedef Task::Prio TaskPrio;
-static const Task INVALID_TASK = Task(0,0);
-static const TaskID INVALID_TASK_ID = 0;
 
 }; // namespace scheduler
 }; // namespace os

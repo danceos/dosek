@@ -1,7 +1,7 @@
-
 set(SRCS
 )
 
+# TODO: add message to ignore non-suppressable warning
 add_library(os ${SRCS})
 
 add_subdirectory(scheduler)
