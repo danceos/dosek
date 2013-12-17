@@ -50,10 +50,10 @@ TASK(Handler13) {
 	a++;
 	a++;
 	a++;
-	ShutdownOS(E_OK);
+	TerminateTask();
 }
 
-int main() { OSEKOS_TASK_Handler11();};
+int os_main() { OSEKOS_TASK_Handler11();};
 
 StatusType OSEKOS_TerminateTask() {
 	return E_OK;
@@ -62,7 +62,6 @@ StatusType OSEKOS_TerminateTask() {
 #include <stdio.h>
 
 StatusType OSEKOS_ActivateTask(TaskType t) {
-	printf("ActivateTask %p\n", t);
 	return E_OK;
 }
 

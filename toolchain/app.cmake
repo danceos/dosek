@@ -98,6 +98,6 @@ MACRO(COREDOS_BINARY)
 
   # Compile the coredos system
   include_directories(${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/include/)
-  add_executable(${NAME} EXCLUDE_FROM_ALL
+  coredos_executable(${NAME} EXCLUDE_FROM_ALL
     ${COREDOS_SOURCE_SYSTEM_OBJECT} ${COREDOS_GENERATED_SOURCE})
 ENDMACRO(COREDOS_BINARY)

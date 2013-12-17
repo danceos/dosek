@@ -51,6 +51,5 @@ if __name__ == "__main__":
 
 
     generator = Generator.Generator(system_description, app_object, rtsc_analysis)
-    generator.load_rules(posix_rules())
     generator.load_rules(base_rules())
     generator.generate_into(options.output)
