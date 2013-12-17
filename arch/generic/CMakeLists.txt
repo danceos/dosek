@@ -24,18 +24,15 @@ macro(coredos_executable ELFFILE)
 	# The actual executable
 	add_executable(${ELFFILE} ${ARGN})
 
-	target_link_libraries(${ELFFILE} os arch gcc)
+	target_link_libraries(${ELFFILE} os arch)
 
 	# Set custom linker script
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
-				"-Wl,-T ${PROJECT_BINARY_DIR}/linker.ld ${ISA_LD_FLAGS} -Wl,--build-id=none" )
+				"-Wl,-T ${PROJECT_BINARY_DIR}/linker.ld ${ISA_LD_FLAGS} -Wl,--build-id=none --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}" )
 
-    # Since the os_main function is defined in the generated coredos
-    # source code, we have an cyclic symbol dependency. Therefore we
-    # add --start-group,--end-group "parentheses" around object files
-    # and library files.
-    SET(CMAKE_CXX_LINK_EXECUTABLE  "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> -Xlinker --start-group <OBJECTS> <LINK_LIBRARIES> -Xlinker --end-group -o <TARGET>")
-    SET(CMAKE_C_LINK_EXECUTABLE  "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> -Xlinker --start-group <OBJECTS> <LINK_LIBRARIES> -Xlinker --end-group -o <TARGET>")
+    # We use our own linker script, that calls llvm-link, llc and the system linker
+    SET(CMAKE_CXX_LINK_EXECUTABLE  "${PROJECT_SOURCE_DIR}/toolchain/linker --llvm-dir ${CCDIR} <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -o <TARGET>")
+    SET(CMAKE_C_LINK_EXECUTABLE  "${PROJECT_SOURCE_DIR}/toolchain/linker --llvm-dir ${CCDIR} <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES>  -o <TARGET>")
 
 	set(EXECUTABLES ${EXECUTABLES} ${ELFFILE} CACHE INTERNAL STRING)
 endmacro()

@@ -1,0 +1,98 @@
+#!/usr/bin/python
+
+import sys
+import tempfile
+import shutil
+import subprocess
+import os
+import glob
+
+def is_llvm_file(file):
+    if not os.path.exists(file):
+        return False
+    return "LLVM" in subprocess.check_output(["file", file])
+
+def is_elf_file(file):
+    if not os.path.exists(file):
+        return False
+    return "ELF" in subprocess.check_output(["file", file])
+
+
+def aggregate_bitcode(archives):
+    elf_object_files = []
+    # First we unpack all archive files into seperate folders
+    # (there can be name collissions)
+    count = 0
+    for i in archives:
+        archive_dir = os.path.join(tempdir, "%d_%s" %(count, os.path.basename(i)))
+        count += 1
+        os.mkdir(archive_dir)
+        subprocess.check_output(["ar", "x", os.path.abspath(i)],
+                                cwd = archive_dir)
+
+    llvm_files = []
+    for root, dirs, files in os.walk(tempdir):
+        for file in files:
+            if "SYM_TAB" in file:
+                continue
+            file = os.path.join(root, file)
+            # Collect all bitcode LLVM files
+            if not is_llvm_file(file):
+                elf_object_files.append(file)
+            else:
+                llvm_files.append(file)
+
+    return elf_object_files, llvm_files
+
+
+def llvm_link(files, output):
+    subprocess.check_output([os.path.join(args.llvm_dir, "bin", "llvm-link"),
+                             "-o", output] + files)
+    return output
+
+def llvm_opt(input, output):
+    subprocess.check_output([os.path.join(args.llvm_dir, "bin", "opt"),
+                             "-std-compile-opts", "-o", output, input])
+    return output
+
+def llvm_llc(file, output):
+    subprocess.check_output([os.path.join(args.llvm_dir, "bin", "llc"),
+                             "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-o", output, file])
+    return output
+
+
+
+def start_ld(flags, objects, output):
+    subprocess.check_output(["clang"] + flags + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
+                            + ["-o", output])
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Linker for CoRedOS.')
+    parser.add_argument("--output", "-o", metavar='OUT', help='The file to generate')
+    parser.add_argument("--linker-prefix", metavar='PREFIX', help='Where are the llvm binaries located')
+    parser.add_argument("--llvm-dir", metavar='LLVM_DIR', help='Where are the llvm binaries located')
+
+    args, unkown_args = parser.parse_known_args()
+    archives = [x for x in unkown_args if x.endswith(".a")]
+    elf_files = [x for x in unkown_args if is_elf_file(x)]
+    llvm_files = [x for x in unkown_args if is_llvm_file(x)]
+
+    # Remove file arguments from unkown args
+    linker_flags = [x for x in unkown_args
+                   if not(x in archives + elf_files + llvm_files)]
+    try:
+        tempdir = tempfile.mkdtemp()
+        (elf_, llvm_) = aggregate_bitcode(archives)
+        elf_files += elf_
+        llvm_files += llvm_
+        # Link all bitcode files together
+        bitcode     = llvm_link(llvm_files, args.linker_prefix + ".bc")
+        bitcode_opt = llvm_opt(bitcode, args.linker_prefix + "-opt.bc")
+        system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj")
+
+        start_ld(linker_flags, [system_object] + elf_files, args.output)
+    finally:
+        shutil.rmtree(tempdir)
+

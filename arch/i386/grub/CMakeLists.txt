@@ -31,7 +31,7 @@ foreach(ELF ${EXECUTABLES})
 	# Create bootable ISO from ELF
 	add_custom_command(
 		DEPENDS ${ELF}
-		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${ELF}> ${BOOTDIR}/${ELFFILE}
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${ELF}> ${BOOTDIR}/coredos.elf
 		COMMAND ${GRUB_MKRESCUE} -o ${ISOFILE} ${ISODIR}
 		COMMENT "[${PROJECT_NAME}] Generating bootable grub iso."
 		OUTPUT ${ISOFILE}

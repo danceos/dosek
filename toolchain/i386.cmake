@@ -11,6 +11,9 @@ set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles" CACHE STRING "LDFLAGS")
 set(CCDIR "/proj/i4danceos/tools/llvm-3.4")
 set(CMAKE_C_COMPILER  ${CCDIR}/bin/clang)
 set(CMAKE_CXX_COMPILER ${CCDIR}/bin/clang++)
+set(CMAKE_CXX_COMPILER ${CCDIR}/bin/clang++)
+set(CMAKE_RANLIB "${CCDIR}/bin/llvm-ranlib" CACHE INTERNAL STRING)
+set(CMAKE_AR "${CCDIR}/bin/llvm-ar" CACHE INTERNAL STRING)
 
 SET(CMAKE_FIND_ROOT_PATH ${CCDIR})
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -19,11 +22,10 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 ## Add *additional* architecture specific compiler flags here.
 # Note that the flags set in toolchain.cmake are still present and used.
-set(ISA_C_FLAGS "" CACHE INTERNAL STRING)
+set(ISA_C_FLAGS "-c -emit-llvm" CACHE INTERNAL STRING)
 set(ISA_CXX_FLAGS "" CACHE INTERNAL STRING)
 set(ISA_ASM_FLAGS "-m32" CACHE INTERNAL STRING)
-set(ISA_LD_FLAGS "-fno-exceptions -fno-rtti -static -nostdlib" CACHE INTERNAL STRING)
-
+set(ISA_LD_FLAGS "-m32 -static -nostdlib" CACHE INTERNAL STRING)
 
 set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker script")
 
@@ -34,4 +36,6 @@ set(LD_KERNEL_START_ADDRESS 0x100000 CACHE INTERNAL "Start address of the first 
 
 # ENABLE x86 32 platform
 set(BUILD_i386 "on" CACHE INTERNAL STRING)
+
+
 
