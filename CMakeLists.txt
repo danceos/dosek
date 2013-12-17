@@ -13,9 +13,6 @@ enable_testing()
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE_MAKE})
 
-# Binary filename
-set(ELFFILE "coredos.elf" CACHE INTERNAL STRING)
-
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
 # Search path for custom cmake scripts
@@ -63,6 +60,8 @@ add_subdirectory(fail)
 # Hardware independent kernel code
 coredos_include_dir("${PROJECT_SOURCE_DIR}/os")
 add_subdirectory(os)
+add_subdirectory(generator)
+add_subdirectory(app)
 
 # Platform specific custom targets/commands.
 # Must be included after add_executable, as they depend on the main target.
@@ -77,5 +76,3 @@ file(GLOB_RECURSE ALLSRCS RELATIVE ${PROJECT_SOURCE_DIR} *.cc *.h )
 set(CCCC_SOURCES ${ALLSRCS} CACHE INTERNAL STRING)
 
 add_subdirectory(static_analysis)
-add_subdirectory(generator)
-add_subdirectory(app)

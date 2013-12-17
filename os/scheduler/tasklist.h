@@ -98,7 +98,7 @@ public:
 		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;
 
 		if(result) {
-			if(DEBUG) kout << "< ";
+			// FIXME: if(DEBUG) kout << "< ";
 
 			// a=b, x=y with added signature B1
 			a.vc = b.vc + (T::B - S::B) + B1;
@@ -107,7 +107,7 @@ public:
 			// set control flow signature (expected: sigCond == sigPos)
 			result += (T::A - 1) + B1; // + (S::B - T::B);
 		} else {
-			if(DEBUG) kout << "> ";
+			// if(DEBUG) kout << "> ";
 
 			// remove old B-1, add new B signature to "unmodified" a,x
 			a.vc = a.vc - B0 + B1;
@@ -171,28 +171,28 @@ public:
 		assert(id.check());
 		assert(prio.check());
 
-		if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
+		// if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
 
 		return signature;
 	}
 
 	template<typename T, typename S>
 	forceinline value_coded_t insert(const T& id, const S& prio) {
-		if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
+		// if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
 
 		return set(id, prio);
 	}
 
 	template<typename T>
 	forceinline value_coded_t remove(const T& id) {
-		if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
+		// if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
 
 		return set(id, EC(5, 0));
 	}
 
 	template<typename T, typename S>
 	forceinline value_coded_t promote(const T& id, const S& newprio) {
-		if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
+		// if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
 		
 		return set(id, newprio);
 	}
@@ -219,10 +219,10 @@ public:
 	
 	// DEBUGGING
 	void print() const {
-		kout << "(" << task1.decode() << "), ";
-		kout << "(" << task2.decode() << "), ";
-		kout << "(" << task3.decode() << "), ";
-		kout << "(" << task4.decode() << ")" << endl;
+		//kout << "(" << task1.decode() << "), ";
+		//kout << "(" << task2.decode() << "), ";
+		//kout << "(" << task3.decode() << "), ";
+		//kout << "(" << task4.decode() << ")" << endl;
 	}
 };
 

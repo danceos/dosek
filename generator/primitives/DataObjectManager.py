@@ -95,6 +95,13 @@ class DataObjectManager:
 
     def add(self, obj, phase = 0):
         obj.data_object_manager = self
+        # Check whether data object was already defined with that
+        # name/type:
+        for _, old_obj in self.__objects:
+            if obj.variable == old_obj.variable:
+                assert obj.typename == old_obj.typename, "Variable %s already defined with different type" % obj.variable
+                # Do not add another instance for this object
+                return
         self.__objects.append([phase, obj])
 
     def source_element_declaration(self):
@@ -107,12 +114,15 @@ class DataObjectManager:
         ns = Block("namespace " + self.__namespace)
         for [phase, o] in self.__objects:
             ns.add(o.source_element_allocation())
-        return ns
+        return [ns, Statement("using namespace " + self.__namespace)]
 
     def source_element_initializer(self):
         b = Block("void init_" + self.__namespace + "()")
         for [phase, o] in sorted(self.__objects, key = lambda x: x[0]):
-            b.inner.append(o.source_element_initializer())
+            inner = o.source_element_initializer()
+            if type(inner) != list:
+                inner = [inner]
+            b.inner += inner
         return b
 
 
@@ -149,6 +159,7 @@ class TestDataObjectManager(unittest.TestCase):
     FooBar foobar;
     int count = 42;
 }
+using namespace data;
 """)
 
     def test_plain_objects_init(self):
@@ -159,6 +170,7 @@ class TestDataObjectManager(unittest.TestCase):
         self.assertEqual(text, """namespace data {
     Scheduler scheduler;
 }
+using namespace data;
 """)
 
         text = tools.format_source_tree(m.source_element_initializer())
@@ -177,6 +189,7 @@ class TestDataObjectManager(unittest.TestCase):
         self.assertEqual(text, """namespace data {
     Task tasks[MAX_TASKS];
 }
+using namespace data;
 """)
 
         text = tools.format_source_tree(m.source_element_initializer())
@@ -215,6 +228,7 @@ class TestDataObjectManager(unittest.TestCase):
         self.assertEqual(text, """namespace data {
     Task tasks[MAX_TASKS] = {/* 0 */ {0, 1, 2}, /* 1 */ {0, 3, 1}};
 }
+using namespace data;
 """)
 
 

@@ -1,13 +1,8 @@
 # Create additional targets for all executables
 foreach(ELF ${EXECUTABLES})
 	# Do not suffix targets for main executable
-	if(${ELF} STREQUAL ${ELFFILE})
-		set(SUFFIX "")
-		set(DSUFFIX "")
-	else()
-		GET_FILENAME_COMPONENT(SUFFIX ${ELF} NAME_WE)
-		set(DSUFFIX "-${SUFFIX}")
-	endif()
+	GET_FILENAME_COMPONENT(SUFFIX ${ELF} NAME_WE)
+	set(DSUFFIX "-${SUFFIX}")
 
 	get_target_property(ELF_ABS ${ELF} LOCATION)
 	set(ISOFILE "${ELF_ABS}.iso")

@@ -1,4 +1,4 @@
-file @ELF@
+file @ELF_ABS@
 target remote localhost:@DEBUG_PORT@
 
 define pe

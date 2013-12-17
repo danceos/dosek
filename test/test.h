@@ -59,6 +59,7 @@
 #include "serial.h"
 #include "output.h"
 #include "os/encoded.h"
+#include "os/os.h"
 
 #define forceinline __inline__ __attribute__((always_inline))
 

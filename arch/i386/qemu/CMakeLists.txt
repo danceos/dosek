@@ -7,14 +7,8 @@ endif()
 
 # Create additional targets for all executables
 foreach(ELF ${EXECUTABLES})
-	# Do not suffix targets for main executable
-	if(${ELF} STREQUAL ${ELFFILE})
-		set(SUFFIX "")
-		set(DSUFFIX "")
-	else()
-		GET_FILENAME_COMPONENT(SUFFIX ${ELF} NAME_WE)
-		set(DSUFFIX "-${SUFFIX}")
-	endif()
+	GET_FILENAME_COMPONENT(SUFFIX ${ELF} NAME_WE)
+	set(DSUFFIX "-${SUFFIX}")
 
 	get_target_property(ELF_ABS ${ELF} LOCATION)
 	set(ISOFILE "${ELF_ABS}.iso")
@@ -27,7 +21,7 @@ foreach(ELF ${EXECUTABLES})
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gdbinit.in" ${GDBINITFILE})
 
 	# Common arguments
-	set(QEMU_ARGS -cdrom ${ISOFILE} -no-reboot -m ${RAM_SIZE})
+	set(QEMU_ARGS -cdrom ${ISOFILE} -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE})
 
 	# Start QEMU
 	add_custom_target(qrun${DSUFFIX}
@@ -55,6 +49,7 @@ foreach(ELF ${EXECUTABLES})
 		DEPENDS iso${DSUFFIX} ${ELF}
 		COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 debug mode. "
 		COMMAND ${QEMU} ${QEMU_ARGS} -gdb tcp::${DEBUG_PORT} -S &
-		${DEBUGGER} -n -x ${GDBINITFILE} $<TARGET_FILE:${ELF}>
+        COMMAND sleep 1
+		COMMAND ${DEBUGGER} -n -x ${GDBINITFILE} $<TARGET_FILE:${ELF}>
 	)
 endforeach()

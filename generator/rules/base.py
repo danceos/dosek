@@ -41,12 +41,16 @@ class SystemCallsToFunctionCalls(Rule):
         return seq[idx]['token'] == SystemCall
 
     def replace(self, generator, seq, idx):
+        kout = DataObject("Serial", "serial", "Serial(Serial::COM1)")
+        generator.source_file.data_manager.add(kout)
+        generator.source_file.includes.add(Include("serial.h"))
         # The Systemcall
         systemcall = generator.analysis.find_syscall(seq[idx]['abb'])
         thread = generator.system_description.getTask(systemcall.calling_subtask())
 
         var = new_variable_name()
         repl = [
+            {'token': Statement, 'statement': kout.variable + ' << "' + seq[idx]['syscall'] + '" << endl;'},
             {'token': Comment, 'text': "Called by %s at prio %d" %(thread.getName(), thread.getStaticPriority())},
             {'token': FunctionCall,
              'name': seq[idx]['syscall'],

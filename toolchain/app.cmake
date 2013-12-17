@@ -40,7 +40,7 @@ MACRO(COREDOS_BINARY)
 	add_custom_command(OUTPUT ${llvm_bytecode}
 	  COMMAND ${CLANG_BINARY} -S -emit-llvm -O0 
       -m32
-	  -I${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/include/
+      ${INCLUDEDIRS_FLAGS}
 	  ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
 	  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${src}
 	  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${src}

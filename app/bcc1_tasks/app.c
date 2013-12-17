@@ -53,13 +53,14 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
-int os_main() { OSEKOS_TASK_Handler11();};
+void os_main() {
+	OSEKOS_TASK_Handler11();
+}
 
 StatusType OSEKOS_TerminateTask() {
 	return E_OK;
-};
-
-#include <stdio.h>
+	for(;;){};
+}
 
 StatusType OSEKOS_ActivateTask(TaskType t) {
 	return E_OK;

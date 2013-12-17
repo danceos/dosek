@@ -39,5 +39,3 @@ macro(coredos_executable ELFFILE)
 
 	set(EXECUTABLES ${EXECUTABLES} ${ELFFILE} CACHE INTERNAL STRING)
 endmacro()
-
-coredos_executable(${ELFFILE} "${SRCS}")

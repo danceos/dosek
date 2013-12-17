@@ -13,6 +13,7 @@
  * @satisfies{13,1}
  */
 typedef enum  {
+  E_OK = 0,
   E_OS_ACCESS = 1,
   E_OS_CALLEVEL = 2,
   E_OS_ID = 3,
@@ -39,6 +40,13 @@ enum TaskStateType {
 #define __cpluplus
 #endif
 
+#ifdef __cplusplus
+#define EXTERN_C_DECL extern "C"
+#else
+#define EXTERN_C_DECL
+#endif
+
+EXTERN_C_DECL void os_main(void);
 
 /******************************************************************************
  *                                                                            *

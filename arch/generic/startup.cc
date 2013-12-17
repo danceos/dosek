@@ -6,7 +6,7 @@
 
 #include "constructors.h"
 
-extern void os_main(void);
+extern "C" void os_main(void);
 
 //! @brief Prepare system environment
 void init_generic (void)

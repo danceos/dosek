@@ -62,6 +62,5 @@ public:
 	void puts(const char* data);
 };
 
-extern CGA kout;
 
 #endif
