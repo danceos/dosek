@@ -214,13 +214,13 @@ macro(fail_test TEST)
 
 	# executable for FAIL*
 	set(TESTELF "fail-${TEST}.elf")
-	coredos_executable("${TESTELF}" "${TEST}.cc")
+	coredos_executable("${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc)
 	set_target_properties("${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "FAIL=1")
 	set_target_properties("${TESTELF}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${FAIL_DIR})
 	set_target_properties("${TESTELF}" PROPERTIES EXCLUDE_FROM_ALL true)
 
 	# generate FAIL* targets
-    	message(STATUS "[${PROJECT_NAME}] Adding FAIL* targets for ${TESTELF} in ${FAIL_DIR}")
+	message(STATUS "[${PROJECT_NAME}] Adding FAIL* targets for ${TESTELF} in ${FAIL_DIR}")
 	set(FAIL_SETUP_${TEST} false CACHE INTERNAL "Common FAIL* targets already setup")
 	foreach(BENCHMARK "mem" "regs" "ip" "jump")
 		fail_targets(${TEST} ${FAIL_DIR}/${TESTELF} ${BENCHMARK})

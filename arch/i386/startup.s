@@ -1,31 +1,33 @@
 ## Bare bone boot.s from wiki.osdev.org
-# Declare constants used for creating a multiboot header.
-.set ALIGN,    1<<0             # align loaded modules on page boundaries
-.set MEMINFO,  1<<1             # provide memory map
-.set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
-#.set FLAGS,    0  # this is the Multiboot 'flag' field
-.set MAGIC,    0x1BADB002       # 'magic number' lets bootloader find the header
-.set CHECKSUM, -(MAGIC + FLAGS) # checksum of above, to prove we are multiboot
 
-# Declare a header as in the Multiboot Standard. We put this into a special
-# section so we can force the header to be in the start of the final program.
-# You don't need to understand all these details as it is just magic values that
-# is documented in the multiboot standard. The bootloader will search for this
-# magic sequence and recognize us as a multiboot kernel.
-.section .multiboot
+# multiboot header
+.section .rodata.multiboot
 .align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
 
-# Currently the stack pointer register (esp) points at anything and using it may
-# cause massive harm. Instead, we'll provide our own stack. We will allocate
-# room for a small temporary stack by creating a symbol at the bottom of it,
-# then allocating 16384 bytes for it, and finally creating a symbol at the top.
-.section .bootstrap_stack
-stack_bottom:
-.skip 16384 # 16 KiB
-stack_top:
+# magic number
+.long 0x1BADB002
+
+# flags: align, meminfo
+.long 0x3
+
+# checksum: -(magic+flags)
+.long -(0x1BADB002 + 0x3)
+
+
+
+# the initial kernel stack
+.section .kernel_stack
+.global os_stack
+.size os_stack, 4096
+#.Lstack_bottom:
+os_stack:
+.byte 0
+#.skip 16384 # 16 KiB
+.skip 4094 # 4 KiB
+.byte 0
+.Lstack_top:
+
+
 
 # The linker script specifies _start as the entry point to the kernel and the
 # bootloader will jump to this position once the kernel has been loaded. It
@@ -37,7 +39,7 @@ _start:
 	# Welcome to kernel mode! 
 	# To set up a stack, we simply set the esp register to point to the top of
 	# our stack (as it grows downwards).
-	movl $stack_top, %esp
+	movl $.Lstack_top, %esp
 	# We are now ready to actually execute C code. (see ./startup.cc)
 	call arch_startup
 

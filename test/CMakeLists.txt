@@ -39,14 +39,12 @@ macro(coredos_test TEST)
     set(TESTELF "test-${TEST}.elf")
 
     # Executable for debugging tests
-    coredos_executable("debug${TESTELF}" "${TEST}.cc")
+    coredos_executable("debug${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc)
     set_target_properties("debug${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "DEBUG=1")
-    set_target_properties("debug${TESTELF}" PROPERTIES EXCLUDE_FROM_ALL true)
 
     # Executable for FAIL* testing
-    coredos_executable("fail${TESTELF}" "${TEST}.cc")
+    coredos_executable("fail${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc)
     set_target_properties("fail${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "FAIL=1")
-    set_target_properties("fail${TESTELF}" PROPERTIES EXCLUDE_FROM_ALL true)
 
     # The normal (CTest) test
     coredos_executable(${TESTELF} "${TEST}.cc")
