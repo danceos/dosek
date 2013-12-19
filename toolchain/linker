@@ -57,21 +57,19 @@ def llvm_opt(input, output):
 
 def llvm_llc(file, output):
     subprocess.check_output([os.path.join(args.llvm_dir, "bin", "llc"),
-                             "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-o", output, file])
+                             "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss", "-mattr=-sse", "-o", output, file])
     return output
 
-
-
 def start_ld(flags, objects, output):
-    subprocess.check_output(["clang"] + flags + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
-                            + ["-o", output])
+    subprocess.check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
+                            + flags + ["-o", output])
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='Linker for CoRedOS.')
     parser.add_argument("--output", "-o", metavar='OUT', help='The file to generate')
-    parser.add_argument("--linker-prefix", metavar='PREFIX', help='Where are the llvm binaries located')
+    parser.add_argument("--linker-prefix", metavar='PREFIX', help='Output file prefix')
     parser.add_argument("--llvm-dir", metavar='LLVM_DIR', help='Where are the llvm binaries located')
 
     args, unkown_args = parser.parse_known_args()

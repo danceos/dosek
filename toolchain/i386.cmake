@@ -25,7 +25,7 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(ISA_C_FLAGS "-c -emit-llvm" CACHE INTERNAL STRING)
 set(ISA_CXX_FLAGS "" CACHE INTERNAL STRING)
 set(ISA_ASM_FLAGS "-m32" CACHE INTERNAL STRING)
-set(ISA_LD_FLAGS "-m32 -static -nostdlib" CACHE INTERNAL STRING)
+set(ISA_LD_FLAGS "-m32 -static -nostdlib -Qunused-arguments -Wl,--build-id=none" CACHE INTERNAL STRING)
 
 set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker script")
 

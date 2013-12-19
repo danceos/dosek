@@ -28,7 +28,7 @@ macro(coredos_executable ELFFILE)
 
 	# Set custom linker script
 	set_target_properties(${ELFFILE} PROPERTIES LINK_FLAGS
-				"-Wl,-T ${PROJECT_BINARY_DIR}/linker.ld ${ISA_LD_FLAGS} -Wl,--build-id=none --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}" )
+				"-lgcc -Wl,-T ${PROJECT_BINARY_DIR}/linker.ld ${ISA_LD_FLAGS} -Wl,--build-id=none --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}" )
 
     # We use our own linker script, that calls llvm-link, llc and the system linker
     SET(CMAKE_CXX_LINK_EXECUTABLE  "${PROJECT_SOURCE_DIR}/toolchain/linker --llvm-dir ${CCDIR} <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -o <TARGET>")
