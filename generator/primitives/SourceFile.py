@@ -27,7 +27,7 @@ class SourceFile:
             + [self.function_manager.source_element_declarations()] \
             + [self.function_manager.source_element_definitions()] \
 
-    def generate(self):
+    def expand(self, generator):
         # Get the source elements tree
         elements = self.source_elements()
-        return tools.format_source_tree(elements)
+        return tools.format_source_tree(generator, elements)

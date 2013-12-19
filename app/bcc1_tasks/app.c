@@ -14,6 +14,11 @@ DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
+
+void bar() {
+	ActivateTask(Handler13);
+}
+
 TASK(Handler11) {
 	unsigned int a = 0;
 
@@ -26,7 +31,13 @@ TASK(Handler11) {
 	a++;
 	a++;
 
-	ActivateTask(Handler13);
+	if (a == 12) {
+		ActivateTask(Handler13);
+	} else {
+		a = 12;
+		bar();
+	}
+
 
 	a++;
 	a++;

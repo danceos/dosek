@@ -6,32 +6,32 @@
     @brief Builds a source line.
 """
 
+from generator.Atom import Atom
+from generator.tools import format_source_tree
 
-class SourceElement:
+class SourceElement(Atom):
     def __init__(self):
-        self.__indent = 0
-    def indent_spaces(self):
-        return " " * (self.__indent * 4)
-    def set_indent(self, indent):
-        self.__indent = indent
-    def get_indent(self):
-        return self.__indent
-
-
+        Atom.__init__(self)
 
 class Comment(SourceElement):
     def __init__(self, text):
         SourceElement.__init__(self)
         self.text = text
-    def generate(self):
+    def expand(self, generator):
         if "\n" in self.text:
             # A multiline comment
-            prefixed = self.text.replace("\n", "\n" + self.indent_spaces()+ " * ")
-            return "\n" + self.indent_spaces() + "/* " + prefixed + "\n" \
-                + self.indent_spaces() + " */\n"
+            prefixed = [Indent(), "/* ",]
+            for line in self.text.split("\n"):
+                prefixed += [line + "\n", Indent(), " * " ]
+            prefixed = prefixed[:-2] + [Indent(), " */\n"]
+            return prefixed
         else:
             # Single line comment
-            return "\n" + self.indent_spaces() + "// " + self.text + "\n"
+            return [Indent(), "// " + self.text + "\n"]
+
+    @staticmethod
+    def atom(fmt, *args):
+        return {"__token": Comment, "text": fmt % args}
 
 
 class CPPStatement(SourceElement):
@@ -40,37 +40,56 @@ class CPPStatement(SourceElement):
         self.cmd = cmd
         self.arg = arg
 
-    def generate(self):
-        return "#" + self.indent_spaces() + self.cmd + " " + self.arg + "\n"
+    def expand(self, generator):
+        return ["#", Indent(), self.cmd + " " + self.arg + "\n"]
 
 class Statement(SourceElement):
     def __init__(self, statment):
         SourceElement.__init__(self)
         self.statement = statement
 
-    def generate(self):
-        return self.indent_spaces() + self.statement + ";"
+    def expand(self):
+        return [Indent(), self.statement + ";"]
 
 
 class Block(SourceElement):
-    def __init__(self, static_guard = ""):
+    # Class Member
+    indentation_level = 0
+
+    @staticmethod
+    def indent_spaces():
+        return " " * (Block.indentation_level * 4)
+
+    def __init__(self, static_guard = "", statements = None):
         SourceElement.__init__(self)
-        self.inner = []
+        if statements is None:
+            self.inner = []
+        else:
+            self.inner = statements
         self.static_guard = static_guard
 
     def block_guard(self):
         return self.static_guard
 
+    @staticmethod
+    def atom(static_guard, statements):
+        return {"__token": Block, "static_guard": static_guard,
+                "__statements": statements}
+
     def add(self, obj):
         self.inner.append(obj)
 
-    def generate(self):
-        ret = self.indent_spaces() + self.block_guard() + " {\n"
+    def expand(self, generator):
+        ret = [Block.indent_spaces() + self.block_guard() + " {\n"]
+        Block.indentation_level += 1
         for i in self.inner:
-            i.set_indent(self.get_indent() + 1)
-            ret += i.generate();
-        ret += self.indent_spaces() + "}\n"
+            ret += format_source_tree(generator, i)
+        Block.indentation_level -= 1
+        ret += Block.indent_spaces() + "}\n"
         return ret;
+
+    def __str__(self):
+        return "<<" + ", ".join([str(x) for x in self.inner]) + ">>"
 
 
 class ForRange(Block):
@@ -95,12 +114,18 @@ class Statement(SourceElement):
     def __init__(self, statement):
         SourceElement.__init__(self)
         self.statement = statement
-    def generate(self):
-        return self.indent_spaces() + self.statement + ";\n";
+    def expand(self, generator):
+        return [Indent(), self.statement + ";\n"]
 
+    @staticmethod
+    def atom():
+        return {"__token": Statement}
+    @staticmethod
+    def atom_return(expression):
+        return {"__token": Statement, "statement": "return %s" % expression}
 
-class Newline(SourceElement):
+class Indent(SourceElement):
     def __init__(self):
         SourceElement.__init__(self)
-    def generate(self):
-        return "\n"
+    def expand(self, generator):
+        return [Block.indent_spaces()]

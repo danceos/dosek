@@ -1,3 +1,3 @@
-from Atom import Atom, FunctionCall
+from BaseAtoms import *
 from SystemCall import SystemCall
 

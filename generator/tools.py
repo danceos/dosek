@@ -6,21 +6,28 @@
     @brief Santa's little helper.
 """
 
+from itertools import chain
+
 def abstract():
     import inspect
     caller = inspect.getouterframes(inspect.currentframe())[1][3]
     raise NotImplementedError(caller + ' must be implemented in subclass')
 
-variable_counter = 0
-def new_variable_name():
-    global variable_counter
-    retval = "var_" + str(variable_counter)
-    variable_counter += 1
-    return retval
-
-def format_source_tree(tree):
+def format_source_tree(generator, tree):
     if type(tree) == list:
-        return "".join([format_source_tree(x) for x in tree])
+        return "".join([format_source_tree(generator, x) for x in tree])
     else:
-        return tree.generate()
+        if hasattr(tree, "expand"):
+            return format_source_tree(generator, tree.expand(generator))
+        else:
+            return "".join(flatten(tree))
 
+
+def flatten(seq):
+    ret = []
+    for i in seq:
+        if type(i) == list:
+            ret += flatten(i)
+        else:
+            ret += [i]
+    return ret

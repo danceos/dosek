@@ -10,3 +10,12 @@ class SystemCall(Atom):
         self.abb      = abb
         self.rettype  = rettype
         self.arguments = arguments
+
+    @staticmethod
+    def atom(syscall, abb, return_variable, arguments):
+        return  {'__token': SystemCall,
+                 'syscall': syscall,
+                 'abb': abb,
+                 'return_variable': return_variable,
+                 'arguments': arguments}
+        

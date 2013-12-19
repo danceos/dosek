@@ -1,8 +1,7 @@
 #!/usr/bin/python
 import unittest
 
-from generator.types import *
-from SourceElement import Block, Statement, Newline
+from SourceElement import Block, Statement
 from generator import  tools
 
 class Function:
@@ -17,17 +16,17 @@ class Function:
         self.statements.append(statement)
 
     def source_element_declarations(self):
-        decl = "%s %s(%s)" %( self.rettype.generate(self.rettype),
+        decl = "%s %s(%s)" %( self.rettype,
                               self.name,
-                              ",".join([x.generate(x) for x in self.argstype]))
+                              ",".join(self.argstype))
         if self.extern_c:
             decl = 'extern "C" %s' % decl
         return Statement(decl);
 
     def source_element_definitions(self):
-        args = ["%s %s" %(CType.generate(x[1]), x[0]) 
+        args = ["%s %s" %(x[1], x[0])
                 for x in self.arguments()]
-        guard = "%s %s(%s)" %( self.rettype.generate(self.rettype),
+        guard = "%s %s(%s)" %( self.rettype,
                                self.name,
                                ",".join(args))
         if self.extern_c:
@@ -36,7 +35,7 @@ class Function:
         block = Block(guard)
         for stmt in self.statements:
             block.add(stmt)
-        return [block, Newline()]
+        return [block, "\n"]
 
     def arguments(self):
         ret = []
@@ -56,7 +55,7 @@ class  FunctionManager:
         # Sort by local and global includes
         for func in self.functions.values():
             ret.append(func.source_element_declarations())
-        ret.append(Newline())
+        ret.append("\n")
         return ret
 
     def source_element_definitions(self):
@@ -69,27 +68,27 @@ class  FunctionManager:
 class TestFunctionManager(unittest.TestCase):
     def test_function_manager(self):
         m = FunctionManager()
-        foo = Function("foo", void, [])
+        foo = Function("foo", "void", [])
         m.add(foo)
 
-        text = tools.format_source_tree(m.source_element_declarations())
+        text = tools.format_source_tree(None, m.source_element_declarations())
         self.assertEqual(text.strip(), """void foo();""")
 
 
-        text = tools.format_source_tree(m.source_element_definitions())
+        text = tools.format_source_tree(None, m.source_element_definitions())
         self.assertEqual(text.strip(), """void foo() {
 }""")
 
     def test_function_manager_args(self):
         m = FunctionManager()
-        foo = Function("foo", StatusType, [EventMaskRefType])
+        foo = Function("foo", "StatusType", ["EventMaskRefType"])
         m.add(foo)
 
-        text = tools.format_source_tree(m.source_element_declarations())
+        text = tools.format_source_tree(None, m.source_element_declarations())
         self.assertEqual(text.strip(), """StatusType foo(EventMaskRefType);""")
 
 
-        text = tools.format_source_tree(m.source_element_definitions())
+        text = tools.format_source_tree(None, m.source_element_definitions())
         self.assertEqual(text.strip(), """StatusType foo(EventMaskRefType arg0) {
 }""")
 

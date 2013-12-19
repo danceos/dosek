@@ -64,6 +64,7 @@ MACRO(COREDOS_BINARY)
 	   -pns=1 -out=${CMAKE_CURRENT_BINARY_DIR} 
 	   -march=${CMAKE_C_ARCH} 
 	   -analyze-tasks -dump-source-system
+       -dump-graphs
 	   ${COREDOS_BINARY_LLVM_BYTECODE}
        COMMENT "[${PROJECT_NAME}] Analyzing application with RTSC")
 

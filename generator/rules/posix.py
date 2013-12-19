@@ -11,15 +11,14 @@ class ReplaceShutdownByExit(Rule):
         Rule.__init__(self, RULE_PRIO_SYSTEM)
 
     def matches(self, generator, seq, idx):
-        if seq[idx]['token'] == SystemCall:
+        if SystemCall.isa(seq[idx]):
             return seq[idx]['syscall'] == "OSEKOS_ShutdownOS"
     def replace(self, generator, seq, idx):
         #include "<stdlib.h>
         generator.source_file.includes.add(Include("stdlib.h", system_include=True))
 
-        newtoken = {'token': FunctionCall,
+        newtoken = {'__token': FunctionCall,
                     'name': 'exit',
-                    'rettype': void,
                     'arguments': seq[idx]['arguments']}
         return self.replace_with(seq, idx, newtoken)
 

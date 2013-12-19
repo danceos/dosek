@@ -54,12 +54,11 @@ class TestIncludeManager(unittest.TestCase):
         m.add(Include("cpu_2.h", comment = "The secondary CPU header\nwith more comments"))
 
 
-        text = tools.format_source_tree(m.source_elements())
+        text = tools.format_source_tree(None, m.source_elements())
+        print text
         self.assertEqual(text, """#include <stdint.h>
-
 // The main CPU header
 #include "cpu.h"
-
 /* The secondary CPU header
  * with more comments
  */

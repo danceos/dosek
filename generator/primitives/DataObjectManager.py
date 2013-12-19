@@ -140,7 +140,7 @@ class TestDataObjectManager(unittest.TestCase):
         m.add(DataObject("int", "count", 42))
 
 
-        text = tools.format_source_tree(m.source_element_declaration())
+        text = tools.format_source_tree(None, m.source_element_declaration())
         self.assertEqual(text, """namespace data {
     extern FooBar foobar;
     extern int count;
@@ -154,7 +154,7 @@ class TestDataObjectManager(unittest.TestCase):
         m.add(DataObject("int", "count", 42))
 
 
-        text = tools.format_source_tree(m.source_element_allocation())
+        text = tools.format_source_tree(None, m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     FooBar foobar;
     int count = 42;
@@ -166,14 +166,14 @@ using namespace data;
         m = DataObjectManager()
         m.add(DataObject("Scheduler", "scheduler", dynamic_initializer = True))
 
-        text = tools.format_source_tree(m.source_element_allocation())
+        text = tools.format_source_tree(None, m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     Scheduler scheduler;
 }
 using namespace data;
 """)
 
-        text = tools.format_source_tree(m.source_element_initializer())
+        text = tools.format_source_tree(None, m.source_element_initializer())
         self.assertEqual(text, """void init_data() {
     data::scheduler.init();
 }
@@ -185,14 +185,14 @@ using namespace data;
         ForRange.count = 0
         m.add(DataObjectArray("Task", "tasks", "MAX_TASKS", dynamic_initializer = True))
 
-        text = tools.format_source_tree(m.source_element_allocation())
+        text = tools.format_source_tree(None, m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     Task tasks[MAX_TASKS];
 }
 using namespace data;
 """)
 
-        text = tools.format_source_tree(m.source_element_initializer())
+        text = tools.format_source_tree(None, m.source_element_initializer())
         self.assertEqual(text, """void init_data() {
     for (int for_range_0 = 0; for_range_0 < MAX_TASKS; for_range_0++) {
         data::tasks[for_range_0].init();
@@ -207,7 +207,7 @@ using namespace data;
         m.add(DataObject("C", "c", dynamic_initializer = True), 3)
         m.add(DataObject("B", "b", dynamic_initializer = True), 2)
 
-        text = tools.format_source_tree(m.source_element_initializer())
+        text = tools.format_source_tree(None, m.source_element_initializer())
         self.assertEqual(text, """void init_data() {
     data::a.init();
     data::b.init();
@@ -224,7 +224,7 @@ using namespace data;
         tasks.add_static_initializer("{0, 3, 1}")
 
 
-        text = tools.format_source_tree(m.source_element_allocation())
+        text = tools.format_source_tree(None,m.source_element_allocation())
         self.assertEqual(text, """namespace data {
     Task tasks[MAX_TASKS] = {/* 0 */ {0, 1, 2}, /* 1 */ {0, 3, 1}};
 }
