@@ -25,14 +25,15 @@ foreach(ELF ${EXECUTABLES})
 	set(GRUBDIR "${BOOTDIR}/grub")
 	file(MAKE_DIRECTORY ${GRUBDIR})
 
-	# Copy and configure grub configuration file
-	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/grub.cfg.in" "${GRUBDIR}/grub.cfg")
+	# Copy the grub configuration file
+	file(COPY grub.cfg DESTINATION ${GRUBDIR})
 
 	# Create bootable ISO from ELF
 	add_custom_command(
 		DEPENDS ${ELF}
 		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${ELF}> ${BOOTDIR}/coredos.elf
 		COMMAND ${GRUB_MKRESCUE} -o ${ISOFILE} ${ISODIR}
+		COMMAND ${CMAKE_COMMAND} -E remove ${BOOTDIR}/coredos.elf
 		COMMENT "[${PROJECT_NAME}] Generating bootable grub iso."
 		OUTPUT ${ISOFILE}
 	)
