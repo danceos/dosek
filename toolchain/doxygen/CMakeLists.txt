@@ -5,8 +5,7 @@ if(DOXYGEN_FOUND)
 # into the doxyfile.  For example, CMake will replace @PROJECT_NAME@ in
 # a configured file with the CMake PROJECT_NAME variable's value.
 #
-#set(DOXY_OUTPUT ${CMAKE_CURRENT_BINARY_DIR})
-set(DOXY_OUTPUT /proj/i4danceos/coredos/doc)
+set(DOXY_OUTPUT ${PROJECT_BINARY_DIR}/doc CACHE STRING "Doxygen output directory")
 set(DOXY_HTML_OUTPUT "html")
 set(DOXY_XML_OUTPUT ${DOXY_OUTPUT}/xml CACHE INTERNAL "Path to doxygen xml data for sphinx/breathe")
 
