@@ -8,12 +8,9 @@
 
 namespace arch {
 
-/** OS/kernel page directory used during syscalls and startup */
-extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectory pagedir_os;
-
 void MMU::init() {
 	// enable the OS page directory
-	pagedir_os.enable();
+	PageDirectory::enable(pagedir_os);
 
 	// enable paging and write protection in CR0
 	unsigned int cr0;
@@ -22,9 +19,34 @@ void MMU::init() {
 	asm volatile("mov %0, %%cr0":: "b"(cr0));
 }
 
-void PageDirectory::enable(void) const {
-	// load directory address in CR3
-	asm volatile("mov %0, %%cr3":: "b"(entries));
+}
+
+// Pagefault interrupt handler printing details for debugging
+#if DEBUG
+#include "idt.h"
+#include "serial.h"
+#include "os/util/inline.h"
+extern Serial serial;
+
+namespace arch {
+
+/** \brief Debug pagefault handler
+ *
+ * Prints invalid address and instruction on serial console.
+ */
+ISR(14) {
+	uint32_t fault_addr, cr3;
+	asm("mov %%cr2, %0" : "=r"(fault_addr));
+	asm("mov %%cr3, %0" : "=r"(cr3));
+
+	serial << "PAGE FAULT for 0x" << hex << fault_addr;
+	serial << ", IP @ 0x" << sf->cpu_context.eip;
+	serial << ", PD @ 0x" << cr3;
+	serial << endl;
+
+	asm("hlt");
 }
 
 }
+
+#endif

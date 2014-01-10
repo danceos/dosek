@@ -34,7 +34,7 @@ set(SRCS
 	startup.s
 	gdt.cc
 	idt.cc
-	idt.s
+	idt.S
 	paging.cc
 	cga.cc
 	serial.cc

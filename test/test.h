@@ -58,6 +58,7 @@
 
 #include "serial.h"
 #include "output.h"
+#include "machine.h"
 #include "util/encoded.h"
 #include "util/inline.h"
 
@@ -171,7 +172,7 @@ void test_equality(expected_value_t real_value, const expected_value_t expected_
 {
 	if((equal && real_value == expected_value) || (!equal && real_value != expected_value)) {
 		#ifndef FAIL
-		serial << "POSITIVE" << endl;
+		serial << "  +" << endl;
 		#endif
 		#ifdef DEBUG
 		kout.setcolor(CGA::GREEN, CGA::BLACK);
@@ -182,7 +183,7 @@ void test_equality(expected_value_t real_value, const expected_value_t expected_
 		positive_tests++;
 	} else {
 		#ifndef FAIL
-		serial << "NEGATIVE " << real_value << (equal ? " != " : " == ") << expected_value << endl;
+		serial << "  -[" << real_value << (equal ? " != " : " == ") << expected_value << "]" << endl;
 		#endif
 		#ifdef DEBUG
 		kout.setcolor(CGA::RED, CGA::BLACK);
@@ -318,6 +319,31 @@ forceinline void run_checkable_function(void (* volatile testfun)(void), T& resu
 __attribute__((weak_import))
 extern void test_prepare();
 
+void test_init(void) {
+	// prepare tests
+	global_all_ok = true;
+	if (test_prepare != NULL) {
+		test_prepare();
+	}
+
+	// run tests
+	trace_start_marker();
+}
+
+
+
+void test_finish(void) {
+	trace_end_marker();
+
+	#ifndef FAIL
+	serial << "Tests finished: ";
+	serial << (global_all_ok ? "ALL OK" : "some tests failed");
+	serial << endl;
+	#endif
+}
+
+
+
 extern "C" void os_main(void)
 {
 	#ifdef DEBUG
@@ -327,33 +353,20 @@ extern "C" void os_main(void)
 	#endif
 
 	// prepare tests
-	global_all_ok = true;
-	if (test_prepare != NULL) {
-		test_prepare();
-	}
+	test_init();
 
 	// run tests
-	trace_start_marker();
 	test();
-	trace_end_marker();
 
-	#ifndef FAIL
-	serial << "Tests finished: ";
-	serial << (global_all_ok ? "ALL OK" : "some tests failed");
-	serial << endl;
-	#endif
+	// finish tests
+	test_finish();
 
 	// halt system
-	#ifndef FAIL
-	asm("int $0x03"); // triple fault, exit emulator
-	#endif
 	#ifdef DEBUG
 	kout.setcolor(CGA::RED, CGA::WHITE);
 	kout << "CoRedOS halt" << endl;
-	asm("hlt"); // stop emulator, don't exit
+	Machine::halt();// stop emulator, don't exit
 	#endif
 
-	for(;;) {
-		asm("nop");
-	}
+	Machine::shutdown();
 } 

@@ -23,6 +23,8 @@ extern "C" void arch_startup()
 	// setup paging
 	MMU::init();
 
+	// TODO: enable interrupts here?
+
 	// Proceed to generic initialisation
 	init_generic();
 }

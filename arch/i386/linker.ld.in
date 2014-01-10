@@ -27,7 +27,9 @@ SECTIONS {
 
 		/* IRQ Handlers */
 		KEEP (*(".text.irqhandlers*")) /* ASM */
-		*(".text.irq_handler") /* C */
+		KEEP (*(".text.idt*")) /* ASM */
+		*(".text.irq_handler*") /* C */
+		*(".text.isrs*") /* C */
 
 		/* constructors */
 		. = ALIGN(8);

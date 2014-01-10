@@ -75,8 +75,42 @@ class PageDirectory {
 	PageDirectoryEntry entries[1024] __attribute__ ((aligned (4096)));
 
 public:
-	/** \brief Enable/use this page directory by loading its address into CR3 register */
-	void enable(void) const;
+	/** \brief Enable/use page directory by loading its address into CR3 register */
+	static inline void enable(PageDirectory &pagedir) {
+		// load directory address in CR3
+		asm volatile("mov %0, %%cr3":: "r"(pagedir.entries));
+	}
+
+	/** \brief Enable/use page directory by loading its address into CR3 register */
+	static inline void enable(const PageDirectoryEntry pagedir[]) {
+		enable(*(PageDirectory *) pagedir);
+	}
+};
+
+
+
+/**
+ * @name Page directories
+ * @{
+ */
+/** \brief OS/kernel page directory used during syscalls and startup */
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_os[1024];
+
+// TODO: generate task directory declarations
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task1[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task2[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task3[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task4[1024];
+/**@}*/
+
+/** \brief Array of task page directories */
+// horrible C++ type declarations ...
+constexpr const PageDirectoryEntry (* const pagedirs[])[1024] = {
+	&pagedir_os,
+	&pagedir_task1,
+	&pagedir_task2,
+	&pagedir_task3,
+	&pagedir_task4
 };
 
 
@@ -86,6 +120,11 @@ class MMU {
 public:
 	/** \brief Initialize and enable paging */
 	static void init();
+
+	/** \brief Switch to page directory of specific task */
+	static inline void switch_task(uint32_t id) {
+		PageDirectory::enable(*pagedirs[id]);
+	}
 };
 
 }
