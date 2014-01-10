@@ -187,7 +187,7 @@ public:
 	};
 
 	template<typename T, class RET = Encoded_Static<_A,  B * T::B>>
-	RET operator*(const T& t) const
+	inline RET operator*(const T& t) const
 	{
 		TAssert(_B * T::B < _A);
 

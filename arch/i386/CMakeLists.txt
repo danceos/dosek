@@ -42,6 +42,8 @@ set(SRCS
 	lapic.cc
 	ioapic.cc
 	pit.cc
+	dispatch.cc
+	syscall.cc
 )
 
 # Create arch library
@@ -49,6 +51,7 @@ add_library(arch ${SRCS})
 target_link_libraries(arch generic)
 
 # Add to include directories
+coredos_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
 set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)
 
 # Setup linker script

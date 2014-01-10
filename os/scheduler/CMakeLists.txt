@@ -1,6 +1,6 @@
-
 set(SRCS
 	tasklist.cc
+	thetasks.cc
 	scheduler.cc
 )
 

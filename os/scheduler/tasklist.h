@@ -3,7 +3,7 @@
 
 
 /**
- * @file 
+ * @file
  * @ingroup scheduler
  * @brief The task list
  */
@@ -39,7 +39,7 @@ public:
 	static constexpr auto idle_prio = EC(12,0);
 
 	TaskList() :
-		task1(0, 0), 
+		task1(0, 0),
 		task2(0, 0),
 		task3(0, 0),
 		task4(0, 0) {}
@@ -83,11 +83,11 @@ public:
 
 		// unencoded comparison
 		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
-		
+
 		// encoded check of comparison
 		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
 		                                         // this<=t => diff = t.vc - vc
-		static volatile A_t ta = T::A; // prevent % -> *,>>,+ optimization
+		static const volatile A_t ta = T::A; // prevent % -> *,>>,+ optimization
 		value_coded_t sigCond = diff % ta;
 		const value_coded_t sigPos = S::B - T::B;
 		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;
@@ -188,7 +188,7 @@ public:
 	template<typename T, typename S>
 	forceinline value_coded_t promote(const T& id, const S& newprio) {
 		// if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
-		
+
 		return set(id, newprio);
 	}
 
@@ -211,7 +211,7 @@ public:
 
 		return sig1+sig2;
 	}
-	
+
 	// DEBUGGING
 	void print() const {
 		//kout << "(" << task1.decode() << "), ";
@@ -220,42 +220,6 @@ public:
 		//kout << "(" << task4.decode() << ")" << endl;
 	}
 };
-
-/* old example how to check for correct control flow by caller
-bool start(TaskList &tl, const Task &t) {
-	value_coded_t res = tl.insert(EC(3, t.getID()), EC(4, t.getPrio()));
-
-	Encoded_Static<A0, 13> i1;
-	Encoded_Static<A0, 12> i2;
-	Encoded_Static<A0, 11> i3;
-	Encoded_Static<A0, 10> i4;
-	switch(t.getID()) {
-		case 1:
-			i1.setCodedValue(res);
-			assert(i1 == 0);
-			return (i1 == 0);
-
-		case 2:
-			i2.setCodedValue(res);
-			assert(i2 == 0);
-			return (i2 == 0);
-
-		case 3:
-			i3.setCodedValue(res);
-			assert(i3 == 0);
-			return (i3 == 0);
-
-		case 4:
-			i4.setCodedValue(res);
-			assert(i4 == 0);
-			return (i4 == 0);
-
-		default:
-			assert(false);
-			return false;
-	}
-}
-*/
 
 }; // namespace scheduler
 }; // namespace os

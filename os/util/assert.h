@@ -12,6 +12,8 @@
 
 //! Runtime assert, print assertion if debugging, else causes trap
 #if DEBUG
+#include "output.h"
+extern output_t kout;
 #define assert(x) { if((x)==0) { \
     kout << "ASSERT " << __FILE__ << ":" << __LINE__ << " " << __func__ << endl; \
     Machine::halt();}}

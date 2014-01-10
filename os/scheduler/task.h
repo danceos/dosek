@@ -8,20 +8,25 @@
 
 
 /**
- * @file 
+ * @file
  * @ingroup scheduler
  * @brief The task handler
  */
-#include "util/encoded.h"
-#include "util/inline.h"
+#include "os/util/encoded.h"
+#include "os/util/inline.h"
 
 namespace os {
 namespace scheduler {
 
-#define TASK(taskname) noinline void os::tasks::start_##taskname (void)
+// static per task stack size (4K = 1 x86 page)
+// TODO: make configurable
+#define STACKSIZE 4096
 
-/** 
- * The basic task class 
+#define TASK(taskname) \
+	noinline extern "C" void taskname ## _function (void)
+
+/**
+ * The basic task class
  * */
 class Task {
 public:
@@ -29,6 +34,7 @@ public:
 	typedef uint8_t prio_t;
 	typedef void (* const fptr_t)(void);
 
+	// task ID
 	const id_t id;
 	template<typename T> constexpr T enc_id() const {
 		return T(id);
@@ -37,6 +43,7 @@ public:
 		return Encoded_Static<A0, B>(id);
 	}
 
+	// static priority
 	const prio_t prio;
 	template<typename T> constexpr T enc_prio() const {
 		return T(prio);
@@ -45,9 +52,26 @@ public:
 		return Encoded_Static<A0, B>(prio);
 	}
 
+	// task function
 	fptr_t fun;
 
-	constexpr Task(id_t _id, prio_t _prio, void (*f)(void)) : id(_id), prio(_prio), fun(f) {}
+	// task stack
+	void * const stack;
+
+	// reference to saved stack pointer
+	// TODO: encode?
+	void* &sp;
+
+	inline void reset_sp(void) const {
+		sp = (uint8_t*)stack + STACKSIZE - 16;
+	}
+
+	inline bool is_running(void) const {
+		return sp == (uint8_t*)stack + STACKSIZE - 16;
+	}
+
+	constexpr Task(id_t _id, prio_t _prio, fptr_t f, void *s, void* &sptr)
+	 	: id(_id), prio(_prio), fun(f), stack(s), sp(sptr) {}
 };
 
 }; // namespace scheduler

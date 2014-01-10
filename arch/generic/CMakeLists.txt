@@ -8,6 +8,7 @@ set(SRCS
 )
 
 # Add to include directories
+coredos_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
 set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)
 
 # Link startup code into library
