@@ -38,6 +38,7 @@ set(SRCS
 	paging.cc
 	cga.cc
 	serial.cc
+	pic.cc
 )
 
 # Create arch library

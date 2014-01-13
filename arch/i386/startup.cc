@@ -7,6 +7,7 @@
 #include "gdt.h"
 #include "idt.h"
 #include "paging.h"
+#include "pic.h"
 
 /** Initialisation stub for generic startup code */
 extern void init_generic();
@@ -22,6 +23,9 @@ extern "C" void arch_startup()
 
 	// setup paging
 	MMU::init();
+
+	// setup PIC
+	PIC::init();
 
 	// TODO: enable interrupts here?
 
