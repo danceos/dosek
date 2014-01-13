@@ -41,6 +41,7 @@ set(SRCS
 	pic.cc
 	lapic.cc
 	ioapic.cc
+	pit.cc
 )
 
 # Create arch library

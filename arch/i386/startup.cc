@@ -10,6 +10,7 @@
 #include "pic.h"
 #include "lapic.h"
 #include "ioapic.h"
+#include "pit.h"
 
 /** Initialisation stub for generic startup code */
 extern void init_generic();
@@ -34,6 +35,9 @@ extern "C" void arch_startup()
 
 	// setup I/O APIC
 	IOAPIC::init();
+
+	// setup PIT
+	PIT::init();
 
 	// TODO: enable interrupts here?
 
