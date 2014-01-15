@@ -34,7 +34,6 @@ TASK(Handler11) {
 	if (a == 12) {
 		ActivateTask(Handler13);
 	} else {
-		a = 12;
 		bar();
 	}
 
@@ -51,7 +50,6 @@ TASK(Handler12) {
 	a++;
 	a++;
 	a++;
-
 	TerminateTask();
 }
 

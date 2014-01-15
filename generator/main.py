@@ -23,6 +23,7 @@ if __name__ == "__main__":
     import ObjectFile
     import Generator
     from generator.rules import *
+    from generator.graph import SystemGraph
 
 
     usage = "usage: %prog [options]"
@@ -49,6 +50,11 @@ if __name__ == "__main__":
     app_object = ObjectFile.ObjectFile(options.nm, options.app_object)
     rtsc_analysis = RTSCAnalysis.RTSCAnalysis(options.rtsc_analyze_xml)
 
+    graph = SystemGraph()
+    graph.read_system_description(system_description)
+    graph.read_rtsc_analysis(rtsc_analysis)
+    graph.fsck()
+    open("/tmp/graph.dot", "w+").write(graph.dump_as_dot())
 
     generator = Generator.Generator(system_description, app_object, rtsc_analysis)
     generator.load_rules(base_rules())

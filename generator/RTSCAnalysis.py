@@ -3,6 +3,8 @@
 from lxml import objectify
 import os
 
+from collections import namedtuple
+
 class RTSCAnalysis:
     """The RTSCAnalysis class represents the results of the application
 analysis done by the RTSC. Informations are for example for every
@@ -33,6 +35,30 @@ system call: Who called it? In which ABB?"""
         def calling_event(self):
             return self.xml.calling.event
 
+    def get_abbs(self):
+        abbs = []
+        # Gather all ABB xml nodes under <abbgraph>
+        for abb_xml in self.rtsc_dom.xpath('//*[local-name()=\'abb\']'):
+            abb = self.ABB(id = int(abb_xml.get("name")),
+                           in_function=abb_xml.get("infunction"),
+                           guard = abb_xml.get("guard"),
+                           func_entry = abb_xml.get("func_entry") == "true")
+            abbs.append(abb)
+        return abbs
+
+    def get_edges(self):
+        # Gather all ABB xml nodes under <abbgraph>
+        deps = []
+        for abb_xml in self.rtsc_dom.xpath('//*[local-name()=\'abb\']'):
+            for dep_xml in abb_xml.xpath('*[local-name()=\'dependency\']'):
+                dep = self.Dependency(source = int(abb_xml.get("name")),
+                                 target = int(dep_xml.get("target")),
+                                 type = dep_xml.get("type"))
+                deps.append(dep)
+        return deps
+
+    ABB = namedtuple('ABB', ['id', 'in_function', 'guard', 'func_entry'])
+    Dependency = namedtuple('Dependency', ['source', 'target', 'type'])
 
 ################################################################
 ##
