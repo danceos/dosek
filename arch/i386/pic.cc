@@ -8,8 +8,7 @@
 
 namespace arch {
 
-void PIC::remap(uint8_t offset1, uint8_t offset2)
-{
+void PIC::remap(uint8_t offset1, uint8_t offset2) {
 	// save masks
 	uint8_t mask1 = inb(PIC1_DATA);
 	uint8_t mask2 = inb(PIC2_DATA);
@@ -51,10 +50,7 @@ void PIC::disable() {
 
 void PIC::init() {
 	// remap interrupts to avoid conflicts
-	remap(0x20, 0x28);
-
-	// TODO: disable PIC when using APIC
-	//disable();
+	remap(PIC_OFFSET, PIC_OFFSET+8);
 }
 
 }; // namespace arch

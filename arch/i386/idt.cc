@@ -7,6 +7,7 @@
 #include "idt.h"
 #include "gdt.h"
 #include "exception.h"
+#include "lapic.h"
 
 #if DEBUG
 #include "serial.h"
@@ -33,13 +34,16 @@ extern "C" __attribute__((naked)) void unhandled_handler() {
 	asm("hlt");
 	#endif
 
+	// send end-of-interrupt (unless exception)
+	if(intno > 31) LAPIC::send_eoi();
+
 	// jump to exit code
 	asm volatile("jmp handler_exit" :: "S"(ctx));
 }
 
 
 
-extern "C" IDTDescriptor theidt[256]; 
+extern "C" IDTDescriptor theidt[256];
 constexpr InterruptDescriptorTable IDT::idt __attribute__ ((aligned (8))) = {
 	sizeof(theidt)-1,
 	&theidt[0]

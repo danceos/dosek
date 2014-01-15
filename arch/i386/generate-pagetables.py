@@ -70,8 +70,8 @@ def read_regions(objdump, elf_file):
 def generate_pagetables(regions, allowed, supervisor_only, is_supervisor=False):
     """Generate static pagetables from regions"""
 
-    # init array of pagetables
-    pagetables = [ [] ];
+    # init dict of pagetables
+    pagetables = {};
 
     # iterate allowed regions
     for rname in allowed:
@@ -102,12 +102,8 @@ def generate_pagetables(regions, allowed, supervisor_only, is_supervisor=False):
         pagetable = (start & 0xFFC00000) >> 22
         offset = (start & 0x003FF000) >> 12
 
-        # create empty pagetables as needed
-        for x in range(pagetable+1 - len(pagetables)):
-            pagetables.append([])
-
-        # get table for entry
-        table = pagetables[pagetable]
+        # get/create empty pagetable as needed
+        table = pagetables.setdefault( pagetable, [] )
 
         # create empty pagetable entries as needed
         for x in range(offset+pages - len(table)):
@@ -126,12 +122,14 @@ def write_output(filename, ptables, paging_start):
     f = open(filename, "w")
     f.write(HEADER)
 
+    # absolute address of current pagetable/pagedir
     offset = paging_start
     for name, pagetables in iter(sorted(ptables.items())):
+        # start of pagetables for this pagedir
         start = offset
 
         # print all pagetables
-        for idx, table in enumerate(pagetables):
+        for idx, table in iter(sorted(pagetables.items())):
             offset += 4096
             f.write(PAGETABLE.format(name + "_" + str(idx)))
             for page in table:
@@ -144,11 +142,14 @@ def write_output(filename, ptables, paging_start):
         # print one pagedirectory
         f.write(PAGEDIR.format(name))
         offset += 4096
-        for idx, table in enumerate(pagetables):
-            if(table == []):
-                f.write("\t{},\n")
+        table = 0 # non-empty pagetable number
+        for idx in xrange(0, 1023):
+            if idx in pagetables:
+                f.write("""\t{{ {}, true }},\n""".format(hex(start+table*4096)))
+                table += 1
             else:
-                f.write("""\t{{ {}, true }},\n""".format(hex(start+idx*4096)))
+                f.write("\t{},\n")
+
         f.write("""};\n""")
 
     # close file and exit
@@ -158,10 +159,10 @@ def main(options, args):
     regions = read_regions(options.objdump, options.elf_file)
 
     # regions we are interested in
-    allowed_common = ["text_common", "text_fail_allowed", "text", "tss", "data_fail", "data"]
-    allowed_os = ["text_os", "stack_os"] + allowed_common
-    allowed_task = ["text_os", "text_task{}", "stack_task{}"] + allowed_os
-    supervisor_only = ["text_os", "tss", "stack_os"]
+    allowed_common = ["text_common", "text_fail_allowed", "text", "tss", "data_fail", "data", "text_os", "stack_os"]
+    allowed_os = ["ioapic", "lapic"] + allowed_common
+    allowed_task = ["text_task{}", "stack_task{}"] + allowed_common
+    supervisor_only = ["text_os", "tss", "stack_os", "ioapic", "lapic"]
 
     ptables = {}
     ptables["os"] = generate_pagetables(regions, allowed_os, supervisor_only, True)

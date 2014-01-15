@@ -39,6 +39,8 @@ set(SRCS
 	cga.cc
 	serial.cc
 	pic.cc
+	lapic.cc
+	ioapic.cc
 )
 
 # Create arch library

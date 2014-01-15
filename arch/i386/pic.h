@@ -21,7 +21,8 @@ class PIC {
 		PIC1_DATA = PIC1+1,
 		PIC2_COMMAND = PIC2,
 		PIC2_DATA = PIC2+1,
-		PIC_EOI = 0x20 //!< End-of-interrupt command code
+		PIC_EOI = 0x20, //!< End-of-interrupt command code
+		PIC_OFFSET = 0x30 //!< Vector (offset) of first PIC interrupt
 	};
 
 public:
@@ -43,7 +44,8 @@ public:
 
 	/** \brief Send end-of-interrupt signal
 	 *
-	 * \param irq Acknowledged IRQ number (original, not remapped value) */
+	 * \param irq Acknowledged IRQ number (original, not remapped value)
+	 */
 	static inline void sendEOI(uint8_t irq) {
 		if(irq >= 8)
 			outb(PIC2_COMMAND, PIC_EOI);

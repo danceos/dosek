@@ -8,6 +8,8 @@
 #include "idt.h"
 #include "paging.h"
 #include "pic.h"
+#include "lapic.h"
+#include "ioapic.h"
 
 /** Initialisation stub for generic startup code */
 extern void init_generic();
@@ -26,6 +28,12 @@ extern "C" void arch_startup()
 
 	// setup PIC
 	PIC::init();
+
+	// setup local APIC
+	LAPIC::init();
+
+	// setup I/O APIC
+	IOAPIC::init();
 
 	// TODO: enable interrupts here?
 

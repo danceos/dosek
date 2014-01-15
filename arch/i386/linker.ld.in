@@ -94,19 +94,19 @@ SECTIONS {
 		*(".text.Task2_*")
 		*(".rodata.Task2_*")
 		_etext_task2 = .;
-		
+
 		. = ALIGN(4096);
 		_stext_task3 = .;
 		*(".text.Task3_*")
 		*(".rodata.Task3_*")
 		_etext_task3 = .;
-		
+
 		. = ALIGN(4096);
 		_stext_task4 = .;
 		*(".text.Task4_*")
 		*(".rodata.Task4_*")
 		_etext_task4 = .;
-		
+
 		/* */
 		. = ALIGN(4096);
 		_etext_fail = .;
@@ -162,7 +162,7 @@ SECTIONS {
 		_sstack_os = .;
 		*(".kernel_stack")
 		_estack_os = .;
-		
+
 		. = ALIGN(4096);
 		_sstack_task1 = .;
 		*(".data.Task1_stack")
@@ -172,7 +172,7 @@ SECTIONS {
 		_sstack_task2 = .;
 		*(".data.Task2_stack")
 		_estack_task2 = .;
-		
+
 		. = ALIGN(4096);
 		_sstack_task3 = .;
 		*(".data.Task3_stack")
@@ -187,7 +187,7 @@ SECTIONS {
 
 		/* Data */
 		_sdata_fail = .;
-		
+
 		_sdata_os = .;
 		*(".data._Z*2os*")
 		_edata_os = .;
@@ -203,12 +203,12 @@ SECTIONS {
 		_sdata_task2 = .;
 		*(".data.Task2_*");
 		_edata_task2 = .;
-		
+
 		. = ALIGN(4096);
 		_sdata_task3 = .;
 		*(".data.Task3_*");
 		_edata_task3 = .;
-		
+
 		. = ALIGN(4096);
 		_sdata_task4 = .;
 		*(".data.Task4_*");
@@ -220,6 +220,16 @@ SECTIONS {
 		_edata = .;
 		_edata_fail = .;
 	}
+
+	/* Memory-mapped I/O APIC */
+	_sioapic = 0xFEC00000;
+	ioapic = 0xFEC00000;
+	_eioapic = 0xFEC00FFF;
+
+	/* Memory-mapped Local APIC */
+	_slapic = 0xFEE00000;
+	lapic = 0xFEE00000;
+	_elapic = 0xFEE00FFF;
 
 	/* Get rid of unnecessary GCC bits */
 	/DISCARD/ :	{
