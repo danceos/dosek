@@ -10,6 +10,8 @@
 #include "idt.h"
 #include "pic.h"
 #include "ioapic.h"
+#include "os/counter.h"
+#include "paging.h"
 
 namespace arch {
 
@@ -44,22 +46,13 @@ void PIT::set_periodic(uint16_t rate) {
 
 
 
-/** \brief System tick counter
- *
- * Temporarily defined here, will be moved to a
- * Counter/Alarm implemenatation in os/
- */
-extern "C" volatile uint32_t ticks = 0;
-
 /** \brief PIT interrupt handler */
-IRQ_HANDLER(48) {
-	// increment tick counter
-	ticks++;
+ISR(48) {
+	// increment counters
+	os::Counter::tick();
 
 	// send end of interrupt
 	LAPIC::send_eoi();
-
-	Machine::return_from_interrupt();
 }
 
 }; // namespace arch
