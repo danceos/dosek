@@ -9,6 +9,8 @@ class AtomicBasicBlock(GraphObject):
         self.outgoing_edges = []
         self.incoming_edges = []
 
+        self.type = "computation"
+        self.arguments = []
 
     def graph_edges(self):
         return self.outgoing_edges
@@ -16,8 +18,8 @@ class AtomicBasicBlock(GraphObject):
     def set_guard(self, guard):
         self.guard = guard
 
-    def add_cfg_edge(self, target):
-        edge = ControlFlowEdge(self, target)
+    def add_cfg_edge(self, target, type = 'local'):
+        edge = ControlFlowEdge(self, target, type = type)
         self.outgoing_edges.append(edge)
         target.incoming_edges.append(edge)
 
@@ -27,11 +29,31 @@ class AtomicBasicBlock(GraphObject):
     def get_incoming_edges(self, type):
         return [x for x in self.incoming_edges if x.type == type]
 
-    def remove_cfg_edge(self, to_abb):
+    def get_outgoing_nodes(self, type):
+        return [x.target for x in self.outgoing_edges if x.type == type]
+
+    def get_incoming_nodes(self, type):
+        return [x.source for x in self.incoming_edges if x.type == type]
+
+
+    def remove_cfg_edge(self, to_abb, type = 'local'):
         for edge in self.outgoing_edges:
-            if edge.target == to_abb:
+            if edge.target == to_abb and edge.type == type:
                 self.outgoing_edges.remove(edge)
                 to_abb.incoming_edges.remove(edge)
+
+    def make_it_a_syscall(self, type, arguments):
+        if type.startswith("OSEKOS_"):
+            type = type[len("OSEKOS_"):]
+        self.type = type
+        args = []
+        # Make the string arguments references to system objects
+        for x in arguments:
+            if x.startswith("OSEKOS_TASK_Struct_"):
+                handler_name = x[len("OSEKOS_TASK_Struct_"):]
+                x = self.system.functions["OSEKOS_TASK_" + handler_name]
+            args.append(x)
+        self.arguments = args
 
     def fsck(self):
         assert self.system.find_abb(self.abb_id) == self
@@ -48,6 +70,11 @@ class AtomicBasicBlock(GraphObject):
             # Source abb can be found
             assert self.system.find_abb(edge.source.abb_id) == edge.source
 
+    def dump(self):
+        if self.type == "computation":
+            return {"type": self.type}
+        return {'type': self.type,
+                'arguments': repr(self.arguments)}
 
     def __repr__(self):
         return "ABB%d"%(self.abb_id)
@@ -59,6 +86,12 @@ class ControlFlowEdge(Edge):
        context)"""
 
     def __init__(self, source, target, type = 'local'):
-        Edge.__init__(self, source, target, color='black')
+        color = 'black'
+        if type == 'global':
+            color = 'blue'
+        Edge.__init__(self, source, target, color=color)
         self.type = type
 
+    def is_local(self):
+        """Returns wheter this is a local edge. A local edge stays always on the task level"""
+        return self.type == 'local'

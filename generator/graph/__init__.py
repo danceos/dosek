@@ -7,6 +7,8 @@ from generator.graph.Task import Task
 from generator.graph.Subtask import Subtask
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock
 from generator.graph.Function import Function
+from generator.graph.Analysis import *
+from generator.graph.RunningTask import RunningTaskAnalysis
 from generator.graph.common import GraphObject
 
 
@@ -19,15 +21,18 @@ class SystemGraph(GraphObject):
         self.tasks = []
         self.functions = {}
         self.label = "SystemGraph"
+        self.passes = {}
+        self.analysis_pipe = []
 
     def graph_subobjects(self):
         objects = []
-        subtasks = set()
+        sub_objects = set()
         for task in self.tasks:
             objects.append(task)
-            subtasks.update(set(task.subtasks))
+            sub_objects.update(set(task.graph_subobjects()))
+
         for function in self.functions.values():
-            if not function in subtasks:
+            if not function in sub_objects:
                 objects.append(function)
         return objects
 
@@ -39,6 +44,18 @@ class SystemGraph(GraphObject):
             for abb in function.abbs:
                 if abb.abb_id == abb_id:
                     return abb
+
+    def get_abbs(self):
+        abbs = []
+        for function in self.functions.values():
+            for abb in function.abbs:
+                abbs.append(abb)
+        return abbs
+    def get_subtasks(self):
+        subtasks = []
+        for x in self.tasks:
+            subtasks.extend(x.subtasks)
+        return subtasks
 
     def read_system_description(self, system):
         """Reads in the system description and builds the tasks and subtask
@@ -66,10 +83,12 @@ class SystemGraph(GraphObject):
 
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc
+        self.max_abb_id = 0
 
         # Add all atomic basic blocks
         for abb_xml in rtsc.get_abbs():
             abb = AtomicBasicBlock(self, abb_xml.id)
+            self.max_abb_id = max(self.max_abb_id, abb_xml.id)
             abb.set_guard(abb_xml.guard)
 
             # Get function for abb
@@ -125,6 +144,68 @@ class SystemGraph(GraphObject):
                     calling_block.add_cfg_edge(called_block)
                     # Remove the artificial middle block
                     middle_block.function.remove_abb(middle_block)
+
+        # Add all system calls
+        for syscall in self.rtsc.syscalls():
+            abb = self.find_abb(syscall.abb)
+            abb.make_it_a_syscall(syscall.name, syscall.arguments)
+
+    def new_abb(self):
+        self.max_abb_id += 1
+        return AtomicBasicBlock(self, self.max_abb_id)
+
+    def add_system_objects(self):
+        def system_function(name):
+            function = Function(name)
+            self.functions[name] = function
+            abb = self.new_abb()
+            function.add_atomic_basic_block(abb)
+            function.set_entry_abb(abb)
+            abb.make_it_a_syscall(name, [])
+            return function
+
+
+
+        # Add Idle Task
+        system_task = Task(self, "OSEK")
+        self.tasks.append(system_task)
+        subtask = Subtask(self, "Idle")
+        self.functions["Idle"] = subtask
+        subtask.set_static_priority(-1)
+        system_task.add_subtask(subtask)
+        abb = self.new_abb()
+        subtask.add_atomic_basic_block(abb)
+        subtask.set_entry_abb(abb)
+        subtask.set_autostart(True)
+        abb.make_it_a_syscall("Idle", [])
+        # System Functions
+        StartOS = system_function("StartOS")
+        system_task.add_function(StartOS)
+
+
+    def register_analysis(self, analysis):
+        analysis.set_system(self)
+        self.passes[analysis.name()] = analysis
+
+    def enqueue_analysis(self, analysis):
+        assert analysis in self.passes.values()
+        self.analysis_pipe.append(analysis)
+
+    def register_and_enqueue_analysis(self, analysis):
+        self.register_analysis(analysis)
+        self.enqueue_analysis(analysis)
+
+    def analyze(self):
+        while len(self.analysis_pipe) > 0:
+            front = self.analysis_pipe[0]
+            required = [self.passes[x] for x in front.requires()]
+            invalid = [x for x in required if not x.valid]
+            if len(invalid) > 0:
+                self.analysis_pipe = invalid + self.analysis_pipe
+                continue
+            del self.analysis_pipe[0]
+            front.analyze()
+            self.fsck()
 
     def fsck(self):
         functions = set()

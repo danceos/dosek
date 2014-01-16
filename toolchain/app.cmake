@@ -91,6 +91,7 @@ MACRO(COREDOS_BINARY)
        --rtsc-analyze-xml "${COREDOS_RTSC_ANALYZE_XML}"
 	   --nm "${LLVM_NM_BINARY}"
 	   --output "${COREDOS_GENERATED_SOURCE}"
+	   -vv
 	COMMENT "Generating COREDOS source code"
 	)
 

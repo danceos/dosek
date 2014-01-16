@@ -5,6 +5,12 @@ class Subtask(Function):
         Function.__init__(self, name)
         self.system = system
         self.task = None
+        self.deadline = None
+        self.static_priority = -1
+        self.preemptable = False
+        self.basic_task = True
+        self.max_activations = 1
+        self.autostart = False
 
     def set_deadline(self, deadline):
         """Takes tuple (type, relative, deadline)"""

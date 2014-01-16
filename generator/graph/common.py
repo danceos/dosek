@@ -18,8 +18,9 @@ class GraphObject:
     def graph_description(self):
         if hasattr(self, "dump"):
             data = self.dump()
-            lines = ["%s: %s" % x for x in data.items()]
-            return "\\l".join(lines)
+            if data != None:
+                lines = ["%s: %s" % x for x in data.items()]
+                return "\\l".join(lines)
         return self.__class__.__name__
 
     def dump_as_dot(self, current_depth = 0):
@@ -79,3 +80,64 @@ class Edge:
 
     def __repr__(self):
         return "<%s %s -> %s>"%(self.__class__.__name__, self.source, self.target)
+
+def dfs(block_functor, take_edge_functor, start_abbs):
+    """Performs a depth first search. It first executes block_functor on a
+       block, then collects all outgoing edges, that satisfy the
+       take_edge_functor. All child blocks are visitied in the
+       same manner. No block is visited more than once. The DFS
+       starts with the list of start_abs blocks.
+
+       The block_functor takes an _edge_ that leads to a _block_
+    """
+    visited = set()
+    # First in start_abs is the first to be popped
+    working_stack = []
+    for abb in start_abbs:
+        working_stack.append(tuple([None, abb]))
+
+    while len(working_stack) > 0:
+        leading_edge, current_block = working_stack.pop()
+        # Call the block_functor
+        block_functor(leading_edge, current_block)
+        for edge in current_block.outgoing_edges:
+            child = edge.target
+            # Already visited or in working_stack
+            if child in visited:
+                continue
+            # Check if edge satisfies condition
+            if not take_edge_functor(edge):
+                continue
+            # PUSH item onto stack
+            working_stack.append((edge, child))
+            visited.add(child)
+
+class FixpointIteraton:
+    def __init__(self, starting_objects):
+        # Start fixpoint iteration with those objects
+        self.working_stack = list(reversed(starting_objects))
+        self.stopped = False
+
+    def enqueue_soon(self, item = None, items = []):
+        if item and not item in self.working_stack:
+            self.working_stack.append(item)
+        for x in items:
+            self.enqueue_soon(x)
+
+    def enqueue_later(self, item = None, items = []):
+        if item and not item in self.working_stack:
+            self.working_stack = [item] + self.working_stack
+        for x in items:
+            self.enqueue_later(x)
+
+    def stop(self):
+        self.stopped = True
+
+    def do(self, functor):
+        """Functor is called with the fixpoint iteration and the current object."""
+        while len(self.working_stack) > 0 and not self.stopped:
+            item = self.working_stack.pop()
+            functor(self, item)
+
+def is_local_edge(edge):
+    return edge.is_local()

@@ -12,6 +12,20 @@
     @ingroup generator
     @brief Main entry point
 """
+
+import logging
+
+def setup_logging(log_level):
+    """ setup the logging module with the given log_level """
+
+    l = logging.WARNING # default
+    if log_level == 1:
+        l = logging.INFO
+    elif log_level >= 2:
+        l = logging.DEBUG
+
+    logging.basicConfig(level=l)
+
 if __name__ == "__main__":
     import os, sys
     source_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,8 +37,7 @@ if __name__ == "__main__":
     import ObjectFile
     import Generator
     from generator.rules import *
-    from generator.graph import SystemGraph
-
+    from generator.graph import *
 
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
@@ -39,12 +52,18 @@ if __name__ == "__main__":
                       default="nm")
     parser.add_option("-o", "--output",
                       metavar="OUTPUT", help="where to place the coredos source")
+    parser.add_option('-v', '--verbose', dest='verbose', action='count',
+                      help="increase verbosity (specify multiple times for more)")
+
 
     (options, args) = parser.parse_args()
 
     if len(args) > 0:
         parser.print_help()
         sys.exit(-1)
+
+    setup_logging(options.verbose)
+
 
     system_description = SystemDescription.SystemDescription(options.system_xml)
     app_object = ObjectFile.ObjectFile(options.nm, options.app_object)
@@ -53,8 +72,16 @@ if __name__ == "__main__":
     graph = SystemGraph()
     graph.read_system_description(system_description)
     graph.read_rtsc_analysis(rtsc_analysis)
-    graph.fsck()
+    graph.add_system_objects()
+    graph.register_and_enqueue_analysis(CurrentRunningSubtask())
+    graph.register_and_enqueue_analysis(MoveFunctionsToTask())
+    graph.analyze()
+
+
+    graph.register_and_enqueue_analysis(RunningTaskAnalysis())
+    graph.analyze()
     open("/tmp/graph.dot", "w+").write(graph.dump_as_dot())
+
 
     generator = Generator.Generator(system_description, app_object, rtsc_analysis)
     generator.load_rules(base_rules())

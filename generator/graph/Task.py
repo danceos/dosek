@@ -7,17 +7,28 @@ class Task(GraphObject):
         self.system = system
         self.label = label
         self.subtasks = []
+        self.functions = []
+        self.event = {}
 
     def graph_subobjects(self):
-        return self.subtasks
+        return self.subtasks + self.functions
 
     def set_event(self, event):
-        assert event[1] == "periodic"
-        self.event = dict(zip(["name", "periodic", "period", "phase", "jitter"], event))
+        if event[1] == "periodic":
+            self.event = dict(zip(["name", "type", "period", "phase", "jitter"], event))
+        elif event[1] == "once":
+            self.event = dict(zip(["name", "type"], event))
+        else:
+            assert False
 
     def add_subtask(self, subtask):
         subtask.task = self
         self.subtasks.append(subtask)
+
+    def add_function(self, function):
+        function.task = self
+        self.functions.append(function)
+
 
     def dump(self):
         return self.event

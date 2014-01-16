@@ -15,25 +15,24 @@ system call: Who called it? In which ABB?"""
 
     def syscalls(self):
         """Return all system calls"""
-        return [self.SystemCall(x) for x in self.rtsc_dom.systemcall]
+        syscalls = []
+        for x in self.rtsc_dom.systemcall:
+            args = []
+            for arg in x.xpath("*[local-name()='call_arguments']/*[local-name()='arg']"):
+                args += [str(arg)]
+            syscall = self.SystemCall(name = x.get("name"),
+                                      abb  = int(x.get("abb")),
+                                      arguments = args)
+            syscalls.append(syscall)
+        return syscalls
 
     def find_syscall(self, abbid):
         """Find a specific system call within an ABB"""
-        for syscall in self.rtsc_dom.systemcall:
-            if abbid == int(syscall.calling.get("abb")):
-                return self.SystemCall(syscall)
+        for syscall in self.syscalls:
+            if abbid == syscall.abb:
+                return syscall
 
-    class SystemCall:
-        def __init__(self, xml):
-            self.xml = xml
-        def name(self):
-            return self.xml.get("name")
-        def calling_task(self):
-            return self.xml.calling.task
-        def calling_subtask(self):
-            return self.xml.calling.subtask
-        def calling_event(self):
-            return self.xml.calling.event
+    SystemCall = namedtuple("SystemCall", ["name", "abb", "arguments"])
 
     def get_abbs(self):
         abbs = []
@@ -72,11 +71,9 @@ class TestRTSCAnalysis(unittest.TestCase):
         self.rtsc = RTSCAnalysis("test/rtsc_analyze.xml")
     def test_osek_attributes(self):
         syscall = self.rtsc.find_syscall(0)
-        self.assertEqual(syscall.name(), "OSEKOS_ActivateTask")
-        self.assertEqual(syscall.calling_task(), "Event1")
-        self.assertEqual(syscall.calling_event(), "Event1")
-        self.assertEqual(syscall.calling_subtask(), "Handler11")
-
+        self.assertEqual(syscall.name, "OSEKOS_ActivateTask")
+        self.assertEqual(syscall.abb, 0)
+        self.assertEqual(syscall.args[0], "OSEKOS_TASK_Struct_Handler13")
 
 
 if __name__ == "__main__":

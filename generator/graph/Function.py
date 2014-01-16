@@ -4,6 +4,7 @@ class Function(GraphObject):
     def __init__(self, functionname):
         GraphObject.__init__(self, functionname, color = "brown")
         self.function_name = functionname
+        self.task = None
         self.abbs = []
 
     def graph_subobjects(self):
@@ -37,6 +38,7 @@ class Function(GraphObject):
             assert incoming.target == abb
             source = incoming.source
             source.remove_cfg_edge(abb)
+
 
     def __repr__(self):
         return "<Function %s>" %self.function_name
