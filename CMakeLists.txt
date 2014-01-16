@@ -39,6 +39,7 @@ include(helpers)
 
 # Include source directory
 coredos_include_dir(${PROJECT_SOURCE_DIR})
+coredos_include_dir(${PROJECT_SOURCE_DIR}/os)
 
 # Tests
 add_subdirectory(test)
@@ -58,7 +59,6 @@ coredos_include_dir(${ARCH_INCLUDE_DIRS})
 add_subdirectory(fail)
 
 # Hardware independent kernel code
-coredos_include_dir("${PROJECT_SOURCE_DIR}/os")
 add_subdirectory(os)
 add_subdirectory(generator)
 add_subdirectory(app)

@@ -22,7 +22,7 @@ void MMU::init() {
 }
 
 // Pagefault interrupt handler printing details for debugging
-#if DEBUG
+#if 1//DEBUG
 #include "idt.h"
 #include "serial.h"
 #include "os/util/inline.h"
@@ -40,7 +40,7 @@ ISR(14) {
 	asm("mov %%cr3, %0" : "=r"(cr3));
 
 	serial << "PAGE FAULT for 0x" << hex << fault_addr;
-	serial << ", IP @ 0x" << sf->cpu_context.eip;
+	serial << ", IP @ 0x" << ctx->cpu_context.eip;
 	serial << ", PD @ 0x" << cr3;
 	serial << endl;
 

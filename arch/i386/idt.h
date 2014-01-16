@@ -15,19 +15,25 @@ namespace arch {
  * @name IRQ numbers
  * @{
  */
-#define IRQ_SYSCALL 48 //!< syscall software interrupt
-#define IRQ_DISPATCH 49 //!< dispatcher software interrupt
+#define IRQ_SYSCALL 33 //!< syscall software interrupt
+#define IRQ_DISPATCH 32 //!< dispatcher software interrupt
 /**@}*/
 
 
 
 /**
  * @name IRQ handler macros
+ *
+ * To define an interrupt handler after the context has been saved use the
+ * ISR macro (this could be used for application ISR1s).
+ * To define an interrupt handler without context saving or stack
+ * adjustments use the IRQ_HANDLER macro. Take care to save and restore
+ * registers and stack before usage!
  * @{
  */
 
 /** \brief Define a free-standing interrupt handler
- * 
+ *
  * This code will be jumped to directly when the interrupt occurs.
  * No context saving or stack adjustment is performed!
  * To finish interrupt handling call Machine::return_from_interrupt() !
@@ -38,8 +44,8 @@ namespace arch {
 
 
 /** \brief Define a free-standing interrupt handler
- * 
- * This helper macro is needed to allow macro expansion for the argument 
+ *
+ * This helper macro is needed to allow macro expansion for the argument
  * of the IRQ_HANDLER macro.
  * \see IRQ_HANDLER
  *
@@ -74,14 +80,14 @@ namespace arch {
  *
  * This code will be jumped to after the context is saved to the stack
  * and then executed on interrupt/kernel stack.
- * 
+ *
  * \param irqno IRQ number
  * \hideinitializer
  */
 #define ISR(irqno) \
-	forceinline void irq_handler_fun_ ## irqno (struct task_context* sf); \
+	forceinline void irq_handler_fun_ ## irqno (struct task_context* ctx); \
 	ISR_HANDLER(irqno, irq_handler_fun_ ## irqno); \
-	forceinline void irq_handler_fun_ ## irqno (struct task_context* sf)
+	forceinline void irq_handler_fun_ ## irqno (__attribute__((unused)) struct task_context* ctx)
 /**@}*/
 
 

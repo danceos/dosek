@@ -19,7 +19,7 @@
 
 /**
  * \brief Machine dependent special instructions.
- * This struct provides static forceinline methods implementings some machine 
+ * This struct provides static forceinline methods implementings some machine
  * specific instructions.
  */
 struct Machine
@@ -59,6 +59,20 @@ struct Machine
 	 */
 	static forceinline void set_data_segment(uint16_t selector) {
 		asm volatile("mov %0, %%ds; mov %0, %%es; mov %0, %%fs ;mov %0, %%gs" :: "r"(selector));
+	}
+
+	/**
+	 * \brief Enable all interrupts
+	 */
+	static forceinline void enable_interrupts() {
+		asm volatile("sti");
+	}
+
+	/**
+	 * \brief Disable all interrupts
+	 */
+	static forceinline void disable_interrupts() {
+		asm volatile("cli");
 	}
 
 	/**

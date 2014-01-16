@@ -39,7 +39,8 @@ extern "C" void arch_startup()
 	// setup PIT
 	PIT::init();
 
-	// TODO: enable interrupts here?
+	// TODO: enable interrupts somewhere?
+	// here, before os_main, or in a future StartOS()
 
 	// Proceed to generic initialisation
 	init_generic();
