@@ -54,6 +54,8 @@ if __name__ == "__main__":
                       metavar="OUTPUT", help="where to place the coredos source")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
+    parser.add_option('', '--verify', dest='verify',
+                      help="verify script for the analysis results")
 
 
     (options, args) = parser.parse_args()
@@ -64,12 +66,12 @@ if __name__ == "__main__":
 
     setup_logging(options.verbose)
 
-
     system_description = SystemDescription.SystemDescription(options.system_xml)
     app_object = ObjectFile.ObjectFile(options.nm, options.app_object)
     rtsc_analysis = RTSCAnalysis.RTSCAnalysis(options.rtsc_analyze_xml)
 
     graph = SystemGraph()
+    graph.read_verify_script(options.verify)
     graph.read_system_description(system_description)
     graph.read_rtsc_analysis(rtsc_analysis)
     graph.add_system_objects()

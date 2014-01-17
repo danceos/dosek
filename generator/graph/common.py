@@ -141,3 +141,14 @@ class FixpointIteraton:
 
 def is_local_edge(edge):
     return edge.is_local()
+
+def get_functions(system, names):
+    """A helper for verify scripts to find quickly a set of subtask handlers"""
+    ret = []
+    for x in names:
+        for name, func in system.functions.items():
+            if x == name or \
+               "OSEKOS_TASK_" + x == name:
+                ret.append(func)
+    return tuple(ret)
+

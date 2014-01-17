@@ -51,11 +51,18 @@ class SystemGraph(GraphObject):
             for abb in function.abbs:
                 abbs.append(abb)
         return abbs
+
     def get_subtasks(self):
         subtasks = []
         for x in self.tasks:
             subtasks.extend(x.subtasks)
         return subtasks
+
+    def find_syscall(self, function, type, arguments):
+        for abb in function.abbs:
+            if abb.type == type \
+               and abb.arguments == arguments:
+                return abb
 
     def read_system_description(self, system):
         """Reads in the system description and builds the tasks and subtask
@@ -150,6 +157,17 @@ class SystemGraph(GraphObject):
             abb = self.find_abb(syscall.abb)
             abb.make_it_a_syscall(syscall.name, syscall.arguments)
 
+    def read_verify_script(self, path):
+        self.verifiers = {}
+        if not path:
+            return
+        import imp
+        module = imp.load_source('generator.verifier', path)
+        for x in dir(module):
+            if x.startswith('after') or x.startswith('before'):
+                self.verifiers[x] = getattr(module, x)
+        logging.info("Loaded %d verifier functions" % len(self.verifiers))
+
     def new_abb(self):
         self.max_abb_id += 1
         return AtomicBasicBlock(self, self.max_abb_id)
@@ -204,7 +222,13 @@ class SystemGraph(GraphObject):
                 self.analysis_pipe = invalid + self.analysis_pipe
                 continue
             del self.analysis_pipe[0]
+            if "before_" + front.name() in self.verifiers:
+                self.verifiers["before_" + front.name()](front)
+                logging.info("Run before_" + front.name() + " verifier")
             front.analyze()
+            if "after_" + front.name() in self.verifiers:
+                logging.info("Run after_" + front.name() + " verifier")
+                self.verifiers["after_" + front.name()](front)
             self.fsck()
 
     def fsck(self):
@@ -226,5 +250,3 @@ class SystemGraph(GraphObject):
             abbs.update(set(func.abbs))
         for abb in abbs:
             abb.fsck()
-
-

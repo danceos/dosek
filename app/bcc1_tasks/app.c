@@ -25,17 +25,17 @@ TASK(Handler11) {
 	a++;
 	a++;
 
-
-	ActivateTask(Handler12);
+	//	if(a == 100)
+		ActivateTask(Handler12);
 
 	a++;
 	a++;
 
-	if (a == 12) {
-		ActivateTask(Handler13);
-	} else {
-		bar();
-	}
+	//	if (a == 12) {
+				ActivateTask(Handler13);
+				//} else {
+				//			bar();
+				//	}
 
 
 	a++;

@@ -6,7 +6,20 @@ from generator.graph.Subtask import Subtask
 class Analysis:
     def __init__(self):
         self.valid = False
+        self.debug = self.__log_void
         pass
+
+    def __log_void(self, *args, **kwargs):
+        pass
+
+    def __log_debug(self, *args, **kwargs):
+        logging.debug(*args, **kwargs)
+
+    def set_debug(self, enabled = True):
+        if enabled:
+            self.debug = self.__log_debug
+        else:
+            self.debug = self.__log_void
 
     def set_system(self, system):
         self.system = system
@@ -102,5 +115,6 @@ class MoveFunctionsToTask(Analysis):
                and subtask != None:
                 subtask.task.add_function(abb.function)
                 logging.debug("Moving %s to %s" %(abb.function, subtask.task))
+
 
 
