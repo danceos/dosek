@@ -95,7 +95,7 @@ endif()
 find_program(PYLINT pylint)
 if(PYLINT)
   add_custom_command(
-    COMMAND find ./ -iname \"*.py\" | xargs ${PYLINT} --output-format=parseable > ${PROJECT_BINARY_DIR}/pylint.txt
+    COMMAND find ./ -iname \"*.py\" | PYTHONPATH=${PROJECT_SOURCE_DIR} xargs ${PYLINT} --output-format=parseable > ${PROJECT_BINARY_DIR}/pylint.txt
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/generator
     OUTPUT ${PROJECT_BINARY_DIR}/pylint.txt
   )
