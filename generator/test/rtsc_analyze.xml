@@ -1,44 +1,75 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <RTSCAnalyze xmlns="http://www4.informatik.uni-erlangen.de/RTSC">
 
-  <systemcall name="OSEKOS_ActivateTask">
-    <calling abb="0">
+  <systemcall abb="3" name="OSEKOS_ActivateTask">
+    <calling>
       <event>Event1</event>
       <task>Event1</task>
       <subtask>Handler11</subtask>
     </calling>
+    <call_arguments>
+      <arg pos="0" type="global">OSEKOS_TASK_Struct_Handler12</arg>
+    </call_arguments>
   </systemcall>
 
-  <systemcall name="OSEKOS_ActivateTask">
-    <calling abb="1">
+  <systemcall abb="4" name="OSEKOS_ActivateTask">
+    <calling>
       <event>Event1</event>
       <task>Event1</task>
       <subtask>Handler11</subtask>
     </calling>
+    <call_arguments>
+      <arg pos="0" type="global">OSEKOS_TASK_Struct_Handler13</arg>
+    </call_arguments>
   </systemcall>
 
-  <systemcall name="OSEKOS_TerminateTask">
-    <calling abb="2">
+  <systemcall abb="5" name="OSEKOS_TerminateTask">
+    <calling>
       <event>Event1</event>
       <task>Event1</task>
       <subtask>Handler11</subtask>
     </calling>
+    <call_arguments/>
   </systemcall>
 
-  <systemcall name="OSEKOS_TerminateTask">
-    <calling abb="3">
+  <systemcall abb="7" name="OSEKOS_TerminateTask">
+    <calling>
       <event>Event1</event>
       <task>Event1</task>
       <subtask>Handler12</subtask>
     </calling>
+    <call_arguments/>
   </systemcall>
 
-  <systemcall name="OSEKOS_TerminateTask">
-    <calling abb="4">
+  <systemcall abb="9" name="OSEKOS_TerminateTask">
+    <calling>
       <event>Event1</event>
       <task>Event1</task>
       <subtask>Handler13</subtask>
     </calling>
+    <call_arguments/>
   </systemcall>
+
+  <abbgraph>
+    <event id="Event1">
+      <subtask name="Handler11">
+        <abb infunction="OSEKOS_TASK_Handler11" name="5"/>
+        <abb func_entry="true" guard="true" infunction="OSEKOS_TASK_Handler11" name="3">
+          <dependency target="7" type="ExplicitControlFlowABBDependency"/>
+          <dependency target="4" type="ControlFlowABBDependency"/>
+        </abb>
+        <abb infunction="OSEKOS_TASK_Handler11" name="4">
+          <dependency target="9" type="ExplicitControlFlowABBDependency"/>
+          <dependency target="5" type="ControlFlowABBDependency"/>
+        </abb>
+      </subtask>
+      <subtask name="Handler12">
+        <abb func_entry="true" guard="OR(ABB 3)" infunction="OSEKOS_TASK_Handler12" name="7"/>
+      </subtask>
+      <subtask name="Handler13">
+        <abb func_entry="true" guard="OR(ABB 4)" infunction="OSEKOS_TASK_Handler13" name="9"/>
+      </subtask>
+    </event>
+  </abbgraph>
 
 </RTSCAnalyze>

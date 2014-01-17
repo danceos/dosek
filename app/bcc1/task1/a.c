@@ -20,45 +20,16 @@ void bar() {
 }
 
 TASK(Handler11) {
-	unsigned int a = 0;
-
-	a++;
-	a++;
-
-	//	if(a == 100)
-		ActivateTask(Handler12);
-
-	a++;
-	a++;
-
-	//	if (a == 12) {
-				ActivateTask(Handler13);
-				//} else {
-				//			bar();
-				//	}
-
-
-	a++;
-	a++;
-
+	ActivateTask(Handler12);
+	ActivateTask(Handler13);
 	TerminateTask();
 }
 
 TASK(Handler12) {
-	unsigned int a = 0;
-
-	a++;
-	a++;
-	a++;
 	TerminateTask();
 }
 
 TASK(Handler13) {
-	unsigned int a = 0;
-
-	a++;
-	a++;
-	a++;
 	TerminateTask();
 }
 

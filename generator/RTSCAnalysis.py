@@ -28,7 +28,7 @@ system call: Who called it? In which ABB?"""
 
     def find_syscall(self, abbid):
         """Find a specific system call within an ABB"""
-        for syscall in self.syscalls:
+        for syscall in self.syscalls():
             if abbid == syscall.abb:
                 return syscall
 
@@ -70,10 +70,10 @@ class TestRTSCAnalysis(unittest.TestCase):
     def setUp(self):
         self.rtsc = RTSCAnalysis("test/rtsc_analyze.xml")
     def test_osek_attributes(self):
-        syscall = self.rtsc.find_syscall(0)
+        syscall = self.rtsc.find_syscall(4)
         self.assertEqual(syscall.name, "OSEKOS_ActivateTask")
-        self.assertEqual(syscall.abb, 0)
-        self.assertEqual(syscall.args[0], "OSEKOS_TASK_Struct_Handler13")
+        self.assertEqual(syscall.abb, 4)
+        self.assertEqual(syscall.arguments[0], "OSEKOS_TASK_Struct_Handler13")
 
 
 if __name__ == "__main__":

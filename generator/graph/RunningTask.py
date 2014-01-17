@@ -205,11 +205,13 @@ class RunningTaskAnalysis(Analysis):
 
         # If this block belongs to a task, it must the highest
         # available task for the input state. Otherwise we wouldn't
-        # have been scheduled.
+        # have been scheduled (or the current task is non-preemptable)
         calling_task = self.running_task.for_abb(block)
         if calling_task:
             tasks = self.find_possible_tasks(before)
-            assert len(tasks) == 1 and tasks[0] == calling_task
+            # Task should be schedulable
+            if calling_task.preemptable:
+                assert len(tasks) == 1 and tasks[0] == calling_task
 
         if block.type == 'StartOS':
             after = self.do_StartOS()

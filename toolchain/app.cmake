@@ -2,10 +2,9 @@ include(CMakeParseArguments)
 include(rtsc)
 
 
-
 MACRO(COREDOS_BINARY)
   set(options )
-  set(oneValueArgs SYSTEM_XML NAME)
+  set(oneValueArgs SYSTEM_XML NAME VERIFY)
   set(multiValuedParameters SOURCES)
   cmake_parse_arguments(COREDOS_BINARY "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
   set(COREDOS_BINARY_SOURCES "${COREDOS_BINARY_UNPARSED_ARGUMENTS};${COREDOS_BINARY_SOURCES}")
@@ -13,7 +12,7 @@ MACRO(COREDOS_BINARY)
   SET(NAME "${COREDOS_BINARY_NAME}")
 
   SET(COREDOS_ANNOTATE_SOURCE "${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/annotate/cored_annotate.c")
-  SET(COREDOS_ANNOTATE_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/cored_annotate.ll")
+  SET(COREDOS_ANNOTATE_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/${NAME}_cored_annotate.ll")
 
   # compile annotate file
   add_custom_command(OUTPUT ${COREDOS_ANNOTATE_OBJECT}
@@ -25,14 +24,13 @@ MACRO(COREDOS_BINARY)
     MAIN_DEPENDENCY ${COREDOS_ANNOTATE_SOURCE}
     COMMENT "[${PROJECT_NAME}] Compiling cored_annotate.c with clang")
 
+  set(BDIR "${CMAKE_CURRENT_BINARY_DIR}")
+  set(COREDOS_SOURCE_SYSTEM "${BDIR}/${NAME}_source_system.ll")
+  set(COREDOS_RTSC_ANALYZE_XML "${BDIR}/${NAME}_rtsc_analyze.xml")
+  set(COREDOS_SOURCE_SYSTEM_OBJECT "${BDIR}/${NAME}_source_system.o")
 
-
-  set(COREDOS_SOURCE_SYSTEM "${CMAKE_CURRENT_BINARY_DIR}/source_system.ll")
-  set(COREDOS_RTSC_ANALYZE_XML "${CMAKE_CURRENT_BINARY_DIR}/rtsc_analyze.xml")
-  set(COREDOS_SOURCE_SYSTEM_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/source_system.o")
-
-  set(COREDOS_GENERATED_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/coredos.cc")
-  set(COREDOS_GENERATED_LLVM "${CMAKE_CURRENT_BINARY_DIR}/coredos.ll")
+  set(COREDOS_GENERATED_SOURCE "${BDIR}/${NAME}_coredos.cc")
+  set(COREDOS_GENERATED_LLVM "${BDIR}/${NAME}_coredos.ll")
 
   # First we have to compile all source files with clang
   foreach(src ${COREDOS_BINARY_SOURCES})
@@ -45,7 +43,7 @@ MACRO(COREDOS_BINARY)
 	  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${src}
 	  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${src}
 
-      COMMENT "[${PROJECT_NAME}] Compiling application ${src} with clang")
+      COMMENT "[${PROJECT_NAME}] Compiling application ${NAME}/${src} with clang")
 	
 
 	list(APPEND COREDOS_BINARY_LLVM_BYTECODE ${llvm_bytecode})
@@ -57,7 +55,8 @@ MACRO(COREDOS_BINARY)
   
   # Use RTSC to analyze and merge the source system bytecode
   add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM}"
-	DEPENDS ${COREDOS_ANNOTATE_OBJECT} ${COREDOS_BINARY_LLVM_BYTECODE}
+	DEPENDS ${COREDOS_ANNOTATE_OBJECT} 
+            ${COREDOS_BINARY_LLVM_BYTECODE}
             ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
 	COMMAND ${RTSC_BINARY} -data-deps=explicit -verify 
 	   -sysann=${COREDOS_ANNOTATE_OBJECT}
@@ -67,7 +66,11 @@ MACRO(COREDOS_BINARY)
 	   -analyze-tasks -dump-source-system
        -dump-graphs
 	   ${COREDOS_BINARY_LLVM_BYTECODE}
-       COMMENT "[${PROJECT_NAME}] Analyzing application with RTSC")
+    COMMAND
+       mv ${BDIR}/source_system.ll ${COREDOS_SOURCE_SYSTEM}
+    COMMAND
+       mv ${BDIR}/rtsc_analyze.xml ${COREDOS_RTSC_ANALYZE_XML}
+    COMMENT "[${PROJECT_NAME}] Analyzing application with RTSC")
 
   # Compile source system to a .o file
   add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM_OBJECT}"
@@ -82,7 +85,7 @@ MACRO(COREDOS_BINARY)
 
   # All python source files are a dependency
   file(GLOB_RECURSE PYTHON_SOURCE "${COREDOS_GENERATOR_DIR}/*.py")
-  set(COREDOS_VERIFY_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/verify.py")
+  set(COREDOS_VERIFY_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${COREDOS_BINARY_VERIFY}")
   if(EXISTS "${COREDOS_VERIFY_SCRIPT}")
     SET(COREDOS_GENERATOR_ARGS ${COREDOS_GENERATOR_ARGS} --verify ${COREDOS_VERIFY_SCRIPT})
   endif()
@@ -109,4 +112,6 @@ MACRO(COREDOS_BINARY)
   include_directories(${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/include/)
   coredos_executable(${NAME} EXCLUDE_FROM_ALL
     ${COREDOS_SOURCE_SYSTEM_OBJECT} ${COREDOS_GENERATED_SOURCE})
+
+  add_test(${NAME}-test make ${NAME}-generate)
 ENDMACRO(COREDOS_BINARY)
