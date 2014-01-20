@@ -213,7 +213,10 @@ class SystemGraph(GraphObject):
         self.register_analysis(analysis)
         self.enqueue_analysis(analysis)
 
-    def analyze(self):
+    def analyze(self, basefilename):
+        verifiers_called = set()
+        pass_number = 0
+
         while len(self.analysis_pipe) > 0:
             front = self.analysis_pipe[0]
             required = [self.passes[x] for x in front.requires()]
@@ -221,15 +224,36 @@ class SystemGraph(GraphObject):
             if len(invalid) > 0:
                 self.analysis_pipe = invalid + self.analysis_pipe
                 continue
+            # Remove analysis from analysation pipeline
             del self.analysis_pipe[0]
-            if "before_" + front.name() in self.verifiers:
-                self.verifiers["before_" + front.name()](front)
-                logging.info("Run before_" + front.name() + " verifier")
+            # Call before analyzer
+            verifier_name = "before_" + front.name()
+            if verifier_name in self.verifiers:
+                self.verifiers[verifier_name](front)
+                logging.info("Run %s verifier" % verifier_name)
+                verifiers_called.add(verifier_name)
+
+            # Call analyzer pass
             front.analyze()
-            if "after_" + front.name() in self.verifiers:
-                logging.info("Run after_" + front.name() + " verifier")
-                self.verifiers["after_" + front.name()](front)
+
+            # Call afteranalyzer
+            verifier_name = "after_" + front.name()
+            if verifier_name in self.verifiers:
+                self.verifiers[verifier_name](front)
+                logging.info("Run %s verifier" % verifier_name)
+                verifiers_called.add(verifier_name)
+
+            # Check graph integrity
             self.fsck()
+
+            # Dump graph as dot output
+            with open("%s_%d_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
+                fd.write(self.dump_as_dot())
+
+            pass_number += 1
+
+        assert verifiers_called == set(self.verifiers.keys()), "Not all verifieres were called (missing %s)" % \
+            (set(self.verifiers.keys()) - set(verifiers_called))
 
     def fsck(self):
         functions = set()

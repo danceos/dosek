@@ -31,6 +31,8 @@ MACRO(COREDOS_BINARY)
 
   set(COREDOS_GENERATED_SOURCE "${BDIR}/${NAME}_coredos.cc")
   set(COREDOS_GENERATED_LLVM "${BDIR}/${NAME}_coredos.ll")
+  set(COREDOS_BINARY_LLVM_BYTECODE "")
+  set(tmp "")
 
   # First we have to compile all source files with clang
   foreach(src ${COREDOS_BINARY_SOURCES})

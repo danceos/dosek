@@ -243,7 +243,6 @@ class RunningTaskAnalysis(Analysis):
             after.set_suspended(calling_task)
             # Activate other Task
             after.set_ready(block.arguments[0])
-            print calling_task, block.arguments[0]
             after.freeze()
             self.schedule(block, after)
         elif block.type == 'Idle':

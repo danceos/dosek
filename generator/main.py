@@ -75,14 +75,11 @@ if __name__ == "__main__":
     graph.read_system_description(system_description)
     graph.read_rtsc_analysis(rtsc_analysis)
     graph.add_system_objects()
+
     graph.register_and_enqueue_analysis(CurrentRunningSubtask())
     graph.register_and_enqueue_analysis(MoveFunctionsToTask())
-    graph.analyze()
-
-
     graph.register_and_enqueue_analysis(RunningTaskAnalysis())
-    graph.analyze()
-    open("/tmp/graph.dot", "w+").write(graph.dump_as_dot())
+    graph.analyze(options.output)
 
 
     generator = Generator.Generator(system_description, app_object, rtsc_analysis)
