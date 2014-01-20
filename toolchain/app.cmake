@@ -110,6 +110,11 @@ MACRO(COREDOS_BINARY)
   add_custom_target(${COREDOS_BINARY_NAME}-generate
 	DEPENDS "${COREDOS_GENERATED_SOURCE}")
 
+  add_custom_target(${COREDOS_BINARY_NAME}-clean
+	COMMAND rm -f ${CMAKE_CURRENT_BINARY_DIR}/${NAME}*
+    )
+
+
   # Compile the coredos system
   include_directories(${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/include/)
   coredos_executable(${NAME} EXCLUDE_FROM_ALL
