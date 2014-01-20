@@ -54,7 +54,7 @@ if __name__ == "__main__":
                       metavar="OUTPUT", help="where to place the coredos source")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
-    parser.add_option('', '--verify', dest='verify',
+    parser.add_option('', '--verify', dest='verify', default = None,
                       help="verify script for the analysis results")
 
 

@@ -22,7 +22,7 @@ MACRO(COREDOS_BINARY)
     -m32
     ${COREDOS_ANNOTATE_SOURCE} -o ${COREDOS_ANNOTATE_OBJECT}
     MAIN_DEPENDENCY ${COREDOS_ANNOTATE_SOURCE}
-    COMMENT "[${PROJECT_NAME}] Compiling cored_annotate.c with clang")
+    COMMENT "[${PROJECT_NAME}/${name}] Compiling cored_annotate.c with clang")
 
   set(BDIR "${CMAKE_CURRENT_BINARY_DIR}")
   set(COREDOS_SOURCE_SYSTEM "${BDIR}/${NAME}_source_system.ll")
@@ -45,7 +45,7 @@ MACRO(COREDOS_BINARY)
 	  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${src}
 	  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${src}
 
-      COMMENT "[${PROJECT_NAME}] Compiling application ${NAME}/${src} with clang")
+      COMMENT "[${PROJECT_NAME}/${NAME}] Compiling application ${NAME}/${src} with clang")
 	
 
 	list(APPEND COREDOS_BINARY_LLVM_BYTECODE ${llvm_bytecode})
@@ -72,13 +72,13 @@ MACRO(COREDOS_BINARY)
        mv ${BDIR}/source_system.ll ${COREDOS_SOURCE_SYSTEM}
     COMMAND
        mv ${BDIR}/rtsc_analyze.xml ${COREDOS_RTSC_ANALYZE_XML}
-    COMMENT "[${PROJECT_NAME}] Analyzing application with RTSC")
+    COMMENT "[${PROJECT_NAME}/${NAME}] Analyzing application with RTSC")
 
   # Compile source system to a .o file
   add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM_OBJECT}"
 	DEPENDS "${COREDOS_SOURCE_SYSTEM}"
 	COMMAND ${CLANG_BINARY} -m32 -c -o "${COREDOS_SOURCE_SYSTEM_OBJECT}" "${COREDOS_SOURCE_SYSTEM}"
-	COMMENT "Generating object file for app")
+	COMMENT "[${PROJECT_NAME}/${NAME}] Generating object file for app")
 
   # Add Target for the analysis step
   add_custom_target(${COREDOS_BINARY_NAME}-rtsc-analyze
@@ -86,10 +86,14 @@ MACRO(COREDOS_BINARY)
 
 
   # All python source files are a dependency
+  SET(COREDOS_GENERATOR_ARGS "")
   file(GLOB_RECURSE PYTHON_SOURCE "${COREDOS_GENERATOR_DIR}/*.py")
   set(COREDOS_VERIFY_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${COREDOS_BINARY_VERIFY}")
   if(EXISTS "${COREDOS_VERIFY_SCRIPT}")
-    SET(COREDOS_GENERATOR_ARGS ${COREDOS_GENERATOR_ARGS} --verify ${COREDOS_VERIFY_SCRIPT})
+    if (IS_DIRECTORY "${COREDOS_VERIFY_SCRIPT}")
+    else()
+      SET(COREDOS_GENERATOR_ARGS ${COREDOS_GENERATOR_ARGS} --verify ${COREDOS_VERIFY_SCRIPT})
+    endif()
   endif()
 
   # Generating COREDOS System
@@ -104,7 +108,7 @@ MACRO(COREDOS_BINARY)
 	   --output "${COREDOS_GENERATED_SOURCE}"
        ${COREDOS_GENERATOR_ARGS}
 	   -vv
-	COMMENT "Generating COREDOS source code"
+	COMMENT "[${PROJECT_NAME}/${NAME}] Generating COREDOS source code"
 	)
 
   add_custom_target(${COREDOS_BINARY_NAME}-generate
