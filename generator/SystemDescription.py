@@ -2,6 +2,8 @@
 
 from lxml import objectify
 import os
+from collections import namedtuple
+
 
 class SystemDescription:
     """The system description represents the system.xml, that describes
@@ -90,7 +92,33 @@ class SystemDescription:
             if task.name == name:
                 return self.SubTask(task)
 
+    Alarm = namedtuple("Alarm", ["name", "task", "event"])
 
+    def getAlarms(self):
+        alarms = []
+        if not hasattr(self.osek_dom, "ALARM"):
+            return []
+        for alarm in self.osek_dom.ALARM:
+            name = alarm.name
+            tasks = []
+            events = []
+            if hasattr(alarm, "ACTIVATETASK"):
+                for task in alarm.ACTIVATETASK:
+                    tasks.append(task.TASK)
+            if hasattr(alarm, "SETEVENT"):
+                for setevent in alarm.SETEVENT:
+                    tasks.append(setevent.TASK)
+                    events.append(setevent.EVENT)
+
+            # OSEK Spec 9.2 Only one task or one event is
+            # activated
+            assert len(tasks) == 1 or (len(tasks == 1 and len(events)) == 1)
+            if len(events) == 0:
+                events = [None]
+            alarms.append(self.Alarm(name = name,
+                                     task = tasks[0],
+                                     event = events[0]))
+        return alarms
 
 ################################################################
 ##

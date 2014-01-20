@@ -31,6 +31,6 @@ def after_RunningTaskAnalysis(analysis):
 
     # Idle handler is never left
     test(Idle, "Idle", [], # =>
-         [])
+         [Idle])
 
     assert set(analysis.system.get_syscalls()) == syscalls

@@ -5,7 +5,6 @@ class SystemState:
     READY = 'RDY'
     SUSPENDED = 'SPD'
 
-
     def __init__(self, system):
         self.system = system
         self.frozen = False
@@ -15,6 +14,16 @@ class SystemState:
         for subtask in self.system.get_subtasks():
             self.states[subtask] = set()
             self.continuations[subtask] = set()
+
+    def new(self):
+        return SystemState(self.system)
+
+    def copy(self):
+        state = SystemState(self.system)
+        for subtask in state.get_subtasks():
+            state.states[subtask] = self.states[subtask].copy()
+            state.continuations[subtask] = self.continuations[subtask].copy()
+        return state
 
     def get_subtasks(self):
         """Sorted by priority"""
@@ -86,13 +95,6 @@ class SystemState:
                 return False
         return True
 
-    def copy(self):
-        state = SystemState(self.system)
-        for subtask in state.get_subtasks():
-            state.states[subtask] = self.states[subtask].copy()
-            state.continuations[subtask] = self.continuations[subtask].copy()
-        return state
-
     def __repr__(self):
         ret = "<SystemState>\n"
         for subtask in self.get_subtasks():
@@ -126,7 +128,7 @@ class RunningTaskAnalysis(Analysis):
         #        assert state.is_surely_suspended(x)
         return state
 
-    def do_StartOS(self):
+    def do_StartOS(self, block, before):
         state = SystemState(self.system)
         # In the StartOS node all tasks are suspended before,
         # and afterwards the idle loop and the autostarted
@@ -138,6 +140,45 @@ class RunningTaskAnalysis(Analysis):
                 state.set_suspended(subtask)
             state.set_continuation(subtask, subtask.entry_abb)
         return state
+
+    def do_ActivateTask(self, block, before):
+        after = before.copy()
+        after.set_continuations(self.running_task.for_abb(block),
+                                block.get_outgoing_nodes('local'))
+        after.set_ready(block.arguments[0])
+        return after
+
+    def do_TerminateTask(self, block, before):
+        calling_task = self.running_task.for_abb(block)
+        after = before.copy()
+        after.set_suspended(calling_task)
+        return after
+
+    def do_ChainTask(self, block, before):
+        after = before.copy()
+        # Suspend the current Task, this also sets the
+        # continuations correctly
+        calling_task = self.running_task.for_abb(block)
+        after.set_suspended(calling_task)
+        # Activate other Task
+        after.set_ready(block.arguments[0])
+        return after
+
+    def do_Idle(self, block, before):
+        after = before.copy()
+        after.set_continuations(self.running_task.for_abb(block),
+                                block.get_outgoing_nodes('local'))
+        return after
+
+    def do_computation(self, block, before):
+        after = before.copy()
+        after.set_continuations(self.running_task.for_abb(block),
+                                block.get_outgoing_nodes('local'))
+        # Handle sporadic events
+        for sporadic_event in self.system.sporadic_events:
+            sporadic_event.manipulate_state(block, after)
+
+        return after
 
     def dispatch(self, state, source, subtask, prune_higher_tasks = True):
         # We want to dispatch surely to the subtask
@@ -214,39 +255,27 @@ class RunningTaskAnalysis(Analysis):
                 assert len(tasks) == 1 and tasks[0] == calling_task
 
         if block.type == 'StartOS':
-            after = self.do_StartOS()
+            after = self.do_StartOS(block, before)
             after.freeze()
             self.schedule(block, after)
         elif block.type == 'ActivateTask':
-            after = before.copy()
-            after.set_continuations(self.running_task.for_abb(block),
-                                    block.get_outgoing_nodes('local'))
-            after.set_ready(block.arguments[0])
+            after = self.do_ActivateTask(block, before)
             after.freeze()
             self.schedule(block, after)
         elif block.type == 'TerminateTask':
-            after = before.copy()
-            after.set_suspended(calling_task)
+            after = self.do_TerminateTask(block, before)
             after.freeze()
-            self.schedule(block, after)
-
-        elif block.type == 'computation':
-            after = before.copy()
-            after.set_continuations(self.running_task.for_abb(block),
-                                    block.get_outgoing_nodes('local'))
             self.schedule(block, after)
         elif block.type == 'ChainTask':
-            after = before.copy()
-            # Suspend the current Task, this also sets the
-            # continuations correctly
-            calling_task = self.running_task.for_abb(block)
-            after.set_suspended(calling_task)
-            # Activate other Task
-            after.set_ready(block.arguments[0])
+            after = self.do_ChainTask(block, before)
             after.freeze()
             self.schedule(block, after)
+        elif block.type == 'computation':
+            after = self.do_computation(block, before)
+            self.schedule(block, after)
         elif block.type == 'Idle':
-            pass
+            after = self.do_Idle(block, before)
+            self.schedule(block, after)
         else:
             self.panic("BlockType %s is not supported yet"%block.type)
 
@@ -256,8 +285,9 @@ class RunningTaskAnalysis(Analysis):
             for node in block.get_outgoing_nodes('global'):
                 self.fixpoint.enqueue_soon(item = node)
         self.debug("}}}")
-        
+
     def do(self):
+        self.set_debug()
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
         # (ABB, ABB) -> SystemState
         self.states = {}

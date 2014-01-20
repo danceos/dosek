@@ -106,6 +106,8 @@ class EnsureComputationBlocks(Analysis):
                 syscall.function.add_atomic_basic_block(abb)
                 abb.add_cfg_edge(syscall, 'local')
                 syscall.add_cfg_edge(abb, 'local')
+                # Do start the idle loop with an computation node
+                abb.function.entry_abb = abb
             elif syscall.type in ["ChainTask", "TerminateTask"]:
                 # This two syscalls immediatly return the control flow
                 # to the system

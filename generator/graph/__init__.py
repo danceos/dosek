@@ -10,6 +10,8 @@ from generator.graph.Function import Function
 from generator.graph.Analysis import *
 from generator.graph.RunningTask import RunningTaskAnalysis
 from generator.graph.common import GraphObject
+from generator.graph.Sporadic import Alarm
+
 
 
 class SystemGraph(GraphObject):
@@ -91,6 +93,13 @@ class SystemGraph(GraphObject):
                 subtask.set_basic_task(subtask_osek.isBasicSubTask())
                 subtask.set_max_activations(subtask_osek.getMaxActivations())
                 subtask.set_autostart(subtask_osek.isAutostart())
+
+        self.sporadic_events = []
+        for alarm in system.getAlarms():
+            # FIXME: when events are supported
+            assert alarm.event == None
+            task = self.functions["OSEKOS_TASK_" + alarm.task]
+            self.sporadic_events.append(Alarm(self, alarm.name, task))
 
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc
@@ -186,14 +195,13 @@ class SystemGraph(GraphObject):
             abb.make_it_a_syscall(name, [])
             return function
 
-
-
         # Add Idle Task
         system_task = Task(self, "OSEK")
         self.tasks.append(system_task)
         subtask = Subtask(self, "Idle")
         self.functions["Idle"] = subtask
         subtask.set_static_priority(-1)
+        subtask.set_preemptable(True)
         system_task.add_subtask(subtask)
         abb = self.new_abb()
         subtask.add_atomic_basic_block(abb)
@@ -203,7 +211,6 @@ class SystemGraph(GraphObject):
         # System Functions
         StartOS = system_function("StartOS")
         system_task.add_function(StartOS)
-
 
     def register_analysis(self, analysis):
         analysis.set_system(self)
