@@ -38,3 +38,6 @@ def after_RunningTaskAnalysis(analysis):
     test(Idle, "Idle", [], # =>
          [])
 
+    assert set(analysis.system.get_syscalls()) == syscalls, "missing %s" \
+        %(set(analysis.system.get_syscalls()) - syscalls)
+

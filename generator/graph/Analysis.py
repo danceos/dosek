@@ -53,9 +53,80 @@ class Analysis:
         logging.error(msg)
         sys.exit(-1)
 
-class CurrentRunningSubtask(Analysis):
+class EnsureComputationBlocks(Analysis):
+    """This pass ensures that every system call is surrounded by a
+    computation block. This is nessecary to model alarms/interupts and
+    other sporadic events, since they can only be take place in those blocks"""
+
     def __init__(self):
         Analysis.__init__(self)
+
+    def add_before(self, abb):
+        nessecary = False
+        for node in abb.get_incoming_nodes('local'):
+            if node.type != 'computation':
+                nessecary = True
+        if abb.function.entry_abb == abb:
+            nessecary = True
+        if not nessecary:
+            return
+        new = self.system.new_abb()
+        new.type = 'computation'
+        abb.function.add_atomic_basic_block(new)
+        for edge in abb.incoming_edges:
+            edge.source.remove_cfg_edge(abb, edge.type)
+            edge.source.add_cfg_edge(new, edge.type)
+        if abb.function.entry_abb == abb:
+            abb.function.entry_abb = new
+        new.add_cfg_edge(abb, 'local')
+
+    def add_after(self, abb):
+        nessecary = False
+        for node in abb.get_incoming_nodes('local'):
+            if node.type != 'computation':
+                nessecary = True
+        if not nessecary:
+            return
+        new = self.system.new_abb()
+        new.type = 'computation'
+        abb.function.add_atomic_basic_block(new)
+        for edge in abb.outgoing_edges:
+            abb.remove_cfg_edge(edge.target, edge.type)
+            new.add_cfg_edge(edge.target, edge.type)
+
+        abb.add_cfg_edge(new, 'local')
+
+    def do(self):
+        for syscall in self.system.get_syscalls():
+            if syscall.type == "StartOS":
+                continue# Do not sourround StartOS with computation blocks
+            elif syscall.type == "Idle":
+                abb = self.system.new_abb()
+                abb.type = 'computation'
+                syscall.function.add_atomic_basic_block(abb)
+                abb.add_cfg_edge(syscall, 'local')
+                syscall.add_cfg_edge(abb, 'local')
+            elif syscall.type in ["ChainTask", "TerminateTask"]:
+                # This two syscalls immediatly return the control flow
+                # to the system
+                self.add_before(syscall)
+            else:
+                # For all other syscall ABBs add a computation block
+                # before and after
+                self.add_before(syscall)
+                self.add_after(syscall)
+
+class CurrentRunningSubtask(Analysis):
+    """This pass does a local control flow propagation of the currently
+    running subtask. When a function is called from two subtasks its
+    subtask set contains those two subtasks. This is forbidden by the
+    generator.
+    """
+    def __init__(self):
+        Analysis.__init__(self)
+
+    def requires(self):
+        return [EnsureComputationBlocks.name()]
 
     def for_abb(self, abb):
         x = list(self.values.get(abb, []))
@@ -99,6 +170,11 @@ class CurrentRunningSubtask(Analysis):
         fixpoint.do(self.block_functor)
 
 class MoveFunctionsToTask(Analysis):
+    """This pass uses the results of the CurrentRunningSubtask analysis to
+    move loose functions to the Task the only calling Subtask belongs
+    to. This ensures that every ABB belongs exactly to a single
+    Task/Subtask by calling CurrentRunningSubtask.for_abb()
+    """
     def __init__(self):
         Analysis.__init__(self)
 
