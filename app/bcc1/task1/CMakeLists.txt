@@ -26,3 +26,10 @@ COREDOS_BINARY(
   d.c
 )
 
+COREDOS_BINARY(
+  NAME bcc1_task1e
+  SYSTEM_XML system.xml
+  VERIFY verify_e.py
+  e.c
+)
+
