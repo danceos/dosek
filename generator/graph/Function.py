@@ -16,6 +16,10 @@ class Function(GraphObject):
     def dump(self):
         return {"function_name": self.function_name }
 
+    def get_syscalls(self):
+        return [x for x in self.abbs
+                if x.type != 'computation']
+
     def add_atomic_basic_block(self, abb):
         abb.function = self
         self.abbs.append(abb)

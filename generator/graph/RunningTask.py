@@ -287,7 +287,6 @@ class RunningTaskAnalysis(Analysis):
         self.debug("}}}")
 
     def do(self):
-        self.set_debug()
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
         # (ABB, ABB) -> SystemState
         self.states = {}
@@ -300,7 +299,15 @@ class RunningTaskAnalysis(Analysis):
 
     def reachable_subtasks_from_abb(self, abb):
         subtasks = set()
-        for reaching in abb.get_outgoing_nodes('global'):
+        for reached in abb.get_outgoing_nodes('global'):
+            st = self.running_task.for_abb(reached)
+            subtasks.add(st)
+        return subtasks
+
+    def activated_by(self, subtask):
+        subtasks = set()
+        for reaching in subtask.entry_abb.get_incoming_nodes('global'):
             st = self.running_task.for_abb(reaching)
             subtasks.add(st)
         return subtasks
+

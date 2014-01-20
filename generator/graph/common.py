@@ -161,6 +161,10 @@ def reachability_test(analysis, function, syscall_name, arguments, possible_subt
 
     return syscall
 
+def activated_test(analysis, possible_subtasks, function):
+    reachable_subtasks = analysis.activated_by(function)
+    assert(set(reachable_subtasks) == set(possible_subtasks)), "SetReady(%s):: %s != %s" %(
+        function.function_name, list(possible_subtasks), list(reachable_subtasks))
 
 import sys
 
