@@ -80,6 +80,7 @@ if __name__ == "__main__":
     graph.register_analysis(CurrentRunningSubtask())
     graph.register_and_enqueue_analysis(MoveFunctionsToTask())
     graph.register_and_enqueue_analysis(RunningTaskAnalysis())
+    graph.register_and_enqueue_analysis(GlobalControlFlowMetric(options.output + "_metric"))
     graph.analyze(options.output)
 
 
