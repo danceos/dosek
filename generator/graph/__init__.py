@@ -64,6 +64,10 @@ class SystemGraph(GraphObject):
                and abb.arguments == arguments:
                 return abb
 
+    def get_syscalls(self):
+        return [x for x in self.get_abbs()
+                if x.type != "computation"]
+
     def read_system_description(self, system):
         """Reads in the system description and builds the tasks and subtask
         objects and connects them"""

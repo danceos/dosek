@@ -152,6 +152,15 @@ def get_functions(system, names):
                 ret.append(func)
     return tuple(ret)
 
+def reachability_test(analysis, function, syscall_name, arguments, possible_subtasks):
+    syscall = analysis.system.find_syscall(function, syscall_name, arguments)
+    assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
+    reachable_subtasks = analysis.reachable_subtasks_from_abb(syscall)
+    assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
+        function.function_name, syscall_name, arguments, list(possible_subtasks), list(reachable_subtasks))
+
+    return syscall
+
 
 import sys
 
