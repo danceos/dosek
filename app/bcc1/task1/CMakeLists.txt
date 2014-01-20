@@ -12,3 +12,17 @@ COREDOS_BINARY(
   b.c
 )
 
+COREDOS_BINARY(
+  NAME bcc1_task1c
+  SYSTEM_XML system.xml
+  VERIFY verify_c.py
+  c.c
+)
+
+COREDOS_BINARY(
+  NAME bcc1_task1d
+  SYSTEM_XML system.xml
+  VERIFY verify_d.py
+  d.c
+)
+
