@@ -96,7 +96,6 @@ class SystemDescription:
                 self.isBasicSubTask())
 
     def getSubTasks(self):
-        assert False
         return dict([(str(x.name), self.SubTask(x)) for x in self.osek_dom.TASK])
 
     def getSubTask(self, name):

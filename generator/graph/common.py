@@ -148,7 +148,8 @@ def get_functions(system, names):
     for x in names:
         for name, func in system.functions.items():
             if x == name or \
-               "OSEKOS_TASK_" + x == name:
+               "OSEKOS_TASK_" + x == name or \
+               "OSEKOS_ISR_" + x == name:
                 ret.append(func)
     return tuple(ret)
 
