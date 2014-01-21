@@ -11,13 +11,14 @@ MACRO(COREDOS_BINARY)
   SET(COREDOS_SYSTEM_XML "${CMAKE_CURRENT_SOURCE_DIR}/${COREDOS_BINARY_SYSTEM_XML}")
   SET(NAME "${COREDOS_BINARY_NAME}")
 
-  SET(COREDOS_ANNOTATE_SOURCE "${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/annotate/cored_annotate.c")
+  SET(COREDOS_ANNOTATE_SOURCE "${COREDOS_GENERATOR_DIR}/annotate/cored_annotate.c")
   SET(COREDOS_ANNOTATE_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/${NAME}_cored_annotate.ll")
 
   # compile annotate file
   add_custom_command(OUTPUT ${COREDOS_ANNOTATE_OBJECT}
     COMMAND ${CLANG_BINARY} -S -emit-llvm
-    -I${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/include/
+    -I${COREDOS_GENERATOR_DIR}/annotate/
+    ${INCLUDEDIRS_FLAGS}
     -Wno-return-type 
     -m32
     ${COREDOS_ANNOTATE_SOURCE} -o ${COREDOS_ANNOTATE_OBJECT}

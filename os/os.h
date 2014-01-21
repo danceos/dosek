@@ -1,3 +1,6 @@
+#ifndef _COREDOS_OS_OS_H_
+#define _COREDOS_OS_OS_H_
+
 /**
  *  @defgroup os Operating System Layer
  *  @brief This modules provides all OS functionalities
@@ -348,3 +351,4 @@ extern void OSEKOS_ShutdownOS(StatusType status);
 }
 #endif
 
+#endif
