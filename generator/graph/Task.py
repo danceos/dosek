@@ -16,6 +16,8 @@ class Task(GraphObject):
     def set_event(self, event):
         if event[1] == "periodic":
             self.event = dict(zip(["name", "type", "period", "phase", "jitter"], event))
+        elif event[1] == "nonperiodic":
+            self.event = dict(zip(["name", "type", "interarrivaltime"], event))
         elif event[1] == "once":
             self.event = dict(zip(["name", "type"], event))
         else:

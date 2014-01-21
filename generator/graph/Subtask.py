@@ -11,6 +11,7 @@ class Subtask(Function):
         self.basic_task = True
         self.max_activations = 1
         self.autostart = False
+        self.is_isr = False
 
     def set_deadline(self, deadline):
         """Takes tuple (type, relative, deadline)"""
@@ -33,6 +34,9 @@ class Subtask(Function):
     def set_autostart(self, autostart):
         self.autostart = autostart
 
+    def set_is_isr(self, value):
+        self.is_isr = value
+
     def fsck(self):
         assert self.task in self.system.tasks
 
@@ -43,4 +47,6 @@ class Subtask(Function):
         from_function.update(from_subtask)
         return from_function
 
+    def __repr__(self):
+        return "<Subtask %s>" %self.function_name
 

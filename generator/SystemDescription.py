@@ -38,6 +38,10 @@ class SystemDescription:
             if event.identifier == name:
                 return (name, "periodic", event.period, event.phase, event.jitter)
 
+        for event in self.system_dom.nonperiodicevent:
+            if event.identifier == name:
+                return (name, "nonperiodic", event.interarrivaltime)
+
     def getTasks(self):
         tasks = []
         for task in self.system_dom.task:
@@ -54,6 +58,13 @@ class SystemDescription:
                     root_subtask = subtask.handler
             tasks.append(self.Task(event, root_subtask, subtasks))
         return tasks
+
+    def isISR(self, name):
+        if hasattr(self.osek_dom, "ISR"):
+            for isr in self.osek_dom.ISR:
+                if isr.name == name:
+                    return True
+        return False
 
 
     class SubTask:
@@ -85,6 +96,7 @@ class SystemDescription:
                 self.isBasicSubTask())
 
     def getSubTasks(self):
+        assert False
         return dict([(str(x.name), self.SubTask(x)) for x in self.osek_dom.TASK])
 
     def getSubTask(self, name):
@@ -119,6 +131,19 @@ class SystemDescription:
                                      task = tasks[0],
                                      event = events[0]))
         return alarms
+
+    ISR = namedtuple("ISR", ["name", "category", "priority"])
+
+    def getISR(self, name):
+        alarms = []
+        if not hasattr(self.osek_dom, "ISR"):
+            return
+        for isr in self.osek_dom.ISR:
+            if isr.name == name:
+                return self.ISR(name = isr.name,
+                           category = int(isr.CATEGORY),
+                           priority = int(isr.PRIORITY))
+
 
 ################################################################
 ##

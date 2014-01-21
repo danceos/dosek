@@ -82,7 +82,7 @@ class EnsureComputationBlocks(Analysis):
 
     def add_after(self, abb):
         nessecary = False
-        for node in abb.get_incoming_nodes('local'):
+        for node in abb.get_outgoing_nodes('local'):
             if node.type != 'computation':
                 nessecary = True
         if not nessecary:

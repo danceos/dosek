@@ -1,5 +1,123 @@
 from generator.graph.common import *
 from generator.graph.Analysis import *
+from generator.graph.Sporadic import SporadicEvent
+
+
+class SystemCallSemantic:
+    def __init__(self, system, running_task):
+        self.running_task = running_task
+        self.system = system
+
+    def do_StartOS(self, block, before):
+        state = SystemState(self.system)
+        # In the StartOS node all tasks are suspended before,
+        # and afterwards the idle loop and the autostarted
+        # tasks are ready
+        for subtask in self.system.get_subtasks():
+            if subtask.autostart:
+                state.set_ready(subtask)
+            else:
+                state.set_suspended(subtask)
+            state.set_continuation(subtask, subtask.entry_abb)
+        return [state]
+
+    def do_ActivateTask(self, block, before):
+        after = before.copy()
+        after.set_continuations(self.running_task.for_abb(block),
+                                block.get_outgoing_nodes('local'))
+        after.set_ready(block.arguments[0])
+        return [after]
+
+    def do_TerminateTask(self, block, before):
+        calling_task = self.running_task.for_abb(block)
+        after = before.copy()
+        after.set_suspended(calling_task)
+        return [after]
+
+    def do_ChainTask(self, block, before):
+        after = before.copy()
+        # Suspend the current Task, this also sets the
+        # continuations correctly
+        calling_task = self.running_task.for_abb(block)
+        after.set_suspended(calling_task)
+        # Activate other Task
+        after.set_ready(block.arguments[0])
+        return [after]
+
+    def do_Idle(self, block, before):
+        after = before.copy()
+        after.set_continuations(self.running_task.for_abb(block),
+                                block.get_outgoing_nodes('local'))
+        return [after]
+
+    def do_computation(self, block, before):
+        after = before.copy()
+        after.set_continuations(self.running_task.for_abb(block),
+                                block.get_outgoing_nodes('local'))
+        return [after]
+
+    def do_SystemCall(self, block, before, system_calls):
+        if block.type in system_calls:
+            after = system_calls[block.type](block, before)
+            for x in after:
+                x.freeze()
+            return after
+        else:
+            self.panic("BlockType %s is not supported yet"%block.type)
+
+    def find_possible_tasks(self, state):
+        # We get the subtask in the order of their priority
+        subtasks = []
+        for subtask in state.get_subtasks():
+            if state.is_surely_ready(subtask):
+                subtasks.append(subtask)
+                break
+            elif state.is_surely_suspended(subtask):
+                continue
+            elif state.is_maybe_ready(subtask):
+                subtasks.append(subtask)
+        return subtasks
+
+    def dispatch(self, state, source, target, set_state_on_edge, prune_higher_tasks = True):
+        # Where are we going to
+        subtask = self.running_task.for_abb(target)
+
+        # Set all higher priority subtask to Suspended
+        # -> cont = entry_block
+        if prune_higher_tasks:
+            for st in state.get_subtasks():
+                if st == subtask:
+                    break
+                state.set_suspended(st)
+        # When surely know that we are running
+        state.set_ready(subtask)
+
+        set_state_on_edge(source, target, state)
+
+    def schedule(self, block, state, set_state_on_edge):
+        current_running = self.running_task.for_abb(block)
+        # If current_running task is not running, just dispatch back
+        # to it again
+        if current_running and not current_running.preemptable \
+           and state.is_surely_ready(current_running):
+            # Do not schedule, just return to current block
+            for target in state.get_continuations(current_running):
+                copy_state = state.copy()
+                copy_state.set_continuation(current_running, target)
+
+                self.dispatch(copy_state, block, target,
+                              set_state_on_edge,
+                              prune_higher_tasks = False)
+            return
+
+        for subtask in self.find_possible_tasks(state):
+            for target in state.get_continuations(subtask):
+                copy_state = state.copy()
+                copy_state.set_continuation(subtask, target)
+
+                self.dispatch(copy_state, block, target, set_state_on_edge)
+
+
 
 class SystemState:
     READY = 'RDY'
@@ -107,6 +225,80 @@ class SystemState:
         return ret
 
 
+
+class ISR(SporadicEvent):
+    def __init__(self, analysis, isr_handler):
+        SporadicEvent.__init__(self, analysis.system, isr_handler.function_name)
+        self.analysis = analysis
+        self.system_call_semantic = self.analysis.system_call_semantic
+        self.handler = isr_handler
+        self.idle = self.system.functions["Idle"]
+
+    def block_functor(self, fixpoint, block):
+        if block == self.handler.entry_abb:
+            self.changed_current_block = True
+            before = self.start_state.copy()
+            before.set_ready(self.handler)
+        else:
+            self.changed_current_block, before = \
+                self.analysis.update_before_state(self.edge_states,
+                                                  self.before_abb_states,
+                                                  block,
+                                                  edge_type = 'irq')
+
+        after_states = self.system_call_semantic.do_SystemCall(
+            block, before,
+            {'ActivateTask': self.system_call_semantic.do_ActivateTask,
+             'computation': self.system_call_semantic.do_computation,
+             'Idle': self.system_call_semantic.do_Idle})
+        # Schedule depending on the possible output states
+        for after in after_states:
+            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+
+            if len(block.get_outgoing_edges('local')) == 0:
+                self.result.merge_with(after)
+
+
+        # This has to be done after the system call handling, since
+        # new irq links could have been introduced
+        if self.changed_current_block:
+            for node in block.get_outgoing_nodes('irq'):
+                self.fixpoint.enqueue_soon(item = node)
+
+        assert block.function in (self.handler, self.idle)
+
+
+    def set_state_on_edge(self, source, target, state):
+
+        if not target in source.get_outgoing_nodes('irq'):
+            source.add_cfg_edge(target, 'irq')
+            self.changed_current_block = True
+
+        self.edge_states[(source, target)] = state
+
+    def trigger(self, block, state):
+        self.result = state.new()
+        self.start_state = state
+        entry_abb = self.handler.entry_abb
+
+        # Clean old IRQ edges
+        for abb in self.handler.abbs:
+            for edge in abb.get_outgoing_edges('irq'):
+                abb.remove_cfg_edge(edge.target, 'irq')
+
+        self.edge_states = dict()
+        self.before_abb_states = dict()
+
+        self.fixpoint = FixpointIteraton([entry_abb])
+        self.fixpoint.do(self.block_functor)
+
+        # IRET
+        self.result.set_suspended(self.handler)
+
+        return self.result
+
+
+
 class RunningTaskAnalysis(Analysis):
     def __init__(self):
         Analysis.__init__(self)
@@ -114,170 +306,79 @@ class RunningTaskAnalysis(Analysis):
         # We require all possible system edges to be contructed
         return [CurrentRunningSubtask.name()]
 
-    def merge_inputs(self, block):
+    def merge_inputs(self, edge_states, block, edge_type = 'global'):
         state = SystemState(self.system)
-        for source in block.get_incoming_nodes('global'):
-            state.merge_with(self.states[(source, block)])
-        # The currently task is surely the highest task!
-        #current_running = self.running_task.for_abb(block)
-        #if current_running:
-        #    state.set_ready(current_running)
-        #    for x in state.get_subtasks():
-        #        if x == current_running:
-        #            break
-        #        assert state.is_surely_suspended(x)
+        for source in block.get_incoming_nodes(edge_type):
+            state.merge_with(edge_states[(source, block)])
         return state
 
-    def do_StartOS(self, block, before):
-        state = SystemState(self.system)
-        # In the StartOS node all tasks are suspended before,
-        # and afterwards the idle loop and the autostarted
-        # tasks are ready
-        for subtask in self.system.get_subtasks():
-            if subtask.autostart:
-                state.set_ready(subtask)
-            else:
-                state.set_suspended(subtask)
-            state.set_continuation(subtask, subtask.entry_abb)
-        return state
-
-    def do_ActivateTask(self, block, before):
-        after = before.copy()
-        after.set_continuations(self.running_task.for_abb(block),
-                                block.get_outgoing_nodes('local'))
-        after.set_ready(block.arguments[0])
-        return after
-
-    def do_TerminateTask(self, block, before):
-        calling_task = self.running_task.for_abb(block)
-        after = before.copy()
-        after.set_suspended(calling_task)
-        return after
-
-    def do_ChainTask(self, block, before):
-        after = before.copy()
-        # Suspend the current Task, this also sets the
-        # continuations correctly
-        calling_task = self.running_task.for_abb(block)
-        after.set_suspended(calling_task)
-        # Activate other Task
-        after.set_ready(block.arguments[0])
-        return after
-
-    def do_Idle(self, block, before):
-        after = before.copy()
-        after.set_continuations(self.running_task.for_abb(block),
-                                block.get_outgoing_nodes('local'))
-        return after
-
-    def do_computation(self, block, before):
-        after = before.copy()
-        after.set_continuations(self.running_task.for_abb(block),
-                                block.get_outgoing_nodes('local'))
-        # Handle sporadic events
-        for sporadic_event in self.system.sporadic_events:
-            sporadic_event.manipulate_state(block, after)
-
-        return after
-
-    def dispatch(self, state, source, subtask, prune_higher_tasks = True):
-        # We want to dispatch surely to the subtask
-        # Additional knowledge: we ARE the highest task
-        for target in state.get_continuations(subtask):
-            copy = state.copy()
-            copy.set_continuation(subtask, target)
+    def update_before_state(self, edge_states, before_state_dict, block, edge_type = 'global'):
+        before = self.merge_inputs(edge_states, block, edge_type)
+        changed = False
+        if not block in before_state_dict:
+            before_state_dict[block] = before
             changed = True
-            # Set all higher priority subtask to Suspended
-            # -> cont = entry_block
-            if prune_higher_tasks:
-                for st in copy.get_subtasks():
-                    if st == subtask:
-                        break
-                    copy.set_suspended(st)
-            # When surely know that we are running
-            copy.set_ready(subtask)
+        else:
+            changed = before_state_dict[block].merge_with(before)
+        return changed, before
 
-            if not target in source.get_outgoing_nodes('global'):
-                source.add_cfg_edge(target, 'global')
-                self.changed_current_block = True
+    def set_state_on_edge(self, source, target, state):
+        if not target in source.get_outgoing_nodes('global'):
+            source.add_cfg_edge(target, 'global')
+            self.changed_current_block = True
 
-            self.states[(source, target)] = copy
+        self.edge_states[(source, target)] = state
 
-            self.debug("Dispatch to (%s -> %s)" % (source, target))
-            self.debug(str(self.states[(source, target)]))
+    def install_sporadic_events(self):
+        # Install the alarm handlers
+        self.sporadic_events = list(self.system.alarms)
+        # Install the ISR handlers
+        for subtask in self.system.get_subtasks():
+            if subtask.is_isr:
+                self.sporadic_events.append(ISR(self, subtask))
 
-    def find_possible_tasks(self, state):
-        # We get the subtask in the order of their priority
-        subtasks = []
-        for subtask in state.get_subtasks():
-            if state.is_surely_ready(subtask):
-                subtasks.append(subtask)
-                break
-            elif state.is_surely_suspended(subtask):
-                continue
-            elif state.is_maybe_ready(subtask):
-                subtasks.append(subtask)
-        return subtasks
+    def do_computation_with_sporadic_events(self, block, before):
+        after_states = self.system_call_semantic.do_computation(block, before)
 
-    def schedule(self, block, state):
-        current_running = self.running_task.for_abb(block)
-        # If current_running task is not running, just dispatch back
-        # to it again
-        if current_running and not current_running.preemptable \
-           and state.is_surely_ready(current_running):
-            # Do not schedule, just return to current block
-            self.dispatch(state, block, current_running,
-                          prune_higher_tasks = False)
-            return
+        # Handle sporadic events
+        for sporadic_event in self.sporadic_events:
+            after = before.copy()
+            after.set_continuations(self.running_task.for_abb(block),
+                                    block.get_outgoing_nodes('local'))
+            after = sporadic_event.trigger(block, after)
+            after_states.append(after)
 
-        for subtask in self.find_possible_tasks(state):
-            self.dispatch(state, block, subtask)
+        return after_states
+
 
     def block_functor(self, fixpoint, block):
         self.debug("{{{ " + str(block))
-        before = self.merge_inputs(block)
-        after = None
-        self.changed_current_block = False
-        if not block in self.before_abb_states:
-            self.before_abb_states[block] = before
-            self.changed_current_block = True
-        else:
-            self.changed_current_block = self.before_abb_states[block].merge_with(before)
+
+        self.changed_current_block, before = \
+                self.update_before_state(self.edge_states,
+                                         self.before_abb_states,
+                                         block)
 
         # If this block belongs to a task, it must the highest
         # available task for the input state. Otherwise we wouldn't
         # have been scheduled (or the current task is non-preemptable)
         calling_task = self.running_task.for_abb(block)
-        if calling_task:
-            tasks = self.find_possible_tasks(before)
+        if calling_task and calling_task.preemptable:
+            tasks = self.system_call_semantic.find_possible_tasks(before)
             # Task should be schedulable
-            if calling_task.preemptable:
-                assert len(tasks) == 1 and tasks[0] == calling_task
+            assert len(tasks) == 1 and tasks[0] == calling_task
 
-        if block.type == 'StartOS':
-            after = self.do_StartOS(block, before)
-            after.freeze()
-            self.schedule(block, after)
-        elif block.type == 'ActivateTask':
-            after = self.do_ActivateTask(block, before)
-            after.freeze()
-            self.schedule(block, after)
-        elif block.type == 'TerminateTask':
-            after = self.do_TerminateTask(block, before)
-            after.freeze()
-            self.schedule(block, after)
-        elif block.type == 'ChainTask':
-            after = self.do_ChainTask(block, before)
-            after.freeze()
-            self.schedule(block, after)
-        elif block.type == 'computation':
-            after = self.do_computation(block, before)
-            self.schedule(block, after)
-        elif block.type == 'Idle':
-            after = self.do_Idle(block, before)
-            self.schedule(block, after)
-        else:
-            self.panic("BlockType %s is not supported yet"%block.type)
+        after_states = self.system_call_semantic.do_SystemCall(
+            block, before,
+            {'StartOS': self.system_call_semantic.do_StartOS,
+            'ActivateTask': self.system_call_semantic.do_ActivateTask,
+             'TerminateTask': self.system_call_semantic.do_TerminateTask,
+             'ChainTask': self.system_call_semantic.do_ChainTask,
+             'computation': self.do_computation_with_sporadic_events,
+             'Idle': self.system_call_semantic.do_Idle})
+        # Schedule depending on the possible output states
+        for after in after_states:
+            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
 
         # This has to be done after the system call handling, since
         # new global links could have been introduced
@@ -286,12 +387,17 @@ class RunningTaskAnalysis(Analysis):
                 self.fixpoint.enqueue_soon(item = node)
         self.debug("}}}")
 
+
     def do(self):
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
         # (ABB, ABB) -> SystemState
-        self.states = {}
+        self.edge_states = {}
         # ABB -> SystemState
         self.before_abb_states = {}
+
+        self.system_call_semantic = SystemCallSemantic(self.system, self.running_task)
+
+        self.install_sporadic_events()
 
         entry_abb = self.system.functions["StartOS"].entry_abb
         self.fixpoint = FixpointIteraton([entry_abb])

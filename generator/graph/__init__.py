@@ -79,27 +79,42 @@ class SystemGraph(GraphObject):
             task.set_event(task_desc.event)
             self.tasks.append(task)
             for subtask_name, deadline in task_desc.subtasks.items():
-                subtask = Subtask(self, "OSEKOS_TASK_" + subtask_name)
+                isISR = system.isISR(subtask_name)
+                if isISR:
+                    subtask = Subtask(self, "OSEKOS_ISR_" + subtask_name)
+                else:
+                    subtask = Subtask(self, "OSEKOS_TASK_" + subtask_name)
                 # Every subtask belongs to a task
                 task.add_subtask(subtask)
                 # Every subtask is also an function
                 self.functions[subtask.function_name] = subtask
 
                 subtask.set_deadline(deadline)
+                if isISR:
+                    isr_osek = system.getISR(subtask_name)
+                    subtask.set_static_priority(isr_osek.priority)
+                    # Assumption: Our subtasks are non-preemptable basic-tasks
+                    subtask.set_preemptable(False)
+                    subtask.set_basic_task(True)
+                    subtask.set_max_activations(1)
+                    subtask.set_autostart(False)
+                    subtask.set_is_isr(True)
+                else:
+                    subtask_osek = system.getSubTask(subtask_name)
+                    subtask.set_static_priority(subtask_osek.getStaticPriority())
+                    subtask.set_preemptable(subtask_osek.isPreemptable())
+                    subtask.set_basic_task(subtask_osek.isBasicSubTask())
+                    subtask.set_max_activations(subtask_osek.getMaxActivations())
+                    subtask.set_autostart(subtask_osek.isAutostart())
+                    subtask.set_is_isr(False)
 
-                subtask_osek = system.getSubTask(subtask_name)
-                subtask.set_static_priority(subtask_osek.getStaticPriority())
-                subtask.set_preemptable(subtask_osek.isPreemptable())
-                subtask.set_basic_task(subtask_osek.isBasicSubTask())
-                subtask.set_max_activations(subtask_osek.getMaxActivations())
-                subtask.set_autostart(subtask_osek.isAutostart())
 
-        self.sporadic_events = []
+        self.alarms = []
         for alarm in system.getAlarms():
             # FIXME: when events are supported
             assert alarm.event == None
             task = self.functions["OSEKOS_TASK_" + alarm.task]
-            self.sporadic_events.append(Alarm(self, alarm.name, task))
+            self.alarms.append(Alarm(self, alarm.name, task))
 
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc
@@ -134,6 +149,8 @@ class SystemGraph(GraphObject):
             if dep.type == 'ExplicitControlFlowABBDependency':
                 calling_block = self.find_abb(dep.source)
                 called_block  = self.find_abb(dep.target)
+                assert calling_block != None, "Could not find ABB%d"%dep.source
+                assert called_block != None, "Could not find ABB%d"%dep.source
                 # Subtask Functions cannot be called directly
                 if not isinstance(called_block.function, Subtask):
                     # Only entry blocks can be called
@@ -159,7 +176,6 @@ class SystemGraph(GraphObject):
                         ret_block = self.find_abb(ret_edge.source)
                         # Adding the Control flow return!
                         ret_block.add_cfg_edge(returned_block)
-
                     # Add the calling edge
                     calling_block.add_cfg_edge(called_block)
                     # Remove the artificial middle block
@@ -247,6 +263,13 @@ class SystemGraph(GraphObject):
             # Call analyzer pass
             front.analyze()
 
+            # Check graph integrity
+            self.fsck()
+
+            # Dump graph as dot output
+            with open("%s_%d_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
+                fd.write(self.dump_as_dot())
+
             # Call afteranalyzer
             verifier_name = "after_" + front.name()
             if verifier_name in self.verifiers:
@@ -254,12 +277,6 @@ class SystemGraph(GraphObject):
                 logging.info("Run %s verifier" % verifier_name)
                 verifiers_called.add(verifier_name)
 
-            # Check graph integrity
-            self.fsck()
-
-            # Dump graph as dot output
-            with open("%s_%d_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
-                fd.write(self.dump_as_dot())
 
             pass_number += 1
 

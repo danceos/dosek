@@ -90,9 +90,15 @@ class ControlFlowEdge(Edge):
         color = 'black'
         if type == 'global':
             color = 'blue'
+        if type == 'irq':
+            color = 'red'
+
         Edge.__init__(self, source, target, color=color)
         self.type = type
 
     def is_local(self):
         """Returns wheter this is a local edge. A local edge stays always on the task level"""
         return self.type == 'local'
+
+    def __repr__(self):
+        return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source, self.target, self.type)
