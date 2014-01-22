@@ -36,6 +36,16 @@ class AtomicBasicBlock(GraphObject):
     def get_incoming_nodes(self, type):
         return [x.source for x in self.incoming_edges if x.type == type]
 
+    def definite_after(self, type):
+        nodes = self.get_outgoing_nodes(type)
+        assert len(nodes) == 1
+        return nodes[0]
+
+    def definite_before(self, type):
+        nodes = self.get_incoming_nodes(type)
+        assert len(nodes) == 1
+        return nodes[0]
+
 
     def remove_cfg_edge(self, to_abb, type = 'local'):
         for edge in self.outgoing_edges:

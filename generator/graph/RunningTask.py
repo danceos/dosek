@@ -175,6 +175,9 @@ class SystemState:
     def is_maybe_ready(self, subtask):
         return self.READY in self.states[subtask]
 
+    def is_unsure_ready_state(self, subtask):
+        return len(self.states[subtask]) > 1
+
     def get_continuations(self, subtask):
         return self.continuations[subtask]
 
@@ -205,6 +208,13 @@ class SystemState:
                 changed = True
         return changed
 
+    @staticmethod
+    def merge_many(system, states):
+        state = SystemState(system)
+        for x in states:
+            state.merge_with(x)
+        return state
+
     def equal_to(self, other):
         for subtask in self.get_subtasks():
             if not(self.states[subtask] == other.states[subtask]):
@@ -233,12 +243,16 @@ class ISR(SporadicEvent):
         self.system_call_semantic = self.analysis.system_call_semantic
         self.handler = isr_handler
         self.idle = self.system.functions["Idle"]
+        self.collected_states = {}
+        for abb in self.handler.abbs:
+            self.collected_states[abb] = SystemState(self.system)
 
     def block_functor(self, fixpoint, block):
         if block == self.handler.entry_abb:
             self.changed_current_block = True
             before = self.start_state.copy()
             before.set_ready(self.handler)
+            self.before_abb_states[block] = before
         else:
             self.changed_current_block, before = \
                 self.analysis.update_before_state(self.edge_states,
@@ -277,6 +291,7 @@ class ISR(SporadicEvent):
         self.edge_states[(source, target)] = state
 
     def trigger(self, block, state):
+        SporadicEvent.trigger(self, block, state)
         self.result = state.new()
         self.start_state = state
         entry_abb = self.handler.entry_abb
@@ -291,6 +306,12 @@ class ISR(SporadicEvent):
 
         self.fixpoint = FixpointIteraton([entry_abb])
         self.fixpoint.do(self.block_functor)
+
+        # Merge calculated before-block states into the merged states
+        for abb in self.handler.abbs:
+            self.collected_states[abb].merge_with(
+                self.before_abb_states[abb]
+                )
 
         # IRET
         self.result.set_suspended(self.handler)
@@ -307,10 +328,10 @@ class RunningTaskAnalysis(Analysis):
         return [CurrentRunningSubtask.name()]
 
     def merge_inputs(self, edge_states, block, edge_type = 'global'):
-        state = SystemState(self.system)
-        for source in block.get_incoming_nodes(edge_type):
-            state.merge_with(edge_states[(source, block)])
-        return state
+        input_abbs = block.get_incoming_nodes(edge_type)
+        input_states = [edge_states[(source, block)]
+                        for source in input_abbs]
+        return SystemState.merge_many(self.system, input_states)
 
     def update_before_state(self, edge_states, before_state_dict, block, edge_type = 'global'):
         before = self.merge_inputs(edge_states, block, edge_type)
@@ -333,9 +354,12 @@ class RunningTaskAnalysis(Analysis):
         # Install the alarm handlers
         self.sporadic_events = list(self.system.alarms)
         # Install the ISR handlers
+        self.isrs = []
         for subtask in self.system.get_subtasks():
             if subtask.is_isr:
-                self.sporadic_events.append(ISR(self, subtask))
+                isr = ISR(self, subtask)
+                self.sporadic_events.append(isr)
+                self.isrs.append(isr)
 
     def do_computation_with_sporadic_events(self, block, before):
         after_states = self.system_call_semantic.do_computation(block, before)
@@ -376,9 +400,11 @@ class RunningTaskAnalysis(Analysis):
              'ChainTask': self.system_call_semantic.do_ChainTask,
              'computation': self.do_computation_with_sporadic_events,
              'Idle': self.system_call_semantic.do_Idle})
-        # Schedule depending on the possible output states
-        for after in after_states:
-            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+        # Merge all system call possibilities
+        after = SystemState.merge_many(self.system, after_states)
+        # Schedule depending on the possible output state
+        self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+
 
         # This has to be done after the system call handling, since
         # new global links could have been introduced
@@ -403,6 +429,20 @@ class RunningTaskAnalysis(Analysis):
         self.fixpoint = FixpointIteraton([entry_abb])
         self.fixpoint.do(self.block_functor)
 
+        # Delete this information
+        self.edge_states = None
+
+        # Merge ISRs
+        for isr in self.isrs:
+            # Add IRQ edges from activating blocks
+            # for triggered_in in isr.triggered_in_abb:
+            #    triggered_in.add_cfg_edge(isr.handler.entry_abb, 'irq')
+            for abb in isr.handler.abbs:
+                self.before_abb_states[abb] = isr.collected_states[abb]
+
+    ##
+    ## Result getters for this analysis
+    ##
     def reachable_subtasks_from_abb(self, abb):
         subtasks = set()
         for reached in abb.get_outgoing_nodes('global'):
@@ -416,6 +456,9 @@ class RunningTaskAnalysis(Analysis):
             st = self.running_task.for_abb(reaching)
             subtasks.add(st)
         return subtasks
+
+    def for_abb(self, abb):
+        return self.before_abb_states[abb]
 
 
 class GlobalControlFlowMetric(Analysis):

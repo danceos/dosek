@@ -1,3 +1,5 @@
+import sys
+
 class GraphObject:
     """Any Object that is used within the graph an can be dumped as dot"""
     def __init__(self, label, color = "black", root = False):
@@ -153,6 +155,13 @@ def get_functions(system, names):
                 ret.append(func)
     return tuple(ret)
 
+def syscall_test(analysis, function, syscall_name, arguments):
+    """Tests wheter a syscall exists and returns it"""
+    syscall = analysis.system.find_syscall(function, syscall_name, arguments)
+    assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
+    return syscall
+
+
 def reachability_test(analysis, function, syscall_name, arguments, possible_subtasks):
     syscall = analysis.system.find_syscall(function, syscall_name, arguments)
     assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
@@ -167,8 +176,8 @@ def activated_test(analysis, possible_subtasks, function):
     assert(set(reachable_subtasks) == set(possible_subtasks)), "SetReady(%s):: %s != %s" %(
         function.function_name, list(possible_subtasks), list(reachable_subtasks))
 
-import sys
 
+# Hook for coloured tracebacks on the console :-)
 def myexcepthook(type, value, tb):
     import traceback
     from pygments import highlight
