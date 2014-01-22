@@ -60,11 +60,16 @@ class SystemGraph(GraphObject):
             subtasks.extend(x.subtasks)
         return subtasks
 
-    def find_syscall(self, function, type, arguments):
+    def find_syscall(self, function, type, arguments, multiple = False):
+        abbs = []
         for abb in function.abbs:
             if abb.type == type \
                and abb.arguments == arguments:
-                return abb
+                abbs.append(abb)
+        if multiple:
+            return abbs
+        assert len(abbs) == 1, "System call %s::%s(%s) is ambigious" %(function, type, arguments)
+        return abbs[0]
 
     def get_syscalls(self):
         return [x for x in self.get_abbs()
