@@ -37,6 +37,7 @@ if __name__ == "__main__":
     from generator import SystemDescription, RTSCAnalysis, Generator
     from generator.rules import *
     from generator.graph import *
+    from generator.tools import panic
 
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
@@ -48,6 +49,8 @@ if __name__ == "__main__":
                       metavar="DIR", help="where to place the coredos source (prefix)")
     parser.add_option("-n", "--name",
                       metavar="STRING", help="where to place the coredos source (prefix)")
+    parser.add_option("-a", "--arch",
+                      metavar="STRING", help="for which coredos architecture?")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
     parser.add_option('', '--template-base',
@@ -80,6 +83,13 @@ if __name__ == "__main__":
     graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
     graph.analyze("%s/%s" % (options.prefix, options.name))
 
-    generator = Generator.Generator(graph, options.name, EncodedSystem(), X86Arch())
+    if options.arch == "i386":
+        arch = X86Arch();
+    elif options.arch == "posix":
+        arch = PosixArch()
+    else:
+        panic("Unknown --arch=%s", options.arch)
+
+    generator = Generator.Generator(graph, options.name, EncodedSystem(), arch)
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)

@@ -24,6 +24,11 @@ class Function:
         self.statements.append(statement)
         return statement
 
+    def prepend(self, statement):
+        self.statements = [statement] + self.statements
+        return statement
+
+
     def source_element_declarations(self):
         attributes = ""
         if len(self.attributes) > 0:

@@ -115,6 +115,7 @@ class Generator:
 
         # Generate a StartOS function and delegate it to the OS ruleset
         StartOS = Function("StartOS", "void", ["int"], extern_c = True)
+        self.objects["StartOS"] = StartOS
         self.os_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
 

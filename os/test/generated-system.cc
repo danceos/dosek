@@ -47,3 +47,4 @@ void inlinehint Alarm::checkCounter(const Counter &counter) {
 
 
 void __OS_HOOK_PreIdleHook() {}
+

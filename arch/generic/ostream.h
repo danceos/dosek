@@ -111,19 +111,6 @@ O_Stream<T>& hex(O_Stream<T>& os);
 
 
 
-/** \brief Color */
-typedef enum class Color {
-	BLACK   = 0,
-	BLUE    = 1,
-	GREEN   = 2,
-	CYAN    = 3,
-	RED     = 4,
-	MAGENTA = 5,
-	YELLOW  = 6,
-	WHITE  = 15,
-} Color;
-
-
 
 /**
  * @brief No-op output stream
@@ -132,7 +119,9 @@ class Null_Stream : public O_Stream<Null_Stream> {
 public:
 	void putchar(__attribute__((unused)) char c) {};
 
-	void setcolor(__attribute__((unused)) Color fg, __attribute__((unused)) Color bg) {};
+    //! setcolor isn't supported anyway, the actual color type doesn't matter.
+    template<typename T>
+	void setcolor(__attribute__((unused)) T fg, __attribute__((unused)) T bg) {};
 
 	template<typename T=Null_Stream>
 	Null_Stream& operator<<(__attribute__((unused)) O_Stream<T>& (*f) (O_Stream<T>&)) {

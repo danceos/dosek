@@ -26,7 +26,7 @@ class BaseRules:
             ret += func(subtask)
         return ret
 
-    def call_function(self, block, function, rettype, arguments):
+    def call_function(self, block, function, rettype, arguments, prepend = False):
         """Generates a call to a function and stores the result in an
            variable, if it isn't void"""
         ret_var = VariableDefinition.new(self.generator, rettype)
@@ -35,5 +35,8 @@ class BaseRules:
             name = ret_var.name
         else:
             name = None
-        call    = block.add( FunctionCall(function, arguments, name))
+        if prepend:
+            call    = block.prepend( FunctionCall(function, arguments, name))
+        else:
+            call    = block.add( FunctionCall(function, arguments, name))
         return ret_var

@@ -10,6 +10,10 @@
 
 #include "machine.h"
 
+#ifdef assert
+#undef assert
+#endif
+
 //! Runtime assert, print assertion if debugging, else causes trap
 #if DEBUG
 #include "output.h"

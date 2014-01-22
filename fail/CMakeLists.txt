@@ -227,7 +227,7 @@ macro(coredos_fail_test TEST)
 
 	# executable for FAIL* test
 	set(TESTELF "fail-${TEST}.elf")
-	coredos_executable(${TESTELF} EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN} DEFINITIONS "FAIL=1")
+	coredos_executable(${TESTELF} LIBS libtest EXCLUDE_FROM_ALL SOURCES ${TEST}.cc ${ARGN} DEFINITIONS "FAIL=1")
 	configure_file("${PROJECT_SOURCE_DIR}/os/test/linker.ld" "${CMAKE_CURRENT_BINARY_DIR}/fail-${TEST}_linker.ld" COPYONLY)
 
 	# FAIL* targets

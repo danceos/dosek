@@ -8,7 +8,6 @@
 #define __TASKLIST_H__
 
 #include <stdint.h>
-#include "output.h"
 #include "task.h"
 #include "util/assert.h"
 #include "util/encoded.h"

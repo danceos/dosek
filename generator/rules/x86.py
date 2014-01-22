@@ -1,11 +1,12 @@
 from generator.rules.base import BaseRules
+from generator.rules.simple import SimpleArch
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
     Include, FunctionDeclaration, Comment, Function, DataObject, \
     DataObjectArray
 
-class X86Arch(BaseRules):
+class X86Arch(SimpleArch):
     def __init__(self):
-        BaseRules.__init__(self)
+        SimpleArch.__init__(self)
 
     def generate_linkerscript(self):
         linker_script = LinkerScriptTemplate(self)
@@ -16,7 +17,7 @@ class X86Arch(BaseRules):
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
         self.generate_dataobjects_task_stacks()
-        self.generate_dataobjects_task_entries()
+        self.generate_dataobjects_task_entries() # From SimpleArch
         self.generate_dataobjects_tcbs()
 
     def generate_dataobjects_task_stacks(self):
@@ -38,15 +39,6 @@ class X86Arch(BaseRules):
             self.objects[subtask]["stacksize"] = stacksize
 
 
-    def generate_dataobjects_task_entries(self):
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread
-            if not subtask.is_real_thread():
-                continue
-            entry_function = FunctionDeclaration(subtask.function_name, "void", [],
-                                                                 extern_c = True)
-            self.generator.source_file.function_manager.add(entry_function)
-            self.objects[subtask]["entry_function"] = entry_function
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.includes.add(Include("tcb.h"))

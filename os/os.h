@@ -345,6 +345,10 @@ extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
 
 extern void OSEKOS_ShutdownOS(StatusType status);
 
+/**
+ * \brief Called directly before the idle loop starts.
+ */
+extern void __attribute__((weak_import)) __OS_PreIdleHook(void);
 
 #ifdef __cplusplus
 }

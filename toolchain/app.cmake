@@ -9,6 +9,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
   add_custom_command(OUTPUT ${COREDOS_ANNOTATE_OBJECT}
     COMMAND ${CLANGPP_BINARY} -S -emit-llvm
     -I${COREDOS_GENERATOR_DIR}/annotate/
+    ${ISA_CXX_FLAGS}
     ${INCLUDEDIRS_FLAGS}
     -Wno-return-type
     -m32 -std=c++11
@@ -38,7 +39,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
   foreach(src ${SOURCES})
     set(llvm_bytecode "${CMAKE_CURRENT_BINARY_DIR}/${src}.ll")
     add_custom_command(OUTPUT ${llvm_bytecode}
-      COMMAND ${CLANGPP_BINARY} -S -emit-llvm -O0 -m32 -std=c++11 ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
+      COMMAND ${CLANGPP_BINARY} -S -emit-llvm -O0 -m32 -std=c++11 ${ISA_CXX_FLAGS} ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
       MAIN_DEPENDENCY ${src}
       DEPENDS ${src}
       COMMENT "[${PROJECT_NAME}/${NAME}] Compiling application ${NAME}/${src} with clang")
@@ -98,6 +99,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
      --prefix ${BDIR}
        --name ${NAME}
        --template-base ${PROJECT_SOURCE_DIR}
+       --arch ${COREDOS_ARCHITECTURE}
        ${COREDOS_GENERATOR_ARGS}
      -vv
   COMMENT "[${PROJECT_NAME}/${NAME}] Generating COREDOS source code"
@@ -150,7 +152,7 @@ MACRO(COREDOS_BINARY)
   endif()
 
   if(${COREDOS_BINARY_TEST_ISO} STREQUAL "TRUE")
-    coredos_test_iso_image(test-${NAME} ${NAME} "${PROJECT_BINARY_DIR}/${NAME}.iso")
+    coredos_add_test(${NAME} )
   else()
     # Add a compile testcase
     add_test(test-${NAME} make ${NAME}-clean ${NAME})

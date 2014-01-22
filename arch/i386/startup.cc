@@ -14,6 +14,7 @@
 
 /** Initialisation stub for generic startup code */
 extern void init_generic();
+extern "C" void run_constructors(void);
 
 using namespace arch;
 
@@ -38,6 +39,10 @@ extern "C" void arch_startup()
 
 	// setup PIT
 	PIT::init();
+
+
+    // run constructors of global objects
+    run_constructors();
 
 	// TODO: enable interrupts somewhere?
 	// here, before os_main, or in a future StartOS()

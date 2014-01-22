@@ -30,6 +30,9 @@ fi
 if [ "$1" == "i386" ]
 then
 	ARCH=i386
+elif [ "$1" == "posix" ]
+then
+	ARCH=posix
 else
 	# Default Architecture i386
 	ARCH=i386
@@ -46,11 +49,12 @@ then
 else
 	echo "Currently supported:"
 	echo "     * i386"
+	echo "     * posix"
 	echo "Per default an Eclipse Makefile project file is generated."
 	echo "To change to Ninja add 'ninja' as second parameter. (Needs cmake >= 2.8.9 !)"
 	echo ""
 	echo "Usage: "
-	echo "     $0 [i386] <ninja>"
+	echo "     $0 [i386,posix] <ninja>"
 	echo ""
 	exit 1
 fi

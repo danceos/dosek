@@ -30,6 +30,7 @@ endif()
 
 # setup x86-32 specific sources
 set(SRCS
+    constructors.cc
 	startup.cc
 	startup.s
 	gdt.cc
@@ -130,3 +131,12 @@ macro(coredos_executable ELFFILE)
 	# add to executables list
 	set(EXECUTABLES ${EXECUTABLES} ${ELFFILE} CACHE INTERNAL STRING)
 endmacro()
+
+
+macro(coredos_add_test FN)
+    add_test(${FN} qemu-system-i386 -no-reboot -nographic -cdrom "${PROJECT_BINARY_DIR}/${FN}.iso")
+    set_tests_properties(${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
+    add_dependencies( build_and_test iso-${NAME} )
+    add_dependencies( ctest2jenkins iso-${NAME} )
+endmacro()
+

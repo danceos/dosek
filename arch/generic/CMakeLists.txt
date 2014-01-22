@@ -2,8 +2,6 @@ message(STATUS "Preparing generic startup code.")
 
 set(SRCS
 		startup.cc
-		constructors.cc
-		constructors.h
 )
 
 # Add to include directories

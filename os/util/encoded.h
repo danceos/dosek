@@ -8,16 +8,19 @@
  */
 
 #include <stdint.h>
-#include <limits.h>
 #include "assert.h"
 
-#ifndef UINT16_MAX
-#define UINT16_MAX 0xffff
+#ifdef UINT16_MAX
+#undef UINT16_MAX
 #endif
 
-#ifndef UINT32_MAX
-#define UINT32_MAX 0xffffffff
+#ifdef UINT32_MAX
+#undef UINT32_MAX
 #endif
+
+#define UINT16_MAX 0xffffU
+#define UINT32_MAX 0xffffffffU
+
 
 #define __NUM_PRIMES 6542
 #define __V_MAX UINT16_MAX
