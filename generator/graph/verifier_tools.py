@@ -50,6 +50,6 @@ class RunningTaskToolbox:
         ABBs are returned"""
         activating_subtasks, activating_abbs = self.analysis.activating_subtasks(function)
         assert(set(activating_subtasks) == set(possible_subtasks)), "SetReady(%s):: %s != %s" %(
-            function.function_name, list(activating_subtasks), list(reachable_subtasks))
+            function.function_name, list(activating_subtasks), list(possible_subtasks))
 
         return activating_abbs

@@ -23,14 +23,18 @@ class SystemCallSemantic:
 
     def do_ActivateTask(self, block, before):
         after = before.copy()
-        after.set_continuations(self.running_task.for_abb(block),
-                                block.get_outgoing_nodes('local'))
+        # EnsureComputationBlocks ensures that after an activate task
+        # only one ABB can be located
+        cont = block.definite_after('local')
+        after.set_continuation(self.running_task.for_abb(block),
+                               cont)
         after.set_ready(block.arguments[0])
         return [after]
 
     def do_TerminateTask(self, block, before):
-        calling_task = self.running_task.for_abb(block)
         after = before.copy()
+        calling_task = self.running_task.for_abb(block)
+        after.set_continuation(calling_task, calling_task.entry_abb)
         after.set_suspended(calling_task)
         return [after]
 
@@ -39,6 +43,7 @@ class SystemCallSemantic:
         # Suspend the current Task, this also sets the
         # continuations correctly
         calling_task = self.running_task.for_abb(block)
+        after.set_continuation(calling_task, calling_task.entry_abb)
         after.set_suspended(calling_task)
         # Activate other Task
         after.set_ready(block.arguments[0])
@@ -46,15 +51,21 @@ class SystemCallSemantic:
 
     def do_Idle(self, block, before):
         after = before.copy()
-        after.set_continuations(self.running_task.for_abb(block),
-                                block.get_outgoing_nodes('local'))
+        # EnsureComputationBlocks ensures that after the Idle() function
+        # only one ABB can be located
+        cont = block.definite_after('local')
+        after.set_continuation(self.running_task.for_abb(block),
+                               cont)
         return [after]
 
     def do_computation(self, block, before):
-        after = before.copy()
-        after.set_continuations(self.running_task.for_abb(block),
-                                block.get_outgoing_nodes('local'))
-        return [after]
+        ret = []
+        calling_task = self.running_task.for_abb(block)
+        for next_abb in block.get_outgoing_nodes('local'):
+            after = before.copy()
+            after.set_continuation(calling_task, next_abb)
+            ret.append(after)
+        return ret
 
     def do_SystemCall(self, block, before, system_calls):
         if block.type in system_calls:
@@ -151,15 +162,8 @@ class SystemState:
     def get_task_states(self, subtask):
         return self.states[subtask]
 
-    def set_unknown(self, subtask):
-        assert not self.frozen
-        self.states[subtask] = set()
-
     def set_suspended(self, subtask):
-        # When a subtask is surely suspendend, we know that it can't
-        # be somewhere in its execution
         assert not self.frozen
-        self.set_continuation(subtask, subtask.entry_abb)
         self.states[subtask] = set([self.SUSPENDED])
 
     def set_ready(self, subtask):
@@ -235,91 +239,6 @@ class SystemState:
         return ret
 
 
-
-class ISR(SporadicEvent):
-    def __init__(self, analysis, isr_handler):
-        SporadicEvent.__init__(self, analysis.system, isr_handler.function_name)
-        self.analysis = analysis
-        self.system_call_semantic = self.analysis.system_call_semantic
-        self.handler = isr_handler
-        self.idle = self.system.functions["Idle"]
-        self.collected_states = {}
-        for abb in self.handler.abbs:
-            self.collected_states[abb] = SystemState(self.system)
-
-    def block_functor(self, fixpoint, block):
-        if block == self.handler.entry_abb:
-            self.changed_current_block = True
-            before = self.start_state.copy()
-            before.set_ready(self.handler)
-            self.before_abb_states[block] = before
-        else:
-            self.changed_current_block, before = \
-                self.analysis.update_before_state(self.edge_states,
-                                                  self.before_abb_states,
-                                                  block,
-                                                  edge_type = 'irq')
-
-        after_states = self.system_call_semantic.do_SystemCall(
-            block, before,
-            {'ActivateTask': self.system_call_semantic.do_ActivateTask,
-             'computation': self.system_call_semantic.do_computation,
-             'Idle': self.system_call_semantic.do_Idle})
-        # Schedule depending on the possible output states
-        for after in after_states:
-            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
-
-            if len(block.get_outgoing_edges('local')) == 0:
-                self.result.merge_with(after)
-
-
-        # This has to be done after the system call handling, since
-        # new irq links could have been introduced
-        if self.changed_current_block:
-            for node in block.get_outgoing_nodes('irq'):
-                self.fixpoint.enqueue_soon(item = node)
-
-        assert block.function in (self.handler, self.idle)
-
-
-    def set_state_on_edge(self, source, target, state):
-
-        if not target in source.get_outgoing_nodes('irq'):
-            source.add_cfg_edge(target, 'irq')
-            self.changed_current_block = True
-
-        self.edge_states[(source, target)] = state
-
-    def trigger(self, block, state):
-        SporadicEvent.trigger(self, block, state)
-        self.result = state.new()
-        self.start_state = state
-        entry_abb = self.handler.entry_abb
-
-        # Clean old IRQ edges
-        for abb in self.handler.abbs:
-            for edge in abb.get_outgoing_edges('irq'):
-                abb.remove_cfg_edge(edge.target, 'irq')
-
-        self.edge_states = dict()
-        self.before_abb_states = dict()
-
-        self.fixpoint = FixpointIteraton([entry_abb])
-        self.fixpoint.do(self.block_functor)
-
-        # Merge calculated before-block states into the merged states
-        for abb in self.handler.abbs:
-            self.collected_states[abb].merge_with(
-                self.before_abb_states[abb]
-                )
-
-        # IRET
-        self.result.set_suspended(self.handler)
-
-        return self.result
-
-
-
 class RunningTaskAnalysis(Analysis):
     def __init__(self):
         Analysis.__init__(self)
@@ -327,14 +246,16 @@ class RunningTaskAnalysis(Analysis):
         # We require all possible system edges to be contructed
         return [CurrentRunningSubtask.name()]
 
-    def merge_inputs(self, edge_states, block, edge_type = 'global'):
+    @staticmethod
+    def merge_inputs(edge_states, block, edge_type = 'global'):
         input_abbs = block.get_incoming_nodes(edge_type)
         input_states = [edge_states[(source, block)]
                         for source in input_abbs]
-        return SystemState.merge_many(self.system, input_states)
+        return SystemState.merge_many(block.system, input_states)
 
-    def update_before_state(self, edge_states, before_state_dict, block, edge_type = 'global'):
-        before = self.merge_inputs(edge_states, block, edge_type)
+    @staticmethod
+    def update_before_state(edge_states, before_state_dict, block, edge_type = 'global'):
+        before = RunningTaskAnalysis.merge_inputs(edge_states, block, edge_type)
         changed = False
         if not block in before_state_dict:
             before_state_dict[block] = before
@@ -366,10 +287,10 @@ class RunningTaskAnalysis(Analysis):
 
         # Handle sporadic events
         for sporadic_event in self.sporadic_events:
-            after = before.copy()
+            after = sporadic_event.trigger(block, before)
             after.set_continuations(self.running_task.for_abb(block),
                                     block.get_outgoing_nodes('local'))
-            after = sporadic_event.trigger(block, after)
+
             after_states.append(after)
 
         return after_states
@@ -395,7 +316,7 @@ class RunningTaskAnalysis(Analysis):
         after_states = self.system_call_semantic.do_SystemCall(
             block, before,
             {'StartOS': self.system_call_semantic.do_StartOS,
-            'ActivateTask': self.system_call_semantic.do_ActivateTask,
+             'ActivateTask': self.system_call_semantic.do_ActivateTask,
              'TerminateTask': self.system_call_semantic.do_TerminateTask,
              'ChainTask': self.system_call_semantic.do_ChainTask,
              'computation': self.do_computation_with_sporadic_events,
@@ -461,6 +382,91 @@ class RunningTaskAnalysis(Analysis):
 
     def for_abb(self, abb):
         return self.before_abb_states[abb]
+
+
+class ISR(SporadicEvent):
+    def __init__(self, analysis, isr_handler):
+        SporadicEvent.__init__(self, analysis.system, isr_handler.function_name)
+        self.analysis = analysis
+        self.system_call_semantic = self.analysis.system_call_semantic
+        self.handler = isr_handler
+        self.idle = self.system.functions["Idle"]
+        self.collected_states = {}
+        for abb in self.handler.abbs:
+            self.collected_states[abb] = SystemState(self.system)
+
+    def block_functor(self, fixpoint, block):
+        if block == self.handler.entry_abb:
+            self.changed_current_block = True
+            before = self.start_state.copy()
+            before.set_ready(self.handler)
+            self.before_abb_states[block] = before
+        else:
+            self.changed_current_block, before = \
+                self.analysis.update_before_state(self.edge_states,
+                                                  self.before_abb_states,
+                                                  block,
+                                                  edge_type = 'irq')
+
+        after_states = self.system_call_semantic.do_SystemCall(
+            block, before,
+            {'ActivateTask': self.system_call_semantic.do_ActivateTask,
+             'computation': self.system_call_semantic.do_computation,
+             'Idle': self.system_call_semantic.do_Idle})
+        # Schedule depending on the possible output states
+        for after in after_states:
+            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+
+        if len(block.get_outgoing_edges('local')) == 0:
+            assert len(after_states) == 0
+            assert block.type == 'computation'
+            self.result.merge_with(before)
+
+
+        # This has to be done after the system call handling, since
+        # new irq links could have been introduced
+        if self.changed_current_block:
+            for node in block.get_outgoing_nodes('irq'):
+                self.fixpoint.enqueue_soon(item = node)
+
+        assert block.function in (self.handler, self.idle)
+
+
+    def set_state_on_edge(self, source, target, state):
+
+        if not target in source.get_outgoing_nodes('irq'):
+            source.add_cfg_edge(target, 'irq')
+            self.changed_current_block = True
+
+        self.edge_states[(source, target)] = state
+
+    def trigger(self, block, state):
+        SporadicEvent.trigger(self, block, state)
+        self.result = state.new()
+        self.start_state = state
+        entry_abb = self.handler.entry_abb
+
+        # Clean old IRQ edges
+        for abb in self.handler.abbs:
+            for edge in abb.get_outgoing_edges('irq'):
+                abb.remove_cfg_edge(edge.target, 'irq')
+
+        self.edge_states = dict()
+        self.before_abb_states = dict()
+
+        self.fixpoint = FixpointIteraton([entry_abb])
+        self.fixpoint.do(self.block_functor)
+
+        # Merge calculated before-block states into the merged states
+        for abb in self.handler.abbs:
+            self.collected_states[abb].merge_with(
+                self.before_abb_states[abb]
+                )
+
+        # IRET
+        self.result.set_suspended(self.handler)
+
+        return self.result
 
 
 class GlobalControlFlowMetric(Analysis):
