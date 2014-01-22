@@ -1,36 +1,31 @@
-from generator.graph.common import *
+from generator.graph.verifier_tools import *
 
 def after_RunningTaskAnalysis(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, Idle, StartOS) = \
        get_functions(analysis.system, ["H1", "H2", "H3", "Idle", "StartOS"])
 
-    syscalls = set()
-    def test(func, syscall, args, expected_subtasks):
-        abb = reachability_test(analysis, func, syscall, args, expected_subtasks)
-        syscalls.add(abb)
+    t = RunningTaskToolbox(analysis)
 
     # H3 are not activated
-    syscalls.update(set(H3.get_syscalls()))
+    t.mark_syscalls_in_function(H3)
 
-    test(StartOS, "StartOS", [], # =>
+    t.reachability(StartOS, "StartOS", [], # =>
          [Idle])
 
-    activated_test(analysis, [Idle], # =>
-                   H2)
+    t.activate([Idle], # =>
+               H2)
 
-    test(H2, "ActivateTask", [H1], # =>
+    t.reachability(H2, "ActivateTask", [H1], # =>
          [H1])
 
-    test(H2, "TerminateTask", [], # =>
+    t.reachability(H2, "TerminateTask", [], # =>
          [Idle])
 
-    test(H1, "TerminateTask", [], # =>
+    t.reachability(H1, "TerminateTask", [], # =>
          [H2])
 
-    test(Idle, "Idle", [], # =>
+    t.reachability(Idle, "Idle", [], # =>
          [Idle])
 
-    assert set(analysis.system.get_syscalls()) == syscalls, "missing %s" \
-        %(set(analysis.system.get_syscalls()) - syscalls)
-
+    t.promise_all_syscalls_checked()

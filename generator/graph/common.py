@@ -144,38 +144,6 @@ class FixpointIteraton:
 def is_local_edge(edge):
     return edge.is_local()
 
-def get_functions(system, names):
-    """A helper for verify scripts to find quickly a set of subtask handlers"""
-    ret = []
-    for x in names:
-        for name, func in system.functions.items():
-            if x == name or \
-               "OSEKOS_TASK_" + x == name or \
-               "OSEKOS_ISR_" + x == name:
-                ret.append(func)
-    return tuple(ret)
-
-def syscall_test(analysis, function, syscall_name, arguments):
-    """Tests wheter a syscall exists and returns it"""
-    syscall = analysis.system.find_syscall(function, syscall_name, arguments)
-    assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
-    return syscall
-
-
-def reachability_test(analysis, function, syscall_name, arguments, possible_subtasks):
-    syscall = analysis.system.find_syscall(function, syscall_name, arguments)
-    assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
-    reachable_subtasks = analysis.reachable_subtasks_from_abb(syscall)
-    assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
-        function.function_name, syscall_name, arguments, list(possible_subtasks), list(reachable_subtasks))
-
-    return syscall
-
-def activated_test(analysis, possible_subtasks, function):
-    reachable_subtasks = analysis.activated_by(function)
-    assert(set(reachable_subtasks) == set(possible_subtasks)), "SetReady(%s):: %s != %s" %(
-        function.function_name, list(possible_subtasks), list(reachable_subtasks))
-
 
 # Hook for coloured tracebacks on the console :-)
 def myexcepthook(type, value, tb):

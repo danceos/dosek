@@ -125,5 +125,5 @@ MACRO(COREDOS_BINARY)
   coredos_executable(${NAME} EXCLUDE_FROM_ALL
     ${COREDOS_SOURCE_SYSTEM_OBJECT} ${COREDOS_GENERATED_SOURCE})
 
-  add_test(${NAME}-test make ${NAME}-generate)
+  add_test(${NAME}-test make ${NAME}-clean ${NAME}-generate)
 ENDMACRO(COREDOS_BINARY)

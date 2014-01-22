@@ -450,12 +450,14 @@ class RunningTaskAnalysis(Analysis):
             subtasks.add(st)
         return subtasks
 
-    def activated_by(self, subtask):
+    def activating_subtasks(self, subtask):
         subtasks = set()
+        abbs = set()
         for reaching in subtask.entry_abb.get_incoming_nodes('global'):
             st = self.running_task.for_abb(reaching)
             subtasks.add(st)
-        return subtasks
+            abbs.add(reaching)
+        return subtasks, abbs
 
     def for_abb(self, abb):
         return self.before_abb_states[abb]
