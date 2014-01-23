@@ -8,6 +8,7 @@
 #define IDT_H_
 
 #include "stdint.h"
+#include "util/inline.h"
 
 namespace arch {
 
@@ -15,7 +16,8 @@ namespace arch {
  * @name IRQ numbers
  * @{
  */
-#define IRQ_SYSCALL 33 //!< syscall software interrupt
+#define IRQ_SYSCALL 34 //!< syscall software interrupt
+#define IRQ_RESCHEDULE 33 //!< reschedule software interrupt
 #define IRQ_DISPATCH 32 //!< dispatcher software interrupt
 /**@}*/
 
@@ -42,7 +44,6 @@ namespace arch {
  */
 #define IRQ_HANDLER(irqno) IRQ_HNDLR(irqno)
 
-
 /** \brief Define a free-standing interrupt handler
  *
  * This helper macro is needed to allow macro expansion for the argument
@@ -53,6 +54,7 @@ namespace arch {
  */
 #define IRQ_HNDLR(irqno) \
 	extern "C" __attribute__((naked)) void irq_handler_ ## irqno (void)
+
 
 
 /** \brief Attach interrupt handler function to interrupt
@@ -70,10 +72,11 @@ namespace arch {
  */
 #define ISR_HANDLER(irqno, handler) \
 	extern "C" __attribute__((naked)) void isr_ ## irqno (void) { \
-		struct task_context* ctx; \
-		asm("" : "=S"(ctx)); \
-		handler(ctx); \
-		asm volatile("jmp handler_exit" :: "S"(ctx)); \
+		struct task_context* task; \
+		struct cpu_context* cpu; \
+		asm volatile("" : "=S"(cpu), "=b"(task)); \
+		handler(cpu, task); \
+		asm volatile("jmp handler_exit" :: "S"(cpu), "b"(task)); \
 	}
 
 /** \brief Define an interrupt handler
@@ -85,15 +88,17 @@ namespace arch {
  * \hideinitializer
  */
 #define ISR(irqno) \
-	forceinline void irq_handler_fun_ ## irqno (struct task_context* ctx); \
+	forceinline void irq_handler_fun_ ## irqno (struct cpu_context* cpu, struct task_context* task); \
 	ISR_HANDLER(irqno, irq_handler_fun_ ## irqno); \
-	forceinline void irq_handler_fun_ ## irqno (__attribute__((unused)) struct task_context* ctx)
+	forceinline void irq_handler_fun_ ## irqno (__attribute__((unused)) struct cpu_context* cpu, __attribute__((unused)) struct task_context* task)
 /**@}*/
 
 
 
 /** \brief Context saved by CPU on interrupt/trap/syscall */
 struct cpu_context {
+	uint32_t error_code; //!< error code (dummy value if unused)
+
 	uint32_t eip; //!< source address
 	uint32_t cs; //!< source code segment selector
 
@@ -104,17 +109,11 @@ struct cpu_context {
 	uint32_t ss; //!< userspace stack segment selector
 } __attribute__((packed));
 
-/** \brief Application context (saved by IRQ handlers) */
+/** \brief Application (task) context (saved by IRQ handlers) */
 struct task_context {
-	// saved registers
-	// TODO: dont save eax, ecx, edx (caller save) when syscalling?
+	// esp is not valid, TODO: do not push?
 	uint32_t edi, esi, ebp, esp, ebx;
 	uint32_t edx, ecx, eax;
-
-	// pushed by CPU or handler:
-	uint32_t error_code; //!< error code (dummy value if unused)
-
-	cpu_context cpu_context; //!< context saved by CPU
 } __attribute__((packed));
 
 

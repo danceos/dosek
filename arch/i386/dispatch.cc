@@ -5,13 +5,15 @@
 #include "os/util/inline.h"
 #include "lapic.h"
 
-namespace os {
+namespace arch {
+
 /** \brief Startup stackpointer (save location) */
 void* startup_sp = 0;
 void** save_sp = &startup_sp;
-};
 
-namespace arch {
+uint32_t dispatch_pagedir;
+uint32_t dispatch_stackptr;
+uint32_t dispatch_ip;
 
 /** \brief Dispatch interrupt handler
  *
@@ -19,12 +21,14 @@ namespace arch {
  * and performs the actual dispatching in ring 0.
  */
 IRQ_HANDLER(IRQ_DISPATCH) {
-	// get arguments and saved context from registers
-	uint32_t id; // from %edx
-	uint32_t sp; // from %ebx
-	uint32_t fun; // from %ecx
-	cpu_context *ctx; // stored at current stack pointer
-	asm volatile("mov %%esp, %0" : "=r"(ctx), "=b"(sp), "=c"(fun), "=d"(id));
+	// get CPU context stored at top of stack
+	cpu_context *ctx;
+	asm volatile("leal -4(%%esp), %0" : "=r"(ctx)); // subtract missing error code
+
+	// get dispatch values
+	uint32_t id = dispatch_pagedir;
+	uint32_t fun = dispatch_ip;
+	uint32_t sp = dispatch_stackptr;
 
 	// TODO: remove/reuse pushed CPU context?
 
@@ -35,7 +39,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	Machine::push(sp);
 
 	// push flags, IO privilege level 3
-	// TODO: always enable interrupts?
+	// TODO: always enable interrupts? (0x3200)
 	Machine::push(ctx->eflags | 0x3000);
 
 	// push code segment, DPL3
@@ -60,6 +64,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	}
 
 	// TODO: check prepared stack? (SSE crc32q?)
+
+	// send end-of-interrupt signal
+	LAPIC::send_eoi();
 
 	// return from interrupt
 	Machine::return_from_interrupt();

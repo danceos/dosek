@@ -10,8 +10,10 @@
 #include "scheduler/tasklist.h"
 #include "syscall.h"
 #include "dispatch.h"
+#include "reschedule-ast.h"
+#include "thetasks.h"
 
-using arch::Dispatcher;
+using namespace arch;
 
 namespace os { namespace scheduler {
 
@@ -24,8 +26,9 @@ protected:
 public:
 	Scheduler() : current_prio(0), current_task(0) {}
 
-	forceinline void Schedule(void) {
+	forceinline void Reschedule(void) {
 		// TODO: control flow check
+
 		// set current (=next) task from task list
 		tlist.head(current_task, current_prio);
 
@@ -42,6 +45,16 @@ public:
 			Dispatcher::Idle();
 		} else {
 			assert(false);
+		}
+	}
+
+	forceinline void Schedule(void) {
+		if(in_syscall()) {
+			// in syscall: reschedule directly
+			Reschedule();
+		} else {
+			// not in syscall (probably in ISR): request reschedule AST
+			request_reschedule_ast();
 		}
 	}
 
@@ -92,7 +105,10 @@ public:
 
 extern Scheduler scheduler;
 
-// TODO: meaningful names
+// TODO: more meaningful names
+// currently the "normal" name is a syscall wrapper for
+// the actual syscall which has ...C suffix
+
 template<typename T>
 noinline void ActivateTaskC(const T id) {
 	scheduler.ActivateTask(id);
@@ -119,6 +135,8 @@ forceinline void ChainTask(const Task& t) {
 	auto id = t.enc_id<3>();
 
 	syscall(ChainTaskC<decltype(id)>, id);
+
+	Machine::unreachable();
 }
 
 noinline void TerminateTaskC(uint32_t dummy);
@@ -128,6 +146,17 @@ noinline void TerminateTaskC(uint32_t dummy);
  */
 forceinline void TerminateTask() {
 	syscall(TerminateTaskC, NULL);
+
+	Machine::unreachable();
+}
+
+noinline void ScheduleC(uint32_t dummy);
+
+/**
+ * @satisfies{13,2,3,4}
+ */
+forceinline void Schedule() {
+	syscall(ScheduleC, NULL);
 }
 
 }};

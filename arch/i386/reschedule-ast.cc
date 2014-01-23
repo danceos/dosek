@@ -10,35 +10,25 @@
 
 namespace arch {
 
-/** \brief Syscall interrupt handler */
-IRQ_HANDLER(IRQ_SYSCALL) {
-	// get arguments from registers
-	// also, store pointer to context in %esi before we change %esp
-	uint32_t fun, arg;
+/** \brief */
+IRQ_HANDLER(IRQ_RESCHEDULE) {
+	// store pointer to context in %esi before we change %esp
 	cpu_context* ctx;
-	asm volatile("leal -4(%%esp), %0" : "=r"(ctx), "=c"(arg), "=b"(fun));
-
-	// TODO: remove/reuse pushed CPU context?
+	asm volatile("leal -4(%%esp), %0" : "=r"(ctx));
 
 	// block ISR2s by raising APIC task priority
 	LAPIC::set_task_prio(128);
 
-	// move to interrupt stack
-	asm volatile("mov $_estack_os-2048, %esp");
+	// TODO: reuse pushed CPU context?
+	// move to interrupt stack?
+	//asm volatile("mov $_estack_os-2048, %esp");
 
 	// set userspace segment selectors
 	// TODO: maybe not neccessary?
 	Machine::set_data_segment(GDT::USER_DATA_SEGMENT | 0x3);
 
-	// save stack+instruction pointer
-	if(ctx->cs & 0x3) { // only if coming from userspace
-		*save_sp = (void*) ctx->user_esp; // save SP
-		*(*((uint32_t **) save_sp) - 1) = ctx->eip; // save IP
-		save_sp = 0; // for detecting bugs, not stricly neccessary
-	}
-
 	// push syscall argument
-	Machine::push(arg);
+	Machine::push(0);
 
 	// push return adddress
 	// provides nice stack backtraces but will not actually work:
@@ -60,10 +50,13 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 
 	// push syscall function pointer/segment
 	Machine::push(GDT::USER_CODE_SEGMENT | 0x3); // push code segment, DPL3
-	Machine::push(fun); // push eip
+	Machine::push((uint32_t) os::scheduler::ScheduleC); // push eip
 
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
+
+	// send end-of-interrupt signal
+	LAPIC::send_eoi();
 
 	// return from interrupt and proceed with syscall in ring 3
 	// TODO: optimization: put all values for iret in text segment?

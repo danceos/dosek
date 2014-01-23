@@ -16,5 +16,9 @@ noinline void TerminateTaskC(__attribute__ ((unused)) uint32_t dummy) {
 	scheduler.TerminateTask();
 }
 
+noinline void ScheduleC(__attribute__ ((unused)) uint32_t dummy) {
+	scheduler.Reschedule();
+}
+
 };
 };

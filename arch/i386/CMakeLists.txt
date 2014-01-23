@@ -44,6 +44,7 @@ set(SRCS
 	pit.cc
 	dispatch.cc
 	syscall.cc
+	reschedule-ast.cc
 )
 
 # Create arch library

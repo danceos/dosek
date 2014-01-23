@@ -9,6 +9,7 @@
 #include "exception.h"
 #include "lapic.h"
 
+#define DEBUG 1
 #if DEBUG
 #include "serial.h"
 extern Serial serial;
@@ -17,18 +18,18 @@ extern Serial serial;
 namespace arch {
 
 /** \brief Default handler for interrupts */
-extern "C" __attribute__((naked)) void unhandled_handler() {
-	// get context pointer and int# from registers
-	struct task_context* ctx;
+ISR(unhandled) {
+	// interrupt number passed in %eax
 	uint32_t intno;
-	asm("" : "=S"(ctx), "=a"(intno));
+	asm volatile("" : "=a"(intno));
 
 	// print and halt when debugging
 	#if DEBUG
+	uint32_t ip = cpu->eip;
 	serial << "unhandled interrupt ";
-	serial << intno;
+	serial << dec << intno;
 	serial << " @ 0x";
-	serial << hex << ctx->cpu_context.eip;
+	serial << hex << ip;
 	serial << endl;
 
 	asm("hlt");
@@ -36,9 +37,6 @@ extern "C" __attribute__((naked)) void unhandled_handler() {
 
 	// send end-of-interrupt (unless exception)
 	if(intno > 31) LAPIC::send_eoi();
-
-	// jump to exit code
-	asm volatile("jmp handler_exit" :: "S"(ctx));
 }
 
 

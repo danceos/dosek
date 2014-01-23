@@ -1,5 +1,5 @@
 #define IRQS_BASE 0x101000
-#define IRQS_OFFSET 32
+#define IRQS_OFFSET 128
 #define KERNEL_CODE_SEGMENT 0x8
 #define TYPE_DPL0_IRQ_GATE  0x8E
 #define TYPE_DPL0_TRAP_GATE 0x8F
@@ -35,47 +35,77 @@ irq_handler_\num:
 
 	# push dummy error code if necessary
 	.if !\error_code
-	push $0
+	pushl $0
 	.endif
 
-	# push general purpose registers
-	# TODO: push general purpose registers on userspace stack?
-	pusha
+	# jump to label 1 if coming from user task (check page directory)
+	push %eax # save eax on stack to reuse it
+	mov %cr3, %eax # get page directory
+	.weak pagedir_os
+	cmp $pagedir_os,%eax # if kernel page directory we are not from task
+	jne 1f
 
-	# save stack pointer
-	mov %esp, %esi
+	# coming from kernel: save context on interrupt stack
+	pop %eax # restore eax
+	pusha # save all registers
+	leal 32(%esp), %esi # put interrupt stack pointer in %esi
+	mov %esp, %ebx # put context pointer in %ebx
+	jmp 2f # jump over user mode handling
 
+1:
+	# coming from task: save context on userspace/task stack
+	mov %esp, %eax # save interrupt stackpointer in eax
+	mov 20(%esp), %esp # switch (back) to userspace stack
+	push 8(%eax) # save return address on stack
+	pusha # save all registers
+	mov %esp, %ebx # put context pointer in %ebx
+	push $irq_resume # push irq_resume fragment as "new" return address
+	mov (_ZN4arch7save_spE), %ecx # get value of arch::save_sp
+	mov %ebx, (%ecx) # save stack pointer to *arch::save_sp
+	mov %eax, %esp # switch back to interrupt stack
+	pop %eax # restore eax
+	mov %eax, 28(%ebx) # put real userspace eax in saved context
+	mov %esp, %esi # put interrupt stack pointer in %esi
+
+2:
 	# switch to kernel stack
-	# TODO: where to start interrupt stack?
+	# TODO: where to start kernel stack? define own symbol?
 	mov $_estack_os-2048, %esp
 
-	# save IRQ number in register (for default ISR)
+	# push interrupt return address for stack backtrace, not really neccessary
+	push 4(%esi)
+
+	# save IRQ number in register (for isr_unhandled)
 	mov $\num, %eax
 
 	# jump to ISR
 	jmp isr_\num
 
 
+
 # the default ISR
+# also a weak symbol to allow overriding
 .section .text.isrs
 .weak isr_\num
 isr_\num:
 	# jump to default handler
-	jmp unhandled_handler
+	jmp isr_unhandled
+
 
 
 # add IDT entry to idt section
 .section .text.idt
-	.short ((IRQS_BASE + \num*IRQS_OFFSET) & 0xFFFF)
-	.short KERNEL_CODE_SEGMENT
-	.byte 0
-	.byte \type
-	.short (IRQS_BASE + \num*IRQS_OFFSET) >> 16
-.endm
+	.short ((IRQS_BASE + \num*IRQS_OFFSET) & 0xFFFF) # handler address
+	.short KERNEL_CODE_SEGMENT # handler code segment
+	.byte 0 # always zero
+	.byte \type # gate type
+	.short (IRQS_BASE + \num*IRQS_OFFSET) >> 16 # handler address
+
+.endm # end of IRQ macro
 
 
 
-# put IDT in separate section
+# separate section for IDT
 .section .text.idt
 .global theidt
 theidt:
@@ -88,6 +118,7 @@ theidt:
 .global irq_handlers
 irq_handlers:
 # CPU exceptions
+# TODO: use trap gate if possible?
 IRQ 0
 IRQ 1
 IRQ 2
@@ -125,14 +156,31 @@ IRQ \irqno
 # common IRQ exit code
 .global handler_exit
 handler_exit:
-	# switch back to original stack
+	# restore interrupt stack pointer from %esi
 	mov %esi, %esp
 
-	# pop general purpose registers
-	popa
+	# pop general purpose registers from %ebx
+	mov (%ebx), %edi
+	mov 4(%ebx), %esi
+	mov 8(%ebx), %ebp
+	mov 20(%ebx), %edx
+	mov 24(%ebx), %ecx
+	mov 28(%ebx), %eax
+	mov 16(%ebx), %ebx
 
 	# restore original stack pointer
 	add $0x4, %esp
 
 	# return from interrupt
 	iret
+
+
+
+# common task resumption code
+.global irq_resume
+irq_resume:
+	# restore and remove saved context
+	popa
+
+	# remove and jump back to saved instruction pointer
+	ret

@@ -11,27 +11,58 @@
 #include "os/scheduler/task.h"
 #include "idt.h"
 #include "lapic.h"
+#include "machine.h"
+#include "syscall.h"
 
-namespace os {
+// DEBUG
+#include "serial.h"
+extern Serial serial;
+
+namespace arch {
+
 // TODO: remove pointer usage by determining static location from task ID
 /** \brief Stack pointer save location */
 extern void** save_sp;
-}
-using os::save_sp;
 
-namespace arch {
+extern void* startup_sp;
+
+
+// next task to dispatch (used by dispatch interrupt)
+// TODO: remove redundancy
+extern uint32_t dispatch_pagedir;
+extern uint32_t dispatch_stackptr;
+extern uint32_t dispatch_ip;
+
+
 
 class Dispatcher {
 public:
 	static forceinline void dispatch_syscall(const uint32_t& pagedir, const uint32_t& stackptr, const uint32_t& ip) {
-		asm volatile("int %0" :: "i"(IRQ_DISPATCH), "d"(pagedir), "b"(stackptr), "c"(ip));
+		// set dispatch values
+		dispatch_pagedir = pagedir;
+		dispatch_stackptr = stackptr;
+		dispatch_ip = ip;
+
+		// request dispatcher AST
+		LAPIC::trigger(IRQ_DISPATCH);
+
+		// unblock ISR2s by lowering APIC task priority
+		// TODO: do this at end of syscall, not here?
+		LAPIC::set_task_prio(0);
+
+		// should never come here when called from userspace
+		// TODO: remove this check?
+		if(Machine::current_ring() > 0) {
+			serial << "CPP " << dec << (uint32_t) LAPIC::get_processor_prio() << endl;
+			Machine::unreachable();
+		}
 	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
 		// TODO: remove pointer usage
 		save_sp = &task.sp;
 
-		// TODO: control flow check
+		// TODO: do this in dispatcher IRQ?/control flow check
 		if(task.is_running()) {
 			// not resuming, pass task function
 			dispatch_syscall((uint32_t) task.id, (uint32_t)task.sp, (uint32_t)task.fun);
@@ -43,15 +74,9 @@ public:
 
 	static forceinline void Idle(void) {
 		// TODO: real idle loop
-		asm("int3");
-		asm("hlt");
+		Machine::halt();
 
-		// should never come here
-		asm("int3");
-
-		while(true) {
-			asm("nop");
-		}
+		Machine::unreachable(); // should never come here
 	}
 };
 

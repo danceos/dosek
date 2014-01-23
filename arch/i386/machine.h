@@ -76,6 +76,24 @@ struct Machine
 	}
 
 	/**
+	 * \brief Return interrupt enable flag
+	 */
+	static forceinline bool interrupts_enabled(void) {
+		uint32_t flags;
+		asm("pushf; pop %0" : "=r"(flags));
+		return (flags & 0x0200);
+	}
+
+	/**
+	 * \brief Return current CPU ring
+	 */
+	static forceinline uint8_t current_ring(void) {
+		uint16_t cs;
+		asm("mov %%cs, %0" : "=r"(cs));
+		return (cs & 0x3);
+	}
+
+	/**
 	 * \brief Return from interrupt handler
 	 */
 	static forceinline void return_from_interrupt(void) {
@@ -84,12 +102,21 @@ struct Machine
 	}
 
 	/**
+	 * \brief Unreachable code
+	 * Will trigger interrupt if this is actually executed.
+	 */
+	static forceinline void unreachable(void) {
+		asm volatile("int3");
+		__builtin_unreachable(); // allow compiler optimization
+	}
+
+	/**
 	 * \brief Shutdown machine using ACPI
-	 * The static ACPI values used work for QEMU and Bochs but probably not on real PCs!
+	 * The static ACPI values work for QEMU and Bochs but probably not on real PCs!
 	 */
 	static forceinline void shutdown(void) {
 		// write shutdown command to ACPI port
-		asm volatile( "outw %0, %1" :: "a"((unsigned short) 0x2000), "Nd"((unsigned short) 0xB004) );
+		asm volatile( "outw %0, %1" :: "a"((unsigned short) 0x2000), "Nd"((unsigned short) 0xB004));
 
 		// stop in case ACPI shutdown failed
 		//asm volatile("hlt"); // causes exception when called from ring 3
