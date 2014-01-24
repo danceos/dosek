@@ -2,11 +2,9 @@
 
 """
     @file
-    @ingroup primitives
-    @brief Santa's little helper.
+    @ingroup rules
+    @brief
 """
-
-from itertools import chain
 
 def abstract():
     import inspect
@@ -22,7 +20,6 @@ def format_source_tree(generator, tree):
         else:
             return "".join(flatten(tree))
 
-
 def flatten(seq):
     ret = []
     for i in seq:
@@ -31,3 +28,9 @@ def flatten(seq):
         else:
             ret += [i]
     return ret
+
+def stringify(string):
+    if type(string) == str:
+        return '"%s"' % repr(string)[1:-1]
+    return stringify(repr(string).replace('"', '\"'))
+

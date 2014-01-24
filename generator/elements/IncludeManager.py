@@ -7,7 +7,7 @@
 """
 import unittest
 
-from SourceElement import CPPStatement, Comment
+from generator.elements.SourceElement import CPPStatement, Comment
 from generator import tools
 
 class Include:
@@ -45,26 +45,4 @@ class IncludeManager:
         for include in self.included_files:
             ret.append(include.source_elements())
         return ret
-
-class TestIncludeManager(unittest.TestCase):
-    def test_global_local_includes(self):
-        m = IncludeManager()
-        m.add(Include("stdint.h", system_include = True))
-        m.add(Include("cpu.h", comment = "The main CPU header"))
-        m.add(Include("cpu_2.h", comment = "The secondary CPU header\nwith more comments"))
-
-
-        text = tools.format_source_tree(None, m.source_elements())
-        print text
-        self.assertEqual(text, """#include <stdint.h>
-// The main CPU header
-#include "cpu.h"
-/* The secondary CPU header
- * with more comments
- */
-#include "cpu_2.h"
-""")
-
-if __name__ == '__main__':
-    unittest.main()
 

@@ -105,7 +105,6 @@ MACRO(COREDOS_BINARY)
             "${LLVM_NM_BINARY}" ${COREDOS_VERIFY_SCRIPT}
     COMMAND ${COREDOS_GENERATOR} 
 	   --system-xml "${COREDOS_SYSTEM_XML}"
-	   --app-object "${COREDOS_SOURCE_SYSTEM_OBJECT}" 
        --rtsc-analyze-xml "${COREDOS_RTSC_ANALYZE_XML}"
 	   --nm "${LLVM_NM_BINARY}"
 	   --output "${COREDOS_GENERATED_SOURCE}"

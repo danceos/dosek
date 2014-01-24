@@ -34,7 +34,6 @@ if __name__ == "__main__":
     import optparse
     import SystemDescription
     import RTSCAnalysis
-    import ObjectFile
     import Generator
     from generator.rules import *
     from generator.graph import *
@@ -45,8 +44,6 @@ if __name__ == "__main__":
                       metavar="SYSTEM_XML", help="the system description file")
     parser.add_option("", "--rtsc-analyze-xml",
                       metavar="RTSC_ANALYZE_XML", help="the RTSC Analyze file")
-    parser.add_option("", "--app-object",
-                      metavar="APP", help="the application's .o file")
     parser.add_option("", "--nm",
                       metavar="PATH", help="path to an nm binary",
                       default="nm")
@@ -67,7 +64,6 @@ if __name__ == "__main__":
     setup_logging(options.verbose)
 
     system_description = SystemDescription.SystemDescription(options.system_xml)
-    app_object = ObjectFile.ObjectFile(options.nm, options.app_object)
     rtsc_analysis = RTSCAnalysis.RTSCAnalysis(options.rtsc_analyze_xml)
 
     graph = SystemGraph()
@@ -83,7 +79,5 @@ if __name__ == "__main__":
     graph.register_and_enqueue_analysis(GlobalControlFlowMetric(options.output + "_metric"))
     graph.analyze(options.output)
 
-
-    generator = Generator.Generator(system_description, app_object, rtsc_analysis)
-    generator.load_rules(base_rules())
+    generator = Generator.Generator(graph, BaseRules())
     generator.generate_into(options.output)

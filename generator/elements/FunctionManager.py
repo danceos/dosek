@@ -14,6 +14,7 @@ class Function:
 
     def add(self, statement):
         self.statements.append(statement)
+        return statement
 
     def source_element_declarations(self):
         decl = "%s %s(%s)" %( self.rettype,
@@ -64,35 +65,4 @@ class  FunctionManager:
         for func in self.functions.values():
             ret.append(func.source_element_definitions())
         return ret
-
-class TestFunctionManager(unittest.TestCase):
-    def test_function_manager(self):
-        m = FunctionManager()
-        foo = Function("foo", "void", [])
-        m.add(foo)
-
-        text = tools.format_source_tree(None, m.source_element_declarations())
-        self.assertEqual(text.strip(), """void foo();""")
-
-
-        text = tools.format_source_tree(None, m.source_element_definitions())
-        self.assertEqual(text.strip(), """void foo() {
-}""")
-
-    def test_function_manager_args(self):
-        m = FunctionManager()
-        foo = Function("foo", "StatusType", ["EventMaskRefType"])
-        m.add(foo)
-
-        text = tools.format_source_tree(None, m.source_element_declarations())
-        self.assertEqual(text.strip(), """StatusType foo(EventMaskRefType);""")
-
-
-        text = tools.format_source_tree(None, m.source_element_definitions())
-        self.assertEqual(text.strip(), """StatusType foo(EventMaskRefType arg0) {
-}""")
-
-
-if __name__ == '__main__':
-    unittest.main()
 

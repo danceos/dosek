@@ -1,8 +1,5 @@
 
 set(PYTHON_MODULES_TEST
-  primitives/IncludeManager
-  primitives/DataObjectManager
-  primitives/FunctionManager
   SystemDescription
   RTSCAnalysis
 )

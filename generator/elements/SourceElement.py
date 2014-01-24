@@ -6,12 +6,11 @@
     @brief Builds a source line.
 """
 
-from generator.Atom import Atom
 from generator.tools import format_source_tree
 
-class SourceElement(Atom):
+class SourceElement():
     def __init__(self):
-        Atom.__init__(self)
+        pass
 
 class Comment(SourceElement):
     def __init__(self, text):
@@ -28,11 +27,6 @@ class Comment(SourceElement):
         else:
             # Single line comment
             return [Indent(), "// " + self.text + "\n"]
-
-    @staticmethod
-    def atom(fmt, *args):
-        return {"__token": Comment, "text": fmt % args}
-
 
 class CPPStatement(SourceElement):
     def __init__(self, cmd, arg):
@@ -71,16 +65,12 @@ class Block(SourceElement):
     def block_guard(self):
         return self.static_guard
 
-    @staticmethod
-    def atom(static_guard, statements):
-        return {"__token": Block, "static_guard": static_guard,
-                "__statements": statements}
-
     def add(self, obj):
         self.inner.append(obj)
+        return obj
 
     def expand(self, generator):
-        ret = [Block.indent_spaces() + self.block_guard() + " {\n"]
+        ret = [Block.indent_spaces() + self.block_guard() + "{\n"]
         Block.indentation_level += 1
         for i in self.inner:
             ret += format_source_tree(generator, i)
@@ -117,15 +107,49 @@ class Statement(SourceElement):
     def expand(self, generator):
         return [Indent(), self.statement + ";\n"]
 
-    @staticmethod
-    def atom():
-        return {"__token": Statement}
-    @staticmethod
-    def atom_return(expression):
-        return {"__token": Statement, "statement": "return %s" % expression}
-
 class Indent(SourceElement):
     def __init__(self):
         SourceElement.__init__(self)
     def expand(self, generator):
         return [Block.indent_spaces()]
+
+class VariableDefinition(SourceElement):
+    def __init__(self, datatype, name):
+        self.datatype = datatype
+        self.name = name
+
+    def expand(self, generator):
+        statement = "%s %s" % ( self.datatype, self.name )
+        return [Statement(statement)]
+
+    @staticmethod
+    def new(generator, datatype):
+        if datatype == "void":
+            return None
+        varname = generator.variable_name_for_datatype(datatype)
+        return VariableDefinition(datatype, varname)
+
+class FunctionCall(SourceElement):
+    def __init__(self, name, arguments, return_variable = None):
+        self.function = name
+        self.arguments = arguments
+        self.return_variable = return_variable
+
+    def expand(self, generator):
+        statement = ""
+        if self.return_variable != None:
+            statement += "%s = "% self.return_variable
+
+        statement += "%s(%s)" % (self.function,
+                                 ",".join(self.arguments))
+
+        return [Statement(statement)]
+
+class Hook(Block):
+    def __init__(self, name):
+        Block.__init__(self)
+        self.name = name
+
+    def expand(self, generator):
+        return [Comment("Hook: " + self.name), Block.expand(self, generator)]
+
