@@ -35,17 +35,3 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
-void os_main() {
-	OSEKOS_TASK_Handler11();
-}
-
-StatusType OSEKOS_TerminateTask() {
-	return E_OK;
-	for(;;){};
-}
-
-StatusType OSEKOS_ActivateTask(TaskType t) {
-	return E_OK;
-}
-
-

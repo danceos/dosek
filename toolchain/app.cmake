@@ -61,11 +61,10 @@ MACRO(COREDOS_BINARY)
 	DEPENDS ${COREDOS_ANNOTATE_OBJECT} 
             ${COREDOS_BINARY_LLVM_BYTECODE}
             ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
-	COMMAND ${RTSC_BINARY} -data-deps=explicit -verify 
+	COMMAND ${EAG_BINARY} -data-deps=explicit -verify 
 	   -sysann=${COREDOS_ANNOTATE_OBJECT}
 	   -sourcesystem=${CMAKE_CURRENT_SOURCE_DIR}/${COREDOS_BINARY_SYSTEM_XML}
-	   -pns=1 -out=${CMAKE_CURRENT_BINARY_DIR} 
-	   -march=${CMAKE_C_ARCH} 
+	   -out=${CMAKE_CURRENT_BINARY_DIR} 
 	   -analyze-tasks -dump-source-system
        -dump-graphs
 	   ${COREDOS_BINARY_LLVM_BYTECODE}

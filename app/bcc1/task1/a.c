@@ -14,7 +14,6 @@ DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
-
 TASK(Handler11) {
 	ActivateTask(Handler12);
 	ActivateTask(Handler13);
@@ -28,10 +27,3 @@ TASK(Handler12) {
 TASK(Handler13) {
 	TerminateTask();
 }
-
-
-StatusType OSEKOS_TerminateTask() {
-	return E_OK;
-	for(;;){};
-}
-

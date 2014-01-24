@@ -36,17 +36,3 @@ ISR(ISR1) {
 	}
 }
 
-void os_main() {
-	OSEKOS_TASK_H1();
-}
-
-StatusType OSEKOS_TerminateTask() {
-	return E_OK;
-	for(;;){};
-}
-
-StatusType OSEKOS_ActivateTask(TaskType t) {
-	return E_OK;
-}
-
-

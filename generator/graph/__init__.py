@@ -42,10 +42,13 @@ class SystemGraph(GraphObject):
         return self.functions[name]
 
     def find_abb(self, abb_id):
+        abbs = []
         for function in self.functions.values():
             for abb in function.abbs:
                 if abb.abb_id == abb_id:
-                    return abb
+                    abbs.append(abb)
+        assert len(abbs) == 1
+        return abbs[0]
 
     def get_abbs(self):
         abbs = []
@@ -129,7 +132,6 @@ class SystemGraph(GraphObject):
         for abb_xml in rtsc.get_abbs():
             abb = AtomicBasicBlock(self, abb_xml.id)
             self.max_abb_id = max(self.max_abb_id, abb_xml.id)
-            abb.set_guard(abb_xml.guard)
 
             # Get function for abb
             function = self.functions.get(abb_xml.in_function)
@@ -143,53 +145,44 @@ class SystemGraph(GraphObject):
 
         # Add all implicit intra function control flow graphs
         for dep in self.rtsc.get_edges():
-            if dep.type == 'ControlFlowABBDependency':
-                source = self.find_abb(dep.source)
-                target = self.find_abb(dep.target)
-                source.add_cfg_edge(target)
+            source = self.find_abb(dep.source)
+            target = self.find_abb(dep.target)
+            source.add_cfg_edge(target)
+
+        # Find all return blocks for functions
+        for function in self.functions.values():
+            ret_abbs = []
+            for abb in function.abbs:
+                if len(abb.get_outgoing_edges('local')) == 0:
+                    ret_abbs.append(abb)
+
+            # FIXME: Add artificial return block
+            assert len(ret_abbs) == 1
+            function.set_exit_abb(ret_abbs[0])
 
         # Add all 'normal' function call edges
-        edges = self.rtsc.get_edges()
-        for dep in edges:
-            if dep.type == 'ExplicitControlFlowABBDependency':
-                calling_block = self.find_abb(dep.source)
-                called_block  = self.find_abb(dep.target)
-                assert calling_block != None, "Could not find ABB%d"%dep.source
-                assert called_block != None, "Could not find ABB%d"%dep.source
-                # Subtask Functions cannot be called directly
-                if not isinstance(called_block.function, Subtask):
-                    # Only entry blocks can be called
-                    assert called_block.function.entry_abb == called_block
-                    # Only one intra func edge to the middle block
-                    local_edges = calling_block.get_outgoing_edges('local')
-                    assert len(local_edges) == 1
-                    # There is some kind of aritifical middle block,
-                    # that is always there. We will identify it and
-                    # delete it
-                    middle_block = local_edges[0].target
-                    local_edges = middle_block.get_outgoing_edges('local')
-                    assert len(local_edges) == 1
-                    assert middle_block.get_incoming_edges('local')
-                    # The Returning block is the block that is the
-                    # target for the ret
-                    returned_block = local_edges[0].target
-                    for ret_edge in edges:
-                        if ret_edge.type != 'ExplicitControlFlowABBDependency':
-                            continue
-                        if ret_edge.target != returned_block.abb_id:
-                            continue
-                        ret_block = self.find_abb(ret_edge.source)
-                        # Adding the Control flow return!
-                        ret_block.add_cfg_edge(returned_block)
-                    # Add the calling edge
-                    calling_block.add_cfg_edge(called_block)
-                    # Remove the artificial middle block
-                    middle_block.function.remove_abb(middle_block)
+        for call in self.rtsc.get_calls():
+            calling_block = self.find_abb(call.abb)
+            function = self.functions[call.function]
+            called_block  = function.entry_abb
+            returned_block = calling_block.definite_after('local')
+            return_block = function.exit_abb
+            assert calling_block != None, "Could not find CallingBlock ABB%d" % call.abb
+            assert return_block != None, "Could not find FunctionCall return block"
+
+            calling_block.remove_cfg_edge(returned_block, 'local')
+            calling_block.add_cfg_edge(called_block, 'local')
+            return_block.add_cfg_edge(returned_block, 'local')
 
         # Add all system calls
         for syscall in self.rtsc.syscalls():
             abb = self.find_abb(syscall.abb)
+            assert abb.type == 'computation'
             abb.make_it_a_syscall(syscall.name, syscall.arguments)
+            assert abb.type != 'computation'
+            assert abb in self.get_abbs()
+        assert len(self.get_syscalls()) == len(self.rtsc.syscalls())
+
 
     def read_verify_script(self, path):
         self.verifiers = {}
@@ -248,6 +241,11 @@ class SystemGraph(GraphObject):
     def analyze(self, basefilename):
         verifiers_called = set()
         pass_number = 0
+
+        # Dump graph as dot output
+        with open("%s_%d_RTSC.dot" %(basefilename, pass_number), "w+") as fd:
+            fd.write(self.dump_as_dot())
+            pass_number += 1
 
         while len(self.analysis_pipe) > 0:
             front = self.analysis_pipe[0]

@@ -6,6 +6,9 @@ class Function(GraphObject):
         self.function_name = functionname
         self.task = None
         self.abbs = []
+        self.entry_abb = None
+        self.exit_abb = None
+
 
     def graph_subobjects(self):
         return self.abbs
@@ -27,6 +30,10 @@ class Function(GraphObject):
     def set_entry_abb(self, abb):
         assert(abb in self.abbs)
         self.entry_abb = abb
+
+    def set_exit_abb(self, abb):
+        assert(abb in self.abbs)
+        self.exit_abb = abb
 
     def remove_abb(self, abb):
         # Remove ABB from list of atomic basic blocks

@@ -16,9 +16,6 @@ class AtomicBasicBlock(GraphObject):
     def graph_edges(self):
         return self.outgoing_edges
 
-    def set_guard(self, guard):
-        self.guard = guard
-
     def add_cfg_edge(self, target, type = 'local'):
         edge = ControlFlowEdge(self, target, type = type)
         self.outgoing_edges.append(edge)

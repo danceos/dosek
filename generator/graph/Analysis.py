@@ -137,8 +137,8 @@ class CurrentRunningSubtask(Analysis):
         elif len(x) == 1:
             return x[0]
         else:
-            self.panic("For %s (%s) it is not unambiguous, which task " +
-                       "is running at that very moment. This is not " +
+            self.panic("For %s (%s) it is not unambiguous, which task " \
+                       "is running at that very moment. This is not " \
                        "supported by the system"%(abb, abb.function))
 
     def block_functor(self, fixpoint, abb):
@@ -165,7 +165,7 @@ class CurrentRunningSubtask(Analysis):
             for subtask in task.subtasks:
                 # Start DFS at all entry nodes
                 self.values[subtask.entry_abb] = set([subtask])
-                start_basic_blocks.extend(subtask.abbs)
+                start_basic_blocks.extend(subtask.entry_abb.get_outgoing_nodes('local'))
 
 
         fixpoint = FixpointIteraton(start_basic_blocks)

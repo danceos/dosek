@@ -15,10 +15,6 @@ DeclareTask(Handler12);
 DeclareTask(Handler13);
 
 
-void bar() {
-	ActivateTask(Handler13);
-}
-
 TASK(Handler11) {
 	ActivateTask(Handler12);
 	ActivateTask(Handler13);
@@ -32,18 +28,3 @@ TASK(Handler12) {
 TASK(Handler13) {
 	TerminateTask();
 }
-
-void os_main() {
-	OSEKOS_TASK_Handler11();
-}
-
-StatusType OSEKOS_TerminateTask() {
-	return E_OK;
-	for(;;){};
-}
-
-StatusType OSEKOS_ActivateTask(TaskType t) {
-	return E_OK;
-}
-
-
