@@ -20,6 +20,21 @@ class BaseRules:
     def return_statement(self, block, expression):
         block.add(Statement("return %s" % expression))
 
+
+    def object_COM(self, interface="COM1"):
+        """Returns a variable name to a serial output driver, which can be used for
+        debug printing"""
+        varname = self.generator.variable_name_for_singleton("Serial", interface)
+        serial = DataObject("Serial", varname, "Serial(Serial::%s)" % interface)
+        self.generator.source_file.data_manager.add(serial)
+        self.generator.source_file.includes.add(Include("serial.h"))
+        return varname
+
+    def kout(self, block, *expressions):
+        """Generates a print statement to a serial console"""
+        com = self.object_COM()
+        block.add( Statement("%s << %s" % (com, " << ".join(expressions))))
+
     def system_enter_hook(self, function):
         hook = Hook("SystemEnterHook")
         function.add(hook)
@@ -45,18 +60,6 @@ class BaseRules:
         if ret_var:
             self.return_statement(function, ret_var.name)
 
-    def object_COM(self, interface="COM1"):
-        """Returns a variable name to a serial output driver, which can be used for
-        debug printing"""
-        varname = self.generator.variable_name_for_singleton("Serial", interface)
-        serial = DataObject("Serial", varname, "Serial(Serial::%s)" % interface)
-        self.generator.source_file.data_manager.add(serial)
-        self.generator.source_file.includes.add(Include("serial.h"))
-        return varname
 
-    def kout(self, block, *expressions):
-        """Generates a print statement to a serial console"""
-        com = self.object_COM()
-        block.add( Statement("%s << %s" % (com, " << ".join(expressions))))
-
-
+    def StartOS(self, block):
+        pass

@@ -55,12 +55,21 @@ class Generator:
         "SendZeroMessage": None,
         "ShutdownOS": ["void", "StatusType"]    }
 
+
     def generate_into(self, output_file):
         """Generate into output file"""
         self.source_file = SourceFile()
 
         #include "os.h"
         self.source_file.includes.add(Include("os.h"))
+
+        os_main = Function("os_main", "void", [], extern_c = True)
+        os_main.add( FunctionCall("StartOS", ["0"]) )
+        self.source_file.function_manager.add(os_main)
+
+        StartOS = Function("StartOS", "void", ["int"])
+        self.operations.StartOS(StartOS)
+        self.source_file.function_manager.add(StartOS)
 
         # find all
         for syscall in self.system_graph.get_syscalls():
