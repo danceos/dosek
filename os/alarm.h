@@ -4,14 +4,13 @@
 #include "stdint.h"
 #include "counter.h"
 #include "util/inline.h"
+#include "scheduler/thetasks.h"
+#include "scheduler/scheduler.h"
 
-// TODO
-//#include "scheduler/thetasks.h"
-//#include "scheduler/scheduler.h"
-
-// TESTING
-#include "arch/i386/serial.h"
+#if DEBUG
+#include "serial.h"
 extern Serial serial;
+#endif
 
 namespace os {
 
@@ -21,23 +20,18 @@ extern Alarm alarm0;
 class Alarm {
 	typedef uint32_t Ticks;
 
-	// base
 	Counter& configuration_;
 
-	// state
 	bool armed_;
 	Ticks absoluteTime_;
 	Ticks cycleTime_;
 
-	// action
-	// TODO
-	//const Task* task_; // task to activate / set event to (if applicable)
+	/** \brief task to activate */
+	const Task* const task_;
 
 public:
-	// TODO
-	//constexpr Alarm(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
-	//constexpr Alarm(Counter& counter, const Task& task) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
-	constexpr Alarm(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0) {}
+	constexpr Alarm(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
+	constexpr Alarm(Counter& counter, const Task& task) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
 
 	void setArmed (bool armed) {
 		armed_ = armed;
@@ -74,18 +68,18 @@ public:
 	}
 
 	forceinline void triggerAction () {
-		// TESTING
-		serial << "TRIGGER ALARM" << endl;
+		#if DEBUG
+		serial << "Alarm trigger" << endl;
+		#endif
 
-		// TODO
-		//if(task_) {
-		//	scheduler::ActivateTask(*task_);
-		//}
+		if(task_) {
+			os::scheduler::scheduler.ActivateTask(*task_);
+		}
 	}
 
 	forceinline void trigger () {
 		if(getCycleTime() > 0) {
-			// reconf cyclic alarm
+			// reconfigure cyclic alarm
 			setRelativeTime(getCycleTime());
 		} else {
 			// disable single shot

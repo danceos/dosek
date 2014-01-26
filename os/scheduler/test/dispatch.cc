@@ -73,8 +73,13 @@ void test_prepare(void)
  */
 void test(void)
 {
+	Machine::enable_interrupts();
+
 	//! @test Activate first task
 	ActivateTaskC(t1.enc_id<3>());
+
+	// should never come here
+	Machine::unreachable();
 }
 
 TASK(Task1) {
