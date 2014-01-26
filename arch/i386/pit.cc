@@ -47,7 +47,7 @@ void PIT::set_periodic(uint16_t rate) {
 
 
 /** \brief PIT interrupt handler */
-ISR(48) {
+ISR(IRQ_PIT) {
 	// increment counters
 	os::Counter::tick();
 

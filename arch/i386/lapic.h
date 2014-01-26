@@ -57,8 +57,13 @@ public:
 	}
 
 	/** \brief Return interrupt request register */
-	static inline uint8_t get_irr(uint8_t offset) {
+	static inline uint32_t get_irr(uint8_t offset) {
 		return read_reg((lapic_reg) (IRR + (offset)*0x10));
+	}
+
+	/** \brief Return interrupt service register */
+	static inline uint32_t get_isr(uint8_t offset) {
+		return read_reg((lapic_reg) (ISR + (offset)*0x10));
 	}
 
 	/** \brief Set task priority

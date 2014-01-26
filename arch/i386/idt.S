@@ -1,6 +1,13 @@
+# start address of interrupt handlers
 #define IRQS_BASE 0x101000
+
+# offset between irq handler addresses
 #define IRQS_OFFSET 128
+
+# kernel code GDT segment
 #define KERNEL_CODE_SEGMENT 0x8
+
+# handler gate types
 #define TYPE_DPL0_IRQ_GATE  0x8E
 #define TYPE_DPL0_TRAP_GATE 0x8F
 #define TYPE_DPL3_IRQ_GATE  0xEE
@@ -68,13 +75,6 @@ irq_handler_\num:
 	mov %esp, %esi # put interrupt stack pointer in %esi
 
 2:
-	# switch to kernel stack
-	# TODO: where to start kernel stack? define own symbol?
-	mov $_estack_os-2048, %esp
-
-	# push interrupt return address for stack backtrace, not really neccessary
-	push 4(%esi)
-
 	# save IRQ number in register (for isr_unhandled)
 	mov $\num, %eax
 

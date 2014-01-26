@@ -8,49 +8,28 @@
 #include "util/assert.h"
 #include "os/scheduler/scheduler.h"
 
+extern "C" uint8_t _estack_os;
+
 namespace arch {
 
-/** \brief */
-IRQ_HANDLER(IRQ_RESCHEDULE) {
-	// store pointer to context in %esi before we change %esp
-	cpu_context* ctx;
-	asm volatile("leal -4(%%esp), %0" : "=r"(ctx));
-
+ISR(IRQ_RESCHEDULE) {
 	// block ISR2s by raising APIC task priority
 	LAPIC::set_task_prio(128);
-
-	// TODO: reuse pushed CPU context?
-	// move to interrupt stack?
-	//asm volatile("mov $_estack_os-2048, %esp");
 
 	// set userspace segment selectors
 	// TODO: maybe not neccessary?
 	Machine::set_data_segment(GDT::USER_DATA_SEGMENT | 0x3);
 
-	// push syscall argument
-	Machine::push(0);
-
-	// push return adddress
-	// provides nice stack backtraces but will not actually work:
-	// a return would jump back to the caller without returning to
-	// DPL3 and setting the original page directory...
-	Machine::push(ctx->eip); // push return address
-
-	// TODO: HACK: use current (interrupt) stack for syscall
-	// get current stack pointer
-	uint32_t sp;
-	asm volatile("mov %%esp, %0" : "=r"(sp));
-
 	// push the syscall stack address/segment
 	Machine::push(GDT::USER_DATA_SEGMENT | 0x3); // push stack segment, DPL3
-	Machine::push(sp); // push stack pointer
+	Machine::push((uint32_t) &(_estack_os) - 2048); // push kernel stack pointer
 
 	// push flags, IO privilege level 3
-	Machine::push(ctx->eflags | 0x3000);
+	Machine::push(cpu->eflags | 0x3000);
 
 	// push syscall function pointer/segment
 	Machine::push(GDT::USER_CODE_SEGMENT | 0x3); // push code segment, DPL3
-	Machine::push((uint32_t) os::scheduler::ScheduleC); // push eip
+	Machine::push((uint32_t) os::scheduler::ScheduleC); // push address of scheduler function
 
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);

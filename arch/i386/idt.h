@@ -17,8 +17,9 @@ namespace arch {
  * @{
  */
 #define IRQ_SYSCALL 34 //!< syscall software interrupt
-#define IRQ_RESCHEDULE 33 //!< reschedule software interrupt
-#define IRQ_DISPATCH 32 //!< dispatcher software interrupt
+#define IRQ_RESCHEDULE 33 //!< reschedule (AST) software interrupt
+#define IRQ_DISPATCH 32 //!< dispatcher (AST) software interrupt
+#define IRQ_PIT 48 //!< programmable interval timer interrupt
 /**@}*/
 
 

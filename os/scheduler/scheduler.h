@@ -42,7 +42,7 @@ public:
 		} else if(current_task == t4.enc_id<1>()) {
 			Dispatcher::Dispatch(t4);
 		} else if(current_task == TaskList::idle_id) {
-			Dispatcher::Idle();
+			Dispatcher::idle();
 		} else {
 			assert(false);
 		}
@@ -145,7 +145,7 @@ noinline void TerminateTaskC(uint32_t dummy);
  * @satisfies{13,2,3,2}
  */
 forceinline void TerminateTask() {
-	syscall(TerminateTaskC, NULL);
+	syscall(TerminateTaskC);
 
 	Machine::unreachable();
 }
@@ -156,7 +156,7 @@ noinline void ScheduleC(uint32_t dummy);
  * @satisfies{13,2,3,4}
  */
 forceinline void Schedule() {
-	syscall(ScheduleC, NULL);
+	syscall(ScheduleC);
 }
 
 }};

@@ -14,9 +14,12 @@
 #include "machine.h"
 #include "syscall.h"
 
-// DEBUG
-#include "serial.h"
-extern Serial serial;
+
+
+/** \brief Halt the processor when idle */
+#define IDLE_HALT 1
+
+
 
 namespace arch {
 
@@ -53,7 +56,6 @@ public:
 		// should never come here when called from userspace
 		// TODO: remove this check?
 		if(Machine::current_ring() > 0) {
-			serial << "CPP " << dec << (uint32_t) LAPIC::get_processor_prio() << endl;
 			Machine::unreachable();
 		}
 	}
@@ -72,12 +74,43 @@ public:
 		}
 	}
 
-	static forceinline void Idle(void) {
-		// TODO: real idle loop
-		Machine::halt();
+	#if IDLE_HALT
+
+	/** \brief Syscall to start idle loop (in ring 0) */
+	static forceinline void idle(void) {
+		syscall(&idle_loop, 0, true);
+	}
+
+	/** \brief The idle loop
+	 *
+     * Must be run in ring 0 to allow halting the machine
+	 */
+	static noinline void idle_loop(void) {
+		// allow all interrupts
+		LAPIC::set_task_prio(0);
+		Machine::enable_interrupts();
+
+		// halt the processor
+		while(true) Machine::halt();
 
 		Machine::unreachable(); // should never come here
 	}
+
+	#else // IDLE_HALT
+
+	/** \brief Run idle loop */
+	static forceinline void idle(void) {
+		// allow all interrupts
+		LAPIC::set_task_prio(0);
+		Machine::enable_interrupts();
+
+		// do nothing forever
+		while(true) Machine::nop();
+
+		Machine::unreachable(); // should never come here
+	}
+
+	#endif // IDLE_HALT
 };
 
 } // namespace arch

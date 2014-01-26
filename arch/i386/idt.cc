@@ -9,7 +9,6 @@
 #include "exception.h"
 #include "lapic.h"
 
-#define DEBUG 1
 #if DEBUG
 #include "serial.h"
 extern Serial serial;
