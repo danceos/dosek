@@ -39,5 +39,5 @@ def stringify(string):
 
 
 def panic(fmt, *args):
-    logging.error(fmt % tuple(args))
+    logging.error(fmt, *args)
     sys.exit(-1)

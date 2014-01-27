@@ -1,9 +1,10 @@
 from generator.graph.Function import Function
 
 class Subtask(Function):
-    def __init__(self, system, name):
-        Function.__init__(self, name)
+    def __init__(self, system, name, function_name):
+        Function.__init__(self, function_name)
         self.system = system
+        self.name = name
         self.task = None
         self.deadline = None
         self.static_priority = -1
@@ -36,6 +37,14 @@ class Subtask(Function):
 
     def set_is_isr(self, value):
         self.is_isr = value
+
+    def is_real_thread(self):
+        """Returns True for user threads, and False for the Idle Thread"""
+        return self.static_priority != 0 and not self.is_isr
+
+    def get_stack_size(self):
+        """Returns the size of the user stack"""
+        return str(4096) # FIXME: Should be user configurable
 
     def fsck(self):
         assert self.task in self.system.tasks

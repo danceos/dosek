@@ -5,10 +5,7 @@
     @ingroup primitives
     @brief Building include statements
 """
-import unittest
-
 from generator.elements.SourceElement import CPPStatement, Comment
-from generator import tools
 
 class Include:
     def __init__(self, filename, system_include=False, comment = None):

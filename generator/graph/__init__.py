@@ -89,9 +89,9 @@ class SystemGraph(GraphObject):
             for subtask_name, deadline in task_desc.subtasks.items():
                 isISR = system.isISR(subtask_name)
                 if isISR:
-                    subtask = Subtask(self, "OSEKOS_ISR_" + subtask_name)
+                    subtask = Subtask(self, subtask_name, "OSEKOS_ISR_" + subtask_name)
                 else:
-                    subtask = Subtask(self, "OSEKOS_TASK_" + subtask_name)
+                    subtask = Subtask(self, subtask_name, "OSEKOS_TASK_" + subtask_name)
                 # Every subtask belongs to a task
                 task.add_subtask(subtask)
                 # Every subtask is also an function
@@ -109,11 +109,12 @@ class SystemGraph(GraphObject):
                     subtask.set_is_isr(True)
                 else:
                     subtask_osek = system.getSubTask(subtask_name)
-                    subtask.set_static_priority(subtask_osek.getStaticPriority())
-                    subtask.set_preemptable(subtask_osek.isPreemptable())
-                    subtask.set_basic_task(subtask_osek.isBasicSubTask())
-                    subtask.set_max_activations(subtask_osek.getMaxActivations())
-                    subtask.set_autostart(subtask_osek.isAutostart())
+                    assert subtask_osek.static_priority != 0, "No user thread can have the thread ID 0, it is reserved for the Idle thread"
+                    subtask.set_static_priority(subtask_osek.static_priority)
+                    subtask.set_preemptable(subtask_osek.preemptable)
+                    subtask.set_basic_task(subtask_osek.is_basic)
+                    subtask.set_max_activations(subtask_osek.max_activations)
+                    subtask.set_autostart(subtask_osek.autostart)
                     subtask.set_is_isr(False)
 
 
@@ -212,9 +213,9 @@ class SystemGraph(GraphObject):
         # Add Idle Task
         system_task = Task(self, "OSEK")
         self.tasks.append(system_task)
-        subtask = Subtask(self, "Idle")
+        subtask = Subtask(self, "Idle", "Idle")
         self.functions["Idle"] = subtask
-        subtask.set_static_priority(-1)
+        subtask.set_static_priority(0)
         subtask.set_preemptable(True)
         system_task.add_subtask(subtask)
         abb = self.new_abb()

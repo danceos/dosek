@@ -5,21 +5,26 @@ from SourceElement import Block, Statement
 from generator import  tools
 
 class Function:
-    def __init__(self, name, rettype, argstype, extern_c = False):
+    def __init__(self, name, rettype, argstype, extern_c = False, attributes = []):
         self.name = name
         self.rettype = rettype
         self.argstype = argstype
         self.statements = []
         self.extern_c = extern_c
+        self.attributes = attributes
 
     def add(self, statement):
         self.statements.append(statement)
         return statement
 
     def source_element_declarations(self):
-        decl = "%s %s(%s)" %( self.rettype,
-                              self.name,
-                              ",".join(self.argstype))
+        attributes = ""
+        if len(self.attributes) > 0:
+            attributes = " __attribute__((" + ",".join(self.attributes) + "))"
+        decl = "%s%s %s(%s)" %( self.rettype,
+                                attributes,
+                                self.name,
+                                ",".join(self.argstype))
         if self.extern_c:
             decl = 'extern "C" %s' % decl
         return Statement(decl);
@@ -44,17 +49,29 @@ class Function:
             ret.append(("arg%d" %(i), self.argstype[i]))
         return ret
 
+class FunctionDeclaration(Function):
+    def __init__(self, name, rettype, argstype, extern_c = False, attributes = []):
+        Function.__init__(self, name, rettype, argstype, extern_c, attributes)
+
+    def add(self, statement):
+        assert False, "You cannot add statements to a function DECLARATION"
+
+    def source_element_definitions(self):
+        return []
+
 class  FunctionManager:
     def __init__(self):
-        self.functions = {}
+        self.functions = []
 
     def add(self, function):
-        self.functions[function.name] = function
+        for x in self.functions:
+            assert x.name != function.name, "Duplicate function name"
+        self.functions.append(function)
 
     def source_element_declarations(self):
         ret = []
         # Sort by local and global includes
-        for func in self.functions.values():
+        for func in self.functions:
             ret.append(func.source_element_declarations())
         ret.append("\n")
         return ret
@@ -62,7 +79,7 @@ class  FunctionManager:
     def source_element_definitions(self):
         ret = []
         # Sort by local and global includes
-        for func in self.functions.values():
+        for func in self.functions:
             ret.append(func.source_element_definitions())
         return ret
 

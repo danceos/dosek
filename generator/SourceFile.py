@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from IncludeManager import IncludeManager
-from DataObjectManager import DataObjectManager
+from generator.DataObjectManager import DataObjectManager
 
 import tools
 

@@ -9,6 +9,7 @@ class BaseRules:
 
     def set_generator(self, generator):
         self.generator = generator
+        self.system_graph = generator.system_graph
 
     def call_function(self, block, function, rettype, arguments):
         """Generates a call to a function and stores the result in an
@@ -26,7 +27,7 @@ class BaseRules:
         debug printing"""
         varname = self.generator.variable_name_for_singleton("Serial", interface)
         serial = DataObject("Serial", varname, "Serial(Serial::%s)" % interface)
-        self.generator.source_file.data_manager.add(serial)
+        self.generator.source_file.data_manager.add(serial, namespace=("os", "data"))
         self.generator.source_file.includes.add(Include("serial.h"))
         return varname
 
@@ -63,3 +64,69 @@ class BaseRules:
 
     def StartOS(self, block):
         pass
+
+    def generate_dataobjects(self):
+        """Generate all dataobjects for the system"""
+        stacks = self.generate_dataobjects_task_stacks()
+        entries = self.generate_dataobjects_task_entries()
+        tasks = self.generate_dataobjects_task_descriptors(stacks, entries)
+
+    def generate_dataobjects_task_stacks(self):
+        """Generate the stacks for the tasks, including the task pointers"""
+        objs = {}
+        for subtask in self.system_graph.get_subtasks():
+            # Ignore the Idle thread and ISR subtasks
+            if not subtask.is_real_thread():
+                continue
+            stacksize = subtask.get_stack_size()
+            stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
+                                    extern_c = True)
+            self.generator.source_file.data_manager.add(stack)
+
+            stackptr = DataObject("void *", subtask.name + "_stackptr",
+                                  extern_c = True)
+            self.generator.source_file.data_manager.add(stackptr)
+
+            objs[subtask] = {"stack": stack, "stackptr": stackptr}
+        return objs
+
+    def generate_dataobjects_task_entries(self):
+        objs = {}
+        for subtask in self.system_graph.get_subtasks():
+            # Ignore the Idle thread
+            if not subtask.is_real_thread():
+                continue
+            entry_function = FunctionDeclaration(subtask.function_name, "void", [],
+                                                                 extern_c = True,
+                                                                 attributes = ["weak_import"])
+            self.generator.source_file.function_manager.add(entry_function)
+            objs[subtask] = {'entry_function': entry_function}
+        return objs
+
+    def generate_dataobjects_task_descriptors(self, stacks, entries):
+        objs = {}
+
+        self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
+        task_id = 1
+        for subtask in self.system_graph.get_subtasks():
+            # Ignore the Idle thread
+            if not subtask.is_real_thread():
+                continue
+            initializer = "(%d, %d, %s, &%s, %s)" % (
+                task_id,
+                subtask.static_priority,
+                entries[subtask]["entry_function"].name,
+                stacks[subtask]["stack"].name,
+                stacks[subtask]["stackptr"].name)
+
+
+            task_id += 1
+            desc = DataObject("const os::scheduler::Task", subtask.name + "_task",
+                              initializer)
+            desc.allocation_prefix = "constexpr "
+            self.generator.source_file.data_manager.add(desc, namespace = ("os", "tasks"))
+
+            objs[subtask] = {"task_descriptor": desc, "task_id": task_id}
+
+
+
