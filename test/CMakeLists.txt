@@ -49,7 +49,7 @@ macro(coredos_test TEST)
     # The normal (CTest) test
     coredos_executable(${TESTELF} "${TEST}.cc")
     add_test(${TESTELF} qemu-system-i386 -no-reboot -nographic -cdrom "${PROJECT_BINARY_DIR}/${TESTELF}.iso")
-    set_tests_properties(${TESTELF} PROPERTIES PASS_REGULAR_EXPRESSION "ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
+    set_tests_properties(${TESTELF} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
     add_dependencies( build_and_test iso-test-${TEST} )
     add_dependencies( ctest2jenkins iso-test-${TEST} )
 endmacro()
