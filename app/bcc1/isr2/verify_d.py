@@ -2,8 +2,8 @@ from generator.graph.verifier_tools import *
 
 def after_RunningTaskAnalysis(analysis):
     # Find all three systemcall handlers
-    (H1, H2, H3, Idle, StartOS, ISR1) = \
-       get_functions(analysis.system, ["H1", "H2", "H3", "Idle", "StartOS", "ISR1"])
+    (H1, H2, H3, Idle, ISR1) = \
+       get_functions(analysis.system, ["H1", "H2", "H3", "Idle", "ISR1"])
 
     t = RunningTaskToolbox(analysis)
 

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 from lxml import objectify
-import os
 
 from collections import namedtuple
 
@@ -58,9 +57,9 @@ system call: Who called it? In which ABB?"""
         # Gather all ABB xml nodes under <abbgraph>
         calls = []
         for call_xml in self.rtsc_dom.xpath('*[local-name()=\'functioncall\']'):
-                call = self.Call(function = call_xml.get("name"),
-                                abb = int(call_xml.get("abb")))
-                calls.append(call)
+            call = self.Call(function = call_xml.get("name"),
+                             abb = int(call_xml.get("abb")))
+            calls.append(call)
         return calls
 
     ABB = namedtuple('ABB', ['id', 'in_function', 'func_entry'])

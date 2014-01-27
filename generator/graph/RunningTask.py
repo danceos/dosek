@@ -74,7 +74,7 @@ class SystemCallSemantic:
                 x.freeze()
             return after
         else:
-            self.panic("BlockType %s is not supported yet"%block.type)
+            panic("BlockType %s is not supported yet" % block.type)
 
     def find_possible_tasks(self, state):
         # We get the subtask in the order of their priority

@@ -134,7 +134,6 @@ class SystemDescription:
     ISR = namedtuple("ISR", ["name", "category", "priority"])
 
     def getISR(self, name):
-        alarms = []
         if not hasattr(self.osek_dom, "ISR"):
             return
         for isr in self.osek_dom.ISR:

@@ -12,8 +12,11 @@
     @ingroup generator
     @brief Main entry point
 """
-
+import os
+import sys
 import logging
+import optparse
+
 
 def setup_logging(log_level):
     """ setup the logging module with the given log_level """
@@ -27,14 +30,11 @@ def setup_logging(log_level):
     logging.basicConfig(level=l)
 
 if __name__ == "__main__":
-    import os, sys
+
     source_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, os.path.abspath(os.path.join(source_dir, "..")))
 
-    import optparse
-    import SystemDescription
-    import RTSCAnalysis
-    import Generator
+    from generator import SystemDescription, RTSCAnalysis, Generator
     from generator.rules import *
     from generator.graph import *
 

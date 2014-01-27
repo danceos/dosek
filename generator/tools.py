@@ -6,6 +6,9 @@
     @brief
 """
 
+import sys
+import logging
+
 def abstract():
     import inspect
     caller = inspect.getouterframes(inspect.currentframe())[1][3]
@@ -34,3 +37,7 @@ def stringify(string):
         return '"%s"' % repr(string)[1:-1]
     return stringify(repr(string).replace('"', '\"'))
 
+
+def panic(fmt, *args):
+    logging.error(fmt % tuple(args))
+    sys.exit(-1)
