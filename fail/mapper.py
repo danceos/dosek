@@ -31,7 +31,7 @@ def main(options, args):
 
     (stdout, stderr) = p.communicate(None)
     lines = stdout.split('\n')
-    
+
     for l in lines:
     	cols = l.split(' ')
 	name = cols[-1]
@@ -45,9 +45,9 @@ def main(options, args):
 	    data_start = int(addr, 16)
 	if(cols[-1] == "_edata_fail"):
 	    data_end = int(addr, 16)
-	if(cols[-1] == "stack_bottom"):
+	if(cols[-1] == "_sstack"):
 	    stack_start = int(addr, 16)
-	if(cols[-1] == "stack_top"):
+	if(cols[-1] == "_estack"):
 	    stack_end = int(addr, 16)
 
     writeFile("text_map", text_start, text_end)
