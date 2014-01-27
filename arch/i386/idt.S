@@ -23,9 +23,10 @@
 # define new handler in irqhandlers section
 .section .text.irqhandlers
 # align on IRQS_OFFSET bytes to calculate static offsets
-.align IRQS_OFFSET
+.align IRQS_OFFSET, 0xcc
 
 # IRQ entry point
+.global irq_\num
 irq_\num:
 	jmp irq_handler_\num
 
@@ -80,6 +81,8 @@ irq_handler_\num:
 
 	# jump to ISR
 	jmp isr_\num
+
+.size irq_handler_\num, . - irq_handler_\num
 
 
 
@@ -155,6 +158,7 @@ IRQ \irqno
 
 # common IRQ exit code
 .global handler_exit
+.type handler_exit, @function
 handler_exit:
 	# restore interrupt stack pointer from %esi
 	mov %esi, %esp
@@ -178,6 +182,7 @@ handler_exit:
 
 # common task resumption code
 .global irq_resume
+.type irq_resume, @function
 irq_resume:
 	# restore and remove saved context
 	popa

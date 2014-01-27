@@ -28,6 +28,7 @@ SECTIONS {
 		/* IRQ Handlers */
 		KEEP (*(".text.irqhandlers*")) /* ASM */
 		KEEP (*(".text.idt*")) /* ASM */
+		. += 16; /* padding after data, workaround for import-trace */
 		*(".text.irq_handler*") /* C */
 		*(".text.isrs*") /* C */
 		*(".text.isr_*") /* C */
@@ -50,6 +51,8 @@ SECTIONS {
 		*("_GLOBAL__I_a")
 		_etext_common_syms = .;
 
+		. += 16; /* padding after data, workaround for import-trace */
+
 		/* compiler code (arithmetic routines...) */
 		"*libgcc*.a:" ( ".text" )
 
@@ -58,6 +61,8 @@ SECTIONS {
 		_srodata_an = .;
 		*(".rodata..L*")
 		_erodata_an = .;
+
+		. += 16; /* padding after data, workaround for import-trace */
 
 		/* architectural code and rodata */
 		/* TODO: move arch text out of common text? */
