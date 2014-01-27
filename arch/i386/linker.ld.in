@@ -91,26 +91,26 @@ SECTIONS {
 		/* task code regions */
 		. = ALIGN(4096);
 		_stext_task1 = .;
-		*(".text.Task1_*")
-		*(".rodata.Task1_*")
+		*(".text.OSEKOS_TASK_Task1*")
+		*(".rodata.OSEKOS_TASK_Task1*")
 		_etext_task1 = .;
 
 		. = ALIGN(4096);
 		_stext_task2 = .;
-		*(".text.Task2_*")
-		*(".rodata.Task2_*")
+		*(".text.OSEKOS_TASK_Task2*")
+		*(".rodata.OSEKOS_TASK_Task2*")
 		_etext_task2 = .;
 
 		. = ALIGN(4096);
 		_stext_task3 = .;
-		*(".text.Task3_*")
-		*(".rodata.Task3_*")
+		*(".text.OSEOKOS_TASK_Task3*")
+		*(".rodata.OSEOKOS_TASK_Task3*")
 		_etext_task3 = .;
 
 		. = ALIGN(4096);
 		_stext_task4 = .;
-		*(".text.Task4_*")
-		*(".rodata.Task4_*")
+		*(".text.OSEKOS_TASK_Task4*")
+		*(".rodata.OSEKOS_TASK_Task4*")
 		_etext_task4 = .;
 
 		/* */
