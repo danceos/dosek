@@ -39,15 +39,15 @@ macro(coredos_test TEST)
     set(TESTELF "test-${TEST}.elf")
 
     # Executable for debugging tests
-    coredos_executable("debug${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc)
+    coredos_executable("debug${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN})
     set_target_properties("debug${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "DEBUG=1")
 
     # Executable for FAIL* testing
-    coredos_executable("fail${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc)
+    coredos_executable("fail${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN})
     set_target_properties("fail${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "FAIL=1")
 
     # The normal (CTest) test
-    coredos_executable(${TESTELF} "${TEST}.cc")
+    coredos_executable(${TESTELF} "${TEST}.cc" ${ARGN})
     add_test(${TESTELF} qemu-system-i386 -no-reboot -nographic -cdrom "${PROJECT_BINARY_DIR}/${TESTELF}.iso")
     set_tests_properties(${TESTELF} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
     add_dependencies( build_and_test iso-test-${TEST} )

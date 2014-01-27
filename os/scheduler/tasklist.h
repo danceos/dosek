@@ -22,51 +22,13 @@
 namespace os {
 namespace scheduler {
 
-// encoded constant
-#define EC(b, v) Encoded_Static<A0, b>(v)
-
 /* Simpler array based task queue */
-class TaskList {
-	// encoded task priorities
-	Encoded_Static<A0, 17> task1;
-	Encoded_Static<A0, 16> task2;
-	Encoded_Static<A0, 15> task3;
-	Encoded_Static<A0, 14> task4;
-
+class TaskListStatic {
 public:
 	// idle task id/priority
 	static constexpr auto idle_id = EC(13,0);
 	static constexpr auto idle_prio = EC(12,0);
 
-	TaskList() :
-		task1(0, 0),
-		task2(0, 0),
-		task3(0, 0),
-		task4(0, 0) {}
-
-
-	/** Set priority of task id to prio **/
-	// returns an encoded 0 with the signature (B) of the modified task - prio.B
-	template<typename T, typename S>
-	forceinline value_coded_t set(const T id, const S prio) {
-		//volatile value_coded_t signature;
-		if(id == 1) {
-			task1 = prio;
-			return (task1 - prio).getCodedValue();
-		} else if(id == 2) {
-			task2 = prio;
-			return (task2 - prio).getCodedValue();
-		} else if(id == 3) {
-			task3 = prio;
-			return (task3 - prio).getCodedValue();
-		} else if(id == 4) {
-			task4 = prio;
-			return (task4 - prio).getCodedValue();
-		} else {
-			assert(false);
-			return 0;
-		}
-	}
 
 	// Effect: (a,x) = max{((a,x), (b,y)} with (a,x) <= (b,y) <=> a <= b
 	// subtracts signature B0 from a,x and adds signature B1 to catch lost updates
@@ -115,101 +77,6 @@ public:
 		// return finished control flow signature
 		result += sigCond;
 		return result;
-	}
-
-	/** Get highest-priority task.
-	  * Saves result ID in TaskList::id,
-	  * and result priority in TaskList::prio.
-	  * If no task is ready, TaskList::prio == TaskList::idle_prio
-	  * and TaskList::id is undefined.
-	  */
-	template<typename T, typename S>
-	forceinline value_coded_t head(T& id, S& prio) const {
-		// initialize control flow signature
-		static volatile value_coded_t signature;
-
-		signature = 10;
-
-		// start with idle id/priority
-		id = idle_id;
-		prio = idle_prio;
-
-		// add initial signature
-		id.vc += 10;
-		prio.vc += 10;
-
-		// task1 >= prio?
-		signature += updateMax<10, 11>(prio, task1, id, EC(41, 1));
-		assert(signature % S::A == 36);
-
-		// task2 >= prio?
-		signature += updateMax<11, 12>(prio, task2, id, EC(42, 2));
-		assert(signature % S::A == 62);
-
-		// task3 >= prio?
-		signature += updateMax<12, 13>(prio, task3, id, EC(43, 3));
-		assert(signature % S::A == 88);
-
-		// task4 >= prio?
-		signature += updateMax<13, 14>(prio, task4, id, EC(44, 4));
-		assert(signature % S::A == 114);
-
-		// restore idle_id if idle_id >= prio
-		signature += updateMax<14, 15>(prio, idle_prio, id, idle_id);
-		assert(signature % S::A == 139);
-
-		// subtract last signature
-		id.vc -= 15;
-		prio.vc -= 15;
-
-		// check signatures
-		assert(id.check());
-		assert(prio.check());
-
-		// if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
-
-		return signature;
-	}
-
-	template<typename T, typename S>
-	forceinline value_coded_t insert(const T& id, const S& prio) {
-		// if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
-
-		return set(id, prio);
-	}
-
-	template<typename T>
-	forceinline value_coded_t remove(const T& id) {
-		// if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
-
-		return set(id, EC(5, 0));
-	}
-
-	template<typename T, typename S>
-	forceinline value_coded_t promote(const T& id, const S& newprio) {
-		// if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
-
-		return set(id, newprio);
-	}
-
-	template<typename T, typename S>
-	forceinline value_coded_t dequeue(T& id, S& prio) {
-		static value_coded_t sig1;
-
-		sig1 = head(id, prio);
-
-		value_coded_t sig2;
-		if(prio != idle_prio) {
-			sig2 = remove(id);
-			// IDEA: set id.vc += sig2 + X; ?
-		} else {
-			// IDEA: set id.vc = sig2 + X; ?
-			sig2 = 42;
-		}
-
-		// TODO: more control flow checks?
-
-		return sig1+sig2;
 	}
 
 	// DEBUGGING

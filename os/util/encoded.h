@@ -301,4 +301,7 @@ public:
 	};
 };
 
+// encoded constant
+#define EC(b, v) Encoded_Static<A0, b>(v)
+
 #endif /* ENCODED_H_ */

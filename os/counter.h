@@ -46,6 +46,7 @@ public:
 #include "alarm.h"
 
 namespace os {
+    extern void Alarm_checkCounter(Counter &counter);
 
 forceinline void Counter::advanceCounter() {
 	if(value == maxallowedvalue) {
@@ -54,7 +55,7 @@ forceinline void Counter::advanceCounter() {
 		value++;
 	}
 
-	Alarm::checkCounter(this);
+	Alarm_checkCounter(*this);
 }
 
 } // namespace os

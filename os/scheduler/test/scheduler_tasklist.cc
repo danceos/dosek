@@ -6,6 +6,7 @@
 
 #include "test/test.h"
 #include "../tasklist.h"
+#include "os/test/generated-system.h"
 
 using namespace os::scheduler;
 

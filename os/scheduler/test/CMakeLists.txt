@@ -1,4 +1,4 @@
-coredos_fail_test(scheduler_tasklist)
-coredos_fail_test(dispatch)
-coredos_fail_test(alarm)
-coredos_test(alarm-stress)
+coredos_fail_test(scheduler_tasklist ${PROJECT_SOURCE_DIR}/os/test/generated-system.cc)
+coredos_fail_test(dispatch ${PROJECT_SOURCE_DIR}/os/test/generated-system.cc)
+coredos_fail_test(alarm ${PROJECT_SOURCE_DIR}/os/test/generated-system.cc)
+coredos_test(alarm-stress ${PROJECT_SOURCE_DIR}/os/test/generated-system.cc)

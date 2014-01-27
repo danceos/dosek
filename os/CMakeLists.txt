@@ -1,6 +1,5 @@
 set(SRCS
 	counter.cc
-	alarm.cc
 )
 
 # TODO: add message to ignore non-suppressable warning

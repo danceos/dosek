@@ -229,6 +229,6 @@ endmacro()
 
 # Convenience macro for combined CoRed and FAIL* tests
 macro(coredos_fail_test TEST)
-	coredos_test(${TEST})
+	coredos_test(${TEST} ${ARGN})
 	fail_test(${TEST})
 endmacro()

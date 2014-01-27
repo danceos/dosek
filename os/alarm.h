@@ -4,8 +4,9 @@
 #include "stdint.h"
 #include "counter.h"
 #include "util/inline.h"
-#include "scheduler/thetasks.h"
-#include "scheduler/scheduler.h"
+#include "scheduler/task.h"
+
+using namespace os::scheduler;
 
 #if DEBUG
 #include "serial.h"
@@ -14,10 +15,7 @@ extern Serial serial;
 
 namespace os {
 
-class Alarm;
-extern Alarm alarm0;
-
-class Alarm {
+class AlarmStatic {
 	typedef uint32_t Ticks;
 
 	Counter& configuration_;
@@ -26,12 +24,9 @@ class Alarm {
 	Ticks absoluteTime_;
 	Ticks cycleTime_;
 
-	/** \brief task to activate */
-	const Task* const task_;
 
 public:
-	constexpr Alarm(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
-	constexpr Alarm(Counter& counter, const Task& task) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
+	constexpr AlarmStatic(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0) {}
 
 	void setArmed (bool armed) {
 		armed_ = armed;
@@ -67,28 +62,6 @@ public:
 		return cycleTime_;
 	}
 
-	forceinline void triggerAction () {
-		#if DEBUG
-		serial << "Alarm trigger" << endl;
-		#endif
-
-		if(task_) {
-			os::scheduler::scheduler.ActivateTask(*task_);
-		}
-	}
-
-	forceinline void trigger () {
-		if(getCycleTime() > 0) {
-			// reconfigure cyclic alarm
-			setRelativeTime(getCycleTime());
-		} else {
-			// disable single shot
-			setArmed(false);
-		}
-
-		triggerAction();
-	}
-
 	Ticks getRemainingTicks() {
 		if(absoluteTime_ > configuration_.getValue()) {
 			return absoluteTime_ - configuration_.getValue();
@@ -97,14 +70,18 @@ public:
 		}
 	}
 
-	forceinline void checkTrigger(const Counter* counter) {
-		if(getArmed() && (&configuration_ == counter) && getAbsoluteTime() == counter->getValue())
-			trigger();
-	}
-
-	static forceinline void checkCounter(const Counter* counter) {
-		// TODO: call all generated alarms
-		alarm0.checkTrigger(counter);
+	forceinline bool checkTrigger(const Counter* counter) {
+		if(getArmed() && (&configuration_ == counter) && getAbsoluteTime() == counter->getValue()) {
+			if(getCycleTime() > 0) {
+				// reconfigure cyclic alarm
+				setRelativeTime(getCycleTime());
+			} else {
+				// disable single shot
+				setArmed(false);
+			}
+			return true;
+		}
+		return false;
 	}
 };
 

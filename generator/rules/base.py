@@ -83,11 +83,12 @@ class BaseRules:
                                     extern_c = True)
             self.generator.source_file.data_manager.add(stack)
 
-            stackptr = DataObject("void *", subtask.name + "_stackptr",
+            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr",
                                   extern_c = True)
             self.generator.source_file.data_manager.add(stackptr)
 
-            objs[subtask] = {"stack": stack, "stackptr": stackptr}
+            objs[subtask] = {"stack": stack, "stackptr": stackptr, 
+                             "stacksize": stacksize}
         return objs
 
     def generate_dataobjects_task_entries(self):
@@ -112,16 +113,18 @@ class BaseRules:
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
-            initializer = "(%d, %d, %s, &%s, %s)" % (
+            initializer = "(%d, %d, %s, &%s, %s, %s)" % (
                 task_id,
                 subtask.static_priority,
                 entries[subtask]["entry_function"].name,
                 stacks[subtask]["stack"].name,
-                stacks[subtask]["stackptr"].name)
+                stacks[subtask]["stackptr"].name,
+                stacks[subtask]["stacksize"]
+            )
 
 
             task_id += 1
-            desc = DataObject("const os::scheduler::Task", subtask.name + "_task",
+            desc = DataObject("const os::scheduler::Task", "OS_" + subtask.name + "_task",
                               initializer)
             desc.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(desc, namespace = ("os", "tasks"))

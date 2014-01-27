@@ -18,10 +18,6 @@
 namespace os {
 namespace scheduler {
 
-// static per task stack size (4K = 1 x86 page)
-// TODO: make configurable
-#define STACKSIZE 4096
-
 /**
  * The basic task class
  * */
@@ -59,16 +55,18 @@ public:
 	// TODO: encode?
 	void* &sp;
 
+	const int stacksize;
+
 	inline void reset_sp(void) const {
-		sp = (uint8_t*)stack + STACKSIZE - 16;
+		sp = (uint8_t*)stack + stacksize - 16;
 	}
 
 	inline bool is_running(void) const {
-		return sp != (uint8_t*)stack + STACKSIZE - 16;
+		return sp != (uint8_t*)stack + stacksize - 16;
 	}
 
-	constexpr Task(id_t _id, prio_t _prio, fptr_t f, void *s, void* &sptr)
-	 	: id(_id), prio(_prio), fun(f), stack(s), sp(sptr) {}
+	constexpr Task(id_t _id, prio_t _prio, fptr_t f, void *s, void* &sptr, int stacksize)
+	 	: id(_id), prio(_prio), fun(f), stack(s), sp(sptr), stacksize(stacksize) {}
 };
 
 }; // namespace scheduler

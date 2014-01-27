@@ -8,11 +8,11 @@
 #include "util/encoded.h"
 #include "output.h"
 #include "machine.h"
-#include "os/scheduler/thetasks.h"
 #include "os/scheduler/scheduler.h"
 #include "os/counter.h"
 #include "os/alarm.h"
 #include "os/os.h"
+#include "os/test/generated-system.h"
 using namespace os::scheduler;
 
 // debug serial print macro
