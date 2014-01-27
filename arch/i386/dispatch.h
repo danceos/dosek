@@ -65,7 +65,7 @@ public:
 		save_sp = &task.sp;
 
 		// TODO: do this in dispatcher IRQ?/control flow check
-		if(task.is_running()) {
+		if(!task.is_running()) {
 			// not resuming, pass task function
 			dispatch_syscall((uint32_t) task.id, (uint32_t)task.sp, (uint32_t)task.fun);
 		} else {

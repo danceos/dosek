@@ -64,7 +64,7 @@ public:
 	}
 
 	inline bool is_running(void) const {
-		return sp == (uint8_t*)stack + STACKSIZE - 16;
+		return sp != (uint8_t*)stack + STACKSIZE - 16;
 	}
 
 	constexpr Task(id_t _id, prio_t _prio, fptr_t f, void *s, void* &sptr)
