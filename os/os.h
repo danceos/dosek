@@ -1,6 +1,8 @@
 #ifndef _COREDOS_OS_OS_H_
 #define _COREDOS_OS_OS_H_
 
+#include "os/util/inline.h"
+
 /**
  *  @defgroup os Operating System Layer
  *  @brief This modules provides all OS functionalities
@@ -50,6 +52,7 @@ enum TaskStateType {
 #endif
 
 EXTERN_C_DECL void os_main(void);
+
 
 /******************************************************************************
  *                                                                            *
@@ -102,8 +105,9 @@ typedef struct MESSAGEStruct* MessageIdentifier;
  *                                                                            *
  ******************************************************************************/
 
-#define ISR(x)					\
-  void OSEKOS_ISR_##x()
+
+#define ISR2(taskname) \
+	noinline EXTERN_C_DECL void OSEKOS_ISR_##taskname(void)
 
 #define DeclareTask(x)				\
   struct TASKStruct OSEKOS_TASK_Struct_##x
@@ -111,8 +115,8 @@ typedef struct MESSAGEStruct* MessageIdentifier;
 /**
  * @satisfies{13,2,5}
  */
-#define TASK(x)					\
-  void OSEKOS_TASK_##x()
+#define TASK(taskname) \
+	noinline EXTERN_C_DECL void OSEKOS_TASK_##taskname(void)
 
 #define ActivateTask(x)				\
   OSEKOS_ActivateTask(&OSEKOS_TASK_Struct_##x)

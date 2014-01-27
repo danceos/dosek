@@ -12,11 +12,11 @@ namespace scheduler {
 
 Scheduler scheduler;
 
-noinline void TerminateTaskC(__attribute__ ((unused)) uint32_t dummy) {
+noinline void TerminateTaskC_impl(__attribute__ ((unused)) uint32_t dummy) {
 	scheduler.TerminateTask();
 }
 
-noinline void ScheduleC(__attribute__ ((unused)) uint32_t dummy) {
+noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
 	scheduler.Reschedule();
 }
 

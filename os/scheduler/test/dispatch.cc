@@ -10,6 +10,7 @@
 #include "machine.h" // for shutdown
 #include "os/scheduler/thetasks.h"
 #include "os/scheduler/scheduler.h"
+#include "os/os.h"
 using namespace os::scheduler;
 
 // debug serial print macro
@@ -76,7 +77,7 @@ void test(void)
 	Machine::enable_interrupts();
 
 	//! @test Activate first task
-	ActivateTaskC(t1.enc_id<3>());
+	ActivateTaskC_impl(t1.enc_id<3>());
 
 	// should never come here
 	Machine::unreachable();
@@ -89,7 +90,7 @@ TASK(Task1) {
 	run_checkable_function(step1, k, 3);
 
 	// activate and dispatch higher priority task 2
-	ActivateTask(t2);
+	ActivateTask_impl(t2);
 
 	DEBUGPRINT("!");
 
@@ -97,7 +98,7 @@ TASK(Task1) {
 	run_checkable_function(step4, k, (((3*7)+5)*2+9)*3+2);
 
 	// activate lower priority task 3 (no disptach)
-	ActivateTask(t3);
+	ActivateTask_impl(t3);
 
 	DEBUGPRINT(" :)");
 
@@ -105,7 +106,7 @@ TASK(Task1) {
 	run_checkable_function(step5, k, ((((3*7)+5)*2+9)*3+2)*5+3);
 
 	// terminate and switch to task 3
-	TerminateTask();
+	TerminateTask_impl();
 }
 
 TASK(Task2) {
@@ -115,7 +116,7 @@ TASK(Task2) {
 	run_checkable_function(step2, k, (3*7)+5);
 
 	// chain higher priority task 4
-	ChainTask(t4);
+	ChainTask_impl(t4);
 }
 
 TASK(Task3) {
@@ -132,7 +133,7 @@ TASK(Task3) {
 	Machine::shutdown();
 
 	// would terminate to idle loop
-	TerminateTask();
+	TerminateTask_impl();
 }
 
 TASK(Task4) {
@@ -142,5 +143,5 @@ TASK(Task4) {
 	run_checkable_function(step3, k, ((3*7)+5)*2+9);
 
 	// terminate and return to task 1
-	TerminateTask();
+	TerminateTask_impl();
 }

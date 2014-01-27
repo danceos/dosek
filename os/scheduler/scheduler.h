@@ -110,53 +110,53 @@ extern Scheduler scheduler;
 // the actual syscall which has ...C suffix
 
 template<typename T>
-noinline void ActivateTaskC(const T id) {
+noinline void ActivateTaskC_impl(const T id) {
 	scheduler.ActivateTask(id);
 }
 
 /**
  * @satisfies{13,2,3,1}
  */
-forceinline void ActivateTask(const Task& t) {
+forceinline void ActivateTask_impl(const Task& t) {
 	auto id = t.enc_id<3>();
 
-	syscall(ActivateTaskC<decltype(id)>, id);
+	syscall(ActivateTaskC_impl<decltype(id)>, id);
 }
 
 template<typename T>
-noinline void ChainTaskC(const T id) {
+noinline void ChainTaskC_impl(const T id) {
 	scheduler.ChainTask(id);
 }
 
 /**
  * @satisfies{13,2,3,3}
  */
-forceinline void ChainTask(const Task& t) {
+forceinline void ChainTask_impl(const Task& t) {
 	auto id = t.enc_id<3>();
 
-	syscall(ChainTaskC<decltype(id)>, id);
+	syscall(ChainTaskC_impl<decltype(id)>, id);
 
 	Machine::unreachable();
 }
 
-noinline void TerminateTaskC(uint32_t dummy);
+noinline void TerminateTaskC_impl(uint32_t dummy);
 
 /**
  * @satisfies{13,2,3,2}
  */
-forceinline void TerminateTask() {
-	syscall(TerminateTaskC);
+forceinline void TerminateTask_impl() {
+	syscall(TerminateTaskC_impl);
 
 	Machine::unreachable();
 }
 
-noinline void ScheduleC(uint32_t dummy);
+noinline void ScheduleC_impl(uint32_t dummy);
 
 /**
  * @satisfies{13,2,3,4}
  */
-forceinline void Schedule() {
-	syscall(ScheduleC);
+forceinline void Schedule_impl() {
+	syscall(ScheduleC_impl);
 }
 
 }};

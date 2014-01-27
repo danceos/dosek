@@ -7,10 +7,10 @@
 using os::scheduler::Task;
 
 // task handlers
-extern "C" __attribute__((weak_import)) void Task1_function(void);
-extern "C" __attribute__((weak_import)) void Task2_function(void);
-extern "C" __attribute__((weak_import)) void Task3_function(void);
-extern "C" __attribute__((weak_import)) void Task4_function(void);
+extern "C" __attribute__((weak_import)) void OSEKOS_TASK_Task1(void);
+extern "C" __attribute__((weak_import)) void OSEKOS_TASK_Task2(void);
+extern "C" __attribute__((weak_import)) void OSEKOS_TASK_Task3(void);
+extern "C" __attribute__((weak_import)) void OSEKOS_TASK_Task4(void);
 
 // task stacks
 extern "C" uint8_t Task1_stack[];
@@ -28,10 +28,10 @@ namespace os {
 namespace tasks {
 
 // the tasks
-constexpr Task t1(1, 2, Task1_function, &Task1_stack, stackptr_Task1);
-constexpr Task t2(2, 3, Task2_function, &Task2_stack, stackptr_Task2);
-constexpr Task t3(3, 1, Task3_function, &Task3_stack, stackptr_Task3);
-constexpr Task t4(4, 4, Task4_function, &Task4_stack, stackptr_Task4);
+constexpr Task t1(1, 2, OSEKOS_TASK_Task1, &Task1_stack, stackptr_Task1);
+constexpr Task t2(2, 3, OSEKOS_TASK_Task2, &Task2_stack, stackptr_Task2);
+constexpr Task t3(3, 1, OSEKOS_TASK_Task3, &Task3_stack, stackptr_Task3);
+constexpr Task t4(4, 4, OSEKOS_TASK_Task4, &Task4_stack, stackptr_Task4);
 
 }; // namespace tasks
 }; // namespace os

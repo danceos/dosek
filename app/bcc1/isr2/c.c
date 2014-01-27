@@ -30,7 +30,7 @@ TASK(H3) {
 	TerminateTask();
 }
 
-ISR(ISR1) {
+ISR2(ISR1) {
 	if (a > 100) {
 		ActivateTask(H2);
 	}

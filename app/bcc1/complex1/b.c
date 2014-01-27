@@ -28,7 +28,7 @@ TASK(H3) {
 	TerminateTask();
 }
 
-ISR(ISR1) {
+ISR2(ISR1) {
 	ActivateTask(H3);
 }
 

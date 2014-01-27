@@ -28,7 +28,7 @@ TASK(H3) {
 	ChainTask(H1);
 }
 
-ISR(ISR1) {
+ISR2(ISR1) {
 	ActivateTask(H3);
 }
 

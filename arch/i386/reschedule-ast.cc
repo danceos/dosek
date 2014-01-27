@@ -29,7 +29,7 @@ ISR(IRQ_RESCHEDULE) {
 
 	// push syscall function pointer/segment
 	Machine::push(GDT::USER_CODE_SEGMENT | 0x3); // push code segment, DPL3
-	Machine::push((uint32_t) os::scheduler::ScheduleC); // push address of scheduler function
+	Machine::push((uint32_t) os::scheduler::ScheduleC_impl); // push address of scheduler function
 
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);

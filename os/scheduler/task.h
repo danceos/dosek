@@ -22,9 +22,6 @@ namespace scheduler {
 // TODO: make configurable
 #define STACKSIZE 4096
 
-#define TASK(taskname) \
-	noinline extern "C" void taskname ## _function (void)
-
 /**
  * The basic task class
  * */

@@ -12,6 +12,7 @@
 #include "os/scheduler/scheduler.h"
 #include "os/counter.h"
 #include "os/alarm.h"
+#include "os/os.h"
 using namespace os::scheduler;
 
 // debug serial print macro
@@ -60,7 +61,7 @@ void test(void)
 	Machine::enable_interrupts();
 
 	//! @test Activate first task
-	ActivateTaskC(t1.enc_id<3>());
+	ActivateTaskC_impl(t1.enc_id<3>());
 
 	// should never come here
 	Machine::unreachable();
@@ -75,7 +76,7 @@ TASK(Task1) {
 	os::alarm0.setArmed(true);
 
 	DEBUGPRINT("Terminate task 1");
-	TerminateTask();
+	TerminateTask_impl();
 }
 
 TASK(Task2) {
@@ -107,5 +108,5 @@ TASK(Task2) {
 	}
 
 	running = false;
-	TerminateTask();
+	TerminateTask_impl();
 }
