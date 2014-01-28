@@ -156,7 +156,7 @@ forceinline void test_start()
 	#ifdef DEBUG
 	kout.setcolor(Color::WHITE, Color::BLACK);
 	kout << "[Test " << (unsigned) experiment_number << "]" << endl;
-	kout.setcolor(Color::LIGHT_GREY, Color::BLACK);
+	kout.setcolor(Color::YELLOW, Color::BLACK);
 	#endif
 
 	/* Set a marker for starting the test */
