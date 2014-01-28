@@ -3,12 +3,12 @@
  * @ingroup i386
  * @brief CGA output
  */
-#include "cga.h" 
+#include "cga.h"
 
 uint16_t* const CGA::BUFFER = reinterpret_cast<uint16_t*>(0xB8000);
 
 CGA::CGA() {
-	setcolor(LIGHT_GREY, BLACK);
+	setcolor(Color::WHITE, Color::BLACK);
 	clear();
 }
 
@@ -28,8 +28,8 @@ uint16_t CGA::vgaentry(char character, uint8_t color) {
 	return c16 | color16 << 8;
 }
 
-void CGA::setcolor(enum color foreground, enum color background) {
-	color = foreground | background << 4;
+void CGA::setcolor(Color foreground, Color background) {
+	color = static_cast<uint8_t>(foreground) | static_cast<uint8_t>(background) << 4;
 }
 
 void CGA::putentryat(char character, uint8_t color, size_t x_coord, size_t y_coord) {

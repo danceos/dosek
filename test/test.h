@@ -154,9 +154,9 @@ forceinline void test_start()
 	serial << "Test " << (unsigned) experiment_number << ": " << endl;
 	#endif
 	#ifdef DEBUG
-	kout.setcolor(CGA::WHITE, CGA::BLACK);
+	kout.setcolor(Color::WHITE, Color::BLACK);
 	kout << "[Test " << (unsigned) experiment_number << "]" << endl;
-	kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
+	kout.setcolor(Color::LIGHT_GREY, Color::BLACK);
 	#endif
 
 	/* Set a marker for starting the test */
@@ -175,9 +175,9 @@ void test_equality(expected_value_t real_value, const expected_value_t expected_
 		serial << "  +" << endl;
 		#endif
 		#ifdef DEBUG
-		kout.setcolor(CGA::GREEN, CGA::BLACK);
+		kout.setcolor(Color::GREEN, Color::BLACK);
 		kout << "[POSITIVE]" << endl << endl;
-		kout.setcolor(CGA::WHITE, CGA::BLACK);
+		kout.setcolor(Color::WHITE, Color::BLACK);
 		#endif
 
 		positive_tests++;
@@ -186,9 +186,9 @@ void test_equality(expected_value_t real_value, const expected_value_t expected_
 		serial << "  -[" << real_value << (equal ? " != " : " == ") << expected_value << "]" << endl;
 		#endif
 		#ifdef DEBUG
-		kout.setcolor(CGA::RED, CGA::BLACK);
+		kout.setcolor(Color::RED, Color::BLACK);
 		serial << "[NEGATIVE] " << real_value << (equal ? " != " : " == ") << expected_value << endl;
-		kout.setcolor(CGA::WHITE, CGA::BLACK);
+		kout.setcolor(Color::WHITE, Color::BLACK);
 		#endif
 	}
 }
@@ -230,9 +230,9 @@ void __test_positive_tests(int pos_tests, int sign) {
 		serial << "SUCCESS " << experiment_number << endl;
 		#endif
 		#ifdef DEBUG
-		kout.setcolor(CGA::GREEN, CGA::BLACK);
+		kout.setcolor(Color::GREEN, Color::BLACK);
 		kout << "[SUCCESS] " << experiment_number << endl;
-		kout.setcolor(CGA::WHITE, CGA::BLACK);
+		kout.setcolor(Color::WHITE, Color::BLACK);
 		#endif
 	} else {
 		global_all_ok = false;
@@ -241,9 +241,9 @@ void __test_positive_tests(int pos_tests, int sign) {
 		serial << "FAIL " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
 		#endif
 	        #ifdef DEBUG
-		kout.setcolor(CGA::RED, CGA::BLACK);
+		kout.setcolor(Color::RED, Color::BLACK);
 		serial << "[FAIL] " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
-		kout.setcolor(CGA::WHITE, CGA::BLACK);
+		kout.setcolor(Color::WHITE, Color::BLACK);
 		#endif
 	}
 
@@ -347,9 +347,9 @@ void test_finish(void) {
 extern "C" void os_main(void)
 {
 	#ifdef DEBUG
-	kout.setcolor(CGA::RED, CGA::WHITE);
+	kout.setcolor(Color::RED, Color::WHITE);
 	kout << "CoRedOS start" << endl;
-	kout.setcolor(CGA::LIGHT_GREY, CGA::BLACK);
+	kout.setcolor(Color::YELLOW, Color::BLACK);
 	#endif
 
 	// prepare tests
@@ -363,7 +363,7 @@ extern "C" void os_main(void)
 
 	// halt system
 	#ifdef DEBUG
-	kout.setcolor(CGA::RED, CGA::WHITE);
+	kout.setcolor(Color::RED, Color::WHITE);
 	kout << "CoRedOS halt" << endl;
 	Machine::halt();// stop emulator, don't exit
 	#endif

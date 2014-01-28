@@ -11,7 +11,7 @@ namespace arch {
 
 enum Exceptions {
 	DIV0 = 0,
-	DEBUG,
+	DBG,
 	NMI,
 	BREAKPOINT,
 	OVERFLOW,
