@@ -1,7 +1,4 @@
 from generator.elements import *
-from generator.tools import flatten
-
-import re
 
 class SignatureGenerator:
     def __init__(self, start = 3):
@@ -24,6 +21,10 @@ class Generator:
         self.__used_variable_names = set()
         self.template_base = None
         self.signature_generator = SignatureGenerator()
+
+        self.file_prefix = None
+        self.source_file = None
+        self.source_files = dict()
 
         operations.set_generator(self)
 
@@ -51,7 +52,6 @@ class Generator:
         "WaitEvent": None,
         "GetAlarm": None,
         "SetRelAlarm": None,
-        "SetRelAlarm": None,
         "CancelAlarm": None,
         "GetAlarmBase": None,
         "AdvanceCounter": None,
@@ -66,7 +66,6 @@ class Generator:
     def generate_into(self, output_file_prefix):
         """Generate into output file"""
         self.file_prefix = output_file_prefix
-        self.source_files = {}
         self.source_file = SourceFile()
         self.source_files["%s_coredos.cc"%self.name] = self.source_file
 

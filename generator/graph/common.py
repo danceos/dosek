@@ -120,17 +120,19 @@ class FixpointIteraton:
         self.working_stack = list(reversed(starting_objects))
         self.stopped = False
 
-    def enqueue_soon(self, item = None, items = []):
+    def enqueue_soon(self, item = None, items = None):
         if item and not item in self.working_stack:
             self.working_stack.append(item)
-        for x in items:
-            self.enqueue_soon(x)
+        if items:
+            for x in items:
+                self.enqueue_soon(x)
 
-    def enqueue_later(self, item = None, items = []):
+    def enqueue_later(self, item = None, items = None):
         if item and not item in self.working_stack:
             self.working_stack = [item] + self.working_stack
-        for x in items:
-            self.enqueue_later(x)
+        if items:
+            for x in items:
+                self.enqueue_later(x)
 
     def stop(self):
         self.stopped = True

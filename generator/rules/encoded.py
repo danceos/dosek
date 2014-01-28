@@ -1,7 +1,5 @@
 from generator.rules.base import BaseRules
 from generator.elements import CodeTemplate, Include
-from generator.tools import merge_dict_tree
-
 
 class EncodedSystem(BaseRules):
     def __init__(self):
@@ -14,18 +12,18 @@ class EncodedSystem(BaseRules):
 
 class TaskListTemplate(CodeTemplate):
     def __init__(self, rules):
-       CodeTemplate.__init__(self, rules.generator, "os/scheduler/tasklist.h.in")
-       self.rules = rules
-       self.system_graph = self.generator.system_graph
-       # Reference to the objects object of our rule system
-       self.objects = self.rules.objects
-       self.idle = self.system_graph.find_function("Idle")
+        CodeTemplate.__init__(self, rules.generator, "os/scheduler/tasklist.h.in")
+        self.rules = rules
+        self.system_graph = self.generator.system_graph
+        # Reference to the objects object of our rule system
+        self.objects = self.rules.objects
+        self.idle = self.system_graph.find_function("Idle")
 
-       self.__head_signature_vc = self.generator.signature_generator.new()
-       # Generate signatures for each task for prio and id
-       for subtask in self.system_graph.get_subtasks():
-           self.objects[subtask]["task_id_sig"] = self.generator.signature_generator.new()
-           self.objects[subtask]["task_prio_sig"] = self.generator.signature_generator.new()
+        self.__head_signature_vc = self.generator.signature_generator.new()
+        # Generate signatures for each task for prio and id
+        for subtask in self.system_graph.get_subtasks():
+            self.objects[subtask]["task_id_sig"] = self.generator.signature_generator.new()
+            self.objects[subtask]["task_prio_sig"] = self.generator.signature_generator.new()
 
     def arbitrary_new_signature(self, snippet, args):
         return str(self.generator.signature_generator.new())

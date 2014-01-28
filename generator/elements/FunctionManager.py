@@ -1,17 +1,17 @@
 #!/usr/bin/python
-import unittest
 
-from SourceElement import Block, Statement
-from generator import  tools
+from generator.elements.SourceElement import Block, Statement
 
 class Function:
-    def __init__(self, name, rettype, argstype, extern_c = False, attributes = []):
+    def __init__(self, name, rettype, argstype, extern_c = False, attributes = None):
         self.name = name
         self.rettype = rettype
         self.argstype = argstype
         self.statements = []
         self.extern_c = extern_c
         self.attributes = attributes
+        if self.attributes == None:
+            self.attributes = []
 
     def add(self, statement):
         self.statements.append(statement)
@@ -27,7 +27,7 @@ class Function:
                                 ",".join(self.argstype))
         if self.extern_c:
             decl = 'extern "C" %s' % decl
-        return Statement(decl);
+        return Statement(decl)
 
     def source_element_definitions(self):
         args = ["%s %s" %(x[1], x[0])
@@ -50,7 +50,7 @@ class Function:
         return ret
 
 class FunctionDeclaration(Function):
-    def __init__(self, name, rettype, argstype, extern_c = False, attributes = []):
+    def __init__(self, name, rettype, argstype, extern_c = False, attributes = None):
         Function.__init__(self, name, rettype, argstype, extern_c, attributes)
 
     def add(self, statement):

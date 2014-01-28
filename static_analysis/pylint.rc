@@ -45,7 +45,9 @@ load-plugins=
 #  W0614: Unused imports
 #  I0011: Locally disabling of messages
 #  R0201: Method could be a function
-disable=C,W0401,W0603,W0141,W0142,W0614,R0903,R0904,I0011,R0201
+#  W0613: Unused argument
+#  W0105: String statement has no effect
+disable=C,W0401,W0603,W0141,W0142,W0614,R0903,R0904,I0011,R0201,W0613,W0105
 
 
 [REPORTS]

@@ -1,6 +1,7 @@
 from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph.Sporadic import SporadicEvent
+from generator.tools import panic
 
 
 class SystemCallSemantic:
@@ -242,6 +243,18 @@ class SystemState:
 class RunningTaskAnalysis(Analysis):
     def __init__(self):
         Analysis.__init__(self)
+        self.sporadic_events = []
+        self.isrs = []
+        # A member for the RunningTask analysis
+        self.running_task = None
+        # States for the fixpoint iteration
+        self.changed_current_block = False
+        self.before_abb_states = None
+        self.system_call_semantic = None
+        self.fixpoint = None
+        self.edge_states = None
+
+
     def requires(self):
         # We require all possible system edges to be contructed
         return [CurrentRunningSubtask.name()]
@@ -273,9 +286,8 @@ class RunningTaskAnalysis(Analysis):
 
     def install_sporadic_events(self):
         # Install the alarm handlers
-        self.sporadic_events = list(self.system.alarms)
+        self.sporadic_events.extend(list(self.system.alarms))
         # Install the ISR handlers
-        self.isrs = []
         for subtask in self.system.get_subtasks():
             if subtask.is_isr:
                 isr = ISR(self, subtask)
@@ -395,6 +407,14 @@ class ISR(SporadicEvent):
         for abb in self.handler.abbs:
             self.collected_states[abb] = SystemState(self.system)
 
+        # Variables for the fixpoint iterations
+        self.changed_current_block = True
+        self.result = None
+        self.start_state = None
+        self.edge_states = None
+        self.before_abb_states = None
+        self.fixpoint = None
+
     def block_functor(self, fixpoint, block):
         if block == self.handler.entry_abb:
             self.changed_current_block = True
@@ -481,7 +501,6 @@ class GlobalControlFlowMetric(Analysis):
         current_task = self.get_analysis("CurrentRunningSubtask")
 
         abbs = self.system.get_abbs()
-        abb_count = len(abbs)
         # All possible directed edges
         all_possible_neighbours_count = 0
         # All edges that go to higher priority blocks or the system blocks

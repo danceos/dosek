@@ -25,6 +25,11 @@ class SystemGraph(GraphObject):
         self.label = "SystemGraph"
         self.passes = {}
         self.analysis_pipe = []
+        self.max_abb_id = 0
+        self.system = None
+        self.rtsc = None
+        self.alarms = []
+        self.verifiers = {}
 
     def graph_subobjects(self):
         objects = []
@@ -117,8 +122,6 @@ class SystemGraph(GraphObject):
                     subtask.set_autostart(subtask_osek.autostart)
                     subtask.set_is_isr(False)
 
-
-        self.alarms = []
         for alarm in system.getAlarms():
             # FIXME: when events are supported
             assert alarm.event == None
@@ -186,7 +189,6 @@ class SystemGraph(GraphObject):
 
 
     def read_verify_script(self, path):
-        self.verifiers = {}
         if not path:
             return
         import imp

@@ -6,12 +6,12 @@ from generator.elements import *
 class BaseRules:
     def __init__(self):
         self.generator = None
-
+        self.system_graph = None
+        self.objects = {}
 
     def set_generator(self, generator):
         self.generator = generator
         self.system_graph = generator.system_graph
-        self.objects = {}
         for subtask in self.system_graph.get_subtasks():
             self.objects[subtask] = {}
 

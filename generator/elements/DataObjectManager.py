@@ -12,10 +12,7 @@
     @ingroup generator
     @brief Data object cook.
 """
-import unittest
-from generator import tools
 from generator.elements.SourceElement import Block, Statement, ForRange
-
 
 class DataObject:
     """Manages a variable"""
@@ -24,8 +21,8 @@ class DataObject:
                  static_initializer = None,
                  dynamic_initializer = False,
                  extern_c = False):
-        self.typename = typename;
-        self.name = name;
+        self.typename = typename
+        self.name = name
         self.static_initializer = static_initializer
         self.dynamic_initializer = dynamic_initializer
         self.data_object_manager = None
@@ -58,14 +55,14 @@ class DataObject:
             return Statement(self.allocation_prefix
                              + self.typename + " "
                              + self.name + " = "
-                             + str(self.static_initializer));
+                             + str(self.static_initializer))
         if self.static_initializer != None and self.static_initializer[0] == "(":
             return Statement(
                 self.allocation_prefix
                 + self.typename + " "
                 + self.name
                 + str(self.static_initializer))
-        return Statement(self.typename + " " + self.name);
+        return Statement(self.typename + " " + self.name)
 
     def source_element_initializer(self):
         """Builds a dynamic initialization statement.

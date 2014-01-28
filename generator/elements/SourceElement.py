@@ -37,15 +37,6 @@ class CPPStatement(SourceElement):
     def expand(self, generator):
         return ["#", Indent(), self.cmd + " " + self.arg + "\n"]
 
-class Statement(SourceElement):
-    def __init__(self, statment):
-        SourceElement.__init__(self)
-        self.statement = statement
-
-    def expand(self):
-        return [Indent(), self.statement + ";"]
-
-
 class Block(SourceElement):
     # Class Member
     indentation_level = 0
@@ -76,7 +67,7 @@ class Block(SourceElement):
             ret += format_source_tree(generator, i)
         Block.indentation_level -= 1
         ret += Block.indent_spaces() + "}\n"
-        return ret;
+        return ret
 
     def __str__(self):
         return "<<" + ", ".join([str(x) for x in self.inner]) + ">>"
@@ -115,6 +106,7 @@ class Indent(SourceElement):
 
 class VariableDefinition(SourceElement):
     def __init__(self, datatype, name):
+        SourceElement.__init__(self)
         self.datatype = datatype
         self.name = name
 
@@ -131,6 +123,7 @@ class VariableDefinition(SourceElement):
 
 class FunctionCall(SourceElement):
     def __init__(self, name, arguments, return_variable = None):
+        SourceElement.__init__(self)
         self.function = name
         self.arguments = arguments
         self.return_variable = return_variable

@@ -1,13 +1,12 @@
 import logging
 import sys
 from generator.graph.common import *
-from generator.graph.Subtask import Subtask
 
 class Analysis:
     def __init__(self):
         self.valid = False
         self.debug = self.__log_void
-        pass
+        self.system = None
 
     def __log_void(self, *args, **kwargs):
         pass
@@ -39,12 +38,12 @@ class Analysis:
 
     def analyze(self):
         if not self.valid:
-            logging.info("Running %s analysis" %(self.name()))
+            logging.info("Running %s analysis", self.name())
             assert self.system != None
             self.do()
             self.valid = True
         else:
-            logging.info("Is stil valid: %s analysis" %(self.name()))
+            logging.info("Is stil valid: %s analysis", self.name())
 
     def do(self):
         pass
@@ -126,6 +125,7 @@ class CurrentRunningSubtask(Analysis):
     """
     def __init__(self):
         Analysis.__init__(self)
+        self.values = None
 
     def requires(self):
         return [EnsureComputationBlocks.name()]
@@ -192,7 +192,7 @@ class MoveFunctionsToTask(Analysis):
             if abb.function.task == None \
                and subtask != None:
                 subtask.task.add_function(abb.function)
-                logging.debug("Moving %s to %s" %(abb.function, subtask.task))
+                logging.debug("Moving %s to %s", abb.function, subtask.task)
 
 
 
