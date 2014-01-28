@@ -214,7 +214,7 @@ macro(fail_test TEST)
 
 	# executable for FAIL*
 	set(TESTELF "fail-${TEST}.elf")
-	coredos_executable("${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc)
+	coredos_executable("${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN})
 	set_target_properties("${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "FAIL=1")
 	set_target_properties("${TESTELF}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${FAIL_DIR})
 	set_target_properties("${TESTELF}" PROPERTIES EXCLUDE_FROM_ALL true)
@@ -230,5 +230,5 @@ endmacro()
 # Convenience macro for combined CoRed and FAIL* tests
 macro(coredos_fail_test TEST)
 	coredos_test(${TEST} ${ARGN})
-	fail_test(${TEST})
+	fail_test(${TEST} ${ARGN})
 endmacro()
