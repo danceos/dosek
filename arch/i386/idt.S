@@ -103,6 +103,7 @@ isr_\num:
 	.byte 0 # always zero
 	.byte \type # gate type
 	.short (IRQS_BASE + \num*IRQS_OFFSET) >> 16 # handler address
+.size theidt, . - theidt
 
 .endm # end of IRQ macro
 
@@ -111,6 +112,7 @@ isr_\num:
 # separate section for IDT
 .section .text.idt
 .global theidt
+.type theidt, @object
 theidt:
 	# filled by IRQ macro
 
@@ -155,6 +157,7 @@ IRQ \irqno
 .endr
 
 
+.section .text.irqhandlers
 
 # common IRQ exit code
 .global handler_exit

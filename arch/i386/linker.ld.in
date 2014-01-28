@@ -27,11 +27,11 @@ SECTIONS {
 
 		/* IRQ Handlers */
 		KEEP (*(".text.irqhandlers*")) /* ASM */
-		KEEP (*(".text.idt*")) /* ASM */
-		. += 16; /* padding after data, workaround for import-trace */
 		*(".text.irq_handler*") /* C */
 		*(".text.isrs*") /* C */
 		*(".text.isr_*") /* C */
+		KEEP (*(".text.idt")) /* ASM */
+		. += 16; /* padding after data, workaround for import-trace */
 
 		/* constructors */
 		. = ALIGN(8);
