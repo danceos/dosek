@@ -44,13 +44,14 @@ if __name__ == "__main__":
                       metavar="SYSTEM_XML", help="the system description file")
     parser.add_option("", "--rtsc-analyze-xml",
                       metavar="RTSC_ANALYZE_XML", help="the RTSC Analyze file")
-    parser.add_option("", "--nm",
-                      metavar="PATH", help="path to an nm binary",
-                      default="nm")
-    parser.add_option("-o", "--output",
-                      metavar="OUTPUT", help="where to place the coredos source")
+    parser.add_option("-p", "--prefix",
+                      metavar="DIR", help="where to place the coredos source (prefix)")
+    parser.add_option("-n", "--name",
+                      metavar="STRING", help="where to place the coredos source (prefix)")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
+    parser.add_option('', '--template-base',
+                      help="Where to search for code templates")
     parser.add_option('', '--verify', dest='verify', default = None,
                       help="verify script for the analysis results")
 
@@ -76,8 +77,9 @@ if __name__ == "__main__":
     graph.register_analysis(CurrentRunningSubtask())
     graph.register_and_enqueue_analysis(MoveFunctionsToTask())
     graph.register_and_enqueue_analysis(RunningTaskAnalysis())
-    graph.register_and_enqueue_analysis(GlobalControlFlowMetric(options.output + "_metric"))
-    graph.analyze(options.output)
+    graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
+    graph.analyze("%s/%s" % (options.prefix, options.name))
 
-    generator = Generator.Generator(graph, BaseRules())
-    generator.generate_into(options.output)
+    generator = Generator.Generator(graph, options.name, EncodedSystem())
+    generator.template_base = options.template_base
+    generator.generate_into(options.prefix)

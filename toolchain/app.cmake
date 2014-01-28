@@ -31,6 +31,8 @@ MACRO(COREDOS_BINARY)
   set(COREDOS_SOURCE_SYSTEM_OBJECT "${BDIR}/${NAME}_source_system.o")
 
   set(COREDOS_GENERATED_SOURCE "${BDIR}/${NAME}_coredos.cc")
+
+
   set(COREDOS_GENERATED_LLVM "${BDIR}/${NAME}_coredos.ll")
   set(COREDOS_BINARY_LLVM_BYTECODE "")
   set(tmp "")
@@ -106,8 +108,9 @@ MACRO(COREDOS_BINARY)
     COMMAND ${COREDOS_GENERATOR} 
 	   --system-xml "${COREDOS_SYSTEM_XML}"
        --rtsc-analyze-xml "${COREDOS_RTSC_ANALYZE_XML}"
-	   --nm "${LLVM_NM_BINARY}"
-	   --output "${COREDOS_GENERATED_SOURCE}"
+	   --prefix ${BDIR}
+       --name ${NAME}
+       --template-base ${PROJECT_SOURCE_DIR}
        ${COREDOS_GENERATOR_ARGS}
 	   -vv
 	COMMENT "[${PROJECT_NAME}/${NAME}] Generating COREDOS source code"

@@ -41,5 +41,8 @@ __attribute__((weak)) Alarm alarm0(counter0);
 void Alarm_checkCounter(Counter &counter) {
 	Alarm::checkCounter(counter);
 }
+constexpr Encoded_Static<A0, 13> TaskList::idle_id;
+constexpr Encoded_Static<A0, 12> TaskList::idle_prio;
+
 
 }; // os

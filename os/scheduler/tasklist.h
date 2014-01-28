@@ -25,11 +25,6 @@ namespace scheduler {
 /* Simpler array based task queue */
 class TaskListStatic {
 public:
-	// idle task id/priority
-	static constexpr auto idle_id = EC(13,0);
-	static constexpr auto idle_prio = EC(12,0);
-
-
 	// Effect: (a,x) = max{((a,x), (b,y)} with (a,x) <= (b,y) <=> a <= b
 	// subtracts signature B0 from a,x and adds signature B1 to catch lost updates
 	template<B_t B0, B_t B1, typename T, typename S, typename U, typename V>

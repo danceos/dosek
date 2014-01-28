@@ -1,0 +1,126 @@
+// ****************************************************************
+// TaskList Implementation
+// ****************************************************************
+
+namespace os { namespace scheduler {
+
+/* Simpler array based task queue */
+class TaskList : public TaskListStatic {
+    // encoded task priorities
+    {{{snippet:ready_flag:name,A,B|Encoded_Static<%(A)s, %(B)s> %(name)s;}}}
+    {{{generate:ready_flag_variables}}}
+
+public:
+    // idle task id/priority
+    static constexpr auto idle_id   = EC({{{generate:idle_id_sig}}}, 0);
+    static constexpr auto idle_prio = EC({{{generate:idle_prio_sig}}}, 0);
+
+    {{{snippet:ready_flag_init:name|, %(name)s(0,0)}}}
+    TaskList() : TaskListStatic(){{{generate:ready_flag_constructor}}} {}
+
+    /** Set priority of task id to prio **/
+    // returns an encoded 0 with the signature (B) of the modified task - prio.B
+    template<typename T, typename S>
+    forceinline value_coded_t set(const T id, const S prio) {
+{{{snippet:task_set_entry:name|if(id == %(id)s) {
+    %(name)s = prio;
+    return (%(name)s - prio).getCodedValue();
+} else }}}
+
+         {{{generate:task_set_call}}}{
+             assert(false);
+             return 0;
+         }
+    }
+
+    template<typename T, typename S>
+    forceinline value_coded_t head(T& id, S& prio) const {
+        // initialize control flow signature
+        static volatile value_coded_t signature;
+
+        signature = {{{generate:head_signature_vc}}};
+
+        // start with idle id/priority
+        id = idle_id;
+        prio = idle_prio;
+
+        // add initial signature
+        id.vc   += {{{generate:head_signature_vc}}};
+        prio.vc += {{{generate:head_signature_vc}}};
+
+{{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,task_id,signature|
+// %(task)s >= prio?
+signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task_id_sig)s, %(task_id)s));
+// FIXME: assert((signature %% S::A) == %(signature)s);
+}}}
+        {{{generate:head_update_max_cascade}}}
+
+        // subtract last signature
+        id.vc   -= {{{generate:head_signature_vc}}};
+        prio.vc -= {{{generate:head_signature_vc}}};
+
+        // check signatures
+        assert(id.check());
+        assert(prio.check());
+
+        // if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
+
+        return signature;
+    }
+
+    template<typename T, typename S>
+    forceinline value_coded_t insert(const T& id, const S& prio) {
+        // if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
+        return set(id, prio);
+    }
+
+    template<typename T>
+    forceinline value_coded_t remove(const T& id) {
+        // if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
+        // The signature here is arbitrary, and won't be exposed.
+        return set(id, EC({{{generate:arbitrary_new_signature}}}, 0));
+    }
+
+    template<typename T, typename S>
+    forceinline value_coded_t promote(const T& id, const S& newprio) {
+        // if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
+
+        return set(id, newprio);
+    }
+
+    template<typename T, typename S>
+    forceinline value_coded_t dequeue(T& id, S& prio) {
+        static value_coded_t sig1;
+
+        sig1 = head(id, prio);
+
+        value_coded_t sig2;
+        if(prio != idle_prio) {
+            sig2 = remove(id);
+            // IDEA: set id.vc += sig2 + X; ?
+        } else {
+            // IDEA: set id.vc = sig2 + X; ?
+			// The 42 here is choosen by fair dice roll
+            sig2 = 42;
+        }
+
+        // TODO: more control flow checks?
+
+        return sig1+sig2;
+    }
+
+
+    // DEBUGGING
+    void print() const {
+        //kout << "(" << task1.decode() << "), ";
+        //kout << "(" << task2.decode() << "), ";
+        //kout << "(" << task3.decode() << "), ";
+        //kout << "(" << task4.decode() << ")" << endl;
+    }
+};
+
+constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;
+constexpr Encoded_Static<A0, {{{generate:idle_prio_sig}}}> TaskList::idle_prio;
+
+}; // scheduler
+}; // os

@@ -1,15 +1,19 @@
 #!/usr/bin/python
 
-from generator.tools import stringify
+from generator.tools import stringify, merge_dict_tree
 from generator.elements import *
 
 class BaseRules:
     def __init__(self):
         self.generator = None
 
+
     def set_generator(self, generator):
         self.generator = generator
         self.system_graph = generator.system_graph
+        self.objects = {}
+        for subtask in self.system_graph.get_subtasks():
+            self.objects[subtask] = {}
 
     def call_function(self, block, function, rettype, arguments):
         """Generates a call to a function and stores the result in an
@@ -61,7 +65,6 @@ class BaseRules:
         if ret_var:
             self.return_statement(function, ret_var.name)
 
-
     def StartOS(self, block):
         pass
 
@@ -70,6 +73,11 @@ class BaseRules:
         stacks = self.generate_dataobjects_task_stacks()
         entries = self.generate_dataobjects_task_entries()
         tasks = self.generate_dataobjects_task_descriptors(stacks, entries)
+
+        self.objects = merge_dict_tree(self.objects, entries, 1)
+        self.objects = merge_dict_tree(self.objects, stacks, 1)
+        self.objects = merge_dict_tree(self.objects, tasks, 1)
+        
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
@@ -129,7 +137,9 @@ class BaseRules:
             desc.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(desc, namespace = ("os", "tasks"))
 
-            objs[subtask] = {"task_descriptor": desc, "task_id": task_id}
+            objs[subtask] = {"task_descriptor": desc, "task_id": task_id - 1}
+        return objs
 
 
-
+    def generate_system_code(self):
+        pass

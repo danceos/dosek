@@ -3,20 +3,27 @@ from generator.tools import flatten
 
 import re
 
-""" The debug comments for each replacement rule is only for rules which
-classname, that re.match any of these regular expressions"""
-trace_rule_patterns = ['.*']
+class SignatureGenerator:
+    def __init__(self, start = 3):
+        self.next_sig = start
+    def new(self):
+        x = self.next_sig
+        self.next_sig += 1
+        return x
 
 class Generator:
 
     """Base class of all generators"""
-    def __init__(self, system_graph, operations):
+    def __init__(self, system_graph, name, operations):
+        self.name = name
         self.system_graph = system_graph
         self.system_description = system_graph.system
         self.rtsc_analysis = system_graph.rtsc
         self.operations = operations
         self.rules = []
         self.__used_variable_names = set()
+        self.template_base = None
+        self.signature_generator = SignatureGenerator()
 
         operations.set_generator(self)
 
@@ -56,15 +63,22 @@ class Generator:
         "ShutdownOS": ["void", "StatusType"]    }
 
 
-    def generate_into(self, output_file):
+    def generate_into(self, output_file_prefix):
         """Generate into output file"""
+        self.file_prefix = output_file_prefix
+        self.source_files = {}
         self.source_file = SourceFile()
+        self.source_files["%s_coredos.cc"%self.name] = self.source_file
 
         #include "os.h"
         self.source_file.includes.add(Include("os.h"))
 
         # Generate system objects
         self.operations.generate_dataobjects()
+
+        # Generate all nessecary code elements for the system (except
+        # the concrete calls from the application
+        self.operations.generate_system_code()
 
         os_main = Function("os_main", "void", [], extern_c = True)
         os_main.add( FunctionCall("StartOS", ["0"]) )
@@ -94,11 +108,12 @@ class Generator:
 
             self.source_file.function_manager.add(function)
 
-        # Write source file to file
-        fd = open(output_file, "w")
-        contents = self.source_file.expand(self)
-        fd.write(contents)
-        fd.close()
+        # Write source files to file
+        for name in self.source_files:
+            fd = open(self.file_prefix + "/" + name, "w+")
+            contents = self.source_files[name].expand(self)
+            fd.write(contents)
+            fd.close()
 
     def variable_name_for_singleton(self, datatype, instance = None):
         """Returns a unique datatype for singleton creation. This is used for

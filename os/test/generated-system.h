@@ -52,6 +52,7 @@ namespace os { namespace scheduler {
 
 /* Simpler array based task queue */
 class TaskList : public TaskListStatic {
+
 	// encoded task priorities
 	Encoded_Static<A0, 17> task1;
 	Encoded_Static<A0, 16> task2;
@@ -59,6 +60,10 @@ class TaskList : public TaskListStatic {
 	Encoded_Static<A0, 14> task4;
 
 public:
+	// idle task id/priority
+	static constexpr auto idle_id = EC(13,0);
+	static constexpr auto idle_prio = EC(12,0);
+
 	TaskList() :
 		TaskListStatic(),
 		task1(0, 0),
