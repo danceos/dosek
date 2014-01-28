@@ -50,23 +50,19 @@ public:
 		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;
 
 		if(result) {
-			// FIXME: if(DEBUG) kout << "< ";
-
 			// a=b, x=y with added signature B1
 			a.vc = b.vc + (T::B - S::B) + B1;
 			x.vc = y.vc + (U::B - V::B) + B1;
 
 			// set control flow signature (expected: sigCond == sigPos)
-			result += (T::A - 1) + B1; // + (S::B - T::B);
+			result += (T::A - 1) + B1;
 		} else {
-			// if(DEBUG) kout << "> ";
-
 			// remove old B-1, add new B signature to "unmodified" a,x
 			a.vc = a.vc - B0 + B1;
 			x.vc = x.vc - B0 + B1;
 
 			// set control flow signature (expected: sigCond == sigNeg)
-			result += (sigPos - sigNeg) + B1; // + (S::B - T::B);
+			result += (sigPos - sigNeg) + B1;
 		}
 
 		// return finished control flow signature
@@ -74,13 +70,13 @@ public:
 		return result;
 	}
 
-	// DEBUGGING
-	void print() const {
-		//kout << "(" << task1.decode() << "), ";
-		//kout << "(" << task2.decode() << "), ";
-		//kout << "(" << task3.decode() << "), ";
-		//kout << "(" << task4.decode() << ")" << endl;
+
+	template<typename T, typename S>
+	static constexpr value_coded_t updateMax_signature(value_coded_t B1, T& prio, S& task) {
+		const value_coded_t sigPos = S::B - T::B;
+		return (sigPos + B1) % S::A;
 	}
+
 };
 
 }; // namespace scheduler

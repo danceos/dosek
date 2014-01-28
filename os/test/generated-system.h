@@ -107,7 +107,8 @@ public:
 		// initialize control flow signature
 		static volatile value_coded_t signature;
 
-		signature = 10;
+		const value_coded_t signature0 = 10;
+		signature = signature0;
 
 		// start with idle id/priority
 		id = idle_id;
@@ -119,23 +120,28 @@ public:
 
 		// task1 >= prio?
 		signature += updateMax<10, 11>(prio, task1, id, EC(41, 1));
-		assert(signature % S::A == 36);
+		const value_coded_t signature1 = signature0 + updateMax_signature(11, prio, task1);
+		assert((signature - signature1) % S::A == 0);
 
 		// task2 >= prio?
 		signature += updateMax<11, 12>(prio, task2, id, EC(42, 2));
-		assert(signature % S::A == 62);
+		const value_coded_t signature2 = signature1 + updateMax_signature(12, prio, task2);
+		assert((signature - signature2) % S::A == 0);
 
 		// task3 >= prio?
 		signature += updateMax<12, 13>(prio, task3, id, EC(43, 3));
-		assert(signature % S::A == 88);
+		const value_coded_t signature3 = signature2 + updateMax_signature(13, prio, task3);
+		assert((signature - signature3) % S::A == 0);
 
 		// task4 >= prio?
 		signature += updateMax<13, 14>(prio, task4, id, EC(44, 4));
-		assert(signature % S::A == 114);
+		const value_coded_t signature4 = signature3 + updateMax_signature(14, prio, task4);
+		assert((signature - signature4) % S::A == 0);
 
 		// restore idle_id if idle_id >= prio
 		signature += updateMax<14, 15>(prio, idle_prio, id, idle_id);
-		assert(signature % S::A == 139);
+		const value_coded_t signature5 = signature4 + updateMax_signature(15, prio, idle_prio);
+		assert((signature - signature5) % S::A == 0);
 
 		// subtract last signature
 		id.vc -= 15;
@@ -144,8 +150,6 @@ public:
 		// check signatures
 		assert(id.check());
 		assert(prio.check());
-
-		// if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
 
 		return signature;
 	}
