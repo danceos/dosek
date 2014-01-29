@@ -67,17 +67,22 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	} else {
 		// save page directory
 		uint32_t pd;
-		asm volatile("mov %%cr3, %0" : "=r"(pd));
+		asm volatile("mov %%cr3, %0" : "=S"(pd));
 
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
 
 		// call syscall function with argument
-		void (* f)(uint32_t) = (void (*)(uint32_t))fun;
-		f(arg);
+		// C code does not work as compiler overwrites our return address with arg
+		//void (* f)(uint32_t) = (void (*)(uint32_t))fun; f(arg);
+		asm volatile("push %0; call *%1; pop %0" :: "r"(arg), "r"(fun));
 
 		// restore page directory
-		asm volatile("mov %0, %%cr3" :: "r"(pd));
+		asm volatile("mov %0, %%cr3" :: "S"(pd));
+
+		// reenable ISR2s by resetting APIC task priority
+		Machine::disable_interrupts();
+		LAPIC::set_task_prio(0);
 
 		// return from interrupt and proceed with caller in ring 3
 		Machine::return_from_interrupt();

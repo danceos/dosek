@@ -9,6 +9,7 @@
 
 #include "stdint.h"
 #include "util/inline.h"
+#include "machine.h"
 
 namespace arch {
 
@@ -72,12 +73,13 @@ namespace arch {
  * \hideinitializer
  */
 #define ISR_HANDLER(irqno, handler) \
-	extern "C" __attribute__((naked)) void isr_ ## irqno (void) { \
+	extern "C" void isr_ ## irqno (void) { \
 		struct task_context* task; \
 		struct cpu_context* cpu; \
 		asm volatile("" : "=S"(cpu), "=b"(task)); \
 		handler(cpu, task); \
 		asm volatile("jmp handler_exit" :: "S"(cpu), "b"(task)); \
+		Machine::unreachable(); \
 	}
 
 /** \brief Define an interrupt handler
