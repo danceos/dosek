@@ -10,6 +10,8 @@ import glob
 def is_llvm_file(file):
     if not os.path.exists(file):
         return False
+    if file.endswith(".ll"):
+        return True
     return "LLVM" in subprocess.check_output(["file", file])
 
 def is_elf_file(file):
@@ -67,8 +69,11 @@ def llvm_llc(file, output):
     return output
 
 def start_ld(flags, objects, output):
-    subprocess.check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
-                            + flags + ["-o", output])
+    #check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
+    #             + flags + ["-c", "-o", output + ".obj"])
+
+    check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
+                 + flags + ["-o", output])
 
 if __name__ == "__main__":
     import argparse
@@ -86,6 +91,7 @@ if __name__ == "__main__":
     # Remove file arguments from unkown args
     linker_flags = [x for x in unkown_args
                    if not(x in archives + elf_files + llvm_files)]
+
     try:
         tempdir = tempfile.mkdtemp()
         (elf_, llvm_) = aggregate_bitcode(archives)

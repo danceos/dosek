@@ -196,6 +196,7 @@ class MoveFunctionsToTask(Analysis):
             if abb.function.task == None \
                and subtask != None:
                 subtask.task.add_function(abb.function)
+                abb.function.subtask = subtask
                 logging.debug("Moving %s to %s", abb.function, subtask.task)
 
 

@@ -101,6 +101,10 @@ extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageD
 extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task2[1024];
 extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task3[1024];
 extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task4[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task5[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task6[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task7[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task8[1024];
 /**@}*/
 
 /** \brief Array of task page directories */
@@ -110,7 +114,11 @@ constexpr const PageDirectoryEntry (* const pagedirs[])[1024] = {
 	&pagedir_task1,
 	&pagedir_task2,
 	&pagedir_task3,
-	&pagedir_task4
+	&pagedir_task4,
+	&pagedir_task5,
+	&pagedir_task6,
+	&pagedir_task7,
+	&pagedir_task8
 };
 
 

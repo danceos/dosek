@@ -1,246 +1,188 @@
 /* Kernel entry function */
 ENTRY(_start)
 
-OUTPUT_FORMAT(@LD_OUTPUT_FORMAT@)
+OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS {
-	/* Set kernel start address */
-	. = @LD_KERNEL_START_ADDRESS@;
+    /* Set kernel start address */
+    . = 0x100000;
 
-	/* Code and readonly data */
-	.text : {
-		/* fill gaps with int3 opcode to detect invalid jumps */
-		FILL(0xcc)
+    /* Code and readonly data */
+    .text : {
+        /* fill gaps with int3 opcode to detect invalid jumps */
+        FILL(0xcc)
 
-		/* multiboot header */
-		multiboot_header = .;
-		KEEP (*(".rodata.multiboot"))
+        /* multiboot header */
+        multiboot_header = .;
+        KEEP (*(".rodata.multiboot"))
 
-		/* fixed address for IRQ handlers */
-		. = 0x1000;
+        /* fixed address for IRQ handlers */
+        . = 0x1000;
 
-		/* common text (always accessible) */
-		_stext_common = .;
+        /* common text (always accessible) */
+        _stext_common = .;
 
-		/* start of FAIL* allowed code region */
-		_stext_fail = .;
+        /* start of FAIL* allowed code region */
+        _stext_fail = .;
 
-		/* IRQ Handlers */
-		KEEP (*(".text.irqhandlers*")) /* ASM */
-		*(".text.irq_handler*") /* C */
-		*(".text.isrs*") /* C */
-		*(".text.isr_*") /* C */
-		KEEP (*(".text.idt")) /* ASM */
-		. += 16; /* padding after data, workaround for import-trace */
+        /* IRQ Handlers */
+        KEEP (*(".text.irqhandlers*")) /* ASM */
+        *(".text.irq_handler*") /* C */
+        *(".text.isrs*") /* C */
+        *(".text.isr_*") /* C */
+        KEEP (*(".text.idt")) /* ASM */
+        . += 16; /* padding after data, workaround for import-trace */
 
-		/* constructors */
-		. = ALIGN(8);
-		PROVIDE(__CTORS_START = .);
-		KEEP (*(.ctors*))
-		KEEP (*(.init_array*))
-		PROVIDE(__CTORS_END = .);
+        /* constructors */
+        . = ALIGN(8);
+        PROVIDE(__CTORS_START = .);
+        KEEP (*(.ctors*))
+        KEEP (*(.init_array*))
+        PROVIDE(__CTORS_END = .);
 
-		/* constructor code */
-		_stext_constructors = .;
-		KEEP (*(".text.startup"))
-		_etext_constructors = .;
+        /* constructor code */
+        _stext_constructors = .;
+        KEEP (*(".text.startup"))
+        _etext_constructors = .;
 
-		/* common symbols */
-		_stext_common_syms = .;
-		*(COMMON);
-		*("_GLOBAL__I_a")
-		_etext_common_syms = .;
+        /* common symbols */
+        _stext_common_syms = .;
+        *(COMMON);
+        *("_GLOBAL__I_a")
+        _etext_common_syms = .;
 
-		. += 16; /* padding after data, workaround for import-trace */
+        . += 16; /* padding after data, workaround for import-trace */
 
-		/* compiler code (arithmetic routines...) */
-		"*libgcc*.a:" ( ".text" )
+        /* compiler code (arithmetic routines...) */
+        "*libgcc*.a:" ( ".text" )
 
-		/* anonymous read only data (probably strings) */
-		/* cannot be separated by source, so put it here */
-		_srodata_an = .;
-		*(".rodata..L*")
-		_erodata_an = .;
+        /* anonymous read only data (probably strings) */
+        /* cannot be separated by source, so put it here */
+        _srodata_an = .;
+        *(".rodata..L*")
+        _erodata_an = .;
 
-		. += 16; /* padding after data, workaround for import-trace */
+        . += 16; /* padding after data, workaround for import-trace */
 
-		/* architectural code and rodata */
-		/* TODO: move arch text out of common text? */
-		_stext_arch = .;
-		*(".text._Z*4arch*")
-		*(".rodata._Z*4arch*")
-		"*libarch*.a:" ( ".text*" )
-		"*libarch*.a:" ( ".rodata*" )
-		_etext_arch = .;
+        /* architectural code and rodata */
+        /* TODO: move arch text out of common text? */
+        _stext_arch = .;
+        *(".text._Z*4arch*")
+        *(".rodata._Z*4arch*")
+        "*libarch*.a:" ( ".text*" )
+        "*libarch*.a:" ( ".rodata*" )
+        _etext_arch = .;
 
-		/* FAIL* tests */
-		_stext_fail_test = .;
-		*(".text._Z*4fail*")
-		*(".rodata._Z*4fail*")
-		_etext_fail_test = .;
+        /* FAIL* tests */
+        _stext_fail_test = .;
+        *(".text._Z*4fail*")
+        *(".rodata._Z*4fail*")
+        _etext_fail_test = .;
 
-		_etext_common = .;
+        _etext_common = .;
 
-		/* operating system code and data */
-		. = ALIGN(4096);
-		_stext_os = .;
-		*(".text._Z*2os*")
-		*(".rodata._Z*2os*")
-		_etext_os = .;
+        /* operating system code and data */
+        . = ALIGN(4096);
+        _stext_os = .;
+        *(".text._Z*2os*")
+        *(".rodata._Z*2os*")
+        _etext_os = .;
 
-		/* task code regions */
-		. = ALIGN(4096);
-		_stext_task1 = .;
-		*(".text.OSEKOS_TASK_Task1*")
-		*(".rodata.OSEKOS_TASK_Task1*")
-		_etext_task1 = .;
+        /* task code regions */
+        {{{generate:task_code_regions}}}
 
-		. = ALIGN(4096);
-		_stext_task2 = .;
-		*(".text.OSEKOS_TASK_Task2*")
-		*(".rodata.OSEKOS_TASK_Task2*")
-		_etext_task2 = .;
+        /* */
+        . = ALIGN(4096);
+        _etext_fail = .;
+        _stext_fail_allowed = .;
+        *(".text.test")
 
-		. = ALIGN(4096);
-		_stext_task3 = .;
-		*(".text.OSEOKOS_TASK_Task3*")
-		*(".rodata.OSEOKOS_TASK_Task3*")
-		_etext_task3 = .;
+        /* remaining code */
+        . = ALIGN(0x1000);
+        _stext = .;
+        *(".text*")
+        _etext = .;
 
-		. = ALIGN(4096);
-		_stext_task4 = .;
-		*(".text.OSEKOS_TASK_Task4*")
-		*(".rodata.OSEKOS_TASK_Task4*")
-		_etext_task4 = .;
+        /* remaining rodata */
+        /*. = ALIGN(0x1000);*/
+        _srodata = .;
+        *(".rodata*")
+        _erodata = .;
 
-		/* */
-		. = ALIGN(4096);
-		_etext_fail = .;
-		_stext_fail_allowed = .;
-		*(".text.test")
+        _etext_fail_allowed = .;
+    }
 
-		/* remaining code */
-		. = ALIGN(0x1000);
-		_stext = .;
-		*(".text*")
-		_etext = .;
-
-		/* remaining rodata */
-		/*. = ALIGN(0x1000);*/
-		_srodata = .;
-		*(".rodata*")
-		_erodata = .;
-
-		_etext_fail_allowed = .;
-	}
-
-	/* Page tables and directories */
-	.rodata.paging ALIGN(0x1000) : {
-		_spaging = .;
-		*(".paging*");
-		_epaging = .;
-	}
+    /* Page tables and directories */
+    .rodata.paging ALIGN(0x1000) : {
+        _spaging = .;
+        *(".paging*");
+        _epaging = .;
+    }
 
 
-	/* Data and Stacks */
-	/*. = ALIGN(0x100000);*/
-	. = @LD_KERNEL_START_ADDRESS@ + 0x100000;
-	.data : {
-		_sstack = .; /* to include TSS in FAIL tests, TODO: better placing*/
+    /* Data and Stacks */
+    /*. = ALIGN(0x100000);*/
+    . = 0x100000 + 0x100000;
+    .data : {
+        _sstack = .; /* to include TSS in FAIL tests, TODO: better placing*/
 
-		/* TSS at known address */
-		_stss = .;
-		tss = .;
-		. += 104;
-		_etss = .;
+        /* TSS at known address */
+        _stss = .;
+        tss = .;
+        . += 104;
+        _etss = .;
 
-		/* Stacks */
-		. = ALIGN(4096);
-		/*_sstack = .;*/
+        /* Stacks */
+        . = ALIGN(4096);
+        /*_sstack = .;*/
 
-		_sstack_os = .;
-		*(".startup_stack")
-		_estack_os = .;
+        _sstack_os = .;
+        *(".startup_stack")
+        _estack_os = .;
 
-		. = ALIGN(4096);
-		_sstack = .;
+        . = ALIGN(4096);
+        _sstack = .;
 
-		_sstack_os = .;
-		*(".kernel_stack")
-		_estack_os = .;
+        _sstack_os = .;
+        *(".kernel_stack")
+        _estack_os = .;
 
-		. = ALIGN(4096);
-		_sstack_task1 = .;
-		*(".data.Task1_stack")
-		_estack_task1 = .;
+        {{{generate:task_stacks}}}
 
-		. = ALIGN(4096);
-		_sstack_task2 = .;
-		*(".data.Task2_stack")
-		_estack_task2 = .;
+        _estack = .;
 
-		. = ALIGN(4096);
-		_sstack_task3 = .;
-		*(".data.Task3_stack")
-		_estack_task3 = .;
+        /* Data */
+        _sdata_fail = .;
 
-		. = ALIGN(4096);
-		_sstack_task4 = .;
-		*(".data.Task4_stack")
-		_estack_task4 = .;
+        _sdata_os = .;
+        *(".data._Z*2os*")
+        _edata_os = .;
 
-		_estack = .;
+        *(".data._Z*4fail*")
 
-		/* Data */
-		_sdata_fail = .;
+        {{{generate:task_data}}}
 
-		_sdata_os = .;
-		*(".data._Z*2os*")
-		_edata_os = .;
+        . = ALIGN(4096);
+        _sdata = .;
+        *(".data*")
+        _edata = .;
+        _edata_fail = .;
+    }
 
-		*(".data._Z*4fail*")
+    /* Memory-mapped I/O APIC */
+    _sioapic = 0xFEC00000;
+    ioapic = 0xFEC00000;
+    _eioapic = 0xFEC00FFF;
 
-		. = ALIGN(4096);
-		_sdata_task1 = .;
-		*(".data.Task1_*");
-		_edata_task1 = .;
+    /* Memory-mapped Local APIC */
+    _slapic = 0xFEE00000;
+    lapic = 0xFEE00000;
+    _elapic = 0xFEE00FFF;
 
-		. = ALIGN(4096);
-		_sdata_task2 = .;
-		*(".data.Task2_*");
-		_edata_task2 = .;
-
-		. = ALIGN(4096);
-		_sdata_task3 = .;
-		*(".data.Task3_*");
-		_edata_task3 = .;
-
-		. = ALIGN(4096);
-		_sdata_task4 = .;
-		*(".data.Task4_*");
-		_edata_task4 = .;
-
-		. = ALIGN(4096);
-		_sdata = .;
-		*(".data*")
-		_edata = .;
-		_edata_fail = .;
-	}
-
-	/* Memory-mapped I/O APIC */
-	_sioapic = 0xFEC00000;
-	ioapic = 0xFEC00000;
-	_eioapic = 0xFEC00FFF;
-
-	/* Memory-mapped Local APIC */
-	_slapic = 0xFEE00000;
-	lapic = 0xFEE00000;
-	_elapic = 0xFEE00FFF;
-
-	/* Get rid of unnecessary GCC bits */
-	/DISCARD/ :	{
-		*(.comment)
-		*(.eh_frame)
-		*(.note.gnu.build-id)
-	}
+    /* Get rid of unnecessary GCC bits */
+    /DISCARD/ : {
+        *(.comment)
+        *(.eh_frame)
+        *(.note.gnu.build-id)
+    }
 }

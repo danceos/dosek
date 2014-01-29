@@ -164,10 +164,15 @@ def main(options, args):
     allowed_task = ["text_task{}", "stack_task{}"] + allowed_os
     supervisor_only = ["text_os", "tss", "stack_os", "ioapic", "lapic"]
 
+    # Collect task names:
+    tasks = set()
+    for region in regions:
+        if region.startswith("text_task"):
+            tasks.add (region[len("text_task"):])
+
     ptables = {}
     ptables["os"] = generate_pagetables(regions, allowed_os, supervisor_only, True)
-    TASKS = 4 # TODO: from app config
-    for task in range(1, TASKS+1):
+    for task in tasks:
         ptables["task"+str(task)] = generate_pagetables(regions, [x.format(task) for x in allowed_task], supervisor_only)
 
     write_output(options.cfile, ptables, regions["paging"]["start"])

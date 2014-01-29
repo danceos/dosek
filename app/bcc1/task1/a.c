@@ -14,7 +14,10 @@ DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
+
 TASK(Handler11) {
+	volatile int a = 23;
+	a = 255;
 	ActivateTask(Handler12);
 	ActivateTask(Handler13);
 	TerminateTask();

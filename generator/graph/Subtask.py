@@ -6,6 +6,7 @@ class Subtask(Function):
         self.system = system
         self.name = name
         self.task = None
+        self.subtask = self
         self.deadline = None
         self.static_priority = -1
         self.preemptable = False

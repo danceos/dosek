@@ -55,13 +55,6 @@ target_link_libraries(arch generic)
 coredos_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
 set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)
 
-# Setup linker script
-set(LINKER_SCRIPT "${PROJECT_BINARY_DIR}/linker.ld")
-configure_file(linker.ld.in ${LINKER_SCRIPT})
-
-# Show target specific sources, linker script
-message(STATUS "Linker script: ${LINKER_SCRIPT}")
-
 # Find objdump for pagetable generation
 find_program(OBJDUMP "objdump")
 
@@ -95,11 +88,7 @@ macro(coredos_executable ELFFILE)
 	# Set custom linker script/flags
 	# libgcc added here to be used as needed (compiler helper functions)and not included in full
 	set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES LINK_FLAGS
-		"-lgcc -Wl,-T ${PROJECT_BINARY_DIR}/linker.ld ${ISA_LD_FLAGS} --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}")
-
-	# add dependency on linker script
-	set_source_files_properties(
-		${ARGN} PROPERTIES OBJECT_DEPENDS ${PROJECT_BINARY_DIR}/linker.ld)
+		"-lgcc -Wl,-T ${CMAKE_CURRENT_BINARY_DIR}/${ELFNAME}_linker.ld ${ISA_LD_FLAGS} --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}")
 
 	# we use our own linker (python) script, that calls llvm-link, llc and the system linker
 	# setting CMAKE_*_LINK_EXECUTABLE at this point in the CMake run seems a bit unusual, but works as intended

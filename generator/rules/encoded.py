@@ -1,9 +1,9 @@
-from generator.rules.base import BaseRules
+from generator.rules.simple import SimpleSystem
 from generator.elements import CodeTemplate, Include
 
-class EncodedSystem(BaseRules):
+class EncodedSystem(SimpleSystem):
     def __init__(self):
-        BaseRules.__init__(self)
+        SimpleSystem.__init__(self)
 
     def generate_system_code(self):
         # The current_prio_sig has to be allocated before the tasklist

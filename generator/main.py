@@ -80,6 +80,6 @@ if __name__ == "__main__":
     graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
     graph.analyze("%s/%s" % (options.prefix, options.name))
 
-    generator = Generator.Generator(graph, options.name, EncodedSystem())
+    generator = Generator.Generator(graph, options.name, EncodedSystem(), X86Arch())
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)

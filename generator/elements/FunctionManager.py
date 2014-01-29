@@ -5,6 +5,7 @@ from generator.elements.SourceElement import Block, Statement
 class Function:
     def __init__(self, name, rettype, argstype, extern_c = False, attributes = None):
         self.name = name
+        self.function_name = name
         self.rettype = rettype
         self.argstype = argstype
         self.statements = []

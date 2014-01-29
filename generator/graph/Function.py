@@ -5,6 +5,7 @@ class Function(GraphObject):
         GraphObject.__init__(self, functionname, color = "brown")
         self.function_name = functionname
         self.task = None
+        self.subtask = None
         self.abbs = []
         self.entry_abb = None
         self.exit_abb = None
