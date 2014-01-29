@@ -125,8 +125,7 @@ class BaseRules:
             if not subtask.is_real_thread():
                 continue
             entry_function = FunctionDeclaration(subtask.function_name, "void", [],
-                                                                 extern_c = True,
-                                                                 attributes = ["weak_import"])
+                                                                 extern_c = True)
             self.generator.source_file.function_manager.add(entry_function)
             objs[subtask] = {'entry_function': entry_function}
         return objs

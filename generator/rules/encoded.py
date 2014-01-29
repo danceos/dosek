@@ -41,19 +41,20 @@ class EncodedSystem(BaseRules):
             self.call_function(block, "ActivateTaskC_impl", "void",
                                [self.objects[highestTask]["task_descriptor"].name + ".enc_id<3>()"])
         else:
+            #FIXME: Dispatch to the idle loop
             self.call_function(block, "assert", "void", ["0"])
-        self.call_function(block, "Machine::enable_interrupts", "void", [])
 
+        self.call_function(block, "Machine::enable_interrupts", "void", [])
         self.call_function(block, "Machine::unreachable", "void", [])
 
 
-    def TerminateTask(self, abb):
+    def TerminateTask(self, block, abb):
         pass
 
-    def ActivateTask(self, abb):
+    def ActivateTask(self, block, abb):
         pass
 
-    def ChainTask(self, abb):
+    def ChainTask(self, block, abb):
         pass
 
 
@@ -65,11 +66,11 @@ class EncodedSystem(BaseRules):
         #print systemcall.abb.arguments
 
         if systemcall.function == "TerminateTask":
-            self.TerminateTask(systemcall.abb)
+            self.TerminateTask(function, systemcall.abb)
         elif systemcall.function == "ActivateTask":
-            self.ActivateTask(systemcall.abb)
+            self.ActivateTask(function, systemcall.abb)
         elif systemcall.function == "ChainTask":
-            self.ChainTask(systemcall.abb)
+            self.ChainTask(function, systemcall.abb)
         else:
             assert False, "Not yet supported %s"% systmcall.function
 

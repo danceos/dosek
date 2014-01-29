@@ -25,16 +25,16 @@ namespace arch {
 
 // TODO: remove pointer usage by determining static location from task ID
 /** \brief Stack pointer save location */
-extern void** save_sp;
+extern volatile void** save_sp;
 
-extern void* startup_sp;
+extern volatile void* startup_sp;
 
 
 // next task to dispatch (used by dispatch interrupt)
 // TODO: remove redundancy
-extern uint32_t dispatch_pagedir;
-extern uint32_t dispatch_stackptr;
-extern uint32_t dispatch_ip;
+extern volatile uint32_t dispatch_pagedir;
+extern volatile uint32_t dispatch_stackptr;
+extern volatile uint32_t dispatch_ip;
 
 
 
@@ -62,7 +62,7 @@ public:
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
 		// TODO: remove pointer usage
-		save_sp = &task.sp;
+		save_sp = (volatile void **) &task.sp;
 
 		// TODO: do this in dispatcher IRQ?/control flow check
 		if(!task.is_running()) {

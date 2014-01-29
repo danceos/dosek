@@ -8,12 +8,12 @@
 namespace arch {
 
 /** \brief Startup stackpointer (save location) */
-void* startup_sp = 0;
-void** save_sp = &startup_sp;
+volatile void* startup_sp = 0;
+volatile void** save_sp = (volatile void **)&startup_sp;
 
-uint32_t dispatch_pagedir;
-uint32_t dispatch_stackptr;
-uint32_t dispatch_ip;
+volatile uint32_t dispatch_pagedir;
+volatile uint32_t dispatch_stackptr;
+volatile uint32_t dispatch_ip;
 
 /** \brief Dispatch interrupt handler
  *

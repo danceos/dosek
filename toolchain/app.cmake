@@ -28,7 +28,6 @@ MACRO(COREDOS_BINARY)
   set(BDIR "${CMAKE_CURRENT_BINARY_DIR}")
   set(COREDOS_SOURCE_SYSTEM "${BDIR}/${NAME}_source_system.ll")
   set(COREDOS_RTSC_ANALYZE_XML "${BDIR}/${NAME}_rtsc_analyze.xml")
-  set(COREDOS_SOURCE_SYSTEM_OBJECT "${BDIR}/${NAME}_source_system.o")
 
   set(COREDOS_GENERATED_SOURCE "${BDIR}/${NAME}_coredos.cc")
 
@@ -76,15 +75,9 @@ MACRO(COREDOS_BINARY)
        mv ${BDIR}/rtsc_analyze.xml ${COREDOS_RTSC_ANALYZE_XML}
     COMMENT "[${PROJECT_NAME}/${NAME}] Analyzing application with RTSC")
 
-  # Compile source system to a .o file
-  add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM_OBJECT}"
-	DEPENDS "${COREDOS_SOURCE_SYSTEM}"
-	COMMAND ${CLANG_BINARY} -m32 -c -o "${COREDOS_SOURCE_SYSTEM_OBJECT}" "${COREDOS_SOURCE_SYSTEM}"
-	COMMENT "[${PROJECT_NAME}/${NAME}] Generating object file for app")
-
   # Add Target for the analysis step
   add_custom_target(${COREDOS_BINARY_NAME}-rtsc-analyze
-	DEPENDS ${COREDOS_SOURCE_SYSTEM} ${COREDOS_SOURCE_SYSTEM_OBJECT})
+	DEPENDS ${COREDOS_SOURCE_SYSTEM})
 
 
   # All python source files are a dependency
@@ -104,7 +97,7 @@ MACRO(COREDOS_BINARY)
 
   # Generating COREDOS System
   add_custom_command(OUTPUT "${COREDOS_GENERATED_SOURCE}"
-	DEPENDS ${PYTHON_SOURCE} "${COREDOS_SYSTEM_XML}" "${COREDOS_SOURCE_SYSTEM_OBJECT}" 
+	DEPENDS ${PYTHON_SOURCE} "${COREDOS_SYSTEM_XML}" "${COREDOS_SOURCE_SYSTEM}" 
             "${LLVM_NM_BINARY}" ${COREDOS_VERIFY_SCRIPT} ${OS_TEMPLATES}
     COMMAND ${COREDOS_GENERATOR} 
 	   --system-xml "${COREDOS_SYSTEM_XML}"
@@ -125,10 +118,21 @@ MACRO(COREDOS_BINARY)
     )
 
 
+  # Since COREDOS_SOURCE_SYSTEM end in .ll the add_executable would
+  # simply *silently* ignore the "object" file, by declaring it
+  # external it is passed on to the linker
+  SET_SOURCE_FILES_PROPERTIES(
+    ${COREDOS_SOURCE_SYSTEM}
+    PROPERTIES
+    EXTERNAL_OBJECT true # to say that "this is actually an object file, so it should not be compiled, only linked"
+    GENERATED true       # to say that "it is OK that the obj-files do not exist before build time"
+  )
+
   # Compile the coredos system
   include_directories(${RTSC_SOURCE_DIR}/data/SystemSupport/CoReD/include/)
   coredos_executable(${NAME} EXCLUDE_FROM_ALL
-    ${COREDOS_SOURCE_SYSTEM_OBJECT} ${COREDOS_GENERATED_SOURCE})
+    ${COREDOS_SOURCE_SYSTEM} ${COREDOS_GENERATED_SOURCE})
 
-  add_test(${NAME}-test make ${NAME}-clean ${NAME}-generate)
+  # Add a testcase
+  add_test(${NAME}-test make ${NAME}-clean ${NAME})
 ENDMACRO(COREDOS_BINARY)
