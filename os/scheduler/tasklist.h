@@ -72,9 +72,8 @@ public:
 
 
 	template<typename T, typename S>
-	static constexpr value_coded_t updateMax_signature(value_coded_t B1, T& prio, S& task) {
-		const value_coded_t sigPos = S::B - T::B;
-		return (sigPos + B1) % S::A;
+	static constexpr value_coded_t updateMax_signature(value_coded_t B1, __attribute__ ((unused)) T& prio, __attribute__ ((unused)) S& task) {
+		return (S::B - T::B + B1) % S::A;
 	}
 
 };

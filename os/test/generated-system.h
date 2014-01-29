@@ -250,6 +250,7 @@ public:
 
 	template<typename T>
 	forceinline void ActivateTask_impl(const T id) {
+		// TODO: check comparison!
 		if(id == t1.enc_id<1>()) {
 			t1.reset_sp();
 			value_coded_t sig = tlist.insert(t1.enc_id<3>(),  t1.enc_prio<4>());

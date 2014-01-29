@@ -110,15 +110,6 @@ assert(((signature - signature%(ii)s) %% S::A) == 0);
 
         return sig1+sig2;
     }
-
-
-    // DEBUGGING
-    void print() const {
-        //kout << "(" << task1.decode() << "), ";
-        //kout << "(" << task2.decode() << "), ";
-        //kout << "(" << task3.decode() << "), ";
-        //kout << "(" << task4.decode() << ")" << endl;
-    }
 };
 
 constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;
