@@ -65,7 +65,7 @@ struct Machine
 	 * \brief Enable all interrupts
 	 */
 	static forceinline void enable_interrupts() {
-		asm volatile("sti");
+		asm volatile("sti\n\tnop");
 	}
 
 	/**
@@ -127,5 +127,9 @@ struct Machine
 		__builtin_unreachable();
 	}
 };
+
+#define __asm_label(a) #a
+#define _asm_label(a) __asm_label(a)
+#define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(void *)0))
 
 #endif // __MACHINE_H__
