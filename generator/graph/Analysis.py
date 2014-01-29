@@ -52,6 +52,10 @@ class Analysis:
         logging.error(msg)
         sys.exit(-1)
 
+    def for_abb(self, abb):
+        """Information about a abb that the current analysis provides"""
+        return None
+
 class EnsureComputationBlocks(Analysis):
     """This pass ensures that every system call is surrounded by a
     computation block. This is nessecary to model alarms/interupts and

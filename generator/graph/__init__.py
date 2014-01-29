@@ -289,6 +289,16 @@ class SystemGraph(GraphObject):
         assert verifiers_called == set(self.verifiers.keys()), "Not all verifieres were called (missing %s)" % \
             (set(self.verifiers.keys()) - set(verifiers_called))
 
+    def for_abb(self, abb):
+        """Get various informations about an atomic basic block"""
+        ret = {}
+        for name, p in self.passes.items():
+            value = p.for_abb(abb)
+            if value:
+                assert not name in ret
+                ret[name] = value
+        return ret
+
     def fsck(self):
         functions = set()
         abbs = set()

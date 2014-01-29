@@ -38,7 +38,8 @@ public:
         // initialize control flow signature
         static volatile value_coded_t signature;
 
-        signature = {{{generate:head_signature_vc}}};
+		const value_coded_t signature0 = {{{generate:head_signature_vc}}};
+        signature = signature0;
 
         // start with idle id/priority
         id = idle_id;
@@ -48,10 +49,11 @@ public:
         id.vc   += {{{generate:head_signature_vc}}};
         prio.vc += {{{generate:head_signature_vc}}};
 
-{{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,task_id,signature|
+{{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
 // %(task)s >= prio?
 signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task_id_sig)s, %(task_id)s));
-// FIXME: assert((signature %% S::A) == %(signature)s);
+const value_coded_t signature%(ii)s = signature%(i)s + updateMax_signature(%(next_sig)s, prio, %(task)s);
+assert(((signature - signature%(ii)s) %% S::A) == 0);
 }}}
         {{{generate:head_update_max_cascade}}}
 
@@ -78,7 +80,7 @@ signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task
     forceinline value_coded_t remove(const T& id) {
         // if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
         // The signature here is arbitrary, and won't be exposed.
-        return set(id, EC({{{generate:arbitrary_new_signature}}}, 0));
+        return set(id, EC(3, 0));
     }
 
     template<typename T, typename S>

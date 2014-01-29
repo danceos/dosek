@@ -375,8 +375,7 @@ public:
 	}
 };
 
-
-}
+}; // namespace os
 
 
 #endif

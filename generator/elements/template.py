@@ -56,6 +56,7 @@ class CodeTemplate:
             else:
                 return getattr(self, name)(snippet, args)
 
+        assert snippet, "snippet:%s not found" % name
         return self.expand_snippet(snippet, **dict(zip(snippet.args, args)))
 
     def __format(self, text, prefix_length):

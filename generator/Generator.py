@@ -1,12 +1,26 @@
 from generator.elements import *
 
 class SignatureGenerator:
-    def __init__(self, start = 3):
-        self.next_sig = start
+    def __init__(self, start = 1000):
+        self.sig = start
+        self.used = set()
     def new(self):
-        x = self.next_sig
-        self.next_sig += 1
+        i = 1
+        while (self.sig + i) in self.used:
+            i += 1
+        x = self.sig + i
+        self.sig = x
+        self.used.add(x)
         return x
+    def lessthan(self, other):
+        i = 1
+        while (other - i) in self.used:
+            i += 1
+        x = other - i
+        assert x > 0
+        self.used.add(x)
+        return x
+
 
 class Generator:
 

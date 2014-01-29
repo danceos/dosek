@@ -1,0 +1,161 @@
+namespace os {
+namespace scheduler {
+
+using namespace os::tasks;
+
+class Scheduler  {
+protected:
+    os::scheduler::TaskList tlist;
+
+    Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
+    Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
+
+public:
+    Scheduler() {}
+
+    forceinline void Reschedule(void) {
+        // TODO: control flow check
+
+        // set current (=next) task from task list
+        tlist.head(current_task, current_prio);
+
+        // dispatch or enter idle
+{{{snippet:reschedule_dispatch_task:task|if(current_task == %(task)s.enc_id<1>()) {
+    Dispatcher::Dispatch(%(task)s);
+} else }}}
+        {{{generate:reschedule_foreach_task}}}if(current_task == TaskList::idle_id) {
+            Dispatcher::idle();
+        } else {
+            assert(false);
+        }
+    }
+
+    forceinline void Schedule_impl(void) {
+        if(in_syscall()) {
+            // in syscall: reschedule directly
+            Reschedule();
+        } else {
+            // not in syscall (probably in ISR): request reschedule AST
+            request_reschedule_ast();
+        }
+    }
+
+    forceinline void ActivateTask_impl(const Task t) {
+        ActivateTask_impl(t.enc_id<3>());
+    }
+
+    template<typename T>
+    forceinline void SetReady_impl(const T id) {
+{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
+    %(task)s.reset_sp(); //FIXME
+    value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(),  %(task)s.enc_prio<%(prio_sig)s>());
+    assert(signature == (%(task_prio_sig)s - %(prio_sig)s));
+} else }}}
+
+        {{{generate:activate_task_foreach_task}}}{
+            assert(false);
+        }
+    }
+
+    template<typename T>
+    forceinline void ActivateTask_impl(const T id) {
+        SetReady_impl(id);
+        Schedule_impl();
+    }
+
+    forceinline void TerminateTask_impl() {
+        tlist.remove(current_task);
+        Schedule_impl();
+    }
+
+    forceinline void ChainTask_impl(const Task t) {
+        ChainTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
+    }
+
+    template<typename T>
+    forceinline void ChainTask_impl(const T id) {
+        tlist.remove(current_task);
+        ActivateTask_impl(id);
+    }
+};
+
+extern Scheduler scheduler;
+
+// TODO: more meaningful names
+// currently the "normal" name is a syscall wrapper for
+// the actual syscall which has ...C suffix
+
+template<typename T>
+noinline void ActivateTaskC_impl(const T id) {
+    scheduler.ActivateTask_impl(id);
+}
+
+/**
+ * @satisfies{13,2,3,1}
+ */
+forceinline void ActivateTask_impl(const Task& t) {
+    auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
+
+    syscall(ActivateTaskC_impl<decltype(id)>, id);
+}
+
+template<typename T>
+noinline void ChainTaskC_impl(const T id) {
+    scheduler.ChainTask_impl(id);
+}
+
+/**
+ * @satisfies{13,2,3,3}
+ */
+forceinline void ChainTask_impl(const Task& t) {
+    auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
+
+    syscall(ChainTaskC_impl<decltype(id)>, id);
+
+    Machine::unreachable();
+}
+
+noinline void TerminateTaskC_impl(uint32_t dummy);
+
+forceinline void SetReady_impl(const Task& t) {
+    auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
+    scheduler.SetReady_impl(id);
+}
+
+
+/**
+ * @satisfies{13,2,3,2}
+ */
+forceinline void TerminateTask_impl() {
+    syscall(TerminateTaskC_impl);
+
+    Machine::unreachable();
+}
+
+noinline void ScheduleC_impl(uint32_t dummy);
+
+/**
+ * @satisfies{13,2,3,4}
+ */
+forceinline void Schedule_impl() {
+    syscall(ScheduleC_impl);
+}
+
+}; // namespace scheduler
+}; // namespace os
+
+namespace os {
+namespace scheduler {
+
+Scheduler scheduler;
+
+noinline void TerminateTaskC_impl(__attribute__ ((unused)) uint32_t dummy) {
+    scheduler.TerminateTask_impl();
+}
+
+noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
+    scheduler.Reschedule();
+}
+
+}; // scheduler
+}; // os
