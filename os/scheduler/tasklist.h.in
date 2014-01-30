@@ -54,6 +54,12 @@ signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task
 const value_coded_t signature%(ii)s = signature%(i)s + updateMax_signature(%(next_sig)s, prio, %(task)s);
 assert(((signature - signature%(ii)s) %% S::A) == 0);
 }}}
+{{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
+//  restore idle_id if idle_id >= prio
+signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, idle_prio, id, idle_id);
+const value_coded_t signature%(ii)s = signature%(i)s + updateMax_signature(%(next_sig)s, prio, idle_prio);
+assert(((signature - signature%(ii)s) %% S::A) == 0);
+}}}
         {{{generate:head_update_max_cascade}}}
 
         // subtract last signature
