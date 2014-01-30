@@ -52,7 +52,6 @@ SECTIONS {
 
         /* common symbols */
         _stext_common_syms = .;
-        *(COMMON);
         *("_GLOBAL__I_a")
         _etext_common_syms = .;
 
@@ -169,6 +168,7 @@ SECTIONS {
         . = ALIGN(4096);
         _sdata = .;
         *(".data*")
+        *(COMMON);
         _edata = .;
         _edata_fail = .;
     }
