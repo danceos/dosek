@@ -82,9 +82,8 @@ class SimpleSystem(BaseRules):
                                     extern_c = True)
             self.generator.source_file.data_manager.add(stack)
 
-            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr",
-                                  extern_c = True)
-            self.generator.source_file.data_manager.add(stackptr)
+            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
+            self.generator.source_file.data_manager.add(stackptr, namespace = ("os", "scheduler"))
 
             self.objects[subtask]["stack"] = stack
             self.objects[subtask]["stackptr"] = stackptr

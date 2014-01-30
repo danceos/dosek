@@ -78,7 +78,7 @@ class EncodedSystem(SimpleSystem):
 
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall
-        syscall = Function("syscall_" + function.function_name,
+        syscall = Function("__OS_syscall_" + function.function_name,
                            "void", ["int"], extern_c = True)
         self.generator.source_file.function_manager.add(syscall)
         # The syscall function is called from the function that will

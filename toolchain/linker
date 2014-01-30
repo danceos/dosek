@@ -69,8 +69,8 @@ def llvm_llc(file, output):
     return output
 
 def start_ld(flags, objects, output):
-    #check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
-    #             + flags + ["-c", "-o", output + ".obj"])
+    check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
+                 + flags + ["-c", "-o", output + ".obj"])
 
     check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
                  + flags + ["-o", output])

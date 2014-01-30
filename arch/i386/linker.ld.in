@@ -90,6 +90,8 @@ SECTIONS {
         _stext_os = .;
         *(".text._Z*2os*")
         *(".rodata._Z*2os*")
+        *(".text.__OS_*")
+        *(".rodata.__OS_*")
         _etext_os = .;
 
         /* task code regions */
@@ -159,6 +161,7 @@ SECTIONS {
 
         _sdata_os = .;
         *(".data._Z*2os*")
+        *(".data._Z*4arch*")
         _edata_os = .;
 
         *(".data._Z*4fail*")
