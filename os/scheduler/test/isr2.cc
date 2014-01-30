@@ -77,7 +77,7 @@ volatile bool done = false;
 ISR(66) {
 	step5();
 
-	LAPIC::trigger(70);
+	Machine::trigger_interrupt(70);
 
 	LAPIC::send_eoi();
 }
@@ -86,11 +86,11 @@ ISR(66) {
 ISR(67) {
 	step1();
 
-	LAPIC::trigger(68);
+	Machine::trigger_interrupt(68);
 
 	step3();
 
-	LAPIC::trigger(66);
+	Machine::trigger_interrupt(66);
 
 	step4();
 
@@ -125,7 +125,7 @@ IRQ_HANDLER(70) {
 // for now, any function can be called using syscall(),
 // so it is easy to add this for this test.
 noinline void trigger_syscall(uint8_t irq) {
-	LAPIC::trigger(irq);
+	Machine::trigger_interrupt(irq);
 }
 
 // prepare tests

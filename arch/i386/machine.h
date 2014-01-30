@@ -2,6 +2,7 @@
 #define __MACHINE_H__
 
 #include "os/util/inline.h"
+#include "lapic.h"
 
 /**
  *  @ingroup arch
@@ -82,6 +83,32 @@ struct Machine
 		uint32_t flags;
 		asm("pushf; pop %0" : "=r"(flags));
 		return (flags & 0x0200);
+	}
+
+	/**
+	 * \brief Trigger a software interrupt
+	 *
+	 * Trigger a synchronous software interrupt using the int(errupt)
+	 * instruction.
+	 *
+	 * On i386 this will call the interrupt routine even when interrupts
+	 * are disabled.
+	 */
+	static forceinline void software_interrupt(uint8_t irq) {
+		asm volatile("int %0" :: "i"(irq));
+	}
+
+	/**
+	 * \brief Trigger a non-software interrupt
+	 *
+	 * Trigger an asynchronous interrupt which looks to the system
+	 * like a hardware interrupt. This is probably only
+	 * useful for tests and debugging.
+	 *
+	 * On i386 this interrupt is triggered using the local APIC.
+	 */
+	static forceinline void trigger_interrupt(uint8_t irq) {
+		arch::LAPIC::trigger(irq);
 	}
 
 	/**
