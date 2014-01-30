@@ -1,9 +1,16 @@
 from generator.rules.simple import SimpleSystem
-from generator.elements import CodeTemplate, Include
+from generator.elements import CodeTemplate, Include, Function
 
 class EncodedSystem(SimpleSystem):
     def __init__(self):
         SimpleSystem.__init__(self)
+
+    def enc_id(self, subtask):
+        """Returns a string that generates an encoded id"""
+        B = self.generator.signature_generator.new()
+        task_desc = self.objects[subtask]["task_descriptor"].name
+        ret = "%s.enc_id<%d>()" % (task_desc, B)
+        return ret
 
     def generate_system_code(self):
         # The current_prio_sig has to be allocated before the tasklist
@@ -39,7 +46,7 @@ class EncodedSystem(SimpleSystem):
 
         if highestTask:
             self.call_function(block, "ActivateTaskC_impl", "void",
-                               [self.objects[highestTask]["task_descriptor"].name + ".enc_id<3>()"])
+                               [self.enc_id(highestTask)])
         else:
             #FIXME: Dispatch to the idle loop
             self.call_function(block, "assert", "void", ["0"])
@@ -49,28 +56,41 @@ class EncodedSystem(SimpleSystem):
 
 
     def TerminateTask(self, block, abb):
-        pass
+        self.call_function(block, "scheduler.TerminateTask_impl", "void",
+                           [])
 
     def ActivateTask(self, block, abb):
-        pass
+        self.call_function(block,
+                           "scheduler.ActivateTask_impl",
+                           "void",
+                           [self.enc_id(abb.arguments[0])])
 
     def ChainTask(self, block, abb):
-        pass
+        self.call_function(block,
+                           "scheduler.ChainTask_impl",
+                           "void",
+                           [self.enc_id(abb.arguments[0])])
 
 
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""
         self.system_enter_hook(function)
 
-        # print self.system_graph.for_abb(systemcall.abb)
-        #print systemcall.abb.arguments
+        # Generate a function, that will be executed in system mode,
+        # but is specific for this systemcall
+        syscall = Function("syscall_" + function.function_name,
+                           "void", ["int"], extern_c = True)
+        self.generator.source_file.function_manager.add(syscall)
+        # The syscall function is called from the function that will
+        # be inlined into the application
+        self.call_function(function, "syscall", "void", [syscall.function_name, str(systemcall.abb.abb_id)])
 
         if systemcall.function == "TerminateTask":
-            self.TerminateTask(function, systemcall.abb)
+            self.TerminateTask(syscall, systemcall.abb)
         elif systemcall.function == "ActivateTask":
-            self.ActivateTask(function, systemcall.abb)
+            self.ActivateTask(syscall, systemcall.abb)
         elif systemcall.function == "ChainTask":
-            self.ChainTask(function, systemcall.abb)
+            self.ChainTask(syscall, systemcall.abb)
         else:
             assert False, "Not yet supported %s"% systmcall.function
 
@@ -159,7 +179,19 @@ class TaskListTemplate(CodeTemplate):
                                        )
         # This is a ugly hack to fix python binding madness
         do.i = 0
-        return self.foreach_subtask(do)
+        ret = self.foreach_subtask(do)
+
+        # Update current prio for idle task
+        last_sig = self.__head_signature_vc
+        self.__head_signature_vc = self.generator.signature_generator.new()
+        ret += self.expand_snippet("head_update_idle_prio",
+                                   last_sig = last_sig,
+                                   next_sig = self.__head_signature_vc,
+                                   i = str(do.i), ii = str(do.i + 1))
+
+        return ret
+
+
 
 class SchedulerTemplate(CodeTemplate):
     def __init__(self, rules):

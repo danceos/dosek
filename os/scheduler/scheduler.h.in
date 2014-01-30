@@ -3,14 +3,12 @@ namespace scheduler {
 
 using namespace os::tasks;
 
-class Scheduler  {
-protected:
+struct Scheduler  {
     os::scheduler::TaskList tlist;
 
     Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
     Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
 
-public:
     Scheduler() {}
 
     forceinline void Reschedule(void) {
@@ -40,8 +38,8 @@ public:
         }
     }
 
-    forceinline void ActivateTask_impl(const Task t) {
-        ActivateTask_impl(t.enc_id<3>());
+    forceinline void SetReady_impl(const Task t) {
+        SetReady_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
     }
 
     template<typename T>
@@ -56,6 +54,11 @@ public:
             assert(false);
         }
     }
+
+    forceinline void ActivateTask_impl(const Task t) {
+        ActivateTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
+    }
+
 
     template<typename T>
     forceinline void ActivateTask_impl(const T id) {

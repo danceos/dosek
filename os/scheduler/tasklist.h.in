@@ -5,12 +5,11 @@
 namespace os { namespace scheduler {
 
 /* Simpler array based task queue */
-class TaskList : public TaskListStatic {
+struct TaskList : public TaskListStatic {
     // encoded task priorities
     {{{snippet:ready_flag:name,A,B|Encoded_Static<%(A)s, %(B)s> %(name)s;}}}
     {{{generate:ready_flag_variables}}}
 
-public:
     // idle task id/priority
     static constexpr auto idle_id   = EC({{{generate:idle_id_sig}}}, 0);
     static constexpr auto idle_prio = EC({{{generate:idle_prio_sig}}}, 0);
