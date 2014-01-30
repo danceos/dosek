@@ -15,15 +15,6 @@
 #include "os/test/generated-system.h"
 using namespace os::scheduler;
 
-// debug serial print macro
-#if DEBUG
-#define DEBUGPRINT(STR) serial << STR << endl
-#else
-#define DEBUGPRINT(STR) do {} while(false)
-#endif
-
-
-
 // errors are injected in this namespace
 namespace fail {
 
@@ -150,10 +141,10 @@ void test(void)
 }
 
 TASK(Task1) {
-	DEBUGPRINT("(1)");
+	debug << "(1)" << endl;
 
 	// test ISR2+ISR1 chain
-	DEBUGPRINT("Trigger ISR 67");
+	debug << "Trigger ISR 67" << endl;
 	syscall(trigger_syscall, 67, true);
 
 	// check ISR1 has run
@@ -162,7 +153,7 @@ TASK(Task1) {
 	run_checkable_function(step6, k, 2681);
 
 	// test ISR2 task activatin
-	DEBUGPRINT("Trigger ISR 69");
+	debug << "Trigger ISR 69" << endl;
 	syscall(trigger_syscall, 69, true);
 
 	// should never come here
@@ -171,13 +162,13 @@ TASK(Task1) {
 
 // task 2 is activated by ISR 69
 TASK(Task2) {
-	DEBUGPRINT("(2)");
+	debug << "(2)" << endl;
 
 	run_checkable_function(step7, k, 2681*2+5);
 
-	DEBUGPRINT("finished");
-	test_finish();
+	debug << "finished" << endl;
+	test_finish(2);
 
-	DEBUGPRINT("shutdown\n");
+	debug << "shutdown\n" << endl;
 	Machine::shutdown();
 }

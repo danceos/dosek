@@ -159,7 +159,7 @@ def main(options, args):
     regions = read_regions(options.objdump, options.elf_file)
 
     # regions we are interested in
-    allowed_common = ["text_common", "text_fail_allowed", "text", "tss", "data_fail", "data"]
+    allowed_common = ["cga", "text_common", "text_fail_allowed",  "tss", "data_fail", "data"]
     allowed_os = ["text_os", "stack_os", "ioapic", "lapic"] + allowed_common
     allowed_task = ["text_task{}", "stack_task{}"] + allowed_os
     supervisor_only = ["text_os", "tss", "stack_os", "ioapic", "lapic"]

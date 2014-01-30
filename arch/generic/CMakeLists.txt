@@ -4,7 +4,6 @@ set(SRCS
 		startup.cc
 		constructors.cc
 		constructors.h
-		ostream.cc
 )
 
 # Add to include directories

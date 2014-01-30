@@ -1,13 +1,25 @@
 /**
  * @file
  * @ingroup i386
- * @brief Print output to CGA
+ * @brief Default output streams
  */
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
-#include "cga.h"
+#if DEBUG
 
-typedef CGA output_t;
+// debugging: print kout+debug on CGA
+#include "cga.h"
+extern CGA kout;
+extern CGA debug;
+
+#else // DEBUG
+
+// not debugging: print kout on COM1, ignore debug
+#include "serial.h"
+extern Serial kout;
+extern Null_Stream debug;
+
+#endif // DEBUG
 
 #endif // __OUTPUT_H__

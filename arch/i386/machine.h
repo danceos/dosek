@@ -3,6 +3,7 @@
 
 #include "os/util/inline.h"
 #include "lapic.h"
+#include "output.h"
 
 /**
  *  @ingroup arch
@@ -125,7 +126,7 @@ struct Machine
 	 */
 	static forceinline void return_from_interrupt(void) {
 		asm volatile("iret");
-		__builtin_unreachable();
+		unreachable();
 	}
 
 	/**
@@ -142,16 +143,19 @@ struct Machine
 	 * The static ACPI values work for QEMU and Bochs but probably not on real PCs!
 	 */
 	static forceinline void shutdown(void) {
+		#if DEBUG
+		// don't really shutdown when debugging
+		debug << "ACPI shutdown requested" << endl;
+		#else
 		// write shutdown command to ACPI port
 		asm volatile( "outw %0, %1" :: "a"((unsigned short) 0x2000), "Nd"((unsigned short) 0xB004));
+		#endif
 
 		// stop in case ACPI shutdown failed
-		//asm volatile("hlt"); // causes exception when called from ring 3
-		while(true) {
-			asm("nop");
-		}
+		//halt(); // causes exception when called from ring 3
+		while(true) nop();
 
-		__builtin_unreachable();
+		unreachable();
 	}
 };
 

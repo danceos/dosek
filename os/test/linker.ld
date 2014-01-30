@@ -4,6 +4,11 @@ ENTRY(_start)
 OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS {
+	/* Memory-mapped CGA buffer */
+	_scga = 0xB8000;
+	cga_buffer = 0xB8000;
+	_ecga = 0xB8FFF;
+
 	/* Set kernel start address */
 	. = 0x100000;
 
@@ -103,8 +108,8 @@ SECTIONS {
 
 		. = ALIGN(4096);
 		_stext_task3 = .;
-		*(".text.OSEOKOS_TASK_Task3*")
-		*(".rodata.OSEOKOS_TASK_Task3*")
+		*(".text.OSEKOS_TASK_Task3*")
+		*(".rodata.OSEKOS_TASK_Task3*")
 		_etext_task3 = .;
 
 		. = ALIGN(4096);
@@ -143,8 +148,7 @@ SECTIONS {
 
 
 	/* Data and Stacks */
-	/*. = ALIGN(0x100000);*/
-	. = 0x100000 + 0x100000;
+	. = 0x200000;
 	.data : {
 		_sstack = .; /* to include TSS in FAIL tests, TODO: better placing*/
 

@@ -1,17 +1,11 @@
-#ifndef __TASKLIST_H__
-#define __TASKLIST_H__
-
-
 /**
  * @file
  * @ingroup scheduler
  * @brief The task list
  */
 
-
-#ifndef DEBUG
-#define DEBUG 0
-#endif
+#ifndef __TASKLIST_H__
+#define __TASKLIST_H__
 
 #include <stdint.h>
 #include "output.h"

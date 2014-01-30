@@ -4,6 +4,11 @@ ENTRY(_start)
 OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS {
+	/* Memory-mapped CGA buffer */
+	_scga = 0xB8000;
+	cga_buffer = 0xB8000;
+	_ecga = 0xB8FFF;
+
     /* Set kernel start address */
     . = 0x100000;
 
@@ -65,7 +70,7 @@ SECTIONS {
         . += 16; /* padding after data, workaround for import-trace */
 
         /* architectural code and rodata */
-        /* TODO: move arch text out of common text? */
+        /* TODO: move startup code out of common text? */
         _stext_arch = .;
         *(".text._Z*4arch*")
         *(".rodata._Z*4arch*")
@@ -121,8 +126,7 @@ SECTIONS {
 
 
     /* Data and Stacks */
-    /*. = ALIGN(0x100000);*/
-    . = 0x100000 + 0x100000;
+    . = 0x200000;
     .data : {
         _sstack = .; /* to include TSS in FAIL tests, TODO: better placing*/
 

@@ -8,11 +8,7 @@
 #include "pic.h"
 #include "idt.h"
 #include "machine.h"
-
-#if DEBUG
-#include "serial.h"
-extern Serial serial;
-#endif
+#include "output.h"
 
 namespace arch {
 
@@ -37,10 +33,8 @@ IRQ_HANDLER(255) {
 	// count spurious interrupt
 	spurious_interrupts++;
 
-	#if DEBUG
-	// output warning
-	serial << "spurious interrupt!" << endl;
-	#endif
+	// output warning if debugging
+	debug << "spurious interrupt!" << endl;
 
 	// return without EOI for spurious interrupt
 	Machine::return_from_interrupt();

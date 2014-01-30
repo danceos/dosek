@@ -1,6 +1,3 @@
-#ifndef __OSTREAM_H__
-#define __OSTREAM_H__
-
 /**
  * \file
  *
@@ -9,92 +6,267 @@
  * \brief C++ style output stream.
  */
 
-/** 
- * @brief C++ style output stream
- */
-class O_Stream {
-protected:
-  virtual void putchar(char c);
+#ifndef __OSTREAM_H__
+#define __OSTREAM_H__
 
-  template<typename T> O_Stream& itoa (T c);
+/**
+ * @brief Generic output stream
+ */
+template<typename T>
+class O_Stream {
+	template<typename N> O_Stream& itoa (N c);
+
+	void putchar(char c) {
+		static_cast<T*>(this)->putchar(c);
+	}
 
 public:
-  unsigned char base;
+	unsigned char base;
 
-  O_Stream() : base(10) {}
+	O_Stream() : base(10) {}
 
-  /**
-   * \brief Output a single character
-   * \param c The character to output
-   **/
-  O_Stream& operator<< (unsigned char c);
+	/**
+	 * \brief Output a single character
+	 * \param c The character to output
+	 **/
+	O_Stream<T>& operator<< (unsigned char c);
 
-  /**
-   * \brief Output a single character
-   * \param c The character to output
-   **/
-  O_Stream& operator<< (char c);
+	/**
+	 * \brief Output a single character
+	 * \param c The character to output
+	 **/
+	O_Stream<T>& operator<< (char c);
 
-  /**
-   * \name Display numbers
-   * \param ival The number to be displayed
-   **/
-  //@{
-  O_Stream& operator<<(unsigned short ival);
-  O_Stream& operator<<(short ival);
-  O_Stream& operator<<(unsigned int ival);
-  O_Stream& operator<<(int ival);
-  O_Stream& operator<<(long ival);
-  O_Stream& operator<<(unsigned long ival);
-  // @}
+	/**
+	 * \name Display numbers
+	 * \param ival The number to be displayed
+	 **/
+	//@{
+	O_Stream<T>& operator<<(unsigned short ival);
+	O_Stream<T>& operator<<(short ival);
+	O_Stream<T>& operator<<(unsigned int ival);
+	O_Stream<T>& operator<<(int ival);
+	O_Stream<T>& operator<<(long ival);
+	O_Stream<T>& operator<<(unsigned long ival);
+	// @}
 
-  /**
-   * \brief Display a pointer
-   * \param ptr The pointer to be displayed
-   **/
-  O_Stream& operator<<(void* ptr);
+	/**
+	 * \brief Display a pointer
+	 * \param ptr The pointer to be displayed
+	 **/
+	O_Stream<T>& operator<<(void* ptr);
 
-  /**
-   * \name Display a zero terminated string
-   * \param string The string to be displayed
-   **/
-  //@{
-  O_Stream& operator<<(char* string);
-  O_Stream& operator<<(const char* string);
-  // @}
+	/**
+	 * \name Display a zero terminated string
+	 * \param string The string to be displayed
+	 **/
+	//@{
+	O_Stream<T>& operator<<(char* string);
+	O_Stream<T>& operator<<(const char* string);
+	// @}
 
-  /**
-   * \brief Call an appropriate manipulatpor function
-   **/
-  O_Stream& operator<<(O_Stream& (*f) (O_Stream&));
+	/**
+	 * \brief Call an appropriate manipulatpor function
+	 **/
+	O_Stream<T>& operator<<(O_Stream& (*f) (O_Stream&));
+ };
 
-};
 
-/* Manipulators */
+/**
+ * @name Manipulators
+ * @{
+ */
 
 /**
  * \brief Print a newline
  **/
-O_Stream& endl(O_Stream& os);
+template<typename T>
+O_Stream<T>& endl(O_Stream<T>& os);
 
 /**
  * \brief Switch the numbering system to binary
  **/
-O_Stream& bin(O_Stream& os);
+template<typename T>
+O_Stream<T>& bin(O_Stream<T>& os);
 
 /**
  * \brief Switch the numbering system to octal
  **/
-O_Stream& oct(O_Stream& os);
+template<typename T>
+O_Stream<T>& oct(O_Stream<T>& os);
 
 /**
  * \brief Switch the numbering system to deccimal
  **/
-O_Stream& dec(O_Stream& os);
+template<typename T>
+O_Stream<T>& dec(O_Stream<T>& os);
 
 /**
  * \brief Switch the numbering system to hexadecimal
  **/
-O_Stream& hex(O_Stream& os);
+template<typename T>
+O_Stream<T>& hex(O_Stream<T>& os);
+
+/**@}*/
+
+
+
+/** \brief Color */
+typedef enum class Color {
+	BLACK   = 0,
+	BLUE    = 1,
+	GREEN   = 2,
+	CYAN    = 3,
+	RED     = 4,
+	MAGENTA = 5,
+	YELLOW  = 6,
+	WHITE  = 15,
+} Color;
+
+
+
+/**
+ * @brief No-op output stream
+ */
+class Null_Stream : public O_Stream<Null_Stream> {
+public:
+	void putchar(__attribute__((unused)) char c) {};
+
+	void setcolor(__attribute__((unused)) Color fg, __attribute__((unused)) Color bg) {};
+
+	template<typename T> O_Stream& operator<< (T) { return *this; };
+};
+
+
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (char value) {
+	putchar(value);
+
+	return *this;
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (unsigned char value) {
+	putchar(value);
+
+	return *this;
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (char* value) {
+	while (*value != 0)
+		putchar(*value++);
+
+	return *this;
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (const char* value) {
+	*this << const_cast<char*> (value);
+
+	return *this;
+}
+
+template<typename T>
+template<typename N> O_Stream<T>& O_Stream<T>::itoa (N value) {
+	char buf[sizeof(N)*8]; // worst case: unsigned -> base 2
+
+	char *ptr = buf;
+
+	if (base < 2 || base > 16) return *this;
+
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wtautological-compare"
+	if (value < 0) putchar('-');
+	#pragma clang diagnostic pop
+
+	do {
+		N tmp_value = value;
+		value /= base;
+		*ptr++ = "fedcba9876543210123456789abcdef" [15 + (tmp_value - value * base)];
+	} while ( value );
+	ptr--;
+
+	while(ptr >= buf) putchar(*ptr--);
+
+	return *this;
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (unsigned short value) {
+	return itoa(value);
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (short value) {
+	return itoa(value);
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (unsigned int value) {
+	return itoa(value);
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (int value) {
+	return itoa(value);
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (unsigned long value) {
+	return itoa(value);
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (long value) {
+	return itoa(value);
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (void* value) {
+	unsigned int oldbase = base;
+
+	base = 16;
+	*this << (unsigned long) value;
+	base = oldbase;
+
+	return *this;
+}
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (O_Stream& (*stream) (O_Stream&)) {
+	return (*stream)(*this);
+}
+
+template<typename T>
+O_Stream<T>& endl(O_Stream<T> &out) {
+	out << '\n';
+	return out;
+}
+
+template<typename T>
+O_Stream<T>& bin(O_Stream<T> &out) {
+	out.base = 2;
+	return out;
+}
+
+template<typename T>
+O_Stream<T>& oct(O_Stream<T> &out) {
+	out.base = 8;
+	return out;
+}
+
+template<typename T>
+O_Stream<T>& dec(O_Stream<T> &out) {
+	out.base = 10;
+	return out;
+}
+
+template<typename T>
+O_Stream<T>& hex(O_Stream<T> &out) {
+	out.base = 16;
+	return out;
+}
 
 #endif /* __OSTREAM_H__ */

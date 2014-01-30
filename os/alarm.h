@@ -8,11 +8,6 @@
 
 using namespace os::scheduler;
 
-#if DEBUG
-#include "serial.h"
-extern Serial serial;
-#endif
-
 namespace os {
 
 class AlarmStatic {

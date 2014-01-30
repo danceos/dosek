@@ -13,13 +13,6 @@
 #include "os/test/generated-system.h"
 using namespace os::scheduler;
 
-// debug serial print macro
-#if DEBUG
-#define DEBUGPRINT(STR) serial << STR
-#else
-#define DEBUGPRINT(STR) do {} while(false)
-#endif
-
 // errors are injected in this namespace
 namespace fail {
 
@@ -84,7 +77,7 @@ void test(void)
 }
 
 TASK(Task1) {
-	DEBUGPRINT("HELLO");
+	debug << "HELLO";
 
 	// step 1
 	run_checkable_function(step1, k, 3);
@@ -92,7 +85,7 @@ TASK(Task1) {
 	// activate and dispatch higher priority task 2
 	ActivateTask_impl(t2);
 
-	DEBUGPRINT("!");
+	debug << "!";
 
 	// step 4
 	run_checkable_function(step4, k, (((3*7)+5)*2+9)*3+2);
@@ -100,7 +93,7 @@ TASK(Task1) {
 	// activate lower priority task 3 (no disptach)
 	ActivateTask_impl(t3);
 
-	DEBUGPRINT(" :)");
+	debug << " :)";
 
 	// step 5
 	run_checkable_function(step5, k, ((((3*7)+5)*2+9)*3+2)*5+3);
@@ -110,7 +103,7 @@ TASK(Task1) {
 }
 
 TASK(Task2) {
-	DEBUGPRINT("World");
+	debug << "World";
 
 	// step 2
 	run_checkable_function(step2, k, (3*7)+5);
@@ -120,16 +113,16 @@ TASK(Task2) {
 }
 
 TASK(Task3) {
-	DEBUGPRINT("X\n");
+	debug << "X" << endl;
 
 	// step 6
 	run_checkable_function(step6, k, 8359);
 
 	// everything okay, finish test
-	test_finish();
+	test_finish(6);
 
 	// shutdown
-	DEBUGPRINT("shutdown\n");
+	debug << "shutdown" << endl;
 	Machine::shutdown();
 
 	// would terminate to idle loop
@@ -137,7 +130,7 @@ TASK(Task3) {
 }
 
 TASK(Task4) {
-	DEBUGPRINT("?");
+	debug << "?";
 
 	// step 3
 	run_checkable_function(step3, k, ((3*7)+5)*2+9);

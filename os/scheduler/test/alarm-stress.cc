@@ -16,15 +16,6 @@
 #include "os/test/generated-system.h"
 using namespace os::scheduler;
 
-// debug serial print macro
-#if DEBUG
-#define DEBUGPRINT(STR) serial << STR << endl
-#else
-#define DEBUGPRINT(STR) do {} while(false)
-#endif
-
-
-
 // errors are injected in this namespace
 namespace fail {
 
@@ -68,39 +59,39 @@ void test(void)
 volatile uint32_t count = 0; // task activations
 
 TASK(Task1) {
-	DEBUGPRINT("(1)");
+	debug << "(1)" << endl;
 
 	if(count == 0) {
-		DEBUGPRINT("Arm timer");
+		debug << "Arm timer" << endl;
 		os::alarm0.setRelativeTime(10);
 		os::alarm0.setArmed(true);
 	}
 
 	count++;
 
-	DEBUGPRINT("Activate task 2");
+	debug << "Activate task 2" << endl;
 	ActivateTask_impl(t2);
 
-	DEBUGPRINT("Chain task 2");
+	debug << "Chain task 2" << endl;
 	ChainTask_impl(t2);
 }
 
 TASK(Task2) {
-	DEBUGPRINT("(2)");
+	debug << "(2)" << endl;
 
 	count++;
 
-	DEBUGPRINT("Chain task 3");
+	debug << "Chain task 3" << endl;
 	ChainTask_impl(t3);
 }
 
 TASK(Task3) {
-	DEBUGPRINT("(3)");
+	debug << "(3)" << endl;
 
 	while(true) {
 		count++;
 
-		DEBUGPRINT("Activate task 1");
+		debug << "Activate task 1" << endl;
 		ActivateTask_impl(t1);
 	}
 }
@@ -108,28 +99,28 @@ TASK(Task3) {
 volatile uint32_t ticks = 0; // alarm task activations
 
 TASK(Task4) {
-	DEBUGPRINT("(4)");
+	debug << "(4)" << endl;
 
-	DEBUGPRINT("count: " << count);
-	DEBUGPRINT("tick: " << ticks);
+	debug << "count: " << count << endl;
+	debug << "tick: " << ticks << endl;
 
 	if(++ticks < 100) {
 		// run one test step
 		step();
 
 		// rearm with increasing interval
-		DEBUGPRINT("Rearm timer");
+		debug << "Rearm timer" << endl;
 		os::alarm0.setRelativeTime(ticks);
 		os::alarm0.setArmed(true);
 	} else {
-		DEBUGPRINT("Finished");
+		debug << "Finished" << endl;
 
 		run_checkable_function(step, k, ticks+1);
 
-		test_finish();
+		test_finish(1);
 
 		// shutdown
-		DEBUGPRINT("shutdown\n");
+		debug << "shutdown\n" << endl;
 		Machine::shutdown();
 	}
 

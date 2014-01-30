@@ -38,6 +38,7 @@ set(SRCS
 	paging.cc
 	cga.cc
 	serial.cc
+	output.cc
 	pic.cc
 	lapic.cc
 	ioapic.cc

@@ -5,7 +5,8 @@
  */
 #include "cga.h"
 
-uint16_t* const CGA::BUFFER = reinterpret_cast<uint16_t*>(0xB8000);
+size_t CGA::row;
+size_t CGA::column;
 
 CGA::CGA() {
 	setcolor(Color::WHITE, Color::BLACK);

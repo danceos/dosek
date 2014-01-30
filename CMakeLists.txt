@@ -9,6 +9,13 @@ set(PROJECT_RELEASE "alpha" CACHE STRING "Project release")
 # Enable CTest
 enable_testing()
 
+# Set DEBUG flag when debugging
+OPTION(DEBUGGING "Debug mode" OFF)
+if(DEBUGGING)
+	message(STATUS "[${PROJECT_NAME}] Enabling debug mode")
+	add_definitions(-DDEBUG=1)
+endif()
+
 # Verbose make
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE_MAKE})

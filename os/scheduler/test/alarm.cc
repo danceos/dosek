@@ -15,15 +15,6 @@
 #include "os/test/generated-system.h"
 using namespace os::scheduler;
 
-// debug serial print macro
-#if DEBUG
-#define DEBUGPRINT(STR) serial << STR << endl
-#else
-#define DEBUGPRINT(STR) do {} while(false)
-#endif
-
-
-
 // errors are injected in this namespace
 namespace fail {
 
@@ -68,14 +59,14 @@ void test(void)
 }
 
 TASK(Task1) {
-	DEBUGPRINT("(1)");
+	debug << "(1)" << endl;
 
-	DEBUGPRINT("Arm timer");
+	debug << "Arm timer" << endl;
 	os::alarm0.setCycleTime(10);
 	os::alarm0.setRelativeTime(100);
 	os::alarm0.setArmed(true);
 
-	DEBUGPRINT("Terminate task 1");
+	debug << "Terminate task 1" << endl;
 	TerminateTask_impl();
 }
 
@@ -87,9 +78,9 @@ TASK(Task2) {
 		Machine::debug_trap();
 	}
 
-	DEBUGPRINT("(2)");
-	DEBUGPRINT("tick: " << ticks);
-	DEBUGPRINT("alarm time: " << os::alarm0.getAbsoluteTime());
+	debug << "(2)" << endl;
+	debug << "tick: " << ticks << endl;
+	debug << "alarm time: " << os::alarm0.getAbsoluteTime() << endl;
 
 	// count and test
 	ticks++;
@@ -100,10 +91,10 @@ TASK(Task2) {
 		os::alarm0.setCycleTime(1);
 	} else if(ticks == 6) {
 		// done
-		DEBUGPRINT("finished");
-		test_finish();
+		debug << "finished" << endl;
+		test_finish(6);
 
-		DEBUGPRINT("shutdown\n");
+		debug << "shutdown\n" << endl;
 		Machine::shutdown();
 	}
 

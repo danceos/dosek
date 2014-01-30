@@ -8,11 +8,7 @@
 #include "gdt.h"
 #include "exception.h"
 #include "lapic.h"
-
-#if DEBUG
-#include "serial.h"
-extern Serial serial;
-#endif
+#include "output.h"
 
 namespace arch {
 
@@ -25,11 +21,11 @@ ISR(unhandled) {
 	// print and halt when debugging
 	#if DEBUG
 	uint32_t ip = cpu->eip;
-	serial << "unhandled interrupt ";
-	serial << dec << intno;
-	serial << " @ 0x";
-	serial << hex << ip;
-	serial << endl;
+	debug << "unhandled interrupt ";
+	debug << dec << intno;
+	debug << " @ 0x";
+	debug << hex << ip;
+	debug << endl;
 
 	asm("hlt");
 	#endif

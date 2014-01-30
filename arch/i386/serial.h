@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include "arch/generic/ostream.h"
 
-class Serial : public O_Stream {
+class Serial : public O_Stream<Serial> {
 	uint16_t const PORT;
 
 public:
@@ -30,6 +30,9 @@ public:
 	void putchar(char c);
 
 	void puts(const char* data);
+
+	template<typename T>
+	void setcolor(__attribute__((unused)) T fg, __attribute__((unused)) T bg) {};
 };
 
 #endif // __SERIAL_H__

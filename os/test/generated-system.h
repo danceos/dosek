@@ -157,21 +157,21 @@ public:
 
 	template<typename T, typename S>
 	forceinline value_coded_t insert(const T& id, const S& prio) {
-		// if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
+		debug << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
 
 		return set(id, prio);
 	}
 
 	template<typename T>
 	forceinline value_coded_t remove(const T& id) {
-		// if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
+		debug << "--- Task " << id.decode() << " removed from task queue" << endl;
 
 		return set(id, EC(5, 0));
 	}
 
 	template<typename T, typename S>
 	forceinline value_coded_t promote(const T& id, const S& newprio) {
-		// if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
+		debug << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
 
 		return set(id, newprio);
 	}
@@ -194,15 +194,6 @@ public:
 		// TODO: more control flow checks?
 
 		return sig1+sig2;
-	}
-
-
-	// DEBUGGING
-	void print() const {
-		//kout << "(" << task1.decode() << "), ";
-		//kout << "(" << task2.decode() << "), ";
-		//kout << "(" << task3.decode() << "), ";
-		//kout << "(" << task4.decode() << ")" << endl;
 	}
 };
 
@@ -366,9 +357,7 @@ public:
 		// TODO: call all generated alarms
 		if (alarm0.checkTrigger(&counter)) {
 			if(alarm0.task_) {
-                #if DEBUG
-				serial << "Alarm trigger" << endl;
-                #endif
+				debug << "Alarm trigger" << endl;
 
 				os::scheduler::scheduler.ActivateTask_impl(*alarm0.task_);
 			}

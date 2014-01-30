@@ -56,29 +56,17 @@
  *   ~~~~~~~~~~~~~~
  */
 
-#include "serial.h"
-#include "output.h"
+#include <stdint.h>
 #include "machine.h"
 #include "util/encoded.h"
 #include "util/inline.h"
 
-#ifdef DEBUG
-/**
- * @brief Console output device
- * Used for debugging tests
- * @todo Make hardware independent!
- */
-output_t kout;
+#ifdef FAIL
+Null_Stream kout;
+Null_Stream debug;
+#else
+#include "output.h"
 #endif
-
-//#ifndef FAIL
-/**
- * @brief Serial output device
- * Used for CTest, but not FAIL to reduce binary
- * @todo Make hardware independent!
- */
-Serial serial(Serial::COM1); 
-//#endif
 
 #define EXPECTED_VALUES_MAX 10
 typedef unsigned int expected_value_t;
@@ -91,7 +79,7 @@ extern "C" {
 	 */
 	// @{
 
-	//! encoded result value (result.vc) will be copied here 
+	//! encoded result value (result.vc) will be copied here
 	value_t encoded_storage;
 
 	//! test check function detected error in result
@@ -150,14 +138,9 @@ forceinline void test_start()
 	experiment_number++;
 	positive_tests = 0;
 
-	#ifndef FAIL
-	serial << "Test " << (unsigned) experiment_number << ": " << endl;
-	#endif
-	#ifdef DEBUG
 	kout.setcolor(Color::WHITE, Color::BLACK);
-	kout << "[Test " << (unsigned) experiment_number << "]" << endl;
+	kout << endl << "Test " << (unsigned) experiment_number << ": " << endl;
 	kout.setcolor(Color::YELLOW, Color::BLACK);
-	#endif
 
 	/* Set a marker for starting the test */
 	marker_start();
@@ -171,25 +154,15 @@ forceinline void test_start_check() {
 void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal)
 {
 	if((equal && real_value == expected_value) || (!equal && real_value != expected_value)) {
-		#ifndef FAIL
-		serial << "  +" << endl;
-		#endif
-		#ifdef DEBUG
 		kout.setcolor(Color::GREEN, Color::BLACK);
-		kout << "[POSITIVE]" << endl << endl;
+		kout << "  +" << endl;
 		kout.setcolor(Color::WHITE, Color::BLACK);
-		#endif
 
 		positive_tests++;
 	} else {
-		#ifndef FAIL
-		serial << "  -[" << real_value << (equal ? " != " : " == ") << expected_value << "]" << endl;
-		#endif
-		#ifdef DEBUG
 		kout.setcolor(Color::RED, Color::BLACK);
-		serial << "[NEGATIVE] " << real_value << (equal ? " != " : " == ") << expected_value << endl;
+		kout << "  -[" << real_value << (equal ? " != " : " == ") << expected_value << "]" << endl;
 		kout.setcolor(Color::WHITE, Color::BLACK);
-		#endif
 	}
 }
 
@@ -226,25 +199,16 @@ void __test_positive_tests(int pos_tests, int sign) {
 	if ((sign < 0 && delta < 0)
 		|| (sign == 0 && delta == 0)
 		|| (sign > 0 && delta > 0)) {
-		#ifndef FAIL
-		serial << "SUCCESS " << experiment_number << endl;
-		#endif
-		#ifdef DEBUG
+
 		kout.setcolor(Color::GREEN, Color::BLACK);
-		kout << "[SUCCESS] " << experiment_number << endl;
+		kout << "SUCCESS " << experiment_number << endl;
 		kout.setcolor(Color::WHITE, Color::BLACK);
-		#endif
 	} else {
 		global_all_ok = false;
 
-		#ifndef FAIL
-		serial << "FAIL " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
-		#endif
-	        #ifdef DEBUG
 		kout.setcolor(Color::RED, Color::BLACK);
-		serial << "[FAIL] " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
+		kout << "FAIL " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
 		kout.setcolor(Color::WHITE, Color::BLACK);
-		#endif
 	}
 
 	marker_stop_check();
@@ -332,25 +296,27 @@ void test_init(void) {
 
 
 
-void test_finish(void) {
+void test_finish(int tests=0) {
 	trace_end_marker();
 
-	#ifndef FAIL
-	serial << "Tests finished: ";
-	serial << (global_all_ok ? "ALL OK" : "some tests failed");
-	serial << endl;
-	#endif
+	if((tests > 0) && (tests != experiment_number)) {
+		kout << "INCORRECT NUMBER of tests run: ";
+		kout << dec << experiment_number << " instead of " << tests;
+		kout << endl;
+	} else {
+		kout << "Tests finished: ";
+		kout << (global_all_ok ? "ALL OK" : "some tests failed");
+		kout << endl;
+	}
 }
 
 
 
 extern "C" void os_main(void)
 {
-	#ifdef DEBUG
-	kout.setcolor(Color::RED, Color::WHITE);
-	kout << "CoRedOS start" << endl;
-	kout.setcolor(Color::YELLOW, Color::BLACK);
-	#endif
+	debug.setcolor(Color::RED, Color::WHITE);
+	debug << "CoRedOS start" << endl;
+	debug.setcolor(Color::YELLOW, Color::BLACK);
 
 	// prepare tests
 	test_init();
@@ -362,11 +328,7 @@ extern "C" void os_main(void)
 	test_finish();
 
 	// halt system
-	#ifdef DEBUG
-	kout.setcolor(Color::RED, Color::WHITE);
-	kout << "CoRedOS halt" << endl;
-	Machine::halt();// stop emulator, don't exit
-	#endif
-
+	debug.setcolor(Color::RED, Color::WHITE);
+	debug << "CoRedOS halt" << endl;
 	Machine::shutdown();
-} 
+}

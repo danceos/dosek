@@ -24,29 +24,27 @@ void MMU::init() {
 // Pagefault interrupt handler printing details for debugging
 #if DEBUG
 #include "idt.h"
-#include "serial.h"
+#include "output.h"
 #include "os/util/inline.h"
-extern Serial serial;
 
 namespace arch {
 
 /** \brief Debug pagefault handler
  *
- * Prints invalid address and instruction on serial console.
+ * Prints invalid address and instruction on debug output.
  */
 ISR(14) {
 	uint32_t fault_addr, cr3;
 	asm("mov %%cr2, %0" : "=r"(fault_addr));
 	asm("mov %%cr3, %0" : "=r"(cr3));
 
-	serial << "PAGE FAULT for 0x" << hex << fault_addr;
-	serial << ", IP @ 0x" << cpu->eip;
-	serial << ", PD @ 0x" << cr3;
-	serial << endl;
+	debug << "PAGE FAULT for 0x" << hex << fault_addr;
+	debug << ", IP @ 0x" << cpu->eip;
+	debug << ", PD @ 0x" << cr3;
+	debug << endl;
 
 	asm("hlt");
 }
 
 }
-
-#endif
+#endif // DEBUG

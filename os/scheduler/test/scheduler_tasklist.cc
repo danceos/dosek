@@ -55,8 +55,6 @@ void test_prepare(void)
 	test_start<2>();
 	test_start<3>();
 	test_start<4>();
-
-	if(DEBUG) tlist.print();
 }
 
 /**

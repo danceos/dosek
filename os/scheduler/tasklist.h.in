@@ -65,27 +65,27 @@ assert(((signature - signature%(ii)s) %% S::A) == 0);
         assert(id.check());
         assert(prio.check());
 
-        // if(DEBUG) kout << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
+        debug << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
 
         return signature;
     }
 
     template<typename T, typename S>
     forceinline value_coded_t insert(const T& id, const S& prio) {
-        // if(DEBUG) kout << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
+        debug << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
         return set(id, prio);
     }
 
     template<typename T>
     forceinline value_coded_t remove(const T& id) {
-        // if(DEBUG) kout << "--- Task " << id.decode() << " removed from task queue" << endl;
+        debug << "--- Task " << id.decode() << " removed from task queue" << endl;
         // The signature here is arbitrary, and won't be exposed.
         return set(id, EC(3, 0));
     }
 
     template<typename T, typename S>
     forceinline value_coded_t promote(const T& id, const S& newprio) {
-        // if(DEBUG) kout << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
+        debug << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
 
         return set(id, newprio);
     }
