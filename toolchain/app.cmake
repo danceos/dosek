@@ -11,16 +11,16 @@ MACRO(COREDOS_BINARY)
   SET(COREDOS_SYSTEM_XML "${CMAKE_CURRENT_SOURCE_DIR}/${COREDOS_BINARY_SYSTEM_XML}")
   SET(NAME "${COREDOS_BINARY_NAME}")
 
-  SET(COREDOS_ANNOTATE_SOURCE "${COREDOS_GENERATOR_DIR}/annotate/cored_annotate.c")
+  SET(COREDOS_ANNOTATE_SOURCE "${COREDOS_GENERATOR_DIR}/annotate/cored_annotate.cc")
   SET(COREDOS_ANNOTATE_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/${NAME}_cored_annotate.ll")
 
   # compile annotate file
   add_custom_command(OUTPUT ${COREDOS_ANNOTATE_OBJECT}
-    COMMAND ${CLANG_BINARY} -S -emit-llvm
+    COMMAND ${CLANGPP_BINARY} -S -emit-llvm
     -I${COREDOS_GENERATOR_DIR}/annotate/
     ${INCLUDEDIRS_FLAGS}
     -Wno-return-type 
-    -m32
+    -m32 -std=c++11
     ${COREDOS_ANNOTATE_SOURCE} -o ${COREDOS_ANNOTATE_OBJECT}
     MAIN_DEPENDENCY ${COREDOS_ANNOTATE_SOURCE}
     COMMENT "[${PROJECT_NAME}/${name}] Compiling cored_annotate.c with clang")
@@ -40,8 +40,8 @@ MACRO(COREDOS_BINARY)
   foreach(src ${COREDOS_BINARY_SOURCES})
 	set(llvm_bytecode "${CMAKE_CURRENT_BINARY_DIR}/${src}.ll")
 	add_custom_command(OUTPUT ${llvm_bytecode}
-	  COMMAND ${CLANG_BINARY} -S -emit-llvm -O0 
-      -m32
+	  COMMAND ${CLANGPP_BINARY} -S -emit-llvm -O0 
+      -m32 -std=c++11
       ${INCLUDEDIRS_FLAGS}
 	  ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
 	  MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${src}
@@ -114,7 +114,7 @@ MACRO(COREDOS_BINARY)
 	DEPENDS "${COREDOS_GENERATED_SOURCE}")
 
   add_custom_target(${COREDOS_BINARY_NAME}-clean
-	COMMAND rm -f ${CMAKE_CURRENT_BINARY_DIR}/${NAME}*
+	COMMAND rm -f ${CMAKE_CURRENT_BINARY_DIR}/${NAME}* ${COREDOS_BINARY_LLVM_BYTECODE}
     )
 
 

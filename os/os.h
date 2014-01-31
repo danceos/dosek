@@ -46,6 +46,7 @@ enum TaskStateType {
 
 
 EXTERN_C_DECL void os_main(void);
+EXTERN_C_DECL void StartOS(int);
 
 
 /******************************************************************************
@@ -343,10 +344,6 @@ extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
  ******************************************************************************/
 
 extern void OSEKOS_ShutdownOS(StatusType status);
-
-/** \brief write a character to the user (kout object) */
-extern void putchar(char c);
-extern void putstring(char *c);
 
 
 #ifdef __cplusplus

@@ -1,8 +1,10 @@
 /* \brief This file declares functions that can be included into a
    testcase to generate output for testing task activations */
 
-char trace_table[256];
-unsigned char trace_table_idx = 0;
+#include "output.h"
+
+static char trace_table[256];
+static unsigned char trace_table_idx = 0;
 
 void Trace(char chr) {
 	if (trace_table_idx < 0xff)
@@ -11,31 +13,30 @@ void Trace(char chr) {
 
 void TraceDump(void) {
 	for (unsigned char i = 0; i < trace_table_idx; i++) {
-		putchar(trace_table[i]);
+		kout << trace_table[i];
 	}
 }
 
 void TraceAssert(char *expected) {
 	int good = 1;
-	if (strlen(expected) != trace_table_idx) {
-		good = 0;
-	} else {
-		for (unsigned char i = 0; i < trace_table_idx; i++) {
-			if (trace_table[i] != expected[i]) {
-				good = 0;
-				break;
-			}
+	for (unsigned char i = 0; i < trace_table_idx; i++) {
+		if (expected[i] == 0) {
+			good = 0;
+			break;
+		}
+		if (trace_table[i] != expected[i]) {
+			good = 0;
+			break;
 		}
 	}
 
-	putstring(expected);
-	putchar('\n');
+	kout << expected << endl;
 	TraceDump();
-	putchar('\n');
+	kout << endl;
 
 	if (good) {
-		putstring("SUCCESS ALL OK\n");
+		kout << "SUCCESS ALL OK" << endl;
 	} else {
-		putstring("FAIL\n");
+		kout << "FAIL" << endl;
 	}
 }

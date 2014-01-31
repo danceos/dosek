@@ -19,10 +19,3 @@ Null_Stream debug;
 
 #endif // DEBUG
 
-extern "C" void putchar(char c) {
-	kout << c;
-}
-
-extern "C" void putstring(char *c) {
-	kout << c;
-}

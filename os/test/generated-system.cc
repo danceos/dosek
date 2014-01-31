@@ -46,3 +46,5 @@ constexpr Encoded_Static<A0, 12> TaskList::idle_prio;
 
 
 }; // os
+
+void __OS_HOOK_PreIdleHook() {}

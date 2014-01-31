@@ -16,11 +16,11 @@ DeclareTask(Handler13);
 
 int a;
 
-void bar() {
-	ActivateTask(Handler12);
+extern "C" void bar() {
+	ActivateTask(Handler13);
 }
 
-void foo() {
+extern "C" void foo() {
 	a++;
 	return;
 }
@@ -30,13 +30,18 @@ void foo() {
 
 TASK(Handler11) {
 	a++;
+	if (a == 12) {
+		ActivateTask(Handler12);
+	}
+
 	if (a == 100) {
 		bar();
 		a++;
 	} else {
 		foo();
+		ActivateTask(Handler13);
 	}
-	ChainTask(Handler13);
+	TerminateTask();
 }
 
 TASK(Handler12) {
@@ -46,3 +51,4 @@ TASK(Handler12) {
 TASK(Handler13) {
 	TerminateTask();
 }
+

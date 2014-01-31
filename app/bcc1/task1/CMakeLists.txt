@@ -3,7 +3,7 @@ COREDOS_BINARY(
   SYSTEM_XML system.xml
   VERIFY verify_a.py
   TEST_ISO
-  a.c
+  a.cc ../trace.cc
 )
 
 COREDOS_BINARY(
@@ -11,41 +11,41 @@ COREDOS_BINARY(
   SYSTEM_XML system.xml
   VERIFY verify_b.py
   TEST_ISO
-  b.c
+  b.cc ../trace.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1c
   SYSTEM_XML system.xml
   VERIFY verify_c.py
-  c.c
+  c.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1d
   SYSTEM_XML system.xml
   VERIFY verify_d.py
-  d.c
+  d.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1e
   SYSTEM_XML system.xml
   VERIFY verify_e.py
-  e.c
+  e.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1f
   SYSTEM_XML system.xml
   VERIFY verify_f.py
-  f.c
+  f.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1g
   SYSTEM_XML system.xml
   VERIFY verify_g.py
-  g.c
+  g.cc
 )
 

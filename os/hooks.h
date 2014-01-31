@@ -14,7 +14,7 @@
 /**
  * \brief Called directly before the idle loop starts.
  */
-extern void forceinline __OS_HOOK_PreIdleHook(void);
+extern void __OS_HOOK_PreIdleHook(void);
 EXTERN_C_DECL void  __OS_HOOK_DEFINED_PreIdleHook(void);
 
 #define PreIdleHook() \

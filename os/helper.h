@@ -1,5 +1,8 @@
 #ifndef __OS_KRN_HELPER
 #define __OS_KRN_HELPER
+
+#include "machine.h"
+
 /**
  * @file
  * @ingroup os
@@ -7,15 +10,9 @@
  * from the application
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-	/** \brief Shutdown the machine instantly */
-	extern void ShutdownMachine(void);
-
-#ifdef __cplusplus
+void forceinline ShutdownMachine(void) {
+	Machine::shutdown();
 }
-#endif
 
 
 #endif

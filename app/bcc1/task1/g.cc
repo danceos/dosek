@@ -16,7 +16,7 @@ DeclareTask(Handler13);
 
 int a;
 
-void bar() {
+extern "C" void bar() {
 	ActivateTask(Handler13);
 }
 

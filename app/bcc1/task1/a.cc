@@ -9,14 +9,17 @@
  * @brief Just a simple test application
  */
 #include "os.h"
-#include "../trace.c"
+#include "test/test.h"
+#include "../trace.h"
+
 
 DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
-void os_main(void) {
-	StartOS();
+void test(void) {
+	test_start();
+	StartOS(0);
 }
 
 TASK(Handler11) {
@@ -39,6 +42,8 @@ TASK(Handler13) {
 }
 
 PreIdleHook() {
-	TraceAssert("ab3c2");
+	/* The testcase has finished, check the output */
+	test_start_check();
+	TraceAssert((char *)"ab3c2");
 	ShutdownMachine();
 }
