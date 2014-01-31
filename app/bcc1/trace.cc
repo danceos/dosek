@@ -21,10 +21,12 @@ void TraceAssert(char *expected) {
 	int good = 1;
 	for (unsigned char i = 0; i < trace_table_idx; i++) {
 		if (expected[i] == 0) {
+			kout << "too short" << endl;
 			good = 0;
 			break;
 		}
 		if (trace_table[i] != expected[i]) {
+			kout << "too unqeual: " <<  trace_table[i] << " at " << (int)i <<endl;
 			good = 0;
 			break;
 		}

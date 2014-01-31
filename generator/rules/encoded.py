@@ -36,14 +36,21 @@ class EncodedSystem(SimpleSystem):
         block.unused_parameter(0)
         highestTask = None
         for subtask in self.system_graph.get_subtasks():
-            if not subtask.autostart or not subtask.is_real_thread():
+            if not subtask.is_real_thread():
                 continue
-            if not highestTask or subtask.static_priority > highestTask.static_priority:
-                highestTask = subtask
+            # Use Reset the stack pointer for all all tasks
             self.call_function(block,
-                               "SetReady_impl",
-                               "void",
-                               [self.objects[subtask]["task_descriptor"].name])
+                               self.objects[subtask]["task_descriptor"].name + ".reset_sp",
+                               "void", [])
+
+            if subtask.autostart:
+                self.call_function(block,
+                                   "scheduler.SetReady_impl",
+                                   "void", [self.objects[subtask]["task_descriptor"].name])
+
+
+            if subtask.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
+                highestTask = subtask
 
         if highestTask:
             self.call_function(block, "ActivateTaskC_impl", "void",
@@ -58,7 +65,7 @@ class EncodedSystem(SimpleSystem):
 
     def TerminateTask(self, block, abb):
         self.call_function(block, "scheduler.TerminateTask_impl", "void",
-                           [])
+                           [self.objects[abb.function.subtask]['task_descriptor'].name])
 
     def ActivateTask(self, block, abb):
         self.call_function(block,

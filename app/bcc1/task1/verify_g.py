@@ -17,7 +17,7 @@ def after_RunningTaskAnalysis(analysis):
          [Handler13])
 
     t.reachability(Handler13, "TerminateTask", [], # =>
-         [Handler12, Handler11])
+                   [Handler12, Handler11, Idle])
 
     t.reachability(Handler12, "ChainTask", [Handler11], # =>
          [Handler11])
@@ -27,6 +27,6 @@ def after_RunningTaskAnalysis(analysis):
 
     # Idle handler is never left
     t.reachability(Idle, "Idle", [], # =>
-         [])
+                   [Idle])
 
     t.promise_all_syscalls_checked()
