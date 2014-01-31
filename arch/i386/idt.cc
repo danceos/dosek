@@ -10,6 +10,8 @@
 #include "lapic.h"
 #include "output.h"
 
+#define CONTINUE_UNHANDLED_IRQ 0
+
 namespace arch {
 
 /** \brief Default handler for interrupts */
@@ -30,8 +32,23 @@ ISR(unhandled) {
 	asm("hlt");
 	#endif
 
+	#if CONTINUE_UNHANDLED_IRQ
 	// send end-of-interrupt (unless exception)
 	if(intno > 31) LAPIC::send_eoi();
+	#else // CONTINUE_UNHANDLED_IRQ
+	// panic on unhandled interrupts
+	Machine::panic();
+	#endif // CONTINUE_UNHANDLED_IRQ
+}
+
+
+
+// NMI error handler
+IRQ_HANDLER(2) {
+	// TODO: anything useful left to do?
+	debug << "PANIC" << endl;
+
+	Machine::halt();
 }
 
 

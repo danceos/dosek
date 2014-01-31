@@ -3,6 +3,7 @@
 
 #include "os/util/inline.h"
 #include "lapic.h"
+#include "exception.h"
 #include "output.h"
 
 /**
@@ -47,6 +48,16 @@ struct Machine
 	static forceinline void debug_trap(void) {
 		asm volatile ("ud2");
 		__builtin_unreachable();
+	}
+
+	/**
+	 * \brief Panic when error is detected
+	 *
+	 * Triggers non-maskable error interrupt
+	 */
+	static forceinline void panic(void) {
+		// TODO: APIC NMI request instead of software interrupt?
+		asm volatile ("int %0" :: "i"(arch::Exceptions::NMI));
 	}
 
 	/**
