@@ -6,7 +6,7 @@ set(CMAKE_C_FLAGS "-march=${CMAKE_C_ARCH} -ffreestanding -m32 -Wall -Wextra -Qun
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
 set(CMAKE_ASM_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
 
-set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles" CACHE STRING "LDFLAGS")
+set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -gc-sections" CACHE STRING "LDFLAGS")
 
 set(CCDIR "/proj/i4danceos/tools/llvm-3.4")
 set(CMAKE_C_COMPILER  ${CCDIR}/bin/clang)
