@@ -350,6 +350,11 @@ extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
 
 extern void OSEKOS_ShutdownOS(StatusType status);
 
+/** \brief write a character to the user (kout object) */
+extern void putchar(char c);
+extern void putstring(char *c);
+
+
 
 #ifdef __cplusplus
 }
