@@ -33,6 +33,7 @@ class EncodedSystem(SimpleSystem):
         self.generator.source_file.declarations.append(alarms.expand())
 
     def StartOS(self, block):
+        block.unused_parameter(0)
         highestTask = None
         for subtask in self.system_graph.get_subtasks():
             if not subtask.autostart or not subtask.is_real_thread():
@@ -71,15 +72,26 @@ class EncodedSystem(SimpleSystem):
                            "void",
                            [self.enc_id(abb.arguments[0])])
 
+    def ShutdownOS(self, block):
+        block.unused_parameter(0)
+        self.call_function(block,
+                           "Machine::shutdown",
+                           "void", [])
+
 
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""
         self.system_enter_hook(function)
 
+        if systemcall.function == "ShutdownOS":
+            self.ShutdownOS(function)
+            return
+
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall
         syscall = Function("__OS_syscall_" + function.function_name,
                            "void", ["int"], extern_c = True)
+        syscall.unused_parameter(0)
         self.generator.source_file.function_manager.add(syscall)
         # The syscall function is called from the function that will
         # be inlined into the application
@@ -88,8 +100,10 @@ class EncodedSystem(SimpleSystem):
         if systemcall.function == "TerminateTask":
             self.TerminateTask(syscall, systemcall.abb)
         elif systemcall.function == "ActivateTask":
+            function.unused_parameter(0)
             self.ActivateTask(syscall, systemcall.abb)
         elif systemcall.function == "ChainTask":
+            function.unused_parameter(0)
             self.ChainTask(syscall, systemcall.abb)
         else:
             assert False, "Not yet supported %s"% systmcall.function

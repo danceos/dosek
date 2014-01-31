@@ -18,8 +18,6 @@ foreach(ELF ${EXECUTABLES})
 
 	set(ISODIR "${PROJECT_BINARY_DIR}/grub_iso")
 
-	message(STATUS "[${PROJECT_NAME}] Building bootable ISO for ${ELF}")
-
 	# Generate build directory for grub-mkrescue
 	set(BOOTDIR "${ISODIR}/boot/")
 	set(GRUBDIR "${BOOTDIR}/grub")

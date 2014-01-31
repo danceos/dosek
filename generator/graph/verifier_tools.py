@@ -13,6 +13,9 @@ class RunningTaskToolbox:
     def __init__(self, analysis):
         self.analysis = analysis
         self.checked_syscalls = set()
+        for syscall in self.analysis.system.get_syscalls():
+            if syscall.type == "ShutdownOS":
+                self.checked_syscalls.add(syscall)
 
     def mark_syscall(self, syscall):
         """Mark syscall as checked"""

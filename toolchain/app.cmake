@@ -3,7 +3,7 @@ include(rtsc)
 
 
 MACRO(COREDOS_BINARY)
-  set(options )
+  set(options TEST_ISO)
   set(oneValueArgs SYSTEM_XML NAME VERIFY)
   set(multiValuedParameters SOURCES)
   cmake_parse_arguments(COREDOS_BINARY "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
@@ -133,6 +133,10 @@ MACRO(COREDOS_BINARY)
   coredos_executable(${NAME} EXCLUDE_FROM_ALL
     ${COREDOS_SOURCE_SYSTEM} ${COREDOS_GENERATED_SOURCE})
 
-  # Add a testcase
-  add_test(${NAME}-test make ${NAME}-clean ${NAME})
+  if(${COREDOS_BINARY_TEST_ISO} STREQUAL "TRUE")
+    coredos_test_iso_image(test-${NAME} ${NAME} "${PROJECT_BINARY_DIR}/${NAME}.iso")
+  else()
+    # Add a compile testcase
+    add_test(test-${NAME} make ${NAME}-clean ${NAME})
+  endif()
 ENDMACRO(COREDOS_BINARY)
