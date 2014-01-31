@@ -1,4 +1,5 @@
 from generator.elements import *
+import logging
 
 class SignatureGenerator:
     def __init__(self, start = 1000):
@@ -104,11 +105,14 @@ class Generator:
         # the concrete calls from the application
         self.os_rules.generate_system_code()
 
-        os_main = Function("os_main", "void", [], extern_c = True)
-        os_main.add( FunctionCall("StartOS", ["0"]) )
-        self.source_file.function_manager.add(os_main)
+        # Only generate an os_main, if it does not exist
+        if not "os_main" in self.system_graph.functions:
+            logging.info("Generating an os_main function calling StartOS")
+            os_main = Function("os_main", "void", [], extern_c = True)
+            os_main.add( FunctionCall("StartOS", ["0"]) )
+            self.source_file.function_manager.add(os_main)
 
-        StartOS = Function("StartOS", "void", ["int"])
+        StartOS = Function("StartOS", "void", ["int"], extern_c = True)
         self.os_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
 

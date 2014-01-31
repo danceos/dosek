@@ -19,7 +19,8 @@
 /** \brief Halt the processor when idle */
 #define IDLE_HALT 1
 
-
+/** \brief callback that is called before the idle loop is entered */
+extern "C" void __attribute__((weak_import)) __OS_PreIdleHook(void);
 
 namespace arch {
 
@@ -88,10 +89,14 @@ public:
 	static noinline void idle_loop(void) {
 		// allow all interrupts
 		LAPIC::set_task_prio(0);
-		Machine::enable_interrupts();
 
-		// halt the processor
-		while(true) Machine::halt();
+		/* Call the idle loop callback */
+		/* Call the idle loop callback */
+		if (__OS_PreIdleHook != NULL)
+			__OS_PreIdleHook();
+
+		/* enable interrupts and go to sleep */
+		while (true) Machine::goto_sleep();
 
 		Machine::unreachable(); // should never come here
 	}
@@ -103,6 +108,10 @@ public:
 		// allow all interrupts
 		LAPIC::set_task_prio(0);
 		Machine::enable_interrupts();
+
+		/* Call the idle loop callback */
+		if (__OS_PreIdleHook != NULL)
+			__OS_PreIdleHook();
 
 		// do nothing forever
 		while(true) Machine::nop();

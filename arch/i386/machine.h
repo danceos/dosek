@@ -78,6 +78,14 @@ struct Machine
 	}
 
 	/**
+	 * \brief halt processor atomically
+	 */
+	static forceinline void goto_sleep() {
+		asm volatile("sti\n\thlt");
+	}
+
+
+	/**
 	 * \brief Return interrupt enable flag
 	 */
 	static forceinline bool interrupts_enabled(void) {

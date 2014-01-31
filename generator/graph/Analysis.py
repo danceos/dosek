@@ -188,6 +188,8 @@ class MoveFunctionsToTask(Analysis):
         return [CurrentRunningSubtask.name()]
 
     def do(self):
+        idle = self.system.find_function("Idle")
+
         subtask_analysis = self.get_analysis("CurrentRunningSubtask")
         for abb in self.system.get_abbs():
             subtask = subtask_analysis.for_abb(abb)
@@ -198,6 +200,13 @@ class MoveFunctionsToTask(Analysis):
                 subtask.task.add_function(abb.function)
                 abb.function.subtask = subtask
                 logging.debug("Moving %s to %s", abb.function, subtask.task)
+
+            # The function __OS_before_idle_loop belongs to the idle
+            # subtask, this is a hack for testing
+            if abb.function.task == None \
+               and abb.function.function_name == "__OS_PreIdleHook":
+                idle.task.add_function(abb.function)
+                abb.function.subtask = idle
 
 
 

@@ -14,6 +14,12 @@ class Function:
         if self.attributes == None:
             self.attributes = []
 
+    def unused_parameter(self, parameter):
+        if type(parameter) == int:
+            self.statements.append (Statement("(void) arg%d" % parameter))
+        else:
+            self.statements.append (Statement("(void) %s" % parameter))
+
     def add(self, statement):
         self.statements.append(statement)
         return statement

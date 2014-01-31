@@ -205,6 +205,9 @@ typedef struct MESSAGEStruct* MessageIdentifier;
 #define ShutdownOS(STATUS)			\
   OSEKOS_ShutdownOS(STATUS)
 
+#define PreIdleHook() \
+  void __OS_PreIdleHook(void)
+
 /******************************************************************************
  *                                                                            *
  * API Definitions                                                            *
@@ -349,6 +352,11 @@ extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
  ******************************************************************************/
 
 extern void OSEKOS_ShutdownOS(StatusType status);
+
+/**
+ * \brief Called directly before the idle loop starts.
+ */
+extern void __attribute__((weak_import)) __OS_PreIdleHook(void);
 
 /** \brief write a character to the user (kout object) */
 extern void putchar(char c);
