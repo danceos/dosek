@@ -68,7 +68,7 @@ public:
 	/**
 	 * \brief Call an appropriate manipulatpor function
 	 **/
-	O_Stream<T>& operator<<(O_Stream& (*f) (O_Stream&));
+	O_Stream<T>& operator<<(O_Stream<T>& (*f) (O_Stream<T>&));
  };
 
 
@@ -134,7 +134,13 @@ public:
 
 	void setcolor(__attribute__((unused)) Color fg, __attribute__((unused)) Color bg) {};
 
-	template<typename T> O_Stream& operator<< (T) { return *this; };
+	template<typename T=Null_Stream>
+	Null_Stream& operator<<(__attribute__((unused)) O_Stream<T>& (*f) (O_Stream<T>&)) {
+		return *this;
+	};
+
+	template<typename T>
+	Null_Stream& operator<< (T) { return *this; };
 };
 
 
@@ -235,7 +241,7 @@ O_Stream<T>& O_Stream<T>::operator << (void* value) {
 }
 
 template<typename T>
-O_Stream<T>& O_Stream<T>::operator << (O_Stream& (*stream) (O_Stream&)) {
+O_Stream<T>& O_Stream<T>::operator << (O_Stream<T>& (*stream) (O_Stream<T>&)) {
 	return (*stream)(*this);
 }
 
