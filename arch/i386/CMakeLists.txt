@@ -60,7 +60,16 @@ set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INT
 find_program(OBJDUMP "objdump")
 
 # i386 CoRedOS executable macro
+# usage: coredos_executable(ELFFILE ... [DEFINTIONS ...])
+# Creates CoRedOS executable named ELFFILE. All parameters after ELFFILE until
+# (optional) DEFINITIONS are passed directly to add_executable.
+# To set compile definitions specify them after DEFINITIONS keyword.
 macro(coredos_executable ELFFILE)
+	# parse DEFINITIONS
+	cmake_parse_arguments(COREDOS_EXECUTABLE "" "" "DEFINITIONS" ${ARGN})
+	set(SOURCES ${COREDOS_EXECUTABLE_UNPARSED_ARGUMENTS})
+	set(DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
+
 	get_filename_component(ELFNAME ${ELFFILE} NAME_WE)
 
 	# libraries to link with application
@@ -68,7 +77,7 @@ macro(coredos_executable ELFFILE)
 
 	# First executable with empty, weak page tables
 	set(PRELINK ${ELFNAME}.prelink.elf)
-	add_executable(${PRELINK} ${ARGN})
+	add_executable(${PRELINK} ${SOURCES})
 	set_target_properties(${PRELINK} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 	target_link_libraries(${PRELINK} ${TARGET_LIBS})
 
@@ -83,13 +92,20 @@ macro(coredos_executable ELFFILE)
 	)
 
 	# The actual executable
-	add_executable(${ELFFILE} ${ARGN} ${PAGETABLES})
+	add_executable(${ELFFILE} ${SOURCES} ${PAGETABLES})
 	target_link_libraries(${ELFFILE} ${TARGET_LIBS})
+
+	# set definitions
+	if(COREDOS_EXECUTABLE_DEFINITIONS)
+		set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES COMPILE_DEFINITIONS ${DEFINITIONS})
+	endif()
 
 	# Set custom linker script/flags
 	# libgcc added here to be used as needed (compiler helper functions)and not included in full
-	set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES LINK_FLAGS
-		"-lgcc -Wl,-T ${CMAKE_CURRENT_BINARY_DIR}/${ELFNAME}_linker.ld ${ISA_LD_FLAGS} --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}")
+	set(LINKER_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/${ELFNAME}_linker.ld)
+	set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES
+		LINK_FLAGS "-lgcc -Wl,-T ${LINKER_SCRIPT} ${ISA_LD_FLAGS} --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}"
+		LINK_DEPENDS ${LINKER_SCRIPT})
 
 	# we use our own linker (python) script, that calls llvm-link, llc and the system linker
 	# setting CMAKE_*_LINK_EXECUTABLE at this point in the CMake run seems a bit unusual, but works as intended

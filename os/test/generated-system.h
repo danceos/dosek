@@ -5,8 +5,7 @@
 #include "os/scheduler/scheduler.h"
 #include "os/alarm.h"
 #include "os/counter.h"
-
-
+#include "output.h"
 
 
 #ifndef THETASKS

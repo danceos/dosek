@@ -214,8 +214,8 @@ macro(fail_test TEST)
 
 	# executable for FAIL*
 	set(TESTELF "fail-${TEST}.elf")
-	coredos_executable("${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN})
-	set_target_properties("${TESTELF}" PROPERTIES COMPILE_DEFINITIONS "FAIL=1")
+	coredos_executable("${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN} DEFINITIONS "FAIL=1")
+	configure_file("${PROJECT_SOURCE_DIR}/os/test/linker.ld" "${CMAKE_CURRENT_BINARY_DIR}/fail-${TEST}_linker.ld" COPYONLY)
 	set_target_properties("${TESTELF}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${FAIL_DIR})
 	set_target_properties("${TESTELF}" PROPERTIES EXCLUDE_FROM_ALL true)
 

@@ -6,6 +6,9 @@
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
+#include "arch/generic/ostream.h"
+
+#ifndef FAIL
 #if DEBUG
 
 // debugging: print kout+debug on CGA
@@ -21,5 +24,13 @@ extern Serial kout;
 extern Null_Stream debug;
 
 #endif // DEBUG
+
+#else
+
+extern Null_Stream kout;
+extern Null_Stream debug;
+
+#endif // FAIL
+
 
 #endif // __OUTPUT_H__

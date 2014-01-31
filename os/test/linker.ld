@@ -142,7 +142,7 @@ SECTIONS {
 	/* Page tables and directories */
 	.rodata.paging ALIGN(0x1000) : {
 		_spaging = .;
-		*(".paging*");
+        KEEP (*(".paging*"));
 		_epaging = .;
 	}
 

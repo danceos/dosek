@@ -21,16 +21,16 @@
  * A testcase can be defined by including the test.h header.
  * You can define `void test_prepare()` to do work before the experiment
  * (won't be traced).
- * 
+ *
  * The `void test(void)` function is called by the operating systems
  * main function. Everything that happens there will be included in
  * the fail trace afterwards.
  *
  * @warning This "header" file instantiates global objects.
  *          Do not include this header in multiple files!
- * 
+ *
  * Each testcase in the test functions has the following form:
- * 
+ *
  * * *Optionally* store dynamic test result:
  *   ~~~~~~~~~~~~~~{.c}
  *    // Store expected results (if dynamic)
@@ -45,12 +45,12 @@
  *   run_my_super_dupper_test_function(&a, &b)
  *   // finish the testcase (injecting till here)
  *   int result = test_start_check();
- *   
+ *
  *   // Run n tests on the result:
  *   test_eq(result, 123);
  *   test_expect_eq(0, a);
  *   test_expect_eq(1, b);
- *   
+ *
  *   // Testcase is only positive when more than one condition holds
  *   test_positive_tests_gt(1);
  *   ~~~~~~~~~~~~~~
@@ -60,13 +60,7 @@
 #include "machine.h"
 #include "util/encoded.h"
 #include "util/inline.h"
-
-#ifdef FAIL
-Null_Stream kout;
-Null_Stream debug;
-#else
 #include "output.h"
-#endif
 
 #define EXPECTED_VALUES_MAX 10
 typedef unsigned int expected_value_t;
@@ -286,7 +280,7 @@ extern void test_prepare();
 void test_init(void) {
 	// prepare tests
 	global_all_ok = true;
-	if (test_prepare != NULL) {
+	if (test_prepare != 0) {
 		test_prepare();
 	}
 

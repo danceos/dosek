@@ -236,7 +236,8 @@ vgaromimage: file=@BOCHS_VGA_IMAGE@
 # values are 'vbe' for Bochs VBE and 'cirrus' for Cirrus SVGA support.
 #=======================================================================
 #vga: extension=cirrus
-vga: extension=vbe
+#vga: extension=vbe
+vga: extension=none
 
 #=======================================================================
 # FLOPPYA:
@@ -432,9 +433,9 @@ floppy_bootsig_check: disabled=0
 #   log: /dev/tty
 #=======================================================================
 #log: /dev/stdout
-#log: /dev/null
+log: /dev/null
 #log: /tmp/bochsout.txt
-log: bochsout.txt
+#log: bochsout.txt
 
 #=======================================================================
 # LOGPREFIX:
@@ -489,9 +490,9 @@ pass: action=ignore
 # Examples:
 #   debugger_log: ./debugger.out
 #=======================================================================
-#debugger_log: /dev/null
+debugger_log: /dev/null
 #debugger_log: debugger.out
-debugger_log: -
+#debugger_log: -
 
 #=======================================================================
 # COM1, COM2, COM3, COM4:
@@ -527,7 +528,9 @@ debugger_log: -
 #   com4: enabled=1, mode=pipe-client, dev=\\.\pipe\mypipe
 #   com4: enabled=1, mode=pipe-server, dev=\\.\pipe\mypipe
 #=======================================================================
-com1: enabled=1, mode=file, dev=serial.out
+# speedup FAIL* by a lot
+#com1: enabled=1, mode=file, dev=serial.out
+com1: enabled=1, mode=null
 
 
 #=======================================================================
