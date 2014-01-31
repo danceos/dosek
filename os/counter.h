@@ -46,7 +46,7 @@ public:
 #include "alarm.h"
 
 namespace os {
-    extern void Alarm_checkCounter(Counter &counter);
+    extern called_once void Alarm_checkCounter(Counter &counter);
 
 forceinline void Counter::advanceCounter() {
 	if(value == maxallowedvalue) {

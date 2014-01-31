@@ -22,7 +22,7 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 ## Add *additional* architecture specific compiler flags here.
 # Note that the flags set in toolchain.cmake are still present and used.
-set(ISA_C_FLAGS "-c -emit-llvm" CACHE INTERNAL STRING)
+set(ISA_C_FLAGS "-S -emit-llvm -O0" CACHE INTERNAL STRING)
 set(ISA_CXX_FLAGS "" CACHE INTERNAL STRING)
 set(ISA_ASM_FLAGS "-m32" CACHE INTERNAL STRING)
 set(ISA_LD_FLAGS "-m32 -static -nostdlib -Qunused-arguments -Wl,--build-id=none" CACHE INTERNAL STRING)

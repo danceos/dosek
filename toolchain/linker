@@ -12,6 +12,9 @@ def is_llvm_file(file):
         return False
     if file.endswith(".ll"):
         return True
+    with open(file) as fd:
+        if fd.read(len("; ModuleID")) == "; ModuleID":
+            return True
     return "LLVM" in subprocess.check_output(["file", file])
 
 def is_elf_file(file):
@@ -60,7 +63,7 @@ def llvm_link(files, output):
 
 def llvm_opt(input, output):
     check_output([os.path.join(args.llvm_dir, "bin", "opt"),
-                  "-std-compile-opts", "-o", output, input])
+                  "-std-compile-opts", "-inlinehint-threshold=2000000000", "-o", output, input])
     return output
 
 def llvm_llc(file, output):
