@@ -36,15 +36,33 @@ noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
 
 namespace os {
 
+Counter counter0;
 __attribute__((weak)) Alarm alarm0(counter0);
 
-void Alarm_checkCounter(Counter &counter) {
-	Alarm::checkCounter(counter);
-}
 constexpr Encoded_Static<A0, 13> TaskList::idle_id;
 constexpr Encoded_Static<A0, 12> TaskList::idle_prio;
 
 
+void inlinehint Counter::tick() {
+	if(counter0.value == counter0.maxallowedvalue) {
+		counter0.value = 0;
+	} else {
+		counter0.value++;
+	}
+
+	Alarm::checkCounter(counter0);
+}
+
+void inlinehint Alarm::checkCounter(const Counter &counter) {
+	if ((&counter == &counter0) && alarm0.checkTrigger(&counter)) {
+		if(alarm0.task_) {
+			debug << "Alarm trigger" << endl;
+			os::scheduler::scheduler.ActivateTask_impl(*alarm0.task_);
+		}
+	}
+}
+
 }; // os
+
 
 void __OS_HOOK_PreIdleHook() {}

@@ -20,6 +20,6 @@
 
 #define noinline __attribute__ ((noinline))
 #define forceinline __inline__ __attribute__((always_inline))
-#define called_once forceinline __attribute__((used))
+#define inlinehint forceinline __attribute__((used))
 
 #endif /* __INLINE_H__ */

@@ -70,6 +70,7 @@ class SimpleSystem(BaseRules):
         self.generate_dataobjects_task_stacks()
         self.generate_dataobjects_task_entries()
         self.generate_dataobjects_task_descriptors()
+        self.generate_dataobjects_counters_and_alarms()
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
@@ -126,8 +127,34 @@ class SimpleSystem(BaseRules):
 
             self.objects[subtask].update({"task_descriptor": desc, "task_id": task_id - 1})
 
+    def generate_dataobjects_counters_and_alarms(self):
+        self.objects["counter"] = {}
+        self.objects["alarm"] = {}
+        for counter_info in self.generator.system_description.getHardwareCounters():
+            counter = DataObject("Counter", "OS_%s_counter" %( counter_info.name),
+                                 "(%d, %d, %d)" % (counter_info.maxallowedvalue,
+                                                   counter_info.ticksperbase,
+                                                   counter_info.mincycle))
+            self.generator.source_file.data_manager.add(counter, namespace = ("os",))
+            self.objects["counter"][counter_info.name] = counter
+
+        for alarm_info in self.generator.system_description.getAlarms():
+            counter = self.objects["counter"][alarm_info.counter].name
+            subtask = self.system_graph.get_subtask(alarm_info.task)
+            task = "os::tasks::" + self.objects[subtask]["task_descriptor"].name
+            alarm = DataObject("Alarm", "OS_%s_alarm" %( alarm_info.name),
+                               "(%s, %s, %s, %d, %d)" % (counter, task,
+                                                         str(alarm_info.armed).lower(),
+                                                         alarm_info.cycletime,
+                                                         alarm_info.reltime))
+            self.generator.source_file.data_manager.add(alarm, namespace = ("os",))
+            self.objects["alarm"][alarm_info.name] = alarm
+
     def generate_system_code(self):
-        pass
+        self.generator.source_file.includes.add(Include("os/alarm.h"))
+        alarms = AlarmTemplate(self)
+        self.generator.source_file.declarations.append(alarms.expand())
+
 
     def generate_hooks(self):
         hooks = ["PreIdleHook"]
@@ -139,5 +166,33 @@ class SimpleSystem(BaseRules):
             if user_defined in self.system_graph.functions:
                 self.call_function(hook_function, user_defined, "void", [])
 
+
+
+
+class AlarmTemplate(CodeTemplate):
+    def __init__(self, rules):
+        CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
+        self.rules = rules
+        self.system_graph = self.generator.system_graph
+        # Reference to the objects object of our rule system
+        self.objects = self.rules.objects
+
+        # Link the foreach_subtask method from the rules
+        self.foreach_subtask = self.rules.foreach_subtask
+
+    def increase_and_check_counters(self, snippet, args):
+        ret = []
+        for counter in self.system_graph.system.getHardwareCounters():
+            ret += self.expand_snippet("increase_counter",
+                                       name = self.objects["counter"][counter.name].name)
+        return ret
+
+    def trigger_alarms(self, snippet, args):
+        ret = []
+        for alarm in self.system_graph.system.getAlarms():
+            ret += self.expand_snippet("alarm_to_task",
+                                       counter = self.objects["counter"][alarm.counter].name,
+                                       alarm = self.objects["alarm"][alarm.name].name)
+        return ret
 
 

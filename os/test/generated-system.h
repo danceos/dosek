@@ -4,6 +4,8 @@
 #include "os/scheduler/tasklist.h"
 #include "os/scheduler/scheduler.h"
 #include "os/alarm.h"
+#include "os/counter.h"
+
 
 
 
@@ -341,30 +343,7 @@ forceinline void Schedule_impl() {
 }; // namespace os
 
 namespace os {
-
-class Alarm;
-extern Alarm alarm0;
-
-class Alarm : public AlarmStatic {
-	/** \brief task to activate */
-	const Task* const task_;
-public:
-	constexpr Alarm(Counter& counter) : AlarmStatic(counter), task_(0) {}
-	constexpr Alarm(Counter& counter, const Task& task) : AlarmStatic(counter), task_(&task) {}
-
-
-	static forceinline void checkCounter(Counter& counter) {
-		// TODO: call all generated alarms
-		if (alarm0.checkTrigger(&counter)) {
-			if(alarm0.task_) {
-				debug << "Alarm trigger" << endl;
-
-				os::scheduler::scheduler.ActivateTask_impl(*alarm0.task_);
-			}
-		}
-	}
-};
-
+	extern Alarm alarm0;
 }; // namespace os
 
 

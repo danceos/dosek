@@ -68,6 +68,13 @@ class SystemGraph(GraphObject):
             subtasks.extend(x.subtasks)
         return subtasks
 
+    def get_subtask(self, name):
+        for x in self.tasks:
+            for subtask in x.subtasks:
+                if subtask.name == name:
+                    return subtask
+
+
     def find_syscall(self, function, type, arguments, multiple = False):
         abbs = []
         for abb in function.abbs:

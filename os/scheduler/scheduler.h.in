@@ -42,12 +42,21 @@ struct Scheduler  {
         SetReady_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
     }
 
+    forceinline void SetRunning_impl(const Task t) {
+		auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
+		auto prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
+		SetRunning_impl(id, prio);
+	}
+
+    template<typename Id, typename Prio>
+    forceinline void SetRunning_impl(const Id id, const Prio prio) {
+		current_task = id;
+		current_prio = prio;
+    }
 
     forceinline void ActivateTask_impl(const Task t) {
         ActivateTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
     }
-
-
 
     forceinline void ChainTask_impl(const Task t) {
         ChainTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
@@ -87,7 +96,7 @@ struct Scheduler  {
     }
 };
 
-extern Scheduler scheduler;
+extern Scheduler scheduler_;
 
 // TODO: more meaningful names
 // currently the "normal" name is a syscall wrapper for
@@ -95,7 +104,7 @@ extern Scheduler scheduler;
 
 template<typename T>
 noinline void ActivateTaskC_impl(const T id) {
-    scheduler.ActivateTask_impl(id);
+    scheduler_.ActivateTask_impl(id);
 }
 
 /**
@@ -109,7 +118,7 @@ forceinline void ActivateTask_impl(const Task& t) {
 
 template<typename T>
 noinline void ChainTaskC_impl(const T id) {
-    scheduler.ChainTask_impl(id);
+    scheduler_.ChainTask_impl(id);
 }
 
 /**
@@ -125,7 +134,7 @@ forceinline void ChainTask_impl(const Task& t) {
 
 forceinline void SetReady_impl(const Task& t) {
     auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
-    scheduler.SetReady_impl(id);
+    scheduler_.SetReady_impl(id);
 }
 
 
@@ -144,10 +153,10 @@ forceinline void Schedule_impl() {
 namespace os {
 namespace scheduler {
 
-Scheduler scheduler;
+Scheduler scheduler_;
 
 noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
-    scheduler.Reschedule();
+    scheduler_.Reschedule();
 }
 
 }; // scheduler

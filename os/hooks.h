@@ -15,10 +15,10 @@
  * \brief Called directly before the idle loop starts.
  */
 EXTERN_C_DECL void __OS_HOOK_PreIdleHook(void);
-EXTERN_C_DECL called_once void __OS_HOOK_DEFINED_PreIdleHook(void);
+EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PreIdleHook(void);
 
 #define PreIdleHook() \
-	void called_once __OS_HOOK_DEFINED_PreIdleHook(void)
+	void __OS_HOOK_DEFINED_PreIdleHook(void)
 
 #define CALL_HOOK(NAME, ...) __OS_HOOK_ ## NAME (__VA_ARGS__)
 

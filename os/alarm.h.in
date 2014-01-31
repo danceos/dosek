@@ -1,33 +1,27 @@
+#include "counter.h"
+#include "alarm.h"
+
 namespace os {
 
-class Alarm;
-
-	// FIXME: extern Alarm alarm0;
-
-class Alarm : public AlarmStatic {
-	/** \brief task to activate */
-	const Task* const task_;
-public:
-	constexpr Alarm(Counter& counter) : AlarmStatic(counter), task_(0) {}
-	constexpr Alarm(Counter& counter, const Task& task) : AlarmStatic(counter), task_(&task) {}
-
-
-	static forceinline void checkCounter(Counter& counter) {
-		// TODO: call all generated alarms
-		// if (alarm0.checkTrigger(&counter)) {
-		// 	if(alarm0.task_) {
-        //         #if DEBUG
-		// 		serial << "Alarm trigger" << endl;
-        //         #endif
-
-		// 		os::scheduler::scheduler.ActivateTask_impl(*alarm0.task_);
-		// 	}
-		// }
-	}
-};
-
-void Alarm_checkCounter(Counter &counter) {
-	Alarm::checkCounter(counter);
+void inlinehint Counter::tick() {
+    {{{snippet:increase_counter:name|if(%(name)s.value == %(name)s.maxallowedvalue) {
+    %(name)s.value = 0;
+} else {
+    %(name)s.value++;
 }
+Alarm::checkCounter(%(name)s);
+}}}
+    {{{generate:increase_and_check_counters}}}
+}
+
+void inlinehint Alarm::checkCounter(const Counter &counter) {
+    {{{snippet:alarm_to_task:counter,alarm|if ((&counter == &%(counter)s) && %(alarm)s.checkTrigger(&%(counter)s)) {
+    debug << "Alarm trigger" << endl;
+    os::scheduler::scheduler_.ActivateTask_impl(*%(alarm)s.task_);
+}
+}}}
+    {{{generate:trigger_alarms}}}
+}
+
 
 } // os

@@ -1,4 +1,4 @@
-from generator.rules.simple import SimpleSystem
+from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, Function
 
 class EncodedSystem(SimpleSystem):
@@ -45,17 +45,27 @@ class EncodedSystem(SimpleSystem):
 
             if subtask.autostart:
                 self.call_function(block,
-                                   "scheduler.SetReady_impl",
+                                   "scheduler_.SetReady_impl",
                                    "void", [self.objects[subtask]["task_descriptor"].name])
 
 
             if subtask.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
+        # If we have a subtask with highest priority, just dispatch
+        # there, after setting the correct running task
         if highestTask:
-            self.call_function(block, "ActivateTaskC_impl", "void",
-                               [self.enc_id(highestTask)])
+            self.call_function(block, "scheduler_.SetRunning_impl", "void",
+                               [self.objects[highestTask]["task_descriptor"].name])
+            self.call_function(block, "Dispatcher::Dispatch", "void",
+                               [self.objects[highestTask]["task_descriptor"].name])
         else:
+            self.call_function(block, "scheduler_.SetRunning_impl", "void",
+                               ["os::scheduler::TaskList::idle_id",
+                                "os::scheduler::TaskList::idle_prio"])
+            self.call_function(block, "Dispatcher::idle", "void",
+                               [])
+
             #FIXME: Dispatch to the idle loop
             self.call_function(block, "assert", "void", ["0"])
 
@@ -64,18 +74,18 @@ class EncodedSystem(SimpleSystem):
 
 
     def TerminateTask(self, block, abb):
-        self.call_function(block, "scheduler.TerminateTask_impl", "void",
+        self.call_function(block, "scheduler_.TerminateTask_impl", "void",
                            [self.objects[abb.function.subtask]['task_descriptor'].name])
 
     def ActivateTask(self, block, abb):
         self.call_function(block,
-                           "scheduler.ActivateTask_impl",
+                           "scheduler_.ActivateTask_impl",
                            "void",
                            [self.enc_id(abb.arguments[0])])
 
     def ChainTask(self, block, abb):
         self.call_function(block,
-                           "scheduler.ChainTask_impl",
+                           "scheduler_.ChainTask_impl",
                            "void",
                            [self.enc_id(abb.arguments[0])])
 
@@ -244,16 +254,4 @@ class SchedulerTemplate(CodeTemplate):
                                        )
 
         return self.foreach_subtask(do)
-
-
-class AlarmTemplate(CodeTemplate):
-    def __init__(self, rules):
-        CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
-        self.rules = rules
-        self.system_graph = self.generator.system_graph
-        # Reference to the objects object of our rule system
-        self.objects = self.rules.objects
-
-        # Link the foreach_subtask method from the rules
-        self.foreach_subtask = self.rules.foreach_subtask
 

@@ -10,18 +10,29 @@ using namespace os::scheduler;
 
 namespace os {
 
-class AlarmStatic {
+class Counter;
+
+class Alarm {
 	typedef uint32_t Ticks;
 
-	Counter& configuration_;
+	const Counter& configuration_;
 
 	bool armed_;
 	Ticks absoluteTime_;
 	Ticks cycleTime_;
 
-
 public:
-	constexpr AlarmStatic(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0) {}
+	/** \brief task to activate */
+	const Task* const task_;
+
+	constexpr Alarm(Counter& counter) : configuration_(counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
+	constexpr Alarm(Counter& counter, const Task& task) : configuration_(counter), armed_(false),
+														  absoluteTime_(0), cycleTime_(0), task_(&task) {}
+	constexpr Alarm(Counter& counter, const Task& task, bool armed, 
+					Ticks absoluteTime, Ticks cycleTime) : 
+		configuration_(counter), armed_(armed),
+		absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
+
 
 	void setArmed (bool armed) {
 		armed_ = armed;
@@ -78,6 +89,8 @@ public:
 		}
 		return false;
 	}
+
+	static void checkCounter(const Counter& counter);
 };
 
 } // namespace os

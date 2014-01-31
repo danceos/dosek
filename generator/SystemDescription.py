@@ -87,7 +87,8 @@ class SystemDescription:
             if task.name == name:
                 return task
 
-    Alarm = namedtuple("Alarm", ["name", "task", "event"])
+    Alarm = namedtuple("Alarm", ["name", "counter", "task", "event",
+                                 "armed", "cycletime", "reltime"])
 
     def getAlarms(self):
         alarms = []
@@ -105,15 +106,43 @@ class SystemDescription:
                     tasks.append(setevent.TASK)
                     events.append(setevent.EVENT)
 
+            armed = False
+            cycletime = 0
+            reltime = 0
+            if hasattr(alarm, "ARMED"):
+                armed = (str(alarm.ARMED) == "TRUE")
+            if hasattr(alarm, "CYCLETIME"):
+                cycletime = int(str(alarm.CYCLETIME))
+            if hasattr(alarm, "RELTIME"):
+                reltime = int(str(alarm.RELTIME))
+
             # OSEK Spec 9.2 Only one task or one event is
             # activated
             assert len(tasks) == 1 or (len(tasks == 1 and len(events)) == 1)
             if len(events) == 0:
                 events = [None]
-            alarms.append(self.Alarm(name = name,
+            alarms.append(self.Alarm(name = str(name),
+                                     counter = str(alarm.COUNTER),
                                      task = tasks[0],
-                                     event = events[0]))
+                                     event = events[0],
+                                     armed = armed,
+                                     cycletime = cycletime,
+                                     reltime = reltime))
         return alarms
+
+    Counter = namedtuple("Counter", ["name", "maxallowedvalue", "ticksperbase", "mincycle"])
+
+    def getHardwareCounters(self):
+        counters = []
+        if not hasattr(self.osek_dom, "HARDWARECOUNTER"):
+            return []
+        for counter in self.osek_dom.HARDWARECOUNTER:
+            counters.append(self.Counter(name = counter.name,
+                                         maxallowedvalue = counter.MAXALLOWEDVALUE,
+                                         ticksperbase = counter.TICKSPERBASE,
+                                         mincycle = counter.MINCYCLE))
+        return counters
+
 
     ISR = namedtuple("ISR", ["name", "category", "priority"])
 
