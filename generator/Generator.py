@@ -112,11 +112,12 @@ class Generator:
             os_main.add( FunctionCall("StartOS", ["0"]) )
             self.source_file.function_manager.add(os_main)
 
+        # Generate a StartOS function and delegate it to the OS ruleset
         StartOS = Function("StartOS", "void", ["int"], extern_c = True)
         self.os_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
 
-        # find all
+        # find all syscalls
         for syscall in self.system_graph.get_syscalls():
             if syscall.type in ("Idle", "StartOS"):
                 continue
@@ -125,7 +126,8 @@ class Generator:
             argtypes = self.OSEK_CALLS[syscall.type][1:]
             abb      = syscall
 
-            # Generate all atoms into a function block
+            # Add function definition for the function that is
+            # _called_ by the application (with __ABB suffix)
             function = Function(generated_function,
                                 rettype,
                                 argtypes,
@@ -139,11 +141,15 @@ class Generator:
 
             self.source_file.function_manager.add(function)
 
+        # Generate the hooks into the operating system
+        self.os_rules.generate_hooks()
+
         # Write source files to file
         for name in self.source_files:
             with self.open_file(name) as fd:
                 contents = self.source_files[name].expand(self)
                 fd.write(contents)
+
 
         self.arch_rules.generate_linkerscript()
 

@@ -7,6 +7,17 @@
  * @brief Inline macros
  */
 
+#ifdef __cplusplus__
+#define __cpluplus
+#endif
+
+#ifdef __cplusplus
+#define EXTERN_C_DECL extern "C"
+#else
+#define EXTERN_C_DECL
+#endif
+
+
 #define noinline __attribute__ ((noinline))
 #define forceinline __inline__ __attribute__((always_inline))
 

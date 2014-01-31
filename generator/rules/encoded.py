@@ -72,20 +72,9 @@ class EncodedSystem(SimpleSystem):
                            "void",
                            [self.enc_id(abb.arguments[0])])
 
-    def ShutdownOS(self, block):
-        block.unused_parameter(0)
-        self.call_function(block,
-                           "Machine::shutdown",
-                           "void", [])
-
-
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""
         self.system_enter_hook(function)
-
-        if systemcall.function == "ShutdownOS":
-            self.ShutdownOS(function)
-            return
 
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall

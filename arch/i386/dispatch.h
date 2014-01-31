@@ -9,6 +9,7 @@
 
 #include "os/util/inline.h"
 #include "os/scheduler/task.h"
+#include "os/hooks.h"
 #include "idt.h"
 #include "lapic.h"
 #include "machine.h"
@@ -91,9 +92,7 @@ public:
 		LAPIC::set_task_prio(0);
 
 		/* Call the idle loop callback */
-		/* Call the idle loop callback */
-		if (__OS_PreIdleHook != NULL)
-			__OS_PreIdleHook();
+		CALL_HOOK(PreIdleHook);
 
 		/* enable interrupts and go to sleep */
 		while (true) Machine::goto_sleep();
@@ -110,8 +109,7 @@ public:
 		Machine::enable_interrupts();
 
 		/* Call the idle loop callback */
-		if (__OS_PreIdleHook != NULL)
-			__OS_PreIdleHook();
+		CALL_HOOK(PreIdleHook);
 
 		// do nothing forever
 		while(true) Machine::nop();

@@ -2,6 +2,9 @@
 #define _COREDOS_OS_OS_H_
 
 #include "os/util/inline.h"
+#include "os/helper.h"
+#include "os/hooks.h"
+
 
 /**
  *  @defgroup os Operating System Layer
@@ -41,15 +44,6 @@ enum TaskStateType {
 };
 
 
-#ifdef __cplusplus__
-#define __cpluplus
-#endif
-
-#ifdef __cplusplus
-#define EXTERN_C_DECL extern "C"
-#else
-#define EXTERN_C_DECL
-#endif
 
 EXTERN_C_DECL void os_main(void);
 
@@ -205,9 +199,6 @@ typedef struct MESSAGEStruct* MessageIdentifier;
 #define ShutdownOS(STATUS)			\
   OSEKOS_ShutdownOS(STATUS)
 
-#define PreIdleHook() \
-  void __OS_PreIdleHook(void)
-
 /******************************************************************************
  *                                                                            *
  * API Definitions                                                            *
@@ -353,15 +344,9 @@ extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
 
 extern void OSEKOS_ShutdownOS(StatusType status);
 
-/**
- * \brief Called directly before the idle loop starts.
- */
-extern void __attribute__((weak_import)) __OS_PreIdleHook(void);
-
 /** \brief write a character to the user (kout object) */
 extern void putchar(char c);
 extern void putstring(char *c);
-
 
 
 #ifdef __cplusplus

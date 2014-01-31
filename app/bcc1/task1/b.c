@@ -58,7 +58,7 @@ TASK(Handler13) {
 
 PreIdleHook() {
 	TraceAssert("cdf32");
-	ShutdownOS(E_OK);
+	ShutdownMachine();
 }
 
 

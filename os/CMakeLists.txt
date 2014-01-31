@@ -1,5 +1,6 @@
 set(SRCS
 	counter.cc
+    helper.cc
 )
 
 # TODO: add message to ignore non-suppressable warning

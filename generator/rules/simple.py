@@ -129,4 +129,15 @@ class SimpleSystem(BaseRules):
     def generate_system_code(self):
         pass
 
+    def generate_hooks(self):
+        hooks = ["PreIdleHook"]
+        for hook in hooks:
+            hook_function = Function("__OS_HOOK_" + hook, "void", [])
+            self.generator.source_file.function_manager.add(hook_function)
+
+            user_defined = "__OS_HOOK_DEFINED_" + hook
+            if user_defined in self.system_graph.functions:
+                self.call_function(hook_function, user_defined, "void", [])
+
+
 

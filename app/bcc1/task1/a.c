@@ -40,5 +40,5 @@ TASK(Handler13) {
 
 PreIdleHook() {
 	TraceAssert("ab3c2");
-	ShutdownOS(E_OK);
+	ShutdownMachine();
 }
