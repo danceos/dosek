@@ -57,6 +57,9 @@ public:
 
 	const int stacksize;
 
+	/* Is the task preemptable */
+	const bool preemptable;
+
 	inline void reset_sp(void) const {
 		sp = (uint8_t*)stack + stacksize - 16;
 	}
@@ -65,8 +68,8 @@ public:
 		return sp != (uint8_t*)stack + stacksize - 16;
 	}
 
-	constexpr Task(id_t _id, prio_t _prio, fptr_t f, void *s, void* &sptr, int stacksize)
-	 	: id(_id), prio(_prio), fun(f), stack(s), sp(sptr), stacksize(stacksize) {}
+	constexpr Task(id_t _id, prio_t _prio, fptr_t f, void *s, void* &sptr, int stacksize, bool _preemptable)
+	 	: id(_id), prio(_prio), fun(f), stack(s), sp(sptr), stacksize(stacksize), preemptable(_preemptable) {}
 };
 
 }; // namespace scheduler

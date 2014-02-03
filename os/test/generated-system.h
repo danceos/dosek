@@ -35,10 +35,10 @@ namespace os {
 namespace tasks {
 
 // the tasks
-constexpr Task t1(1, 2, OSEKOS_TASK_Task1, &Task1_stack, stackptr_Task1, 4096);
-constexpr Task t2(2, 3, OSEKOS_TASK_Task2, &Task2_stack, stackptr_Task2, 4096);
-constexpr Task t3(3, 1, OSEKOS_TASK_Task3, &Task3_stack, stackptr_Task3, 4096);
-constexpr Task t4(4, 4, OSEKOS_TASK_Task4, &Task4_stack, stackptr_Task4, 4096);
+constexpr Task t1(1, 2, OSEKOS_TASK_Task1, &Task1_stack, stackptr_Task1, 4096, true);
+constexpr Task t2(2, 3, OSEKOS_TASK_Task2, &Task2_stack, stackptr_Task2, 4096, true);
+constexpr Task t3(3, 1, OSEKOS_TASK_Task3, &Task3_stack, stackptr_Task3, 4096, true);
+constexpr Task t4(4, 4, OSEKOS_TASK_Task4, &Task4_stack, stackptr_Task4, 4096, true);
 
 }; // namespace tasks
 }; // namespace os

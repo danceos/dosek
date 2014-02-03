@@ -52,24 +52,9 @@ class EncodedSystem(SimpleSystem):
             if subtask.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
-        # If we have a subtask with highest priority, just dispatch
-        # there, after setting the correct running task
-        if highestTask:
-            self.call_function(block, "scheduler_.SetRunning_impl", "void",
-                               [self.objects[highestTask]["task_descriptor"].name])
-            self.call_function(block, "Dispatcher::Dispatch", "void",
-                               [self.objects[highestTask]["task_descriptor"].name])
-        else:
-            self.call_function(block, "scheduler_.SetRunning_impl", "void",
-                               ["os::scheduler::TaskList::idle_id",
-                                "os::scheduler::TaskList::idle_prio"])
-            self.call_function(block, "Dispatcher::idle", "void",
-                               [])
-
-            #FIXME: Dispatch to the idle loop
-            self.call_function(block, "assert", "void", ["0"])
-
         self.call_function(block, "Machine::enable_interrupts", "void", [])
+        # Call a full reschedule
+        self.call_function(block, "syscall", "void", ["os::scheduler::ScheduleC_impl", "0"])
         self.call_function(block, "Machine::unreachable", "void", [])
 
 

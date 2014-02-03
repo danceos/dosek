@@ -98,13 +98,14 @@ class SimpleSystem(BaseRules):
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
-            initializer = "(%d, %d, %s, &%s, %s, %s)" % (
+            initializer = "(%d, %d, %s, &%s, %s, %s, %s)" % (
                 task_id,
                 subtask.static_priority,
                 self.objects[subtask]["entry_function"].name,
                 self.objects[subtask]["stack"].name,
                 self.objects[subtask]["stackptr"].name,
-                self.objects[subtask]["stacksize"]
+                self.objects[subtask]["stacksize"],
+                str(subtask.preemptable).lower()
             )
 
 

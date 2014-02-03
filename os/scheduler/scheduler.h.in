@@ -8,17 +8,27 @@ struct Scheduler  {
 
     Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
     Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
+    Encoded_Static<A0, {{{generate:arbitrary_new_signature}}}> scheduler_locked;
 
-    Scheduler() {}
+    Scheduler() {
+        unlock_scheduler();
+    }
 
     forceinline void Reschedule(void) {
         // TODO: control flow check
 
         // set current (=next) task from task list
-        tlist.head(current_task, current_prio);
+        assert(scheduler_locked.check());
+        // Check is scheduler is locked and reschedule, then
+        if (scheduler_locked == EC({{{generate:arbitrary_new_signature}}}, 0)) {
+            tlist.head(current_task, current_prio);
+        }
 
         // dispatch or enter idle
 {{{snippet:reschedule_dispatch_task:task|if(current_task == %(task)s.enc_id<1>()) {
+    if (%(task)s.preemptable == false) {
+        lock_scheduler();
+    }
     Dispatcher::Dispatch(%(task)s);
 } else }}}
         {{{generate:reschedule_foreach_task}}}if(current_task == TaskList::idle_id) {
@@ -34,6 +44,7 @@ struct Scheduler  {
             Reschedule();
         } else {
             // not in syscall (probably in ISR): request reschedule AST
+            // Calls also Reschedule()
             request_reschedule_ast();
         }
     }
@@ -43,15 +54,15 @@ struct Scheduler  {
     }
 
     forceinline void SetRunning_impl(const Task t) {
-		auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
-		auto prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
-		SetRunning_impl(id, prio);
-	}
+        auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
+        auto prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
+        SetRunning_impl(id, prio);
+    }
 
     template<typename Id, typename Prio>
     forceinline void SetRunning_impl(const Id id, const Prio prio) {
-		current_task = id;
-		current_prio = prio;
+        current_task = id;
+        current_prio = prio;
     }
 
     forceinline void ActivateTask_impl(const Task t) {
@@ -59,19 +70,26 @@ struct Scheduler  {
     }
 
     forceinline void ChainTask_impl(const Task from, const Task to) {
-		auto from_id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
-		auto to_id = to.enc_id<{{{generate:arbitrary_new_signature}}}>();
-		assert(from_id == current_task);
-		from.reset_sp();
+        auto from_id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
+        auto to_id = to.enc_id<{{{generate:arbitrary_new_signature}}}>();
+        assert(from_id == current_task);
+        from.reset_sp();
         tlist.remove(from_id);
+        /* If the current task had a scheduler lock, we unlock
+           it. Otherwise unlocking is not harmful */
+        unlock_scheduler();
+
         ActivateTask_impl(to_id);
     }
 
     forceinline void TerminateTask_impl(const Task from) {
-		auto id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
-		assert(id == current_task);
-		from.reset_sp();
+        auto id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
+        assert(id == current_task);
+        from.reset_sp();
         tlist.remove(id);
+        /* If the current task had a scheduler lock, we unlock
+           it. Otherwise unlocking is not harmful */
+        unlock_scheduler();
         Schedule_impl();
     }
 
@@ -92,6 +110,14 @@ struct Scheduler  {
     forceinline void ActivateTask_impl(const T id) {
         SetReady_impl(id);
         Schedule_impl();
+    }
+
+    forceinline void lock_scheduler() {
+        scheduler_locked = EC({{{generate:arbitrary_new_signature}}}, 1);
+    }
+
+    forceinline void unlock_scheduler() {
+        scheduler_locked = EC({{{generate:arbitrary_new_signature}}}, 0);
     }
 };
 

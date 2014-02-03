@@ -11,7 +11,6 @@
 #include "os.h"
 #include "test/test.h"
 #include "../trace.h"
-#include "syscall.h"
 
 
 DeclareTask(Handler11);
@@ -23,19 +22,13 @@ void test(void) {
 	StartOS(0);
 }
 
-int a;
 TASK(Handler11) {
 	Trace('a');
+	ActivateTask(Handler13);
+	Trace('b');
 	ActivateTask(Handler12);
-	if (a < 100) {
-		Trace('b');
-		ActivateTask(Handler13);
-		Trace('c');
-		TerminateTask();
-	} else {
-		Trace('d');
-		TerminateTask();
-	}
+	Trace('c');
+	TerminateTask();
 }
 
 TASK(Handler12) {
@@ -49,8 +42,8 @@ TASK(Handler13) {
 }
 
 PreIdleHook() {
+	/* The testcase has finished, check the output */
 	test_start_check();
 	TraceAssert((char *)"abc32");
 	ShutdownMachine();
 }
-
