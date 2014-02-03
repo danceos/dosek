@@ -38,3 +38,11 @@ COREDOS_BINARY(
   e.cc ../trace.cc
 )
 
+
+COREDOS_BINARY(
+  NAME bcc1_alarm1f
+  SYSTEM_XML system.xml
+  # VERIFY verify_f.py
+  TEST_ISO
+  f.cc ../trace.cc
+)

@@ -87,7 +87,8 @@ class EncodedSystem(SimpleSystem):
         self.call_function(block,
                            "scheduler_.ChainTask_impl",
                            "void",
-                           [self.enc_id(abb.arguments[0])])
+                           [self.objects[abb.function.subtask]['task_descriptor'].name,
+                            self.objects[abb.arguments[0]]['task_descriptor'].name])
 
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""

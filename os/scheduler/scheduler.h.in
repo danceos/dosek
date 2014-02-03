@@ -58,14 +58,20 @@ struct Scheduler  {
         ActivateTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
     }
 
-    forceinline void ChainTask_impl(const Task t) {
-        ChainTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
+    forceinline void ChainTask_impl(const Task from, const Task to) {
+		auto from_id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
+		auto to_id = to.enc_id<{{{generate:arbitrary_new_signature}}}>();
+		assert(from_id == current_task);
+		from.reset_sp();
+        tlist.remove(from_id);
+        ActivateTask_impl(to_id);
     }
 
     forceinline void TerminateTask_impl(const Task from) {
-		assert(from.enc_id<{{{generate:arbitrary_new_signature}}}>() == current_task);
+		auto id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
+		assert(id == current_task);
 		from.reset_sp();
-        tlist.remove(from.enc_id<{{{generate:arbitrary_new_signature}}}>());
+        tlist.remove(id);
         Schedule_impl();
     }
 
@@ -73,7 +79,6 @@ struct Scheduler  {
     template<typename T>
     forceinline void SetReady_impl(const T id) {
 {{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
-    %(task)s.reset_sp(); //FIXME
     value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(),  %(task)s.enc_prio<%(prio_sig)s>());
     assert(signature == (%(task_prio_sig)s - %(prio_sig)s));
 } else }}}
@@ -81,12 +86,6 @@ struct Scheduler  {
         {{{generate:activate_task_foreach_task}}}{
             assert(false);
         }
-    }
-
-    template<typename T>
-    forceinline void ChainTask_impl(const T id) {
-        tlist.remove(current_task);
-        ActivateTask_impl(id);
     }
 
     template<typename T>
@@ -114,22 +113,6 @@ forceinline void ActivateTask_impl(const Task& t) {
     auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
 
     syscall(ActivateTaskC_impl<decltype(id)>, id);
-}
-
-template<typename T>
-noinline void ChainTaskC_impl(const T id) {
-    scheduler_.ChainTask_impl(id);
-}
-
-/**
- * @satisfies{13,2,3,3}
- */
-forceinline void ChainTask_impl(const Task& t) {
-    auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
-
-    syscall(ChainTaskC_impl<decltype(id)>, id);
-
-    Machine::unreachable();
 }
 
 forceinline void SetReady_impl(const Task& t) {
