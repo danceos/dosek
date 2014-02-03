@@ -1,5 +1,6 @@
 from generator.rules.base import BaseRules
-from generator.elements import CodeTemplate
+from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
+    Include, FunctionDeclaration, Comment, Function
 
 class X86Arch(BaseRules):
     def __init__(self):
@@ -10,6 +11,50 @@ class X86Arch(BaseRules):
         with self.generator.open_file("linker.ld") as fd:
             content = linker_script.expand()
             fd.write(content)
+
+    def generate_isr(self, isr):
+        self.generator.source_file.includes.add(Include("machine.h"))
+        isr_desc = self.generator.system_description.getISR(isr.name)
+        handler = FunctionDefinitionBlock('ISR', [str(isr_desc.device)])
+        self.generator.source_file.function_manager.add(handler)
+
+        # Forward declaration for the user defined function
+        forward = FunctionDeclaration(isr.function_name, "void", [], extern_c=True)
+        self.generator.source_file.function_manager.add(forward)
+
+        # Call the user defined function
+        self.call_function(handler, isr.function_name, "void", [])
+
+        # Call the end of interrupt function
+        self.call_function(handler, "LAPIC::send_eoi", "void", [])
+
+    def syscall_block(self, function, subtask, argument):
+        """When a systemcall is needed to execute code on kernel level, a new
+           function is generated, and the new-functions block is
+           returned. otherwise the argument is returned. This is
+           useful for x86-bare, since an ActivateTask can be called
+           directly from the ISR2, but must be invoked via an syscall
+           form a TASK.
+
+        """
+
+        # System function can be executed directly in an isr
+        if subtask.is_isr:
+            function.add(Comment("Called from ISR, no syscall required!"))
+            return function
+
+        # Generate a function, that will be executed in system mode,
+        # but is specific for this systemcall
+        syscall = Function("__OS_syscall_" + function.function_name,
+                           "void", ["int"], extern_c = True)
+        syscall.unused_parameter(0)
+        self.generator.source_file.function_manager.add(syscall)
+        # The syscall function is called from the function that will
+        # be inlined into the application
+        self.call_function(function, "syscall", "void", [syscall.function_name, str(argument)])
+
+        return syscall
+
 
 
 class LinkerScriptTemplate(CodeTemplate):

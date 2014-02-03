@@ -8,17 +8,6 @@ class SimpleSystem(BaseRules):
     def __init__(self):
         BaseRules.__init__(self)
 
-    def call_function(self, block, function, rettype, arguments):
-        """Generates a call to a function and stores the result in an
-           variable, if it isn't void"""
-        ret_var = VariableDefinition.new(self.generator, rettype)
-        if ret_var:
-            block.add(ret_var)
-            name = ret_var.name
-        else:
-            name = None
-        call    = block.add( FunctionCall(function, arguments, name))
-        return ret_var
 
     def return_statement(self, block, expression):
         block.add(Statement("return %s" % expression))

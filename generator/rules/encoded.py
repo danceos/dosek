@@ -94,15 +94,8 @@ class EncodedSystem(SimpleSystem):
         """Generate systemcall into function"""
         self.system_enter_hook(function)
 
-        # Generate a function, that will be executed in system mode,
-        # but is specific for this systemcall
-        syscall = Function("__OS_syscall_" + function.function_name,
-                           "void", ["int"], extern_c = True)
-        syscall.unused_parameter(0)
-        self.generator.source_file.function_manager.add(syscall)
-        # The syscall function is called from the function that will
-        # be inlined into the application
-        self.call_function(function, "syscall", "void", [syscall.function_name, str(systemcall.abb.abb_id)])
+        syscall = self.generator.arch_rules.syscall_block(function, systemcall.abb.function.subtask,
+                                                          systemcall.abb.abb_id)
 
         if systemcall.function == "TerminateTask":
             self.TerminateTask(syscall, systemcall.abb)

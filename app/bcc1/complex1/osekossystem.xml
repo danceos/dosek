@@ -44,6 +44,7 @@
     <name>ISR1</name>
     <CATEGORY>2</CATEGORY>
     <PRIORITY>10</PRIORITY>
+    <DEVICE>37</DEVICE>
   </ISR>
 
   <ALARM>

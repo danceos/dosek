@@ -144,6 +144,14 @@ class Generator:
         # Generate the hooks into the operating system
         self.os_rules.generate_hooks()
 
+        # Generate systemcalls
+        for isr in self.system_graph.get_subtasks():
+            if not isr.is_isr:
+                continue
+
+            self.arch_rules.generate_isr(isr)
+
+
         # Write source files to file
         for name in self.source_files:
             with self.open_file(name) as fd:

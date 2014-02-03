@@ -3,8 +3,8 @@
 
 #include "output.h"
 
-static char trace_table[256];
-static unsigned char trace_table_idx = 0;
+char trace_table[256];
+unsigned char trace_table_idx = 0;
 
 void Trace(char chr) {
 	if (trace_table_idx < 0xff)
@@ -12,6 +12,7 @@ void Trace(char chr) {
 }
 
 void TraceDump(void) {
+	kout << "traced: ";
 	for (unsigned char i = 0; i < trace_table_idx; i++) {
 		kout << trace_table[i];
 	}
@@ -34,7 +35,7 @@ void TraceAssert(char *expected) {
 		}
 	}
 
-	kout << expected << endl;
+	kout << "expect: " << expected << endl;
 	TraceDump();
 	kout << endl;
 

@@ -66,6 +66,28 @@ class FunctionDeclaration(Function):
     def source_element_definitions(self):
         return []
 
+
+class FunctionDefinitionBlock(Function):
+    """ Can be used to declare bare definition blocks, like
+
+        ISR(42) {
+        }
+    """
+
+    def __init__(self, name, definition_args):
+        Function.__init__(self, name, rettype = None, argstype = None, extern_c = None, attributes = None)
+        self.definition_args = definition_args
+
+    def source_element_declarations(self):
+        return []
+
+    def source_element_definitions(self):
+        guard = "%s(%s) " %(self.name, ", ".join(self.definition_args))
+        block = Block(guard)
+        for stmt in self.statements:
+            block.add(stmt)
+        return [block, "\n"]
+
 class  FunctionManager:
     def __init__(self):
         self.functions = []

@@ -144,7 +144,7 @@ class SystemDescription:
         return counters
 
 
-    ISR = namedtuple("ISR", ["name", "category", "priority"])
+    ISR = namedtuple("ISR", ["name", "category", "priority", "device"])
 
     def getISR(self, name):
         if not hasattr(self.osek_dom, "ISR"):
@@ -152,8 +152,10 @@ class SystemDescription:
         for isr in self.osek_dom.ISR:
             if isr.name == name:
                 return self.ISR(name = isr.name,
-                           category = int(isr.CATEGORY),
-                           priority = int(isr.PRIORITY))
+                                category = int(isr.CATEGORY),
+                                priority = int(isr.PRIORITY),
+                                device = int(isr.DEVICE),
+                            )
 
 
 ################################################################
