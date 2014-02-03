@@ -50,6 +50,10 @@
   <ALARM>
     <name>A1</name>
     <COUNTER>C1</COUNTER>
+    <ARMED>TRUE</ARMED>
+    <CYCLETIME>1</CYCLETIME>
+    <RELTIME>10</RELTIME>
+
     <ACTIVATETASK>
       <TASK>H2</TASK>
     </ACTIVATETASK>
