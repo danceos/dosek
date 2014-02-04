@@ -48,8 +48,8 @@ PreIdleHook() {
 	cycle_count++;
 
 	if (cycle_count > 3) {
-		test_start_check();
-		test_trace_assert((char *)".:ab3.:ab3.:ab3");
+		test_trace_assert(".:ab3.:ab3.:ab3");
+		test_finish();
 		ShutdownMachine();
 	} else {
 		Machine::trigger_interrupt_from_user(37);

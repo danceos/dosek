@@ -24,8 +24,9 @@ TASK(H1) {
 
 TASK(H2) {
 	test_trace('2');
-	test_start_check();
-	test_trace_assert((char *)"312");
+
+	test_trace_assert("312");
+	test_finish();
 	ShutdownMachine();
 	TerminateTask();
 }

@@ -45,8 +45,8 @@ TASK(Handler13) {
 }
 
 PreIdleHook() {
-	test_start_check();
-	test_trace_assert((char *)"abc32");
+	test_trace_assert("abc32");
+	test_finish();
 	ShutdownMachine();
 }
 

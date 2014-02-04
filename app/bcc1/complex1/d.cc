@@ -57,8 +57,8 @@ PreIdleHook() {
 	cycle_count++;
 
 	if (cycle_count > 3) {
-		test_start_check();
-		test_trace_assert((char *)"<>.:12<>.:12<>.:12");
+		test_trace_assert("<>.:12<>.:12<>.:12");
+		test_finish();
 		ShutdownMachine();
 	}
 }

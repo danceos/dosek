@@ -60,8 +60,8 @@ TASK(Handler13) {
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
-	test_start_check();
-	test_trace_assert((char *) "cdf32");
+	test_trace_assert("cdf32");
+	test_finish();
 	ShutdownMachine();
 }
 

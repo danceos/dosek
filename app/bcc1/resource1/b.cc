@@ -46,8 +46,8 @@ TASK(H5) {
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
-	test_start_check();
-	test_trace_assert((char *)"52-<>1*");
+	test_trace_assert("52-<>1*");
+	test_finish();
 	ShutdownMachine();
 }
 

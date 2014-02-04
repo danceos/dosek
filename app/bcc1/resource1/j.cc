@@ -63,8 +63,8 @@ TASK(H5) {
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
-	test_start_check();
-	test_trace_assert((char *)"54{<1>3}*|4[(1)3]*");
+	test_trace_assert("54{<1>3}*|4[(1)3]*");
+	test_finish();
 	ShutdownMachine();
 }
 

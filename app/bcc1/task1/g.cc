@@ -49,7 +49,7 @@ TASK(Handler13) {
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
-	test_start_check();
-	test_trace_assert((char *)"C32C32C321b3C321b3C3");
+	test_trace_assert("C32C32C321b3C321b3C3");
+	test_finish();
 	ShutdownMachine();
 }

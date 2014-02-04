@@ -48,8 +48,8 @@ PreIdleHook() {
 	cycle_count++;
 
 	if (cycle_count > 3) {
-		test_start_check();
-		test_trace_assert((char *)"2{}_32{}_32{}_3");
+		test_trace_assert("2{}_32{}_32{}_3");
+		test_finish();
 		ShutdownMachine();
 	}
 }

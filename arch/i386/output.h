@@ -25,11 +25,16 @@ extern Null_Stream debug;
 
 #endif // DEBUG
 
-#else
+#else // FAIL
 
 // FAIL* testing: no output
 extern Null_Stream kout;
 extern Null_Stream debug;
+
+// define dummy colors here as Null_Stream doesn't
+typedef enum class Color {
+	BLACK, BLUE, GREEN, CYAN, RED, MAGENTA, YELLOW, WHITE
+} Color;
 
 #endif // FAIL
 

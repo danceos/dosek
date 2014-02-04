@@ -46,8 +46,8 @@ PreIdleHook() {
 	cycle_count++;
 
 	if (cycle_count > 3) {
-		test_start_check();
-		test_trace_assert((char *)" !321 !321 !321");
+		test_trace_assert(" !321 !321 !321");
+		test_finish();
 		ShutdownMachine();
 	} else {
 		Machine::trigger_interrupt_from_user(37);

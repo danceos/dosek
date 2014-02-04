@@ -36,8 +36,8 @@ PreIdleHook() {
 	cycle_count++;
 
 	if (cycle_count > 5) {
-		test_start_check();
-		test_trace_assert((char *)"1.234:5.:6.:7.:8.:");
+		test_trace_assert("1.234:5.:6.:7.:8.:");
+		test_finish();
 		ShutdownMachine();
 	}
 }

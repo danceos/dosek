@@ -31,8 +31,8 @@ PreIdleHook() {
 	cycle_count++;
 
 	if (cycle_count > 3) {
-		test_start_check();
-		test_trace_assert((char *)"212121");
+		test_trace_assert("212121");
+		test_finish();
 		ShutdownMachine();
 	}
 }

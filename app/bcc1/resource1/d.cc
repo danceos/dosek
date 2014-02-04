@@ -61,8 +61,8 @@ TASK(H5) {
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
-	test_start_check();
-	test_trace_assert((char *)"5<><>1T{}{}{}2X");
+	test_trace_assert("5<><>1T{}{}{}2X");
+	test_finish();
 	ShutdownMachine();
 }
 
