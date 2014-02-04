@@ -66,9 +66,8 @@ find_program(OBJDUMP "objdump")
 # To set compile definitions specify them after DEFINITIONS keyword.
 macro(coredos_executable ELFFILE)
 	# parse DEFINITIONS
-	cmake_parse_arguments(COREDOS_EXECUTABLE "" "" "DEFINITIONS" ${ARGN})
+	cmake_parse_arguments(COREDOS_EXECUTABLE "" "LINKER_SCRIPT" "DEFINITIONS" ${ARGN})
 	set(SOURCES ${COREDOS_EXECUTABLE_UNPARSED_ARGUMENTS})
-	set(DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
 
 	get_filename_component(ELFNAME ${ELFFILE} NAME_WE)
 
@@ -97,12 +96,16 @@ macro(coredos_executable ELFFILE)
 
 	# set definitions
 	if(COREDOS_EXECUTABLE_DEFINITIONS)
-		set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES COMPILE_DEFINITIONS ${DEFINITIONS})
+		set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES COMPILE_DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
 	endif()
 
 	# Set custom linker script/flags
 	# libgcc added here to be used as needed (compiler helper functions)and not included in full
-	set(LINKER_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/${ELFNAME}_linker.ld)
+	if(COREDOS_EXECUTABLE_LINKER_SCRIPT)
+		set(LINKER_SCRIPT ${COREDOS_EXECUTABLE_LINKER_SCRIPT})
+	else()
+		set(LINKER_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/${ELFNAME}_linker.ld)
+	endif()
 	set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES
 		LINK_FLAGS "-lgcc -Wl,-T ${LINKER_SCRIPT} ${ISA_LD_FLAGS} --linker-prefix=${CMAKE_CURRENT_BINARY_DIR}/${ELFFILE}"
 		LINK_DEPENDS ${LINKER_SCRIPT})

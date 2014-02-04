@@ -204,18 +204,11 @@ macro(fail_targets TNAME ELF TEST)
 	add_dependencies(fail-all-${TEST} fail-${BENCHMARK})
 endmacro()
 
-# Helper to define FAIL* test cases
-# Usage: fail_test(<testcasefilename>)
-# (without .cc ending)
-macro(fail_test TEST)
-	# directory for this FAIL* target
+macro(fail_test TEST TESTELF)
+	# directory for FAIL* test
 	set(FAIL_DIR "${PROJECT_BINARY_DIR}/fail-${TEST}")
 	file(MAKE_DIRECTORY ${FAIL_DIR})
 
-	# executable for FAIL*
-	set(TESTELF "fail-${TEST}.elf")
-	coredos_executable("${TESTELF}" EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN} DEFINITIONS "FAIL=1")
-	configure_file("${PROJECT_SOURCE_DIR}/os/test/linker.ld" "${CMAKE_CURRENT_BINARY_DIR}/fail-${TEST}_linker.ld" COPYONLY)
 	set_target_properties("${TESTELF}" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${FAIL_DIR})
 	set_target_properties("${TESTELF}" PROPERTIES EXCLUDE_FROM_ALL true)
 
@@ -227,8 +220,16 @@ macro(fail_test TEST)
 	endforeach()
 endmacro()
 
-# Convenience macro for combined CoRed and FAIL* tests
+# Macro for combined CoRed and FAIL* tests
 macro(coredos_fail_test TEST)
+	# normal test
 	coredos_test(${TEST} ${ARGN})
-	fail_test(${TEST} ${ARGN})
+
+	# executable for FAIL* test
+	set(TESTELF "fail-${TEST}.elf")
+	coredos_executable(${TESTELF} EXCLUDE_FROM_ALL ${TEST}.cc ${ARGN} DEFINITIONS "FAIL=1")
+	configure_file("${PROJECT_SOURCE_DIR}/os/test/linker.ld" "${CMAKE_CURRENT_BINARY_DIR}/fail-${TEST}_linker.ld" COPYONLY)
+
+	# FAIL* targets
+	fail_test(${TEST} ${TESTELF})
 endmacro()
