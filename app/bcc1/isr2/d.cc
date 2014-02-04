@@ -10,7 +10,6 @@
  */
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 #include "syscall.h"
 
 
@@ -18,31 +17,27 @@ DeclareTask(H1);
 DeclareTask(H2);
 DeclareTask(H3);
 
-
-void test(void) {
-	test_start();
-	StartOS(0);
-}
+TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
-	Trace('1');
+	test_trace('1');
 	TerminateTask();
 }
 
 TASK(H2) {
-	Trace('2');
+	test_trace('2');
 	ChainTask(H1);
 }
 
 TASK(H3) {
-	Trace('3');
+	test_trace('3');
 	ChainTask(H2);
 }
 
 ISR2(ISR1) {
-	Trace(' ');
+	test_trace(' ');
 	ActivateTask(H3);
-	Trace('!');
+	test_trace('!');
 }
 
 
@@ -60,7 +55,7 @@ PreIdleHook() {
 
 	if (cycle_count > 3) {
 		test_start_check();
-		TraceAssert((char *)" !321 !321 !321");
+		test_trace_assert((char *)" !321 !321 !321");
 		ShutdownMachine();
 	} else {
 		arch::syscall(__OS_trigger_syscall, 37, true);

@@ -4,7 +4,12 @@
  * @test Test the execution of global constructors.
  */
 
+#include "os/os.h"
 #include "test/test.h"
+
+void os_main(void) {
+	test_main();
+}
 
 class GlobalConstructorTester {
     int test;

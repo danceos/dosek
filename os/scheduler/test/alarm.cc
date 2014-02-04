@@ -15,6 +15,10 @@
 #include "os/test/generated-system.h"
 using namespace os::scheduler;
 
+void os_main(void) {
+	test_main();
+}
+
 // errors are injected in this namespace
 namespace fail {
 

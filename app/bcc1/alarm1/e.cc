@@ -1,4 +1,5 @@
 #include "os.h"
+#include "test/test.h"
 
 DeclareTask(H1);
 DeclareTask(H2);
@@ -6,41 +7,35 @@ DeclareTask(H3);
 DeclareAlarm(A1);
 DeclareCounter(C1);
 
-#include "test/test.h"
-#include "../trace.h"
-
-void test(void) {
-	test_start();
-	StartOS(0);
-}
+TEST_MAKE_OS_MAIN(StartOS(0))
 
 int a;
 
 TASK(H1) {
-	Trace('1');
+	test_trace('1');
 	TerminateTask();
 }
 
 TASK(H2) {
-	Trace('.');
+	test_trace('.');
 	if (a < 5) {
-		Trace('A');
+		test_trace('A');
 		ActivateTask(H3);
-		Trace('a');
+		test_trace('a');
 	}
-	Trace('T');
+	test_trace('T');
 	TerminateTask();
 }
 
 TASK(H3) {
-	Trace('3');
+	test_trace('3');
 	while (a < 3) {
 		a++;
-		Trace('H');
+		test_trace('H');
 		ActivateTask(H1);
-		Trace('h');
+		test_trace('h');
 	}
-	Trace('t');
+	test_trace('t');
 	TerminateTask();
 }
 
@@ -51,7 +46,7 @@ PreIdleHook() {
 
 	if (cycle_count > 3) {
 		test_start_check();
-		TraceAssert((char *)".AaT3H1hH1hH1ht.AaT3t.AaT3t");
+		test_trace_assert((char *)".AaT3H1hH1hH1ht.AaT3t.AaT3t");
 		ShutdownMachine();
 	}
 }

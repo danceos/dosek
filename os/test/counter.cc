@@ -4,12 +4,17 @@
  * @test Test counters
  */
 
+#include "os/os.h"
 #include "test/test.h"
 #include "output.h"
 #include "machine.h"
 #include "os/counter.h"
 
 extern os::Counter os::counter0;
+
+void os_main(void) {
+	test_main();
+}
 
 /**
  * @brief Run counter test

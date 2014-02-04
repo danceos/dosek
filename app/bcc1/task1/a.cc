@@ -10,40 +10,36 @@
  */
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 
 
 DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
-void test(void) {
-	test_start();
-	StartOS(0);
-}
+TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(Handler11) {
-	Trace('a');
+	test_trace('a');
 	ActivateTask(Handler12);
-	Trace('b');
+	test_trace('b');
 	ActivateTask(Handler13);
-	Trace('c');
+	test_trace('c');
 	TerminateTask();
 }
 
 TASK(Handler12) {
-	Trace('2');
+	test_trace('2');
 	TerminateTask();
 }
 
 TASK(Handler13) {
-	Trace('3');
+	test_trace('3');
 	TerminateTask();
 }
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_start_check();
-	TraceAssert((char *)"ab3c2");
+	test_trace_assert((char *)"ab3c2");
 	ShutdownMachine();
 }

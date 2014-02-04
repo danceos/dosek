@@ -66,17 +66,27 @@ find_program(OBJDUMP "objdump")
 # To set compile definitions specify them after DEFINITIONS keyword.
 macro(coredos_executable ELFFILE)
 	# parse DEFINITIONS
-	cmake_parse_arguments(COREDOS_EXECUTABLE "" "LINKER_SCRIPT" "DEFINITIONS" ${ARGN})
-	set(SOURCES ${COREDOS_EXECUTABLE_UNPARSED_ARGUMENTS})
+    set(options "EXCLUDE_FROM_ALL")
+    set(oneValueArgs "LINKER_SCRIPT")
+    set(multiValuedParameters DEFINITIONS LIBS SOURCES)
+    cmake_parse_arguments(COREDOS_EXECUTABLE "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
+	set(SOURCES ${COREDOS_EXECUTABLE_SOURCES} ${COREDOS_EXECUTABLE_UNPARSED_ARGUMENTS})
+	set(DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
+    set(ADD_EXECUTABLE_OPTIONS "")
+    if(${COREDOS_EXECUTABLE_EXCLUDE_FROM_ALL} STREQUAL "TRUE")
+      set(ADD_EXECUTABLE_OPTIONS "EXCLUDE_FROM_ALL")
+    endif()
+
+
 
 	get_filename_component(ELFNAME ${ELFFILE} NAME_WE)
 
 	# libraries to link with application
-	set(TARGET_LIBS os arch)
+	set(TARGET_LIBS os arch ${COREDOS_EXECUTABLE_LIBS})
 
 	# First executable with empty, weak page tables
 	set(PRELINK ${ELFNAME}.prelink.elf)
-	add_executable(${PRELINK} ${SOURCES})
+	add_executable(${PRELINK} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES})
 	set_target_properties(${PRELINK} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 	target_link_libraries(${PRELINK} ${TARGET_LIBS})
 
@@ -91,7 +101,7 @@ macro(coredos_executable ELFFILE)
 	)
 
 	# The actual executable
-	add_executable(${ELFFILE} ${SOURCES} ${PAGETABLES})
+	add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES} ${PAGETABLES})
 	target_link_libraries(${ELFFILE} ${TARGET_LIBS})
 
 	# set definitions

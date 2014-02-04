@@ -1,6 +1,5 @@
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 
 
 DeclareTask(H1);
@@ -9,25 +8,22 @@ DeclareTask(H3);
 DeclareAlarm(A1);
 DeclareCounter(C1);
 
-void test(void) {
-	test_start();
-	StartOS(0);
-}
+TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
-	Trace('a');
+	test_trace('a');
 	ActivateTask(H3);
-	Trace('b');
+	test_trace('b');
 	TerminateTask();
 }
 
 TASK(H2) {
-	Trace('2');
+	test_trace('2');
 	ChainTask(H1);
 }
 
 TASK(H3) {
-	Trace('3');
+	test_trace('3');
 	TerminateTask();
 }
 
@@ -38,7 +34,7 @@ PreIdleHook() {
 
 	if (cycle_count > 3) {
 		test_start_check();
-		TraceAssert((char *)"2ab32ab32ab3");
+		test_trace_assert((char *)"2ab32ab32ab3");
 		ShutdownMachine();
 	}
 }

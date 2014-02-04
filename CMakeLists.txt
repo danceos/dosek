@@ -48,9 +48,6 @@ include(helpers)
 coredos_include_dir(${PROJECT_SOURCE_DIR})
 coredos_include_dir(${PROJECT_SOURCE_DIR}/os)
 
-# Tests
-add_subdirectory(test)
-
 # Documentation
 add_subdirectory(toolchain/doxygen)
 
@@ -61,6 +58,9 @@ set(EXECUTABLES "" CACHE INTERNAL "List of executables")
 set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories")
 add_subdirectory(arch)
 coredos_include_dir(${ARCH_INCLUDE_DIRS})
+
+# Tests
+add_subdirectory(test)
 
 # FAIL* targets
 add_subdirectory(fail)

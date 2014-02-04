@@ -10,7 +10,6 @@
  */
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 #include "syscall.h"
 
 
@@ -19,10 +18,7 @@ DeclareTask(H2);
 DeclareTask(H3);
 
 
-void test(void) {
-	test_start();
-	StartOS(0);
-}
+TEST_MAKE_OS_MAIN(StartOS(0))
 
 // new syscall to trigger interrupt using local APIC
 // for now, any function can be called using syscall(),
@@ -35,26 +31,26 @@ static int cycle_count;
 
 
 TASK(H1) {
-	Trace('1');
+	test_trace('1');
 	TerminateTask();
 }
 
 TASK(H2) {
-	Trace('2');
+	test_trace('2');
     arch::syscall(__OS_trigger_syscall, 37, true);
-	Trace('_');
+	test_trace('_');
 	TerminateTask();
 }
 
 TASK(H3) {
-	Trace('3');
+	test_trace('3');
 	ChainTask(H1);
 }
 
 ISR2(ISR1) {
-	Trace('{');
+	test_trace('{');
 	ActivateTask(H3);
-	Trace('}');
+	test_trace('}');
 }
 
 
@@ -67,7 +63,7 @@ PreIdleHook() {
 
 	if (cycle_count > 3) {
 		test_start_check();
-		TraceAssert((char *)"2{}_312{}_312{}_31");
+		test_trace_assert((char *)"2{}_312{}_312{}_31");
 		ShutdownMachine();
 	}
 }

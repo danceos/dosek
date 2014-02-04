@@ -10,67 +10,62 @@
  */
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 
 DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
+TEST_MAKE_OS_MAIN( StartOS(0) )
+
 int a = 11;
 
 extern "C" void bar() {
-	Trace('b');
+	test_trace('b');
 	ActivateTask(Handler13);
 }
 
 extern "C" void foo() {
-	Trace('f');
+	test_trace('f');
 	a++;
 	return;
 }
 
-void test(void) {
-	test_start();
-	StartOS(0);
-}
-
-
 TASK(Handler11) {
-	Trace('1');
+	test_trace('1');
 	a++;
 	if (a == 12) {
-		Trace('2');
+		test_trace('2');
 		ActivateTask(Handler12);
 	}
 
 	if (a == 100) {
-		Trace('3');
+		test_trace('3');
 		bar();
-		Trace('4');
+		test_trace('4');
 		a++;
 	} else {
 		foo();
-		Trace('5');
+		test_trace('5');
 		ActivateTask(Handler13);
 	}
-	Trace('6');
+	test_trace('6');
 	TerminateTask();
 }
 
 TASK(Handler12) {
-	Trace('X');
+	test_trace('X');
 	TerminateTask();
 }
 
 TASK(Handler13) {
-	Trace('Y');
+	test_trace('Y');
 	TerminateTask();
 }
 
 PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_start_check();
-	TraceAssert((char *)"12f5Y6X");
+	test_trace_assert((char *)"12f5Y6X");
 	ShutdownMachine();
 }
 

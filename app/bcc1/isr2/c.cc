@@ -10,7 +10,6 @@
  */
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 #include "syscall.h"
 
 
@@ -18,41 +17,37 @@ DeclareTask(H1);
 DeclareTask(H2);
 DeclareTask(H3);
 
-void test(void) {
-	test_start();
-	StartOS(0);
-}
-
+TEST_MAKE_OS_MAIN( StartOS(0) )
 
 volatile int a;
 
 TASK(H1) {
-	Trace('1');
+	test_trace('1');
 	TerminateTask();
 }
 
 TASK(H2) {
-	Trace('{');
+	test_trace('{');
 	ActivateTask(H3);
-	Trace('*');
+	test_trace('*');
 	ActivateTask(H1);
-	Trace('}');
+	test_trace('}');
 	TerminateTask();
 }
 
 TASK(H3) {
-	Trace('3');
+	test_trace('3');
 	TerminateTask();
 }
 
 ISR2(ISR1) {
-	Trace('.');
+	test_trace('.');
 	if (a < 1000) {
-		Trace(':');
+		test_trace(':');
 		ActivateTask(H2);
 	}
 	a++;
-	Trace('T');
+	test_trace('T');
 }
 
 // new syscall to trigger interrupt using local APIC
@@ -70,7 +65,7 @@ PreIdleHook() {
 
 	if (cycle_count > 3) {
 		test_start_check();
-		TraceAssert((char *)".:T{*1}3.:T{*1}3.:T{*1}3");
+		test_trace_assert((char *)".:T{*1}3.:T{*1}3.:T{*1}3");
 		ShutdownMachine();
 	} else {
 		arch::syscall(__OS_trigger_syscall, 37, true);

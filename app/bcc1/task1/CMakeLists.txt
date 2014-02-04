@@ -2,55 +2,62 @@ COREDOS_BINARY(
   NAME bcc1_task1a
   SYSTEM_XML system.xml
   VERIFY verify_a.py
+  LIBS libtest
   TEST_ISO
-  a.cc ../trace.cc
+  a.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1b
   SYSTEM_XML system.xml
   VERIFY verify_b.py
+  LIBS libtest
   TEST_ISO
-  b.cc ../trace.cc
+  b.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1c
   SYSTEM_XML system.xml
   VERIFY verify_c.py
+  LIBS libtest
   TEST_ISO
-  c.cc ../trace.cc
+  c.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1d
   SYSTEM_XML system.xml
   VERIFY verify_d.py
+  LIBS libtest
   TEST_ISO
-  d.cc ../trace.cc
+  d.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1e
   SYSTEM_XML system.xml
   VERIFY verify_e.py
+  LIBS libtest
   TEST_ISO
-  e.cc ../trace.cc
+  e.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1f
   SYSTEM_XML system.xml
   VERIFY verify_f.py
+  LIBS libtest
   TEST_ISO
-  f.cc ../trace.cc
+  f.cc
 )
 
 COREDOS_BINARY(
   NAME bcc1_task1g
   SYSTEM_XML system.xml
   VERIFY verify_g.py
+  LIBS libtest
   TEST_ISO
-  g.cc ../trace.cc
+  g.cc 
 )
 

@@ -10,7 +10,6 @@
  */
 #include "os.h"
 #include "test/test.h"
-#include "../trace.h"
 #include "syscall.h"
 
 
@@ -18,39 +17,36 @@ DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
 
-void test(void) {
-	test_start();
-	StartOS(0);
-}
+TEST_MAKE_OS_MAIN(StartOS(0))
 
 int a;
 TASK(Handler11) {
-	Trace('a');
+	test_trace('a');
 	ActivateTask(Handler12);
 	if (a < 100) {
-		Trace('b');
+		test_trace('b');
 		ActivateTask(Handler13);
-		Trace('c');
+		test_trace('c');
 		TerminateTask();
 	} else {
-		Trace('d');
+		test_trace('d');
 		TerminateTask();
 	}
 }
 
 TASK(Handler12) {
-	Trace('2');
+	test_trace('2');
 	TerminateTask();
 }
 
 TASK(Handler13) {
-	Trace('3');
+	test_trace('3');
 	TerminateTask();
 }
 
 PreIdleHook() {
 	test_start_check();
-	TraceAssert((char *)"abc32");
+	test_trace_assert((char *)"abc32");
 	ShutdownMachine();
 }
 
