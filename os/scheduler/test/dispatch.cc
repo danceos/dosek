@@ -71,6 +71,11 @@ void test_prepare(void)
  */
 void test(void)
 {
+    t1.tcb.reset();
+    t2.tcb.reset();
+    t3.tcb.reset();
+    t4.tcb.reset();
+
 	Machine::enable_interrupts();
 
 	//! @test Activate first task
@@ -103,7 +108,7 @@ TASK(Task1) {
 	run_checkable_function(step5, k, ((((3*7)+5)*2+9)*3+2)*5+3);
 
 	// terminate and switch to task 3
-	TerminateTask_impl();
+	TerminateTask_impl(t1);
 }
 
 TASK(Task2) {
@@ -113,7 +118,7 @@ TASK(Task2) {
 	run_checkable_function(step2, k, (3*7)+5);
 
 	// chain higher priority task 4
-	ChainTask_impl(t4);
+	ChainTask_impl(t2, t4);
 }
 
 TASK(Task3) {
@@ -130,7 +135,7 @@ TASK(Task3) {
 	Machine::shutdown();
 
 	// would terminate to idle loop
-	TerminateTask_impl();
+	TerminateTask_impl(t3);
 }
 
 TASK(Task4) {
@@ -140,5 +145,5 @@ TASK(Task4) {
 	run_checkable_function(step3, k, ((3*7)+5)*2+9);
 
 	// terminate and return to task 1
-	TerminateTask_impl();
+	TerminateTask_impl(t4);
 }

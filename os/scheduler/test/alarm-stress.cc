@@ -52,6 +52,11 @@ void test_prepare(void)
 void test(void)
 {
 	Machine::enable_interrupts();
+    t1.tcb.reset();
+    t2.tcb.reset();
+    t3.tcb.reset();
+    t4.tcb.reset();
+
 
 	//! @test Activate first task
 	ActivateTaskC_impl(t1.enc_id<3>());
@@ -77,7 +82,7 @@ TASK(Task1) {
 	ActivateTask_impl(t2);
 
 	debug << "Chain task 2" << endl;
-	ChainTask_impl(t2);
+	ChainTask_impl(t1, t2);
 }
 
 TASK(Task2) {
@@ -86,7 +91,7 @@ TASK(Task2) {
 	count++;
 
 	debug << "Chain task 3" << endl;
-	ChainTask_impl(t3);
+	ChainTask_impl(t2, t3);
 }
 
 TASK(Task3) {
@@ -128,5 +133,5 @@ TASK(Task4) {
 		Machine::shutdown();
 	}
 
-	TerminateTask_impl();
+	TerminateTask_impl(t4);
 }

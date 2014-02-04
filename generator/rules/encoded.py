@@ -40,7 +40,7 @@ class EncodedSystem(SimpleSystem):
                 continue
             # Use Reset the stack pointer for all all tasks
             self.call_function(block,
-                               self.objects[subtask]["task_descriptor"].name + ".reset_sp",
+                               self.objects[subtask]["task_descriptor"].name + ".tcb.reset",
                                "void", [])
 
             if subtask.autostart:

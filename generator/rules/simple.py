@@ -56,56 +56,21 @@ class SimpleSystem(BaseRules):
 
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
-        self.generate_dataobjects_task_stacks()
-        self.generate_dataobjects_task_entries()
         self.generate_dataobjects_task_descriptors()
         self.generate_dataobjects_counters_and_alarms()
 
-    def generate_dataobjects_task_stacks(self):
-        """Generate the stacks for the tasks, including the task pointers"""
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread and ISR subtasks
-            if not subtask.is_real_thread():
-                continue
-            stacksize = subtask.get_stack_size()
-            stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
-                                    extern_c = True)
-            self.generator.source_file.data_manager.add(stack)
-
-            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
-            self.generator.source_file.data_manager.add(stackptr, namespace = ("os", "scheduler"))
-
-            self.objects[subtask]["stack"] = stack
-            self.objects[subtask]["stackptr"] = stackptr
-            self.objects[subtask]["stacksize"] = stacksize
-
-
-    def generate_dataobjects_task_entries(self):
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread
-            if not subtask.is_real_thread():
-                continue
-            entry_function = FunctionDeclaration(subtask.function_name, "void", [],
-                                                                 extern_c = True)
-            self.generator.source_file.function_manager.add(entry_function)
-            self.objects[subtask]["entry_function"] = entry_function
-
     def generate_dataobjects_task_descriptors(self):
-
         self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
         task_id = 1
         for subtask in self.system_graph.get_subtasks():
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
-            initializer = "(%d, %d, %s, &%s, %s, %s, %s)" % (
+            initializer = "(%d, %d, %s, arch::%s)" % (
                 task_id,
                 subtask.static_priority,
-                self.objects[subtask]["entry_function"].name,
-                self.objects[subtask]["stack"].name,
-                self.objects[subtask]["stackptr"].name,
-                self.objects[subtask]["stacksize"],
-                str(subtask.preemptable).lower()
+                str(subtask.preemptable).lower(),
+                self.objects[subtask]["tcb_descriptor"].name
             )
 
 

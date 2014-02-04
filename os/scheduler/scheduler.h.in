@@ -73,7 +73,8 @@ struct Scheduler  {
         auto from_id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
         auto to_id = to.enc_id<{{{generate:arbitrary_new_signature}}}>();
         assert(from_id == current_task);
-        from.reset_sp();
+        from.tcb.reset();
+
         tlist.remove(from_id);
         /* If the current task had a scheduler lock, we unlock
            it. Otherwise unlocking is not harmful */
@@ -85,7 +86,7 @@ struct Scheduler  {
     forceinline void TerminateTask_impl(const Task from) {
         auto id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
         assert(id == current_task);
-        from.reset_sp();
+        from.tcb.reset();
         tlist.remove(id);
         /* If the current task had a scheduler lock, we unlock
            it. Otherwise unlocking is not harmful */

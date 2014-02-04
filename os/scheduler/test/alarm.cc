@@ -53,6 +53,11 @@ void test_prepare(void)
  */
 void test(void)
 {
+    t1.tcb.reset();
+    t2.tcb.reset();
+    t3.tcb.reset();
+    t4.tcb.reset();
+
 	Machine::enable_interrupts();
 
 	//! @test Activate first task
@@ -71,7 +76,7 @@ TASK(Task1) {
 	os::alarm0.setArmed(true);
 
 	debug << "Terminate task 1" << endl;
-	TerminateTask_impl();
+	TerminateTask_impl(t1);
 }
 
 TASK(Task2) {
@@ -103,5 +108,5 @@ TASK(Task2) {
 	}
 
 	running = false;
-	TerminateTask_impl();
+	TerminateTask_impl(t2);
 }

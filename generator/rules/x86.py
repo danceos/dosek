@@ -1,6 +1,7 @@
 from generator.rules.base import BaseRules
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
-    Include, FunctionDeclaration, Comment, Function
+    Include, FunctionDeclaration, Comment, Function, DataObject, \
+    DataObjectArray
 
 class X86Arch(BaseRules):
     def __init__(self):
@@ -11,6 +12,61 @@ class X86Arch(BaseRules):
         with self.generator.open_file("linker.ld") as fd:
             content = linker_script.expand()
             fd.write(content)
+
+    def generate_dataobjects(self):
+        """Generate all dataobjects for the system"""
+        self.generate_dataobjects_task_stacks()
+        self.generate_dataobjects_task_entries()
+        self.generate_dataobjects_tcbs()
+
+    def generate_dataobjects_task_stacks(self):
+        """Generate the stacks for the tasks, including the task pointers"""
+        for subtask in self.system_graph.get_subtasks():
+            # Ignore the Idle thread and ISR subtasks
+            if not subtask.is_real_thread():
+                continue
+            stacksize = subtask.get_stack_size()
+            stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
+                                    extern_c = True)
+            self.generator.source_file.data_manager.add(stack)
+
+            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
+            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+
+            self.objects[subtask]["stack"] = stack
+            self.objects[subtask]["stackptr"] = stackptr
+            self.objects[subtask]["stacksize"] = stacksize
+
+
+    def generate_dataobjects_task_entries(self):
+        for subtask in self.system_graph.get_subtasks():
+            # Ignore the Idle thread
+            if not subtask.is_real_thread():
+                continue
+            entry_function = FunctionDeclaration(subtask.function_name, "void", [],
+                                                                 extern_c = True)
+            self.generator.source_file.function_manager.add(entry_function)
+            self.objects[subtask]["entry_function"] = entry_function
+
+    def generate_dataobjects_tcbs(self):
+        self.generator.source_file.includes.add(Include("tcb.h"))
+        for subtask in self.system_graph.get_subtasks():
+            # Ignore the Idle thread
+            if not subtask.is_real_thread():
+                continue
+            initializer = "(&%s, %s, %s, %s)" % (
+                self.objects[subtask]["entry_function"].name,
+                self.objects[subtask]["stack"].name,
+                self.objects[subtask]["stackptr"].name,
+                self.objects[subtask]["stacksize"]
+            )
+
+            desc = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
+                              initializer)
+            desc.allocation_prefix = "constexpr "
+            self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
+            self.objects[subtask].update({"tcb_descriptor": desc})
+
 
     def generate_isr(self, isr):
         self.generator.source_file.includes.add(Include("machine.h"))

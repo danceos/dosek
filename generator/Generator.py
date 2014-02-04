@@ -99,6 +99,7 @@ class Generator:
         self.source_file.includes.add(Include("os.h"))
 
         # Generate system objects
+        self.arch_rules.generate_dataobjects()
         self.os_rules.generate_dataobjects()
 
         # Generate all nessecary code elements for the system (except

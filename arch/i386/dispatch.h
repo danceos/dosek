@@ -14,6 +14,7 @@
 #include "lapic.h"
 #include "machine.h"
 #include "syscall.h"
+#include "tcb.h"
 
 
 
@@ -64,15 +65,15 @@ public:
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
 		// TODO: remove pointer usage
-		save_sp = (volatile void **) &task.sp;
+		save_sp = (volatile void **) &task.tcb.sp;
 
 		// TODO: do this in dispatcher IRQ?/control flow check
-		if(!task.is_running()) {
+		if(!task.tcb.is_running()) {
 			// not resuming, pass task function
-			dispatch_syscall((uint32_t) task.id, (uint32_t)task.sp, (uint32_t)task.fun);
+			dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)task.tcb.fun);
 		} else {
 			// resuming, pass stackpointer with saved IP
-			dispatch_syscall((uint32_t) task.id, (uint32_t)task.sp, (uint32_t)&task.sp);
+			dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)&task.tcb.sp);
 		}
 	}
 

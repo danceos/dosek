@@ -34,11 +34,17 @@ extern "C" void* stackptr_Task4;
 namespace os {
 namespace tasks {
 
+
+constexpr TCB t1_tcb(OSEKOS_TASK_Task1, &Task1_stack, stackptr_Task1, 4096);
+constexpr TCB t2_tcb(OSEKOS_TASK_Task2, &Task2_stack, stackptr_Task2, 4096);
+constexpr TCB t3_tcb(OSEKOS_TASK_Task3, &Task3_stack, stackptr_Task3, 4096);
+constexpr TCB t4_tcb(OSEKOS_TASK_Task4, &Task4_stack, stackptr_Task4, 4096);
+
 // the tasks
-constexpr Task t1(1, 2, OSEKOS_TASK_Task1, &Task1_stack, stackptr_Task1, 4096, true);
-constexpr Task t2(2, 3, OSEKOS_TASK_Task2, &Task2_stack, stackptr_Task2, 4096, true);
-constexpr Task t3(3, 1, OSEKOS_TASK_Task3, &Task3_stack, stackptr_Task3, 4096, true);
-constexpr Task t4(4, 4, OSEKOS_TASK_Task4, &Task4_stack, stackptr_Task4, 4096, true);
+constexpr Task t1(1, 2, true, t1_tcb);
+constexpr Task t2(2, 3, true, t2_tcb);
+constexpr Task t3(3, 1, true, t3_tcb);
+constexpr Task t4(4, 4, true, t4_tcb);
 
 }; // namespace tasks
 }; // namespace os
@@ -244,19 +250,15 @@ public:
 	forceinline void ActivateTask_impl(const T id) {
 		// TODO: check comparison!
 		if(id == t1.enc_id<1>()) {
-			t1.reset_sp();
 			value_coded_t sig = tlist.insert(t1.enc_id<3>(),  t1.enc_prio<4>());
 			assert(sig == 13);
 		} else if(id == t2.enc_id<1>()) {
-			t2.reset_sp();
 			value_coded_t sig = tlist.insert(t2.enc_id<3>(),  t2.enc_prio<4>());
 			assert(sig == 12);
 		} else if(id == t3.enc_id<1>()) {
-			t3.reset_sp();
 			value_coded_t sig = tlist.insert(t3.enc_id<3>(),  t3.enc_prio<4>());
 			assert(sig == 11);
 		} else if(id == t4.enc_id<1>()) {
-			t4.reset_sp();
 			value_coded_t sig = tlist.insert(t4.enc_id<3>(),  t4.enc_prio<4>());
 			assert(sig == 10);
 		} else {
@@ -266,17 +268,15 @@ public:
 		Schedule_impl();
 	}
 
-	forceinline void TerminateTask_impl() {
+	forceinline void TerminateTask_impl(const Task &from) {
+        from.tcb.reset();
 		tlist.remove(current_task);
 		Schedule_impl();
 	}
 
-	forceinline void ChainTask_impl(const Task t) {
-		ChainTask_impl(t.enc_id<3>());
-	}
-
-	template<typename T>
-	forceinline void ChainTask_impl(const T id) {
+    template<typename T>
+	forceinline void ChainTask_impl(const Task &from, T id) {
+        from.tcb.reset();
 		tlist.remove(current_task);
 		ActivateTask_impl(id);
 	}
@@ -302,16 +302,21 @@ forceinline void ActivateTask_impl(const Task& t) {
 	syscall(ActivateTaskC_impl<decltype(id)>, id);
 }
 
+extern const Task *current_task_ptr;
+
+
 template<typename T>
-noinline void ChainTaskC_impl(const T id) {
-	scheduler.ChainTask_impl(id);
+noinline void ChainTaskC_impl(T id) {
+	scheduler.ChainTask_impl(*current_task_ptr, id);
 }
 
 /**
  * @satisfies{13,2,3,3}
  */
-forceinline void ChainTask_impl(const Task& t) {
+forceinline void ChainTask_impl(const Task &f, const Task& t) {
 	auto id = t.enc_id<3>();
+
+    current_task_ptr = &f;
 
 	syscall(ChainTaskC_impl<decltype(id)>, id);
 
@@ -323,7 +328,8 @@ noinline void TerminateTaskC_impl(uint32_t dummy);
 /**
  * @satisfies{13,2,3,2}
  */
-forceinline void TerminateTask_impl() {
+forceinline void TerminateTask_impl(const Task &f) {
+    current_task_ptr = &f;
 	syscall(TerminateTaskC_impl);
 
 	Machine::unreachable();

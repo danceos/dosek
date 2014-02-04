@@ -16,6 +16,11 @@
 using namespace os::scheduler;
 
 void os_main(void) {
+	t1.tcb.reset();
+	t2.tcb.reset();
+	t3.tcb.reset();
+	t4.tcb.reset();
+
 	test_main();
 }
 

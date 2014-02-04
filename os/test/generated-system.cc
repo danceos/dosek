@@ -21,12 +21,15 @@ namespace os {
 namespace scheduler {
 
 Scheduler scheduler;
+const Task *current_task_ptr;
+
 
 noinline void TerminateTaskC_impl(__attribute__ ((unused)) uint32_t dummy) {
-	scheduler.TerminateTask_impl();
+	scheduler.TerminateTask_impl(*current_task_ptr);
 }
 
-noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
+noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) 
+{
 	scheduler.Reschedule();
 }
 
