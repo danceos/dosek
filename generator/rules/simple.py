@@ -191,9 +191,21 @@ class AlarmTemplate(CodeTemplate):
     def trigger_alarms(self, snippet, args):
         ret = []
         for alarm in self.system_graph.system.getAlarms():
-            ret += self.expand_snippet("alarm_to_task",
-                                       counter = self.objects["counter"][alarm.counter].name,
-                                       alarm = self.objects["alarm"][alarm.name].name)
+            callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
+            has_callback  = (callback_name in self.system_graph.functions)
+            args = {"counter": self.objects["counter"][alarm.counter].name,
+                    "alarm":   self.objects["alarm"][alarm.name].name}
+            ret += self.expand_snippet("if_alarm", **args) + "\n"
+            # This alarm has an callback
+            if has_callback:
+                # Add a Declaration
+                decl = FunctionDeclaration(callback_name, "void", [], extern_c = True)
+                self.generator.source_file.function_manager.add(decl)
+                ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
+            ret += self.expand_snippet("alarm_activate_task", **args) + "\n"
+            ret += self.expand_snippet("endif_alarm", **args) + "\n"
+
+
         return ret
 
 

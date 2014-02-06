@@ -24,3 +24,11 @@ COREDOS_BINARY(
   TEST_ISO
   c.cc
 )
+
+COREDOS_BINARY(
+  NAME bcc1_complex1d
+  SYSTEM_XML system.xml
+  LIBS libtest
+  TEST_ISO
+  d.cc
+)

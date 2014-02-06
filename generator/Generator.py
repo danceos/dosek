@@ -58,26 +58,26 @@ class Generator:
         "ActivateTask": ["StatusType", "TaskType"],
         "ChainTask": ["StatusType", "TaskType"],
         "TerminateTask": ["StatusType"],
-        "Schedule": ["StatusType"],
-        "GetTaskID": ["StatusType", "TaskRefType"],
-        "GetTaskState": ["StatusType", "TaskType", "TaskStateRefType"],
+        "Schedule": None, # ["StatusType"],
+        "GetTaskID": None, # ["StatusType", "TaskRefType"],
+        "GetTaskState": None, # ["StatusType", "TaskType", "TaskStateRefType"],
 
-        "EnableAllInterrupts": ["void"],
-        "DisableAllInterrupts": ["void"],
-        "ResumeAllInterrupts": ["void"],
-        "SuspendAllInterrupts": ["void"],
-        "ResumeOSInterrupts": ["void"],
-        "SuspendOSInterrupts": ["void"],
+        "EnableAllInterrupts": None, # ["void"],
+        "DisableAllInterrupts": None, # ["void"],
+        "ResumeAllInterrupts": None, # ["void"],
+        "SuspendAllInterrupts": None, # ["void"],
+        "ResumeOSInterrupts":  None, # ["void"],
+        "SuspendOSInterrupts": None, #["void"],
 
-        "GetResource": ["StatusType", "ResourceType"],
-        "ReleaseResource": ["StatusType", "ResourceType"],
+        "GetResource": None, #["StatusType", "ResourceType"],
+        "ReleaseResource": None, #["StatusType", "ResourceType"],
 
-        "SetEvent": ["StatusType", "TaskType", "EventMaskType"],
-        "GetEvent": ["StatusType", "TaskType", "EventMaskRefType"],
-        "ClearEvent": ["StatusType", "EventMaskType"],
+        "SetEvent": None, # ["StatusType", "TaskType", "EventMaskType"],
+        "GetEvent": None, # ["StatusType", "TaskType", "EventMaskRefType"],
+        "ClearEvent": None, #["StatusType", "EventMaskType"],
         "WaitEvent": None,
         "GetAlarm": None,
-        "SetRelAlarm": None,
+        "SetRelAlarm": ["StatusType", "AlarmType", "int", "int"],
         "CancelAlarm": None,
         "GetAlarmBase": None,
         "AdvanceCounter": None,
@@ -179,7 +179,9 @@ class Generator:
     def variable_name_for_datatype(self, datatype):
 
         """Generates a new unique variable name for a concrete datatype"""
-        datatype = datatype.replace("::", "_")
+        for i in range(0, len(datatype)):
+            if not datatype[i].isalnum():
+                datatype = datatype[:i] + "_" + datatype[i+1:]
         varname = "var_" + datatype
         if not varname in self.__used_variable_names:
             self.__used_variable_names.add(varname)
