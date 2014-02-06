@@ -6,15 +6,20 @@
 
 #include "test/test.h"
 #include "util/encoded.h"
-#include "output.h"
-#include "machine.h" // for shutdown
-#include "os/scheduler/scheduler.h"
-#include "os/os.h"
-#include "os/test/generated-system.h"
-using namespace os::scheduler;
+#include "os.h"
 
-void os_main(void) {
-	test_main();
+DeclareTask(Task1);
+DeclareTask(Task2);
+DeclareTask(Task3);
+DeclareTask(Task4);
+
+
+void os_main() {
+    test_main();
+}
+
+void test() {
+   StartOS(0);
 }
 
 // errors are injected in this namespace
@@ -66,25 +71,6 @@ void test_prepare(void)
 	k.encode(1, 0);
 }
 
-/**
- * @brief Runs dispatcher tests
- */
-void test(void)
-{
-    t1.tcb.reset();
-    t2.tcb.reset();
-    t3.tcb.reset();
-    t4.tcb.reset();
-
-	Machine::enable_interrupts();
-
-	//! @test Activate first task
-	ActivateTaskC_impl(t1.enc_id<3>());
-
-	// should never come here
-	Machine::unreachable();
-}
-
 TASK(Task1) {
 	debug << "HELLO";
 
@@ -92,7 +78,7 @@ TASK(Task1) {
 	run_checkable_function(step1, k, 3);
 
 	// activate and dispatch higher priority task 2
-	ActivateTask_impl(t2);
+	ActivateTask(Task2);
 
 	debug << "!";
 
@@ -100,7 +86,7 @@ TASK(Task1) {
 	run_checkable_function(step4, k, (((3*7)+5)*2+9)*3+2);
 
 	// activate lower priority task 3 (no disptach)
-	ActivateTask_impl(t3);
+	ActivateTask(Task3);
 
 	debug << " :)";
 
@@ -108,7 +94,7 @@ TASK(Task1) {
 	run_checkable_function(step5, k, ((((3*7)+5)*2+9)*3+2)*5+3);
 
 	// terminate and switch to task 3
-	TerminateTask_impl(t1);
+	TerminateTask();
 }
 
 TASK(Task2) {
@@ -118,7 +104,7 @@ TASK(Task2) {
 	run_checkable_function(step2, k, (3*7)+5);
 
 	// chain higher priority task 4
-	ChainTask_impl(t2, t4);
+	ChainTask(Task4);
 }
 
 TASK(Task3) {
@@ -135,7 +121,7 @@ TASK(Task3) {
 	Machine::shutdown();
 
 	// would terminate to idle loop
-	TerminateTask_impl(t3);
+	TerminateTask();
 }
 
 TASK(Task4) {
@@ -145,5 +131,5 @@ TASK(Task4) {
 	run_checkable_function(step3, k, ((3*7)+5)*2+9);
 
 	// terminate and return to task 1
-	TerminateTask_impl(t4);
+	TerminateTask();
 }

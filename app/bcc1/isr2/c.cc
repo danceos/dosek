@@ -50,14 +50,6 @@ ISR2(ISR1) {
 	test_trace('T');
 }
 
-// new syscall to trigger interrupt using local APIC
-// for now, any function can be called using syscall(),
-// so it is easy to add this for this test.
-noinline void __OS_trigger_syscall(uint8_t irq) {
-	Machine::trigger_interrupt(irq);
-}
-
-
 PreIdleHook() {
 	/* The testcase has finished, check the output */
 	static int cycle_count;
@@ -68,7 +60,7 @@ PreIdleHook() {
 		test_trace_assert((char *)".:T{*1}3.:T{*1}3.:T{*1}3");
 		ShutdownMachine();
 	} else {
-		arch::syscall(__OS_trigger_syscall, 37, true);
+		Machine::trigger_interrupt_from_user(37);
 	}
 }
 

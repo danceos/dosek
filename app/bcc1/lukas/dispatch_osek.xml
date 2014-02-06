@@ -14,25 +14,16 @@
   </OS>
 
   <TASK>
-    <name>H1</name>
+    <name>Task1</name>
     <TYPE>BASIC</TYPE>
     <SCHEDULE>FULL</SCHEDULE>
-    <PRIORITY>5</PRIORITY>
+    <PRIORITY>2</PRIORITY>
     <ACTIVATION>1</ACTIVATION>
-    <AUTOSTART>FALSE</AUTOSTART>
+    <AUTOSTART>TRUE</AUTOSTART>
   </TASK>
 
   <TASK>
-    <name>H2</name>
-    <TYPE>BASIC</TYPE>
-    <SCHEDULE>FULL</SCHEDULE>
-    <PRIORITY>4</PRIORITY>
-    <ACTIVATION>1</ACTIVATION>
-    <AUTOSTART>FALSE</AUTOSTART>
-  </TASK>
-
-  <TASK>
-    <name>H3</name>
+    <name>Task2</name>
     <TYPE>BASIC</TYPE>
     <SCHEDULE>FULL</SCHEDULE>
     <PRIORITY>3</PRIORITY>
@@ -40,11 +31,23 @@
     <AUTOSTART>FALSE</AUTOSTART>
   </TASK>
 
-  <ISR>
-    <name>ISR1</name>
-    <CATEGORY>2</CATEGORY>
-    <PRIORITY>10</PRIORITY>
-    <DEVICE>37</DEVICE>
-  </ISR>
+  <TASK>
+    <name>Task3</name>
+    <TYPE>BASIC</TYPE>
+    <SCHEDULE>FULL</SCHEDULE>
+    <PRIORITY>1</PRIORITY>
+    <ACTIVATION>1</ACTIVATION>
+    <AUTOSTART>FALSE</AUTOSTART>
+  </TASK>
+
+  <TASK>
+    <name>Task4</name>
+    <TYPE>BASIC</TYPE>
+    <SCHEDULE>FULL</SCHEDULE>
+    <PRIORITY>4</PRIORITY>
+    <ACTIVATION>1</ACTIVATION>
+    <AUTOSTART>FALSE</AUTOSTART>
+  </TASK>
+
 
 </oseksystem>

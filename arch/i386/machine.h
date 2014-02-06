@@ -119,6 +119,8 @@ struct Machine
 	static forceinline void trigger_interrupt(uint8_t irq) {
 		arch::LAPIC::trigger(irq);
 	}
+	static void trigger_interrupt_from_user(uint8_t irq);
+
 
 	/**
 	 * \brief Return current CPU ring

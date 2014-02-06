@@ -6,19 +6,23 @@
 
 #include "test/test.h"
 #include "util/encoded.h"
-#include "output.h"
-#include "machine.h"
-#include "os/scheduler/scheduler.h"
-#include "os/counter.h"
-#include "os/alarm.h"
 #include "os/os.h"
 
-#include "os/test/generated-system.h"
-using namespace os::scheduler;
+DeclareTask(Task1);
+DeclareTask(Task2);
+DeclareTask(Task3);
+DeclareTask(Task4);
+DeclareCounter(C1);
+DeclareAlarm(A0);
 
-void os_main(void) {
-	test_main();
+void os_main() {
+    test_main();
 }
+
+void test() {
+   StartOS(0);
+}
+
 
 // errors are injected in this namespace
 namespace fail {
@@ -36,33 +40,11 @@ using namespace fail;
 
 
 
-// activate task 4 by alarm
-os::Alarm os::alarm0(counter0, t4);
-
 // prepare tests
 void test_prepare(void)
 {
 	// initialize test integer
 	k.encode(1, 0);
-}
-
-/**
- * @brief Run alarm tests
- */
-void test(void)
-{
-	Machine::enable_interrupts();
-    t1.tcb.reset();
-    t2.tcb.reset();
-    t3.tcb.reset();
-    t4.tcb.reset();
-
-
-	//! @test Activate first task
-	ActivateTaskC_impl(t1.enc_id<3>());
-
-	// should never come here
-	Machine::unreachable();
 }
 
 volatile uint32_t count = 0; // task activations
@@ -72,17 +54,21 @@ TASK(Task1) {
 
 	if(count == 0) {
 		debug << "Arm timer" << endl;
-		os::alarm0.setRelativeTime(10);
-		os::alarm0.setArmed(true);
+		// FIXME: Implement Alarm system calls
+		// Machine::disable_interrupts();
+		// os::alarm0.setRelativeTime(10);
+		// os::alarm0.setArmed(true);
+		// os::alarm0.setCycleTime(10);
+		// Machine::enable_interrupts();
 	}
 
 	count++;
 
 	debug << "Activate task 2" << endl;
-	ActivateTask_impl(t2);
+	ActivateTask(Task2);
 
 	debug << "Chain task 2" << endl;
-	ChainTask_impl(t1, t2);
+	ChainTask(Task2);
 }
 
 TASK(Task2) {
@@ -91,7 +77,7 @@ TASK(Task2) {
 	count++;
 
 	debug << "Chain task 3" << endl;
-	ChainTask_impl(t2, t3);
+	ChainTask(Task3);
 }
 
 TASK(Task3) {
@@ -101,8 +87,9 @@ TASK(Task3) {
 		count++;
 
 		debug << "Activate task 1" << endl;
-		ActivateTask_impl(t1);
+		ActivateTask(Task1);
 	}
+	TerminateTask();
 }
 
 volatile uint32_t ticks = 0; // alarm task activations
@@ -119,12 +106,16 @@ TASK(Task4) {
 
 		// rearm with increasing interval
 		debug << "Rearm timer" << endl;
-		os::alarm0.setRelativeTime(ticks);
-		os::alarm0.setArmed(true);
+		// Machine::disable_interrupts();
+		// os::alarm0.setCycleTime(ticks);
+		// Machine::enable_interrupts();
 	} else {
+		Machine::disable_interrupts();
 		debug << "Finished" << endl;
 
 		run_checkable_function(step, k, ticks+1);
+
+		// os::alarm0.setCycleTime(0);
 
 		test_finish(1);
 
@@ -133,5 +124,5 @@ TASK(Task4) {
 		Machine::shutdown();
 	}
 
-	TerminateTask_impl(t4);
+	TerminateTask();
 }

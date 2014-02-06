@@ -18,13 +18,6 @@ DeclareTask(H3);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
-// new syscall to trigger interrupt using local APIC
-// for now, any function can be called using syscall(),
-// so it is easy to add this for this test.
-noinline void __OS_trigger_syscall(uint8_t irq) {
-	Machine::trigger_interrupt(irq);
-}
-
 static int cycle_count;
 
 TASK(H1) {
@@ -34,7 +27,7 @@ TASK(H1) {
 
 TASK(H2) {
 	test_trace('2');
-    arch::syscall(__OS_trigger_syscall, 37, true);
+	Machine::trigger_interrupt_from_user(37);
 	test_trace('_');
 	TerminateTask();
 }

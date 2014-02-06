@@ -77,13 +77,14 @@ class FunctionDefinitionBlock(Function):
     def __init__(self, name, definition_args):
         Function.__init__(self, name, rettype = None, argstype = None, extern_c = None, attributes = None)
         self.definition_args = definition_args
+        self.function_name = "%s(%s) " %(self.name, ", ".join(self.definition_args))
+        self.name = self.function_name
 
     def source_element_declarations(self):
         return []
 
     def source_element_definitions(self):
-        guard = "%s(%s) " %(self.name, ", ".join(self.definition_args))
-        block = Block(guard)
+        block = Block(self.function_name)
         for stmt in self.statements:
             block.add(stmt)
         return [block, "\n"]
@@ -94,7 +95,7 @@ class  FunctionManager:
 
     def add(self, function):
         for x in self.functions:
-            assert x.name != function.name, "Duplicate function name"
+            assert x.name != function.name, "Duplicate function name %s" % function.name
         self.functions.append(function)
 
     def source_element_declarations(self):

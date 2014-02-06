@@ -167,9 +167,18 @@ class SystemGraph(GraphObject):
                 if len(abb.get_outgoing_edges('local')) == 0:
                     ret_abbs.append(abb)
 
-            # FIXME: Add artificial return block
-            assert len(ret_abbs) == 1
-            function.set_exit_abb(ret_abbs[0])
+            if len(ret_abbs) == 0:
+                logging.info("Endless loop in %s", function)
+            elif len(ret_abbs) > 1:
+                # Add an artificial exit block
+                abb = self.new_abb();
+                function.add_atomic_basic_block(abb)
+                for ret in ret_abbs:
+                    ret.add_cfg_edge(abb)
+                function.set_exit_abb(abb)
+            else:
+                function.set_exit_abb(ret_abbs[0])
+
 
         # Add all 'normal' function call edges
         for call in self.rtsc.get_calls():
