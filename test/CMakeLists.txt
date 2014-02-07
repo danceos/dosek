@@ -53,7 +53,6 @@ macro(coredos_test TEST)
     # Only 'arch' knows how to run the test!
     coredos_add_test(${TESTELF})
 
-    set_tests_properties(${TESTELF} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
     add_dependencies( build_and_test iso-test-${TEST} )
     add_dependencies( ctest2jenkins iso-test-${TEST} )
 

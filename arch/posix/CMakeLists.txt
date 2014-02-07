@@ -86,7 +86,7 @@ endmacro()
 
 macro(coredos_add_test FN)
     add_test(${FN} ${PROJECT_BINARY_DIR}/${FN})
-    set_tests_properties(${TESTNAME} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
+    set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
     add_dependencies( build_and_test ${FN} )
     add_dependencies( ctest2jenkins ${FN} )
 endmacro()

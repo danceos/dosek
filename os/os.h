@@ -153,7 +153,7 @@ typedef struct MESSAGEStruct* MessageIdentifier;
   struct ALARMStruct OSEKOS_ALARM_Struct_##x
 
 #define ALARMCALLBACK(x)				\
-  void OSEKOS_ALARMCALLBACK_##x()
+  EXTERN_C_DECL void OSEKOS_ALARMCB_##x()
 
 #define GetAlarm(x,tick)				\
   OSEKOS_GetAlarm(&OSEKOS_ALARM_Struct_##x,tick)
