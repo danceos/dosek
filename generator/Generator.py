@@ -164,7 +164,7 @@ class Generator:
         self.arch_rules.generate_linkerscript()
 
     def open_file(self, name, mode = "w+"):
-        fd = open(self.file_prefix + "/" + self.name + "_" + name, "w+")
+        fd = open(self.file_prefix + "/" + name, "w+")
         return fd
 
     def variable_name_for_singleton(self, datatype, instance = None):

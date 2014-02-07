@@ -3,7 +3,9 @@ include(rtsc)
 
 MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITIONS LIBS)
   SET(COREDOS_ANNOTATE_SOURCE "${COREDOS_GENERATOR_DIR}/annotate/cored_annotate.cc")
-  SET(COREDOS_ANNOTATE_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/${NAME}_cored_annotate.ll")
+  SET(COREDOS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${NAME}")
+  file(MAKE_DIRECTORY "${COREDOS_OUTPUT_DIR}")
+  SET(COREDOS_ANNOTATE_OBJECT "${COREDOS_OUTPUT_DIR}/cored_annotate.ll")
 
   # compile annotate file
   add_custom_command(OUTPUT ${COREDOS_ANNOTATE_OBJECT}
@@ -17,16 +19,13 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
     MAIN_DEPENDENCY ${COREDOS_ANNOTATE_SOURCE}
     COMMENT "[${PROJECT_NAME}/${name}] Compiling cored_annotate.c with clang")
 
-  set(BDIR "${CMAKE_CURRENT_BINARY_DIR}")
-  set(COREDOS_SOURCE_SYSTEM "${BDIR}/${NAME}_source_system.ll")
-  set(COREDOS_RTSC_ANALYZE_XML "${BDIR}/${NAME}_rtsc_analyze.xml")
-
-  set(COREDOS_GENERATED_SOURCE "${BDIR}/${NAME}_coredos.cc")
-
-  set(COREDOS_GENERATED_LINKER "${BDIR}/${NAME}_linker.ld")
+  set(COREDOS_SOURCE_SYSTEM "${COREDOS_OUTPUT_DIR}/source_system.ll")
+  set(COREDOS_RTSC_ANALYZE_XML "${COREDOS_OUTPUT_DIR}/rtsc_analyze.xml")
+  set(COREDOS_GENERATED_SOURCE "${COREDOS_OUTPUT_DIR}/coredos.cc")
+  set(COREDOS_GENERATED_LINKER "${COREDOS_OUTPUT_DIR}/linker.ld")
 
 
-  set(COREDOS_GENERATED_LLVM "${BDIR}/${NAME}_coredos.ll")
+  set(COREDOS_GENERATED_LLVM "${COREDOS_OUTPUT_DIR}/coredos.ll")
   set(COREDOS_BINARY_LLVM_BYTECODE "")
   set(tmp "")
 
@@ -37,7 +36,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
 
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
-    set(llvm_bytecode "${CMAKE_CURRENT_BINARY_DIR}/${src}.ll")
+    set(llvm_bytecode "${COREDOS_OUTPUT_DIR}/${src}.ll")
     add_custom_command(OUTPUT ${llvm_bytecode}
       COMMAND ${CLANGPP_BINARY} -S -emit-llvm -O0 -m32 -std=c++11 ${ISA_CXX_FLAGS} ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
       MAIN_DEPENDENCY ${src}
@@ -59,14 +58,10 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
   COMMAND ${EAG_BINARY} -data-deps=explicit -verify
      -sysann=${COREDOS_ANNOTATE_OBJECT}
      -sourcesystem=${SYSTEM_XML}
-     -out=${CMAKE_CURRENT_BINARY_DIR}
+     -out=${COREDOS_OUTPUT_DIR}
      -analyze-tasks -dump-source-system
        -dump-graphs
      ${COREDOS_BINARY_LLVM_BYTECODE}
-    COMMAND
-      ${CMAKE_COMMAND} -E rename ${BDIR}/source_system.ll ${COREDOS_SOURCE_SYSTEM}
-    COMMAND
-       ${CMAKE_COMMAND} -E rename ${BDIR}/rtsc_analyze.xml ${COREDOS_RTSC_ANALYZE_XML}
     COMMENT "[${PROJECT_NAME}/${NAME}] Analyzing application with RTSC")
 
   # Add Target for the analysis step
@@ -96,7 +91,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
     COMMAND ${COREDOS_GENERATOR}
      --system-xml "${SYSTEM_XML}"
        --rtsc-analyze-xml "${COREDOS_RTSC_ANALYZE_XML}"
-     --prefix ${BDIR}
+       --prefix ${COREDOS_OUTPUT_DIR}
        --name ${NAME}
        --template-base ${PROJECT_SOURCE_DIR}
        --arch ${COREDOS_ARCHITECTURE}
@@ -108,7 +103,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
   add_custom_target(${NAME}-generate DEPENDS "${COREDOS_GENERATED_SOURCE}")
 
   add_custom_target(${NAME}-clean
-    COMMAND ${CMAKE_COMMAND} -E remove -f ${CMAKE_CURRENT_BINARY_DIR}/${NAME}* ${COREDOS_BINARY_LLVM_BYTECODE}
+    COMMAND ${CMAKE_COMMAND} -E remove -f ${COREDOS_OUTPUT_DIR}/* ${COREDOS_BINARY_LLVM_BYTECODE}
   )
 
 

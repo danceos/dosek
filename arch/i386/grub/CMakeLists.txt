@@ -7,7 +7,7 @@ foreach(ELF ${EXECUTABLES})
 	get_target_property(ELF_ABS ${ELF} LOCATION)
 	set(ISOFILE "${ELF_ABS}.iso")
 
-	set(STARTUP_SCRIPTS ${PROJECT_BINARY_DIR}/startup_scripts)
+	set(STARTUP_SCRIPTS ${PROJECT_BINARY_DIR}/grub/${SUFFIX}/startup_scripts)
 	file(MAKE_DIRECTORY ${STARTUP_SCRIPTS})
 
 	# Grub
@@ -16,7 +16,7 @@ foreach(ELF ${EXECUTABLES})
 		message(FATAL_ERROR "grub-mkrescue not found, cannot create bootable iso :(")
 	endif()
 
-	set(ISODIR "${PROJECT_BINARY_DIR}/grub_iso")
+	set(ISODIR "${PROJECT_BINARY_DIR}/grub/${SUFFIX}/grub_iso")
 
 	# Generate build directory for grub-mkrescue
 	set(BOOTDIR "${ISODIR}/boot/")
