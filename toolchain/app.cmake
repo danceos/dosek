@@ -27,7 +27,6 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
 
   set(COREDOS_GENERATED_LLVM "${COREDOS_OUTPUT_DIR}/coredos.ll")
   set(COREDOS_BINARY_LLVM_BYTECODE "")
-  set(tmp "")
 
   set(DEFINITON_FLAGS ";")
   foreach(DEF ${DEFINITIONS})
@@ -44,11 +43,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
       COMMENT "[${PROJECT_NAME}/${NAME}] Compiling application ${NAME}/${src} with clang")
 
     list(APPEND COREDOS_BINARY_LLVM_BYTECODE ${llvm_bytecode})
-    list(APPEND tmp ${src})
   endforeach(src)
-
-  SET(COREDOS_BINARY_SOURCES ${tmp})
-
 
   # Use RTSC to analyze and merge the source system bytecode
   add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM}"

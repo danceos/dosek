@@ -84,7 +84,7 @@ macro(fail_targets TNAME ELF TEST)
 				-Wf,--elf-file=${ELF}
 			COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"
 			WORKING_DIRECTORY ${FAIL_DIR}
-			OUTPUT ${TRACEFILE} ${STATEDIR} ${FAIL_DIR}/bochsout.txt ${FAIL_DIR}/serial.out
+			OUTPUT ${TRACEFILE} ${STATEDIR}
 		)
 		add_custom_target(fail-trace-${TNAME} DEPENDS ${TRACEFILE})
 
