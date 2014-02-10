@@ -54,7 +54,8 @@ class RunningTaskToolbox:
     def __reachability(self, syscall, possible_subtasks):
         reachable_subtasks = self.analysis.reachable_subtasks_from_abb(syscall)
         assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
-            function.function_name, syscall_name, arguments, list(possible_subtasks), list(reachable_subtasks))
+            syscall.function.function_name, syscall.type,
+            syscall.arguments, list(possible_subtasks), list(reachable_subtasks))
         self.checked_syscalls.add(syscall)
 
         return syscall

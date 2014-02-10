@@ -6,3 +6,30 @@ COREDOS_BINARY(
   TEST_ISO
   a.cc
 )
+
+COREDOS_BINARY(
+  NAME bcc1_resource1b
+  SYSTEM_XML system.xml
+  LIBS libtest
+  VERIFY verify_b.py
+  TEST_ISO
+  b.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_resource1c
+  SYSTEM_XML system.xml
+  LIBS libtest
+  VERIFY verify_a.py # Same constraints as A
+  TEST_ISO
+  c.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_resource1d
+  SYSTEM_XML system.xml
+  LIBS libtest
+  VERIFY verify_d.py # Same constraints as A
+  TEST_ISO
+  d.cc
+)
