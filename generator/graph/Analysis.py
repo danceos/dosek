@@ -201,12 +201,5 @@ class MoveFunctionsToTask(Analysis):
                 abb.function.subtask = subtask
                 logging.debug("Moving %s to %s", abb.function, subtask.task)
 
-            # The function __OS_before_idle_loop belongs to the idle
-            # subtask, this is a hack for testing
-            if abb.function.task == None \
-               and abb.function.function_name == "__OS_PreIdleHook":
-                idle.task.add_function(abb.function)
-                abb.function.subtask = idle
-
 
 
