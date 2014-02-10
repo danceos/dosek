@@ -26,7 +26,9 @@ extern "C" void arch_startup()
 	IDT::init();
 
 	// setup paging
+	#ifndef MPU_DISABLED
 	MMU::init();
+	#endif
 
 	// setup PIC
 	PIC::init();

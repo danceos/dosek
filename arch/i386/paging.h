@@ -77,8 +77,12 @@ class PageDirectory {
 public:
 	/** \brief Enable/use page directory by loading its address into CR3 register */
 	static inline void enable(PageDirectory &pagedir) {
+		// TODO: do not set %cr3
+		// currently this is still required to check if running in userspace in idt.S
+		//#ifndef MPU_DISABLED
 		// load directory address in CR3
 		asm volatile("mov %0, %%cr3":: "r"(pagedir.entries));
+		//#endif
 	}
 
 	/** \brief Enable/use page directory by loading its address into CR3 register */

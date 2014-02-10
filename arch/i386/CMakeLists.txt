@@ -9,6 +9,13 @@ string(RANDOM LENGTH 4 ALPHABET "123456789" DPORT)
 set(DEBUG_PORT ${DPORT} CACHE STRING "Debug (stub) port")
 message(STATUS "[${PROJECT_NAME}] Using port ${DEBUG_PORT} for debug stub")
 
+# Build option to disable MMU protection
+option(MPU_PROTECTION "Use MPU protection" ON)
+if(NOT MPU_PROTECTION)
+	message(STATUS "[${PROJECT_NAME}] Disabling MPU protection")
+	add_definitions(-DMPU_DISABLED)
+endif()
+
 # Enable emulators
 OPTION(X86_TARGET_BOCHS "Bochs" ON)
 OPTION(X86_TARGET_QEMU "QEMU" ON)

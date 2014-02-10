@@ -1,5 +1,3 @@
-message(STATUS "Preparing generic startup code.")
-
 set(SRCS
 		startup.cc
 )
