@@ -6,7 +6,6 @@
 #include "paging.h"
 #include "lapic.h"
 #include "util/assert.h"
-#include "os/scheduler/scheduler.h"
 
 extern "C" uint8_t _estack_os;
 

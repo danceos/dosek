@@ -31,7 +31,6 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/toolchain")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ISA_C_FLAGS} -ffunction-sections -fdata-sections -fno-zero-initialized-in-bss -nostdlib -fno-builtin")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-exceptions -std=c++11")
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
-message(STATUS "[${PROJECT_NAME}] Assembler flags: ${ISA_ASM_FLAGS}")
 
 # Find python
 find_program(PYTHON "python")

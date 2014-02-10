@@ -21,9 +21,6 @@
 /** \brief Halt the processor when idle */
 #define IDLE_HALT 1
 
-/** \brief callback that is called before the idle loop is entered */
-extern "C" void __attribute__((weak_import)) __OS_PreIdleHook(void);
-
 namespace arch {
 
 // TODO: remove pointer usage by determining static location from task ID
@@ -94,7 +91,7 @@ public:
 	 *
      * Must be run in ring 0 to allow halting the machine
 	 */
-	static noinline void idle_loop(void) {
+	static noinline void idle_loop(__attribute__((unused)) uint32_t dummy) {
 		// allow all interrupts
 		LAPIC::set_task_prio(0);
 

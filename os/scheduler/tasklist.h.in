@@ -95,6 +95,7 @@ assert(((signature - signature%(ii)s) %% S::A) == 0);
         return set(id, newprio);
     }
 
+    /* unused by scheduler
     template<typename T, typename S>
     forceinline value_coded_t dequeue(T& id, S& prio) {
         static value_coded_t sig1;
@@ -115,6 +116,7 @@ assert(((signature - signature%(ii)s) %% S::A) == 0);
 
         return sig1+sig2;
     }
+    */
 };
 
 constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;

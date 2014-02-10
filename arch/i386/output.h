@@ -27,6 +27,7 @@ extern Null_Stream debug;
 
 #else
 
+// FAIL* testing: no output
 extern Null_Stream kout;
 extern Null_Stream debug;
 
