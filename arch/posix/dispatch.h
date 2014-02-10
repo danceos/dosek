@@ -87,6 +87,10 @@ public:
         doDispatch(m_current, &nextctxt);
 	}
 
+	static forceinline void ResumeToTask(const os::scheduler::Task& next) {
+		Dispatch(next);
+	}
+
 	static const TCB * getCurrent(void) {
 		return m_current;
 	}

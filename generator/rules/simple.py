@@ -86,6 +86,8 @@ class SimpleSystem(BaseRules):
         self.objects["counter"] = {}
         self.objects["alarm"] = {}
         for counter_info in self.generator.system_description.getHardwareCounters():
+            assert counter_info.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
+
             counter = DataObject("Counter", "OS_%s_counter" %( counter_info.name),
                                  "(%d, %d, %d)" % (counter_info.maxallowedvalue,
                                                    counter_info.ticksperbase,

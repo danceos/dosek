@@ -13,13 +13,11 @@ namespace os {
 class Counter;
 
 class Alarm {
-	typedef uint32_t Ticks;
-
 	const Counter& configuration_;
 
 	bool armed_;
-	Ticks absoluteTime_;
-	Ticks cycleTime_;
+	TickType absoluteTime_;
+	TickType cycleTime_;
 
 public:
 	/** \brief task to activate */
@@ -29,7 +27,7 @@ public:
 	constexpr Alarm(Counter& counter, const Task& task) : configuration_(counter), armed_(false),
 														  absoluteTime_(0), cycleTime_(0), task_(&task) {}
 	constexpr Alarm(Counter& counter, const Task& task, bool armed, 
-					Ticks absoluteTime, Ticks cycleTime) : 
+					TickType absoluteTime, TickType cycleTime) : 
 		configuration_(counter), armed_(armed),
 		absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
 
@@ -42,12 +40,17 @@ public:
 		return armed_;
 	}
 
-	void setAbsoluteTime (Ticks absoluteTime) {
+	void setAbsoluteTime (TickType absoluteTime) {
 		absoluteTime_ = absoluteTime;
 	}
 
-	void setRelativeTime (Ticks relativeTime) {
-		Ticks remaining = configuration_.maxallowedvalue - configuration_.getValue();
+	template<typename Encoded>
+	void setRelativeTime(Encoded encoded) {
+		setRelativeTime(encoded.decode());
+	}
+
+	void setRelativeTime (TickType relativeTime) {
+		TickType remaining = configuration_.maxallowedvalue - configuration_.getValue();
 
 		if(remaining >= relativeTime) {
 			absoluteTime_ = configuration_.getValue() + relativeTime;
@@ -56,19 +59,24 @@ public:
 		}
 	}
 
-	Ticks getAbsoluteTime () {
+	TickType getAbsoluteTime () {
 		return absoluteTime_;
 	}
 
-	void setCycleTime (Ticks cycleTime) {
+	template<typename Encoded>
+	void setCycleTime(Encoded encoded) {
+		setCycleTime(encoded.decode());
+	}
+
+	void setCycleTime (TickType cycleTime) {
 		cycleTime_ = cycleTime;
 	}
 
-	Ticks getCycleTime () {
+	TickType getCycleTime () {
 		return cycleTime_;
 	}
 
-	Ticks getRemainingTicks() {
+	TickType getRemainingTickType() {
 		if(absoluteTime_ > configuration_.getValue()) {
 			return absoluteTime_ - configuration_.getValue();
 		} else {

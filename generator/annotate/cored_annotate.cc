@@ -53,20 +53,20 @@ StatusType OSEKOS_WaitEvent(EventMaskType e) {
   rtsc_annotate_os_param((void*)e);
 }
 
-StatusType OSEKOS_GetAlarm(AlarmType a,unsigned int* ticks) {
+StatusType OSEKOS_GetAlarm(AlarmType a, TickType* ticks) {
   rtsc_systemcall();
   rtsc_annotate_os_param(a);
   rtsc_annotate_app_param((void*)ticks);
 }
 
-StatusType OSEKOS_SetRelAlarm(AlarmType a,unsigned int inc,unsigned int cycle) {
+StatusType OSEKOS_SetRelAlarm(AlarmType a, TickType inc, TickType cycle) {
   rtsc_systemcall();
   rtsc_annotate_os_param(a);
   rtsc_annotate_app_param((void*)inc);
   rtsc_annotate_app_param((void*)cycle);
 }
 
-StatusType OSEKOS_SetAbsAlarm(AlarmType a,unsigned int inc,unsigned int cycle) {
+StatusType OSEKOS_SetAbsAlarm(AlarmType a, TickType inc, TickType cycle) {
   rtsc_systemcall();
   rtsc_annotate_os_param(a);
   rtsc_annotate_app_param((void*)inc);

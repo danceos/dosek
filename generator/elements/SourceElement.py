@@ -45,13 +45,17 @@ class Block(SourceElement):
     def indent_spaces():
         return " " * (Block.indentation_level * 4)
 
-    def __init__(self, static_guard = "", statements = None):
+    def __init__(self, static_guard = "", statements = None, arguments = None):
         SourceElement.__init__(self)
         if statements is None:
             self.inner = []
         else:
             self.inner = statements
         self.static_guard = static_guard
+        self.__arguments = arguments
+
+    def arguments(self):
+        return self.__arguments
 
     def block_guard(self):
         return self.static_guard
@@ -105,21 +109,25 @@ class Indent(SourceElement):
         return [Block.indent_spaces()]
 
 class VariableDefinition(SourceElement):
-    def __init__(self, datatype, name):
+    def __init__(self, datatype, name, array_length = None):
         SourceElement.__init__(self)
         self.datatype = datatype
         self.name = name
+        self.array_length = array_length
 
     def expand(self, generator):
-        statement = "%s %s" % ( self.datatype, self.name )
+        if self.array_length:
+            statement = "%s %s[%s]" % ( self.datatype, self.name, self.array_length )
+        else:
+            statement = "%s %s" % ( self.datatype, self.name )
         return [Statement(statement)]
 
     @staticmethod
-    def new(generator, datatype):
+    def new(generator, datatype, array_length = None):
         if datatype == "void":
             return None
         varname = generator.variable_name_for_datatype(datatype)
-        return VariableDefinition(datatype, varname)
+        return VariableDefinition(datatype, varname, array_length)
 
 class FunctionCall(SourceElement):
     def __init__(self, name, arguments, return_variable = None):
@@ -134,7 +142,7 @@ class FunctionCall(SourceElement):
             statement += "%s = "% self.return_variable
 
         statement += "%s(%s)" % (self.function,
-                                 ",".join(self.arguments))
+                                 ", ".join(self.arguments))
 
         return [Statement(statement)]
 

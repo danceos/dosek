@@ -60,6 +60,9 @@ class AtomicBasicBlock(GraphObject):
             if x.startswith("OSEKOS_TASK_Struct_"):
                 handler_name = x[len("OSEKOS_TASK_Struct_"):]
                 x = self.system.functions["OSEKOS_TASK_" + handler_name]
+            elif x.startswith("OSEKOS_ALARM_Struct_"):
+                alarm_name = x[len("OSEKOS_ALARM_Struct_"):]
+                x = alarm_name
             args.append(x)
         self.arguments = args
 

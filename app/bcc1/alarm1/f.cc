@@ -12,7 +12,7 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 volatile int a;
 
 TASK(H1) {
-	test_trace('1');
+	test_trace('X');
 	TerminateTask();
 }
 

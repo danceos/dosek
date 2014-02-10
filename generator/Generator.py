@@ -77,7 +77,7 @@ class Generator:
         "ClearEvent": None, #["StatusType", "EventMaskType"],
         "WaitEvent": None,
         "GetAlarm": None,
-        "SetRelAlarm": ["StatusType", "AlarmType", "int", "int"],
+        "SetRelAlarm": ["StatusType", "AlarmType", "TickType", "TickType"],
         "CancelAlarm": None,
         "GetAlarmBase": None,
         "AdvanceCounter": None,

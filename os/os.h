@@ -94,6 +94,8 @@ struct MESSAGEStruct {
 
 typedef struct MESSAGEStruct* MessageIdentifier;
 
+typedef uint16_t TickType;
+
 /******************************************************************************
  *                                                                            *
  * Macro Definitions                                                          *
@@ -269,7 +271,7 @@ extern StatusType OSEKOS_WaitEvent(EventMaskType e);
 /**
  * \brief Get the ticks until the next expiration
  **/
-extern StatusType OSEKOS_GetAlarm(AlarmType a,unsigned int* ticks);
+extern StatusType OSEKOS_GetAlarm(AlarmType a,TickType* ticks);
 
 /**
  * \brief Trigger the given Alarm to expire in certain amount of time
@@ -277,15 +279,7 @@ extern StatusType OSEKOS_GetAlarm(AlarmType a,unsigned int* ticks);
  * \param inc The relative offset for the first expiration of the given ALARM
  * \param cycle The ALARM will periodically expire every cycle time units
  **/
-extern StatusType OSEKOS_SetRelAlarm(AlarmType a,unsigned int inc,unsigned int cycle);
-
-/**
- * \brief Trigger the given Alarm to expire in certain amount of time
- * \param a The ALARM to be triggered
- * \param inc The absolute offset for the first expiration of the given ALARM
- * \param cycle The ALARM will periodically expire every cycle time units
- **/
-extern StatusType OSEKOS_SetRelAlarm(AlarmType a,unsigned int inc,unsigned int cycle);
+extern StatusType OSEKOS_SetRelAlarm(AlarmType a,TickType inc, TickType cycle);
 
 /**
  * \brief Reset the given ALARM

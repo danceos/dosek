@@ -73,7 +73,7 @@ class PosixArch(SimpleArch):
             return function
 
         self.call_function(function, "Machine::disable_interrupts", "void", [])
-        block = Block()
+        block = Block(arguments = [(argument, "void *")])
         function.add(block)
         self.call_function(function, "Machine::enable_interrupts", "void", [])
 

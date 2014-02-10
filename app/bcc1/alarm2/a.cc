@@ -1,0 +1,33 @@
+#include "os.h"
+#include "test/test.h"
+
+DeclareTask(H1);
+DeclareTask(H2);
+DeclareTask(H3);
+DeclareAlarm(A1);
+DeclareCounter(C1);
+DeclareAlarm(A2);
+DeclareCounter(C2);
+
+
+TEST_MAKE_OS_MAIN(StartOS(0))
+
+TASK(H1) {
+    test_trace('1');
+    TerminateTask();
+}
+
+TASK(H2) {
+    test_trace('2');
+    test_start_check();
+    test_trace_assert((char *)"312");
+    ShutdownMachine();
+    TerminateTask();
+}
+
+TASK(H3) {
+    test_trace('3');
+    SetRelAlarm(A1, 1, 0);
+    SetRelAlarm(A2, 1, 0);
+    TerminateTask();
+}

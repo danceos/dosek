@@ -1,5 +1,6 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
-from generator.elements import CodeTemplate, Include, Function
+from generator.elements import CodeTemplate, Include, Function, VariableDefinition, \
+    Block, Statement, Comment
 
 class EncodedSystem(SimpleSystem):
     def __init__(self):
@@ -57,6 +58,30 @@ class EncodedSystem(SimpleSystem):
         self.call_function(block, "syscall", "void", ["os::scheduler::ScheduleC_impl", "0"])
         self.call_function(block, "Machine::unreachable", "void", [])
 
+    def encode_arguments(self, block, arguments):
+        encoded_count = len(arguments);
+        b = self.generator.signature_generator.new()
+        ## FIXME: We could use a custom struct here
+        var = VariableDefinition.new(self.generator, "Encoded_Static<A0, %d>" % b,
+                                     array_length = encoded_count)
+        encoding_block = Block("/* Encode Arguments */ ")
+        block.prepend(encoding_block)
+        block.prepend(var)
+
+        for i in range(0, len(arguments)):
+            arg = arguments[i][0]
+            encoding_block.add(Statement("%s[%d].encode(%s, 0 /* = D */)" % (var.name, i, arg)))
+        return var
+
+    def get_encoded_args(self, function, encoded_arguments, arg):
+        datatype = encoded_arguments.datatype + "*";
+        decl = VariableDefinition.new(self.generator, datatype)
+        function.add(decl)
+        function.add(Statement("%s = (%s) %s" %(decl.name, datatype, arg[0])))
+        return decl
+
+    def get_calling_task_desc(self, abb):
+        return self.objects[abb.function.subtask]['task_descriptor']
 
     def TerminateTask(self, block, abb):
         self.call_function(block, "scheduler_.TerminateTask_impl", "void",
@@ -72,31 +97,60 @@ class EncodedSystem(SimpleSystem):
         self.call_function(block,
                            "scheduler_.ChainTask_impl",
                            "void",
-                           [self.objects[abb.function.subtask]['task_descriptor'].name,
+                           [self.get_calling_task_desc(abb).name,
                             self.objects[abb.arguments[0]]['task_descriptor'].name])
 
-    def systemcall(self, systemcall, function):
-        """Generate systemcall into function"""
-        self.system_enter_hook(function)
+    def SetRelAlarm(self, kernelspace, abb, encoded_args):
+        # We have to encode 2 arguments, there
+        args = self.get_encoded_args(kernelspace, encoded_args, kernelspace.arguments()[0])
+        alarm_id = abb.arguments[0]
+        alarm_object = self.objects["alarm"][alarm_id]
+        self.call_function(kernelspace, "%s.setRelativeTime" % alarm_object.name,
+                           "void", ["%s[0]" % args.name])
+        self.call_function(kernelspace, "%s.setCycleTime" % alarm_object.name,
+                           "void", ["%s[1]" % args.name])
+        self.call_function(kernelspace, "%s.setArmed" % alarm_object.name,
+                           "void", ["true"])
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(abb).name])
 
-        syscall = self.generator.arch_rules.syscall_block(function, systemcall.abb.function.subtask,
-                                                          systemcall.abb.abb_id)
+    def systemcall(self, systemcall, userspace):
+        """Generate systemcall into userspace"""
+        self.system_enter_hook(userspace)
+
+        subtask = systemcall.abb.function.subtask
+        abb_id  = systemcall.abb.abb_id
+        func_syscall_block = self.generator.arch_rules.syscall_block
+
 
         if systemcall.function == "TerminateTask":
+            syscall = func_syscall_block(userspace, subtask, abb_id)
             self.TerminateTask(syscall, systemcall.abb)
         elif systemcall.function == "ActivateTask":
-            function.unused_parameter(0)
+            userspace.unused_parameter(0)
+            syscall = func_syscall_block(userspace, subtask, abb_id)
             self.ActivateTask(syscall, systemcall.abb)
         elif systemcall.function == "ChainTask":
-            function.unused_parameter(0)
+            userspace.unused_parameter(0)
+            syscall = func_syscall_block(userspace, subtask, abb_id)
             self.ChainTask(syscall, systemcall.abb)
+        elif systemcall.function == "SetRelAlarm":
+            userspace.unused_parameter(0)
+            # The SetRelAlarm systemcall needs two arguments from the
+            # userspace, so we encode them
+            encoded_args = self.encode_arguments(userspace, userspace.arguments()[1:])
+            # A Pointer to the encoded args is given
+            syscall = func_syscall_block(userspace, subtask, "&" + encoded_args.name)
+            self.SetRelAlarm(syscall, systemcall.abb, encoded_args)
         else:
             assert False, "Not yet supported %s"% systmcall.function
 
-        self.system_leave_hook(function)
+        self.system_leave_hook(userspace)
 
         if systemcall.rettype != 'void':
-            self.return_statement(function, "E_OK")
+            self.return_statement(userspace, "E_OK")
 
 
 

@@ -77,6 +77,12 @@ public:
 		}
 	}
 
+	static forceinline void ResumeToTask(const os::scheduler::Task& task) {
+		save_sp = (volatile void **) &task.tcb.sp;
+		// resuming, pass stackpointer with saved IP
+		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)&task.tcb.sp);
+	}
+
 	#if IDLE_HALT
 
 	/** \brief Syscall to start idle loop (in ring 0) */

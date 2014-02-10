@@ -1,5 +1,6 @@
 // TODO: this file will be generated from the application configuration!
 
+#include "os/os.h"
 #include "os/scheduler/task.h"
 #include "os/scheduler/tasklist.h"
 #include "os/scheduler/scheduler.h"
