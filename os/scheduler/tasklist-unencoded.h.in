@@ -1,0 +1,67 @@
+// ****************************************************************
+// TaskList Implementation
+// ****************************************************************
+
+namespace os { namespace scheduler {
+
+// only needed for Tasklist constructor comma placement
+class UnencodedTaskListStatic {};
+
+/* Simpler array based task queue */
+struct TaskList : public UnencodedTaskListStatic {
+    typedef uint8_t id_t;
+    typedef uint8_t prio_t;
+
+    // encoded task priorities
+    {{{snippet:ready_flag:name,A,B|prio_t %(name)s;}}}
+    {{{generate:ready_flag_variables}}}
+
+    // idle task id/priority
+    static constexpr id_t idle_id = 0;
+    static constexpr prio_t idle_prio = 0;
+
+    {{{snippet:ready_flag_init:name|, %(name)s(0)}}}
+    TaskList() : UnencodedTaskListStatic() {{{generate:ready_flag_constructor}}} {}
+
+    /** Set priority of task id to prio **/
+    forceinline void set(const prio_t id, const prio_t prio) {
+{{{snippet:task_set_entry:name|if(id == %(id)s) {
+    %(name)s = prio;
+} else }}}
+         {{{generate:task_set_call}}}{
+             assert(false);
+         }
+    }
+
+    forceinline void head(id_t& id, prio_t& prio) const {
+        // start with idle id/priority
+        id = idle_id;
+        prio = idle_prio;
+
+{{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
+
+        if(%(task)s > prio) {
+            prio = %(task)s;
+            id = %(task_id)s;
+        }
+}}}
+{{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
+}}}
+        {{{generate:head_update_max_cascade}}}
+    }
+
+    forceinline void insert(const id_t& id, const prio_t& prio) {
+        set(id, prio);
+    }
+
+    forceinline void remove(const id_t& id) {
+        set(id, 0);
+    }
+
+    forceinline void promote(const id_t& id, const prio_t& newprio) {
+        set(id, newprio);
+    }
+};
+
+}; // scheduler
+}; // os

@@ -57,7 +57,8 @@ if __name__ == "__main__":
                       help="Where to search for code templates")
     parser.add_option('', '--verify', dest='verify', default = None,
                       help="verify script for the analysis results")
-
+    parser.add_option('', '--unencoded', dest='unencoded', default = None,
+                      help="generate unencoded system")
 
     (options, args) = parser.parse_args()
 
@@ -93,6 +94,12 @@ if __name__ == "__main__":
     else:
         panic("Unknown --arch=%s", options.arch)
 
-    generator = Generator.Generator(graph, options.name, EncodedSystem(), arch)
+    if options.unencoded:
+        system = UnencodedSystem()
+    else:
+        system = EncodedSystem()
+
+    generator = Generator.Generator(graph, options.name, system, arch)
+
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)

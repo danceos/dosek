@@ -1,0 +1,183 @@
+namespace os {
+namespace scheduler {
+
+using namespace os::tasks;
+
+struct Scheduler {
+    os::scheduler::TaskList tlist;
+
+    typedef uint8_t prio_t;
+    typedef uint8_t id_t;
+
+    prio_t current_prio;
+    id_t current_task;
+
+    static constexpr prio_t scheduler_prio = {{{generate:scheduler_prio}}};
+
+    forceinline void Reschedule(void) {
+        // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
+        if (current_prio != scheduler_prio) {
+            // set current (=next) task from task list
+            tlist.head(current_task, current_prio);
+        }
+
+        // dispatch or enter idle
+        // TODO: generated signature
+{{{snippet:reschedule_dispatch_task:task|if(current_task == %(task)s.id) {
+    if (%(task)s.preemptable == false) {
+        // promote non-preemptable task to RES_SCHEDULER
+        tlist.promote(%(task)s.id, scheduler_prio);
+        current_prio = scheduler_prio;
+    }
+    Dispatcher::Dispatch(%(task)s);
+} else }}}
+        {{{generate:reschedule_foreach_task}}}if(current_task == TaskList::idle_id) {
+            Dispatcher::idle();
+        } else {
+            assert(false);
+        }
+    }
+
+    forceinline void Schedule_impl(void) {
+        if(in_syscall()) {
+            // in syscall: reschedule directly
+            Reschedule();
+        } else {
+            // not in syscall (probably in ISR): request reschedule AST
+            // Calls also Reschedule()
+            request_reschedule_ast();
+        }
+    }
+
+    forceinline void SetReady_impl(const Task t) {
+        SetReady_impl(t.id);
+    }
+
+    forceinline void SetRunning_impl(const Task t) {
+        auto id = t.id;
+        auto prio = t.prio;
+        SetRunning_impl(id, prio);
+    }
+
+    forceinline void SetSuspended_impl(const Task t) {
+        t.tcb.reset();
+
+        tlist.remove(t.id);
+        if (t.preemptable == false) {
+            // restore non-preemptable task to original priority
+            // this is required for the optimization in Reschedule()
+            current_prio = t.prio;
+        }
+    }
+
+    template<typename Id, typename Prio>
+    forceinline void SetRunning_impl(const Id id, const Prio prio) {
+        current_task = id;
+        current_prio = prio;
+    }
+
+    forceinline void ActivateTask_impl(const Task t) {
+        ActivateTask_impl(t.id);
+    }
+
+    forceinline void ChainTask_impl(const Task from, const Task to) {
+        auto from_id = from.id;
+        auto to_id = to.id;
+        assert(from_id == current_task);
+
+        SetSuspended_impl(from);
+
+        ActivateTask_impl(to_id);
+    }
+
+    forceinline void TerminateTask_impl(const Task from) {
+        auto id = from.id;
+        assert(id == current_task);
+
+        SetSuspended_impl(from);
+
+        Schedule_impl();
+    }
+
+    forceinline void GetResource_impl(const Task current_task, const int new_prio) {
+        tlist.promote(current_task.id, new_prio);
+        current_prio = new_prio;
+    }
+
+    forceinline void ReleaseResource_impl(const Task current_task, const int new_prio) {
+        tlist.promote(current_task.id, new_prio);
+        current_prio = new_prio;
+        Schedule_impl();
+    }
+
+    template<typename T>
+    forceinline void SetReady_impl(const T id) {
+        // TODO: generated signature
+{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.id) {
+    tlist.insert(%(task)s.id,  %(task)s.prio);
+} else }}}
+
+        {{{generate:activate_task_foreach_task}}}{
+            assert(false);
+        }
+    }
+
+    template<typename T>
+    forceinline void ActivateTask_impl(const T id) {
+        SetReady_impl(id);
+        Schedule_impl();
+    }
+
+};
+
+constexpr Scheduler::prio_t Scheduler::scheduler_prio;
+
+extern Scheduler scheduler_;
+
+// TODO: more meaningful names
+// currently the "normal" name is a syscall wrapper for
+// the actual syscall which has ...C suffix
+
+template<typename T>
+noinline void ActivateTaskC_impl(const T id) {
+    scheduler_.ActivateTask_impl(id);
+}
+
+/**
+ * @satisfies{13,2,3,1}
+ */
+forceinline void ActivateTask_impl(const Task& t) {
+    auto id = t.id;
+
+    syscall(ActivateTaskC_impl<decltype(id)>, id);
+}
+
+forceinline void SetReady_impl(const Task& t) {
+    auto id = t.id;
+    scheduler_.SetReady_impl(id);
+}
+
+
+noinline void ScheduleC_impl(uint32_t dummy);
+
+/**
+ * @satisfies{13,2,3,4}
+ */
+forceinline void Schedule_impl() {
+    syscall(ScheduleC_impl);
+}
+
+}; // namespace scheduler
+}; // namespace os
+
+namespace os {
+namespace scheduler {
+
+Scheduler scheduler_;
+
+noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
+    scheduler_.Reschedule();
+}
+
+}; // scheduler
+}; // os

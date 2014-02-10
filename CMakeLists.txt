@@ -16,6 +16,14 @@ if(DEBUGGING)
 	add_definitions(-DDEBUG=1)
 endif()
 
+OPTION(ENCODED_SYSTEM "Build encoded system" ON)
+if(ENCODED_SYSTEM)
+	message(STATUS "[${PROJECT_NAME}] Building encoded system")
+else()
+	message(STATUS "[${PROJECT_NAME}] Building UNencoded system")
+endif()
+
+
 # Verbose make
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE_MAKE})
