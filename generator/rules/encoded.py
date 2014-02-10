@@ -17,6 +17,7 @@ class EncodedSystem(SimpleSystem):
         # The current_prio_sig has to be allocated before the tasklist
         # is instanciated. Otherwise a TAssert in tasklist.h fails
         self.objects["Scheduler"] = {}
+        self.objects["Scheduler"]["scheduler_prio_sig"] = self.generator.signature_generator.new()
         self.objects["Scheduler"]["current_prio_sig"] = self.generator.signature_generator.new()
         self.objects["Scheduler"]["current_task_sig"] = self.generator.signature_generator.new()
 
@@ -264,6 +265,18 @@ class SchedulerTemplate(CodeTemplate):
         return str(self.objects["Scheduler"]["current_task_sig"])
     def current_prio_sig(self, snippet, args):
         return str(self.objects["Scheduler"]["current_prio_sig"])
+    def scheduler_prio_sig(self, snippet, args):
+        return str(self.objects["Scheduler"]["scheduler_prio_sig"])
+
+    def scheduler_prio(self, snippet, args):
+        max_prio = 0
+        for subtask in self.system_graph.get_subtasks():
+            if not subtask.is_real_thread():
+                continue
+            if(subtask.static_priority > max_prio):
+                max_prio = subtask.static_priority
+
+        return str(max_prio+1)
 
     # Reschedule
     def reschedule_foreach_task(self, snippet, args):
