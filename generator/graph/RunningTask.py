@@ -333,6 +333,7 @@ class RunningTaskAnalysis(Analysis):
              'ChainTask': self.system_call_semantic.do_ChainTask,
              'computation': self.do_computation_with_sporadic_events,
              'SetRelAlarm': self.system_call_semantic.do_computation, # ignore
+             'CancelAlarm': self.system_call_semantic.do_computation, # ignore
              'Idle': self.system_call_semantic.do_Idle})
         # Merge all system call possibilities
         after = SystemState.merge_many(self.system, after_states)

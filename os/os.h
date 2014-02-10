@@ -167,7 +167,7 @@ typedef uint16_t TickType;
   OSEKOS_SetRelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
 
 #define CancelAlarm(x)						\
-  OSEKOS_CancelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
+  OSEKOS_CancelAlarm(&OSEKOS_ALARM_Struct_##x)
 
 #define GetAlarmBase(x,b)				\
   OSEKOS_GetAlarmBase(&OSEKOS_ALARM_Struct_##x,b)

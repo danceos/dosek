@@ -78,7 +78,7 @@ class Generator:
         "WaitEvent": None,
         "GetAlarm": None,
         "SetRelAlarm": ["StatusType", "AlarmType", "TickType", "TickType"],
-        "CancelAlarm": None,
+        "CancelAlarm": ["StatusType", "AlarmType"],
         "GetAlarmBase": None,
         "AdvanceCounter": None,
         "SendMessage": None,

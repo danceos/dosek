@@ -117,6 +117,16 @@ class EncodedSystem(SimpleSystem):
                            "void",
                            [self.get_calling_task_desc(abb).name])
 
+    def CancelAlarm(self, kernelspace, abb):
+        alarm_id = abb.arguments[0]
+        alarm_object = self.objects["alarm"][alarm_id]
+        self.call_function(kernelspace, "%s.setArmed" % alarm_object.name,
+                           "void", ["false"])
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(abb).name])
+
     def systemcall(self, systemcall, userspace):
         """Generate systemcall into userspace"""
         self.system_enter_hook(userspace)
@@ -137,6 +147,10 @@ class EncodedSystem(SimpleSystem):
             userspace.unused_parameter(0)
             syscall = func_syscall_block(userspace, subtask, abb_id)
             self.ChainTask(syscall, systemcall.abb)
+        elif systemcall.function == "CancelAlarm":
+            userspace.unused_parameter(0)
+            syscall = func_syscall_block(userspace, subtask, abb_id)
+            self.CancelAlarm(syscall, systemcall.abb)
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
             # The SetRelAlarm systemcall needs two arguments from the
