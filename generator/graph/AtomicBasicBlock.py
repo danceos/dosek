@@ -12,6 +12,8 @@ class AtomicBasicBlock(GraphObject):
 
         self.type = "computation"
         self.arguments = []
+        # This is set by the DynamicPriorityAnalysis
+        self.dynamic_priority = None
 
     def graph_edges(self):
         return self.outgoing_edges
@@ -60,6 +62,9 @@ class AtomicBasicBlock(GraphObject):
             if x.startswith("OSEKOS_TASK_Struct_"):
                 handler_name = x[len("OSEKOS_TASK_Struct_"):]
                 x = self.system.functions["OSEKOS_TASK_" + handler_name]
+            elif x.startswith("OSEKOS_RESOURCE_Struct_"):
+                res_name = x[len("OSEKOS_RESOURCE_Struct_"):]
+                x = self.system.resources[res_name]
             elif x.startswith("OSEKOS_ALARM_Struct_"):
                 alarm_name = x[len("OSEKOS_ALARM_Struct_"):]
                 x = alarm_name
@@ -83,9 +88,11 @@ class AtomicBasicBlock(GraphObject):
 
     def dump(self):
         if self.type == "computation":
-            return {"type": self.type}
+            return {"type": self.type,
+                    "prio": str(self.dynamic_priority)}
         return {'type': self.type,
-                'arguments': repr(self.arguments)}
+                'arguments': repr(self.arguments),
+                'prio': str(self.dynamic_priority)}
 
     def __repr__(self):
         return "ABB%d"%(self.abb_id)

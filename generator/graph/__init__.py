@@ -11,6 +11,9 @@ from generator.graph.Analysis import *
 from generator.graph.RunningTask import *
 from generator.graph.common import GraphObject
 from generator.graph.Sporadic import Alarm
+from generator.graph.Resource import Resource
+from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
+
 
 
 
@@ -30,6 +33,7 @@ class SystemGraph(GraphObject):
         self.rtsc = None
         self.alarms = []
         self.verifiers = {}
+        self.resources = {}
 
     def graph_subobjects(self):
         objects = []
@@ -90,6 +94,10 @@ class SystemGraph(GraphObject):
         return [x for x in self.get_abbs()
                 if x.type != "computation"]
 
+    def scheduler_priority(self):
+        """The scheduler priority is higher than the highest task"""
+        return max([x.static_priority for x in self.get_subtasks()]) + 1
+
     def read_system_description(self, system):
         """Reads in the system description and builds the tasks and subtask
         objects and connects them"""
@@ -134,6 +142,9 @@ class SystemGraph(GraphObject):
             assert alarm.event == None
             task = self.functions["OSEKOS_TASK_" + alarm.task]
             self.alarms.append(Alarm(self, alarm.name, task))
+
+        for res in system.getResources():
+            self.resources[res.name] = Resource(self, res.name, res.tasks)
 
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc

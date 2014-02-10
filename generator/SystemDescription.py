@@ -157,6 +157,26 @@ class SystemDescription:
                                 device = int(isr.DEVICE),
                             )
 
+    Resource = namedtuple("Resource", ["name", "tasks"])
+
+    def getResources(self):
+        resources = []
+        if not hasattr(self.osek_dom, "RESOURCE"):
+            return resources
+        for res in self.osek_dom.RESOURCE:
+            tasks = set([])
+            for task in self.osek_dom.TASK:
+                if res.name == "RES_SCHEDULER":
+                    tasks.add(task.name)
+                if not hasattr(task, "RESOURCE"):
+                    continue
+                for x in task.RESOURCE:
+                    if str(x) == res.name:
+                        tasks.add(task)
+            resources.append(self.Resource(name = res.name,
+                                           tasks = list(tasks)))
+        return resources
+
 
 ################################################################
 ##
