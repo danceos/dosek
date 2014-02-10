@@ -1,6 +1,7 @@
 import logging
 import sys
 from generator.graph.common import *
+import copy
 
 class Analysis:
     def __init__(self):
@@ -66,17 +67,24 @@ class EnsureComputationBlocks(Analysis):
 
     def add_before(self, abb):
         nessecary = False
-        for node in abb.get_incoming_nodes('local'):
-            if node.type != 'computation':
-                nessecary = True
-        if abb.function.entry_abb == abb:
+        if len (abb.get_incoming_nodes('local')) > 1:
             nessecary = True
+        elif len (abb.get_incoming_nodes('local')) == 1:
+            if abb.definite_before('local').type != "computation":
+                nessecary = True
+        else:
+            assert abb.function.entry_abb == abb
+            nessecary = True
+
         if not nessecary:
             return
+        #print "add_before", abb
+
         new = self.system.new_abb()
         new.type = 'computation'
         abb.function.add_atomic_basic_block(new)
-        for edge in abb.incoming_edges:
+        
+        for edge in copy.copy(abb.incoming_edges):
             edge.source.remove_cfg_edge(abb, edge.type)
             edge.source.add_cfg_edge(new, edge.type)
         if abb.function.entry_abb == abb:
@@ -85,15 +93,18 @@ class EnsureComputationBlocks(Analysis):
 
     def add_after(self, abb):
         nessecary = False
-        for node in abb.get_outgoing_nodes('local'):
-            if node.type != 'computation':
-                nessecary = True
+        if len (abb.get_outgoing_nodes('local')) > 1:
+            nessecary = True
+        elif len (abb.get_outgoing_nodes('local')) == 1 \
+             and abb.definite_after('local').type != "computation":
+            nessecary = True
         if not nessecary:
             return
+        #print "add_after", abb
         new = self.system.new_abb()
         new.type = 'computation'
         abb.function.add_atomic_basic_block(new)
-        for edge in abb.outgoing_edges:
+        for edge in copy.copy(abb.outgoing_edges):
             abb.remove_cfg_edge(edge.target, edge.type)
             new.add_cfg_edge(edge.target, edge.type)
 

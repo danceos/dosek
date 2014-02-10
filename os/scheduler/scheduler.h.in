@@ -98,8 +98,23 @@ struct Scheduler  {
         Schedule_impl();
     }
 
+    forceinline void GetResource_impl(const Task current_task, const int new_prio) {
+		auto id = current_task.enc_id<1>();
+		auto new_prio_encoded = EC(2, new_prio);
+		tlist.promote(id, new_prio_encoded);
+		current_prio = new_prio_encoded;
+    }
 
-    template<typename T>
+    forceinline void ReleaseResource_impl(const Task current_task, const int new_prio) {
+		auto id = current_task.enc_id<1>();
+		auto new_prio_encoded = EC(2, new_prio);
+		tlist.promote(id, new_prio_encoded);
+		current_prio = new_prio_encoded;
+		Schedule_impl();
+    }
+
+
+	template<typename T>
     forceinline void SetReady_impl(const T id) {
         // TODO: generated signature
 {{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {

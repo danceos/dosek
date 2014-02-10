@@ -9,6 +9,13 @@ def get_functions(system, names):
                 ret.append(func)
     return tuple(ret)
 
+def get_objects(system, names):
+    ret = []
+    for x in names:
+        if x in system.resources:
+            ret.append(system.resources[x])
+    return ret
+
 class RunningTaskToolbox:
     def __init__(self, analysis):
         self.analysis = analysis
@@ -16,6 +23,7 @@ class RunningTaskToolbox:
         for syscall in self.analysis.system.get_syscalls():
             if syscall.type == "ShutdownOS":
                 self.checked_syscalls.add(syscall)
+        self.check_base_constraints()
 
     def mark_syscall(self, syscall):
         """Mark syscall as checked"""
@@ -41,6 +49,9 @@ class RunningTaskToolbox:
         marked as visited"""
 
         syscall = self.syscall(function, syscall_name, arguments)
+        return self.__reachability(syscall, possible_subtasks)
+
+    def __reachability(self, syscall, possible_subtasks):
         reachable_subtasks = self.analysis.reachable_subtasks_from_abb(syscall)
         assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
             function.function_name, syscall_name, arguments, list(possible_subtasks), list(reachable_subtasks))
@@ -56,3 +67,9 @@ class RunningTaskToolbox:
             function.function_name, list(activating_subtasks), list(possible_subtasks))
 
         return activating_abbs
+
+    def check_base_constraints(self):
+        for syscall in self.analysis.system.get_syscalls():
+            # Some syscalls cannot reschedule
+            if syscall.type in ("GetResource", "CancelAlarm", "SetRelAlarm"):
+                self.__reachability(syscall, [syscall.function.subtask])

@@ -16,17 +16,6 @@ class DynamicPriorityAnalysis(Analysis):
     def requires(self):
         return [EnsureComputationBlocks.name(), MoveFunctionsToTask.name()]
 
-    def for_abb(self, abb):
-        x = list(self.values.get(abb, []))
-        if len(x) == 0:
-            return None
-        elif len(x) == 1:
-            return x[0]
-        else:
-            self.panic("For %s (%s) it is not unambiguous, which task " \
-                       "is running at that very moment. This is not " \
-                       "supported by the system"%(abb, abb.function))
-
     StateVector = namedtuple("StateVector", ["free", "taken"])
 
     def block_functor(self, fixpoint, abb):
@@ -109,7 +98,15 @@ class DynamicPriorityAnalysis(Analysis):
             # Each abb has a dynamic priority
             abb.dynamic_priority = dynamic_priority
 
-        # Each systemcall has the scheduler priority
-        scheduler_prio = self.system.scheduler_priority()
+        # Each systemcall has the priority of the preceeding block, if
+        # there is no preceeding block (which is only true for
+        # StartOS), the priority is the idle priority.
         for syscall in self.system.get_syscalls():
-            syscall.dynamic_priority = scheduler_prio
+            precessors = syscall.get_incoming_nodes('local')
+            if len(precessors) == 0:
+                assert syscall.type == "StartOS"
+                syscall.dynamic_priority = self.system.get_subtask("Idle").static_priority
+            elif len(precessors) == 1:
+                syscall.dynamic_priority = precessors[0].dynamic_priority
+            else:
+                assert False, "Weird Systemcall %s %s" %(syscall, syscall.type)

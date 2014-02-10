@@ -1,5 +1,6 @@
 from generator.graph.common import *
 from generator.graph.Analysis import *
+from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.Sporadic import SporadicEvent
 from generator.tools import panic
 
@@ -77,58 +78,67 @@ class SystemCallSemantic:
         else:
             panic("BlockType %s is not supported yet" % block.type)
 
-    def find_possible_tasks(self, state):
-        # We get the subtask in the order of their priority
-        subtasks = []
-        for subtask in state.get_subtasks():
-            if state.is_surely_ready(subtask):
-                subtasks.append(subtask)
-                break
-            elif state.is_surely_suspended(subtask):
-                continue
-            elif state.is_maybe_ready(subtask):
-                subtasks.append(subtask)
-        return subtasks
+    def find_possible_next_blocks(self, source, state):
+        current_running = self.running_task.for_abb(source)
 
-    def dispatch(self, state, source, target, set_state_on_edge, prune_higher_tasks = True):
-        # Where are we going to
-        subtask = self.running_task.for_abb(target)
-
-        # Set all higher priority subtask to Suspended
-        # -> cont = entry_block
-        if prune_higher_tasks:
-            for st in state.get_subtasks():
-                if st == subtask:
-                    break
-                state.set_suspended(st)
-        # When surely know that we are running
-        state.set_ready(subtask)
-
-        set_state_on_edge(source, target, state)
-
-    def schedule(self, block, state, set_state_on_edge):
-        current_running = self.running_task.for_abb(block)
-        # If current_running task is not running, just dispatch back
-        # to it again
+        # If the current task is not preemptable, we can just continue
+        # on the local task graph
         if current_running and not current_running.preemptable \
            and state.is_surely_ready(current_running):
-            # Do not schedule, just return to current block
-            for target in state.get_continuations(current_running):
-                copy_state = state.copy()
-                copy_state.set_continuation(current_running, target)
+            return list(state.get_continuations(current_running))
 
-                self.dispatch(copy_state, block, target,
-                              set_state_on_edge,
-                              prune_higher_tasks = False)
-            return
+        # First of all all blocks blocks of maybe ready blocks are
+        # possible at all. We will delete some in the future.
+        # [(block, surely_running)]
+        possible_blocks = []
+        for subtask in state.get_subtasks():
+            if state.is_surely_ready(subtask):
+                for B in state.get_continuations(subtask):
+                    possible_blocks.append([B, True])
+            elif state.is_maybe_ready(subtask):
+                for B in state.get_continuations(subtask):
+                    possible_blocks.append([B, False])
 
-        for subtask in self.find_possible_tasks(state):
-            for target in state.get_continuations(subtask):
-                copy_state = state.copy()
-                copy_state.set_continuation(subtask, target)
+        # Then we sort the continuing blocks after their dynamic priority
+        possible_blocks = list(sorted(possible_blocks,
+                                      key = lambda x: x[0].dynamic_priority,
+                                      reverse = True))
 
-                self.dispatch(copy_state, block, target, set_state_on_edge)
+        ret = []
+        # Now we take all possible blocks until we find a block, that
+        # belongs to a surely runnning block
+        minimum_system_prio = 0
+        for block, surely in possible_blocks:
+            if surely:
+                minimum_system_prio = max(minimum_system_prio, block.dynamic_priority)
+        for block, surely in possible_blocks:
+            if block.dynamic_priority >= minimum_system_prio:
+                ret.append(block)
+        return ret
 
+    def schedule(self, source, state, set_state_on_edge):
+        possible_blocks = self.find_possible_next_blocks(source, state)
+
+        # The possible blocks are ordered with their dynamic priority.
+        # [....., Block, ....]
+        # All blocks left of a block are not taken blocks
+        for i in range(0, len(possible_blocks)):
+            target = possible_blocks[i]
+            copy_state = state.copy()
+            # Our target is surely running
+            copy_state.set_ready(target.function.subtask)
+            copy_state.set_continuation(target.function.subtask, target)
+
+            not_taken = set(possible_blocks[:i])
+            # If all possible continuations of a subtasks are not taken,
+            # we are sure that this task is not running.
+            for subtask in set([x.function.subtask for x in not_taken]):
+                if set(copy_state.get_continuations(subtask)).issubset(not_taken):
+                    copy_state.set_suspended(subtask)
+
+            set_state_on_edge(source, target, copy_state)
+
+        return
 
 
 class SystemState:
@@ -257,7 +267,7 @@ class RunningTaskAnalysis(Analysis):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return [CurrentRunningSubtask.name()]
+        return [CurrentRunningSubtask.name(), DynamicPriorityAnalysis.name()]
 
     @staticmethod
     def merge_inputs(edge_states, block, edge_type = 'global'):
@@ -320,10 +330,10 @@ class RunningTaskAnalysis(Analysis):
         # available task for the input state. Otherwise we wouldn't
         # have been scheduled (or the current task is non-preemptable)
         calling_task = self.running_task.for_abb(block)
-        if calling_task and calling_task.preemptable:
-            tasks = self.system_call_semantic.find_possible_tasks(before)
+        # if calling_task and calling_task.preemptable:
+            # tasks = self.system_call_semantic.find_possible_tasks(before)
             # Task should be schedulable
-            assert len(tasks) == 1 and tasks[0] == calling_task
+            # assert len(tasks) == 1 and tasks[0] == calling_task
 
         after_states = self.system_call_semantic.do_SystemCall(
             block, before,
@@ -334,12 +344,13 @@ class RunningTaskAnalysis(Analysis):
              'computation': self.do_computation_with_sporadic_events,
              'SetRelAlarm': self.system_call_semantic.do_computation, # ignore
              'CancelAlarm': self.system_call_semantic.do_computation, # ignore
+             'GetResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
+             'ReleaseResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
              'Idle': self.system_call_semantic.do_Idle})
         # Merge all system call possibilities
         after = SystemState.merge_many(self.system, after_states)
         # Schedule depending on the possible output state
         self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
-
 
         # This has to be done after the system call handling, since
         # new global links could have been introduced

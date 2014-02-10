@@ -69,8 +69,8 @@ class Generator:
         "ResumeOSInterrupts":  None, # ["void"],
         "SuspendOSInterrupts": None, #["void"],
 
-        "GetResource": None, #["StatusType", "ResourceType"],
-        "ReleaseResource": None, #["StatusType", "ResourceType"],
+        "GetResource": ["StatusType", "ResourceType"],
+        "ReleaseResource": ["StatusType", "ResourceType"],
 
         "SetEvent": None, # ["StatusType", "TaskType", "EventMaskType"],
         "GetEvent": None, # ["StatusType", "TaskType", "EventMaskRefType"],

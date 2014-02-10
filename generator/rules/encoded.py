@@ -127,6 +127,27 @@ class EncodedSystem(SimpleSystem):
                            "void",
                            [self.get_calling_task_desc(abb).name])
 
+    def GetResource(self, kernelspace, abb):
+        next_prio = abb.definite_after('local').dynamic_priority
+        self.call_function(kernelspace,
+                           "scheduler_.GetResource_impl",
+                           "void",
+                           [self.get_calling_task_desc(abb).name,
+                            str(next_prio)])
+
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(abb).name])
+
+    def ReleaseResource(self, kernelspace, abb):
+        next_prio = abb.definite_after('local').dynamic_priority
+        self.call_function(kernelspace,
+                           "scheduler_.ReleaseResource_impl",
+                           "void",
+                           [self.get_calling_task_desc(abb).name,
+                            str(next_prio)])
+
     def systemcall(self, systemcall, userspace):
         """Generate systemcall into userspace"""
         self.system_enter_hook(userspace)
@@ -151,6 +172,14 @@ class EncodedSystem(SimpleSystem):
             userspace.unused_parameter(0)
             syscall = func_syscall_block(userspace, subtask, abb_id)
             self.CancelAlarm(syscall, systemcall.abb)
+        elif systemcall.function == "GetResource":
+            userspace.unused_parameter(0)
+            syscall = func_syscall_block(userspace, subtask, abb_id)
+            self.GetResource(syscall, systemcall.abb)
+        elif systemcall.function == "ReleaseResource":
+            userspace.unused_parameter(0)
+            syscall = func_syscall_block(userspace, subtask, abb_id)
+            self.ReleaseResource(syscall, systemcall.abb)
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
             # The SetRelAlarm systemcall needs two arguments from the
@@ -160,7 +189,7 @@ class EncodedSystem(SimpleSystem):
             syscall = func_syscall_block(userspace, subtask, "&" + encoded_args.name)
             self.SetRelAlarm(syscall, systemcall.abb, encoded_args)
         else:
-            assert False, "Not yet supported %s"% systmcall.function
+            assert False, "Not yet supported %s"% systemcall.function
 
         self.system_leave_hook(userspace)
 
