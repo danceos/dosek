@@ -85,7 +85,7 @@ if __name__ == "__main__":
     graph.analyze("%s/%s" % (options.prefix, options.name))
 
     if options.arch == "i386":
-        arch = X86Arch();
+        arch = X86Arch()
     elif options.arch == "posix":
         arch = PosixArch()
     else:

@@ -1,7 +1,5 @@
-from generator.rules.base import BaseRules
-from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
-    Include, FunctionDeclaration, Comment, Function, DataObject, \
-    DataObjectArray, Block
+from generator.elements import Include, FunctionDeclaration, Comment, \
+                               DataObject, Block
 
 from generator.rules.simple import SimpleArch
 

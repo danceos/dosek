@@ -182,7 +182,7 @@ class SystemGraph(GraphObject):
                 logging.info("Endless loop in %s", function)
             elif len(ret_abbs) > 1:
                 # Add an artificial exit block
-                abb = self.new_abb();
+                abb = self.new_abb()
                 function.add_atomic_basic_block(abb)
                 for ret in ret_abbs:
                     ret.add_cfg_edge(abb)

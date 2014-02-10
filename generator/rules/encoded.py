@@ -1,5 +1,5 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
-from generator.elements import CodeTemplate, Include, Function, VariableDefinition, \
+from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment
 
 class EncodedSystem(SimpleSystem):
@@ -60,7 +60,7 @@ class EncodedSystem(SimpleSystem):
         self.call_function(block, "Machine::unreachable", "void", [])
 
     def encode_arguments(self, block, arguments):
-        encoded_count = len(arguments);
+        encoded_count = len(arguments)
         b = self.generator.signature_generator.new()
         ## FIXME: We could use a custom struct here
         var = VariableDefinition.new(self.generator, "Encoded_Static<A0, %d>" % b,
@@ -75,7 +75,7 @@ class EncodedSystem(SimpleSystem):
         return var
 
     def get_encoded_args(self, function, encoded_arguments, arg):
-        datatype = encoded_arguments.datatype + "*";
+        datatype = encoded_arguments.datatype + "*"
         decl = VariableDefinition.new(self.generator, datatype)
         function.add(decl)
         function.add(Statement("%s = (%s) %s" %(decl.name, datatype, arg[0])))

@@ -1,4 +1,3 @@
-from generator.rules.base import BaseRules
 from generator.rules.simple import SimpleArch
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
     Include, FunctionDeclaration, Comment, Function, DataObject, \

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from generator.tools import stringify
 from generator.elements import *
 from generator.rules.base import BaseRules

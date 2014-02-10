@@ -36,7 +36,7 @@ class BaseRules:
         else:
             name = None
         if prepend:
-            call    = block.prepend( FunctionCall(function, arguments, name))
+            block.prepend( FunctionCall(function, arguments, name))
         else:
-            call    = block.add( FunctionCall(function, arguments, name))
+            block.add( FunctionCall(function, arguments, name))
         return ret_var

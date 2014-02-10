@@ -16,7 +16,7 @@ class CodeTemplate:
 
     def __find_snippets(self):
         while True:
-            match = re.search("{{{snippet:(.*?):(.*?)\|(.*?)}}}", self.content, re.MULTILINE | re.DOTALL)
+            match = re.search("{{{snippet:(.*?):(.*?)\\|(.*?)}}}", self.content, re.MULTILINE | re.DOTALL)
             if not match:
                 break
             name = match.group(1)
