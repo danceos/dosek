@@ -93,6 +93,15 @@ public:
 		// destination shorthand: self
 		write_reg(ICR_LO, (1 << 18) | (1<<14) | vector);
 	}
+
+	/** \brief Trigger NMI */
+	static inline void trigger_NMI() {
+		// NMI delivery mode
+		// physical destination mode
+		// assert level
+		// destination shorthand: self
+		write_reg(ICR_LO, (1 << 18) | (1<<14) | (4 << 8));
+	}
 };
 
 }
