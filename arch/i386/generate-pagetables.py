@@ -4,8 +4,10 @@
 
 import os, sys
 from optparse import OptionParser
+from collections import namedtuple
 from subprocess import *
 import shutil
+import copy
 
 ## output file header
 HEADER = """#include "arch/i386/paging.h"\nusing namespace arch;\n\n"""
@@ -67,15 +69,19 @@ def read_regions(objdump, elf_file):
 
     return regions
 
-def generate_pagetables(regions, allowed, supervisor_only, is_supervisor=False):
+Region = namedtuple("Region", ["name", "writeable", "usermode"])
+
+def generate_pagetables(regions, allowed):
     """Generate static pagetables from regions"""
 
     # init dict of pagetables
     pagetables = {};
 
     # iterate allowed regions
-    for rname in allowed:
-        rrange = regions[rname]
+    for region in allowed:
+        rrange = regions[region.name]
+#        region_is_mapped(regions, region.name)
+        rrange["mapped"] = True
 
         # get length and page count
         start = rrange["start"]
@@ -83,20 +89,6 @@ def generate_pagetables(regions, allowed, supervisor_only, is_supervisor=False):
         length = end - start
         if(length <= 0): continue
         pages = ((length-1) / 4096)+1
-
-        # read-only text pages
-        writable = not rname.startswith("text")
-
-        # disallow usermode access to supervisor pages
-        usermode = (not rname in supervisor_only)
-
-        # TODO: os functions contained in is_supervisor=True
-        # pagetables need userspace access to supervisor pages
-        # when run in ring 3
-        # so we allow usermode access to all os pages for the kernel
-        # page directory, which is used even in ring 3
-        # alternative: run os functions in ring 1 or 2
-        usermode = usermode or is_supervisor
 
         # page directory/pagetable indices
         pagetable = (start & 0xFFC00000) >> 22
@@ -109,9 +101,12 @@ def generate_pagetables(regions, allowed, supervisor_only, is_supervisor=False):
         for x in range(offset+pages - len(table)):
             table.append(None)
 
+        if "VERBOSE" in os.environ:
+            print hex(rrange["start"]), hex(rrange["end"]),  region
+
         # insert pagetable entries
         for off in range(pages):
-            table[offset+off] = (hex(start+off*4096), str(writable).lower(), str(usermode).lower(), rname)
+            table[offset+off] = (hex(start+off*4096), str(region.writeable).lower(), str(region.usermode).lower(), region.name)
 
     return pagetables
 
@@ -158,22 +153,52 @@ def write_output(filename, ptables, paging_start):
 def main(options, args):
     regions = read_regions(options.objdump, options.elf_file)
 
-    # regions we are interested in
-    allowed_common = ["cga", "text_common", "text_fail_allowed",  "tss", "data_fail", "data"]
-    allowed_os = ["text_os", "stack_os", "ioapic", "lapic"] + allowed_common
-    allowed_task = ["text_task{}", "stack_task{}"] + allowed_os
-    supervisor_only = ["text_os", "tss", "stack_os", "ioapic", "lapic"]
-
     # Collect task names:
     tasks = set()
     for region in regions:
         if region.startswith("text_task"):
             tasks.add (region[len("text_task"):])
 
-    ptables = {}
-    ptables["os"] = generate_pagetables(regions, allowed_os, supervisor_only, True)
+    # regions we are interested in
+    allowed_common = [ Region("cga"                   , writeable = True , usermode = True),
+                       Region("text"                  , writeable = False, usermode = True),
+                       Region("text_common"           , writeable = False, usermode = True),
+                       Region("text_fail_allowed"     , writeable = False, usermode = True),
+                       Region("data_fail"             , writeable = True , usermode = True),
+                       Region("data"                  , writeable = True,  usermode = True),
+                       Region("text_os"               , writeable = False, usermode = True)]
+
+    allowed_os  = copy.deepcopy(allowed_common)
+    allowed_os += [  Region("stack_os", writeable = True , usermode  = True),
+                     Region("tss"     , writeable = True , usermode = True),
+                     Region("ioapic",   writeable = True , usermode  = True),
+                     Region("lapic",    writeable = True , usermode  = True)]
+
+
+    allowed_task = {}
     for task in tasks:
-        ptables["task"+str(task)] = generate_pagetables(regions, [x.format(task) for x in allowed_task], supervisor_only)
+        task = "task%s" % task
+        allowed_task[task] = copy.deepcopy(allowed_common)
+        # A Task can additionally read its text segment and write its stack
+        allowed_task[task] += [ Region("text_" + task, writeable = False,  usermode = True),
+                                Region("stack_" + task, writeable = True, usermode = True),
+                                Region("stack_os", writeable = True , usermode  = False),
+                                Region("tss"     , writeable = False , usermode = False),
+                                Region("lapic",    writeable = True , usermode  = False),
+                                Region("ioapic",    writeable = True , usermode  = False),
+
+        ]
+        # The operating system can read the user stack
+        allowed_os         += [ Region("stack_" + task, writeable = False, usermode = True)]
+
+
+    ptables = {}
+    print "os"
+    ptables["os"] = generate_pagetables(regions, allowed_os)
+    for task in allowed_task:
+        if "VERBOSE" in os.environ:
+            print task
+        ptables[task] = generate_pagetables(regions, allowed_task[task])
 
     write_output(options.cfile, ptables, regions["paging"]["start"])
 
