@@ -131,6 +131,7 @@ class SystemCallSemantic:
 
     def schedule(self, source, state, set_state_on_edge):
         possible_blocks = self.find_possible_next_blocks(source, state)
+        # print source, [(x.dynamic_priority, x) for x in possible_blocks]
 
         # The possible blocks are ordered with their dynamic priority.
         # [....., Block, ....]
