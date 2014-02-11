@@ -79,10 +79,12 @@ if __name__ == "__main__":
     graph.register_analysis(EnsureComputationBlocks())
     graph.register_analysis(CurrentRunningSubtask())
     graph.register_and_enqueue_analysis(MoveFunctionsToTask())
-    graph.register_and_enqueue_analysis(DynamicPriorityAnalysis())
+
+    graph.register_analysis(PrioritySpreadingPass())
+    graph.register_analysis(DynamicPriorityAnalysis())
     graph.register_and_enqueue_analysis(RunningTaskAnalysis())
     graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
-    graph.analyze("%s/%s" % (options.prefix, options.name))
+    graph.analyze("%s/gen_" % (options.prefix))
 
     if options.arch == "i386":
         arch = X86Arch()

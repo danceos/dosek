@@ -61,8 +61,8 @@ class X86Arch(SimpleArch):
 
     def generate_isr(self, isr):
         self.generator.source_file.includes.add(Include("machine.h"))
-        isr_desc = self.generator.system_description.getISR(isr.name)
-        handler = FunctionDefinitionBlock('ISR', [str(isr_desc.device)])
+        isr_desc = self.generator.system_graph.get_subtask(isr.name)
+        handler = FunctionDefinitionBlock('ISR', [str(isr_desc.isr_device)])
         self.generator.source_file.function_manager.add(handler)
 
         # Forward declaration for the user defined function

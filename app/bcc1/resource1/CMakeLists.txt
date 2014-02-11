@@ -29,7 +29,16 @@ COREDOS_BINARY(
   NAME bcc1_resource1d
   SYSTEM_XML system.xml
   LIBS libtest
-  VERIFY verify_d.py # Same constraints as A
+  VERIFY verify_d.py
   TEST_ISO
   d.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_resource1e
+  SYSTEM_XML system.xml
+  LIBS libtest
+  VERIFY verify_e.py
+  TEST_ISO
+  e.cc
 )

@@ -14,6 +14,7 @@ class Subtask(Function):
         self.max_activations = 1
         self.autostart = False
         self.is_isr = False
+        self.isr_device = None
 
     def set_deadline(self, deadline):
         """Takes tuple (type, relative, deadline)"""
@@ -36,8 +37,9 @@ class Subtask(Function):
     def set_autostart(self, autostart):
         self.autostart = autostart
 
-    def set_is_isr(self, value):
+    def set_is_isr(self, value, device = None):
         self.is_isr = value
+        self.isr_device = device
 
     def is_real_thread(self):
         """Returns True for user threads, and False for the Idle Thread"""

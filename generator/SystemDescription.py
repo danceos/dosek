@@ -172,7 +172,7 @@ class SystemDescription:
                     continue
                 for x in task.RESOURCE:
                     if str(x) == res.name:
-                        tasks.add(task)
+                        tasks.add(task.name)
             resources.append(self.Resource(name = res.name,
                                            tasks = list(tasks)))
         return resources

@@ -9,9 +9,13 @@ class Resource:
             subtask = self.system.get_subtask(t)
             assert subtask, "Subtask %s not found, that uses resource %s" % (t, name)
             self.subtasks.append(subtask)
-        # FIXME: Revalidate this when supporting more than one resource
-        assert self.name == "RES_SCHEDULER", "Only RES_SCHEDULER is supported at the very moment"
-        self.static_priority = max([t.static_priority for t in self.subtasks]) + 1
+
+        # Allocated by the PrioritySpreadingPass
+        self.static_priority = None
+
+    @property
+    def static_priority(self):
+        return max([t.static_priority for t in self.subtasks]) + 1
 
     def __repr__(self):
-        return "<Res %s pri:%d>" %(self.name, self.static_priority)
+        return "<Res %s pri:%s>" %(self.name, self.static_priority)

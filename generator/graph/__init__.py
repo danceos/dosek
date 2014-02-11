@@ -13,7 +13,7 @@ from generator.graph.common import GraphObject
 from generator.graph.Sporadic import Alarm
 from generator.graph.Resource import Resource
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
-
+from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
 
 
 
@@ -23,6 +23,7 @@ class SystemGraph(GraphObject):
 
     def __init__(self):
         GraphObject.__init__(self, "SystemGraph", root = True)
+        self.counters = []
         self.tasks = []
         self.functions = {}
         self.label = "SystemGraph"
@@ -101,7 +102,7 @@ class SystemGraph(GraphObject):
     def read_system_description(self, system):
         """Reads in the system description and builds the tasks and subtask
         objects and connects them"""
-        self.system = system
+
         for task_desc in system.getTasks():
             task = Task(self, "Task:by-event:" + task_desc.event[0])
             task.set_event(task_desc.event)
@@ -126,7 +127,7 @@ class SystemGraph(GraphObject):
                     subtask.set_basic_task(True)
                     subtask.set_max_activations(1)
                     subtask.set_autostart(False)
-                    subtask.set_is_isr(True)
+                    subtask.set_is_isr(True, isr_osek.device)
                 else:
                     subtask_osek = system.getSubTask(subtask_name)
                     assert subtask_osek.static_priority != 0, "No user thread can have the thread ID 0, it is reserved for the Idle thread"
@@ -137,11 +138,12 @@ class SystemGraph(GraphObject):
                     subtask.set_autostart(subtask_osek.autostart)
                     subtask.set_is_isr(False)
 
+
+        self.counters = system.getHardwareCounters()
+
         for alarm in system.getAlarms():
-            # FIXME: when events are supported
-            assert alarm.event == None
             task = self.functions["OSEKOS_TASK_" + alarm.task]
-            self.alarms.append(Alarm(self, alarm.name, task))
+            self.alarms.append(Alarm(self, task, alarm))
 
         for res in system.getResources():
             self.resources[res.name] = Resource(self, res.name, res.tasks)

@@ -29,7 +29,6 @@ class Generator:
     def __init__(self, system_graph, name, os_rules, arch_rules):
         self.name = name
         self.system_graph = system_graph
-        self.system_description = system_graph.system
         self.rtsc_analysis = system_graph.rtsc
         self.os_rules = os_rules
         self.arch_rules = arch_rules

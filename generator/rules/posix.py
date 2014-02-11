@@ -42,16 +42,16 @@ class PosixArch(SimpleArch):
         # Forward declaration for the user defined function
         self.generator.source_file.includes.add(Include("irq.h"))
 
-        isr_desc = self.generator.system_description.getISR(isr.name)
+        isr_desc = self.generator.system_graph.get_subtask(isr.name)
 
         forward = FunctionDeclaration(isr.function_name, "void", ["int"], extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
         self.call_function(self.objects["StartOS"],
-                           "arch::irq.enable", "void", [str(isr_desc.device)],
+                           "arch::irq.enable", "void", [str(isr_desc.isr_device)],
                            prepend = True)
         self.call_function(self.objects["StartOS"], 
-                           "arch::irq.set_handler", "void", [str(isr_desc.device), isr.function_name],
+                           "arch::irq.set_handler", "void", [str(isr_desc.isr_device), isr.function_name],
                            prepend = True)
 
 

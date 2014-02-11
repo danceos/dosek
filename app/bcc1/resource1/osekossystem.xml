@@ -29,6 +29,7 @@
         <PRIORITY>4</PRIORITY>
         <ACTIVATION>1</ACTIVATION>
         <AUTOSTART>FALSE</AUTOSTART>
+        <RESOURCE>R234</RESOURCE>
     </TASK>
 
     <TASK>
@@ -38,6 +39,8 @@
         <PRIORITY>3</PRIORITY>
         <ACTIVATION>1</ACTIVATION>
         <AUTOSTART>FALSE</AUTOSTART>
+        <RESOURCE>R234</RESOURCE>
+        <RESOURCE>R345</RESOURCE>
     </TASK>
 
     <TASK>
@@ -47,6 +50,8 @@
         <PRIORITY>2</PRIORITY>
         <ACTIVATION>1</ACTIVATION>
         <AUTOSTART>FALSE</AUTOSTART>
+        <RESOURCE>R234</RESOURCE>
+        <RESOURCE>R345</RESOURCE>
     </TASK>
 
     <TASK>
@@ -56,11 +61,23 @@
         <PRIORITY>1</PRIORITY>
         <ACTIVATION>1</ACTIVATION>
         <AUTOSTART>TRUE</AUTOSTART>
+        <RESOURCE>R345</RESOURCE>
     </TASK>
 
     <RESOURCE>
         <name>RES_SCHEDULER</name>
         <TYPE>STANDARD</TYPE>
     </RESOURCE>
+
+    <RESOURCE>
+        <name>R234</name>
+        <TYPE>STANDARD</TYPE>
+    </RESOURCE>
+
+    <RESOURCE>
+        <name>R345</name>
+        <TYPE>STANDARD</TYPE>
+    </RESOURCE>
+
 
 </oseksystem>

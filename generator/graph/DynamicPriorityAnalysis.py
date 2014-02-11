@@ -1,4 +1,7 @@
-from generator.graph.Analysis import Analysis, EnsureComputationBlocks, FixpointIteraton, MoveFunctionsToTask
+from generator.graph.Analysis import Analysis, EnsureComputationBlocks,\
+                                     FixpointIteraton, MoveFunctionsToTask
+
+from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
 from collections import namedtuple
 from copy import copy
 
@@ -14,7 +17,8 @@ class DynamicPriorityAnalysis(Analysis):
         self.__res = None
 
     def requires(self):
-        return [EnsureComputationBlocks.name(), MoveFunctionsToTask.name()]
+        return [EnsureComputationBlocks.name(), MoveFunctionsToTask.name(),
+                PrioritySpreadingPass.name()]
 
     StateVector = namedtuple("StateVector", ["free", "taken"])
 
@@ -109,4 +113,4 @@ class DynamicPriorityAnalysis(Analysis):
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority
             else:
-                assert False, "Weird Systemcall %s %s" %(syscall, syscall.type)
+                assert False, "Weird Systemcall %s %s, Check EnsureComputationBlocks for bugs!" %(syscall, syscall.type)

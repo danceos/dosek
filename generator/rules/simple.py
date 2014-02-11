@@ -83,7 +83,7 @@ class SimpleSystem(BaseRules):
     def generate_dataobjects_counters_and_alarms(self):
         self.objects["counter"] = {}
         self.objects["alarm"] = {}
-        for counter_info in self.generator.system_description.getHardwareCounters():
+        for counter_info in self.generator.system_graph.counters:
             assert counter_info.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 
             counter = DataObject("Counter", "OS_%s_counter" %( counter_info.name),
@@ -93,15 +93,15 @@ class SimpleSystem(BaseRules):
             self.generator.source_file.data_manager.add(counter, namespace = ("os",))
             self.objects["counter"][counter_info.name] = counter
 
-        for alarm_info in self.generator.system_description.getAlarms():
+        for alarm_info in self.generator.system_graph.alarms:
             counter = self.objects["counter"][alarm_info.counter].name
-            subtask = self.system_graph.get_subtask(alarm_info.task)
+            subtask = alarm_info.subtask
             task = "os::tasks::" + self.objects[subtask]["task_descriptor"].name
             alarm = DataObject("Alarm", "OS_%s_alarm" %( alarm_info.name),
                                "(%s, %s, %s, %d, %d)" % (counter, task,
-                                                         str(alarm_info.armed).lower(),
-                                                         alarm_info.cycletime,
-                                                         alarm_info.reltime))
+                                                         str(alarm_info.initial_armed).lower(),
+                                                         alarm_info.initial_cycletime,
+                                                         alarm_info.initial_reltime))
             self.generator.source_file.data_manager.add(alarm, namespace = ("os",))
             self.objects["alarm"][alarm_info.name] = alarm
 
@@ -183,14 +183,14 @@ class AlarmTemplate(CodeTemplate):
 
     def increase_and_check_counters(self, snippet, args):
         ret = []
-        for counter in self.system_graph.system.getHardwareCounters():
+        for counter in self.system_graph.counters:
             ret += self.expand_snippet("increase_counter",
                                        name = self.objects["counter"][counter.name].name)
         return ret
 
     def trigger_alarms(self, snippet, args):
         ret = []
-        for alarm in self.system_graph.system.getAlarms():
+        for alarm in self.system_graph.alarms:
             callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
             has_callback  = (callback_name in self.system_graph.functions)
             args = {"counter": self.objects["counter"][alarm.counter].name,
