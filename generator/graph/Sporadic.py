@@ -23,9 +23,10 @@ class Alarm(SporadicEvent):
 
     def trigger(self, block, state):
         SporadicEvent.trigger(self, block, state)
-        new_state = state.new()
-        new_state.set_ready(self.subtask)
-        new_state.merge_with(state)
-        return new_state
+        copy_state = state.copy()
+        if not copy_state.is_surely_ready(self.subtask):
+            copy_state.add_continuation(self.subtask, self.subtask.entry_abb)
+        copy_state.set_ready(self.subtask)
+        return copy_state
 
 

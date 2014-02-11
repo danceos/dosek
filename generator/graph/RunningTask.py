@@ -30,7 +30,10 @@ class SystemCallSemantic:
         cont = block.definite_after('local')
         after.set_continuation(self.running_task.for_abb(block),
                                cont)
-        after.set_ready(block.arguments[0])
+        activated = block.arguments[0]
+        if not after.is_surely_ready(block.arguments[0]):
+            after.add_continuation(activated, activated.entry_abb)
+        after.set_ready(activated)
         return [after]
 
     def do_TerminateTask(self, block, before):
@@ -48,7 +51,10 @@ class SystemCallSemantic:
         after.set_continuation(calling_task, calling_task.entry_abb)
         after.set_suspended(calling_task)
         # Activate other Task
-        after.set_ready(block.arguments[0])
+        activated = block.arguments[0]
+        if not after.is_surely_ready(block.arguments[0]):
+            after.add_continuation(activated, activated.entry_abb)
+        after.set_ready(activated)
         return [after]
 
     def do_Idle(self, block, before):
@@ -93,8 +99,12 @@ class SystemCallSemantic:
         possible_blocks = []
         for subtask in state.get_subtasks():
             if state.is_surely_ready(subtask):
-                for B in state.get_continuations(subtask):
-                    possible_blocks.append([B, True])
+                conts = state.get_continuations(subtask)
+                assert len (conts) > 0, \
+                    "Every surely running task must have one continuation point, %s has none: %s" % (subtask, state)
+                minimum_return_prio = min([x.dynamic_priority for x in conts])
+                for B in conts:
+                    possible_blocks.append([B, B.dynamic_priority <=  minimum_return_prio])
             elif state.is_maybe_ready(subtask):
                 for B in state.get_continuations(subtask):
                     possible_blocks.append([B, False])
@@ -109,10 +119,13 @@ class SystemCallSemantic:
         # belongs to a surely runnning block
         minimum_system_prio = 0
         for block, surely in possible_blocks:
+            if not surely:
+                continue
             if surely:
                 minimum_system_prio = max(minimum_system_prio, block.dynamic_priority)
+                break
         for block, surely in possible_blocks:
-            if block.dynamic_priority >= minimum_system_prio:
+            if minimum_system_prio <= block.dynamic_priority:
                 ret.append(block)
         return ret
 
@@ -130,11 +143,18 @@ class SystemCallSemantic:
             copy_state.set_continuation(target.function.subtask, target)
 
             not_taken = set(possible_blocks[:i])
-            # If all possible continuations of a subtasks are not taken,
-            # we are sure that this task is not running.
-            for subtask in set([x.function.subtask for x in not_taken]):
-                if set(copy_state.get_continuations(subtask)).issubset(not_taken):
+            # We can wipe out all continuations that are not taken, if
+            # a subtask has no possible continuations anymore, it is surely suspended
+            for cont in not_taken:
+                subtask = cont.function.subtask
+                # For the own subtask we already know where we are
+                if subtask == target.function.subtask:
+                    continue
+                copy_state.remove_continuation(subtask, cont)
+                if len(copy_state.get_continuations(subtask)) == 0:
                     copy_state.set_suspended(subtask)
+                    copy_state.set_continuation(subtask, subtask.entry_abb)
+                    # print subtask, " cannot be running in ", target
 
             set_state_on_edge(source, target, copy_state)
 
@@ -203,6 +223,15 @@ class SystemState:
     def set_continuations(self, subtask, abbs):
         assert not self.frozen
         self.continuations[subtask] = set(abbs)
+
+    def remove_continuation(self, subtask, abb):
+        assert not self.frozen
+        assert abb in self.continuations[subtask]
+        self.continuations[subtask].discard(abb)
+
+    def add_continuation(self, subtask, abb):
+        assert not self.frozen
+        self.continuations[subtask].add(abb)
 
     def freeze(self):
         self.frozen = True

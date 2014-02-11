@@ -92,6 +92,7 @@ struct Machine
 		uint32_t flags;
 		asm("pushf; pop %0" : "=r"(flags));
 		return (flags & 0x0200);
+
 	}
 
 	/**
@@ -161,11 +162,11 @@ struct Machine
 		asm volatile( "outw %0, %1" :: "a"((unsigned short) 0x2000), "Nd"((unsigned short) 0xB004));
 		#endif
 
+		// No unreachable() here, otherwise the generator will be unhappy!
 		// stop in case ACPI shutdown failed
 		//halt(); // causes exception when called from ring 3
-		while(true) nop();
+		// while(true) nop();
 
-		unreachable();
 	}
 };
 

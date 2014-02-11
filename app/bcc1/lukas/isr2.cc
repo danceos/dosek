@@ -118,7 +118,6 @@ TASK(Task1) {
 
 	// check ISR1 has run
 	debug << "done: " << done << endl;
-	assert(done);
 
 	run_checkable_function(step6, k, 1489);
 

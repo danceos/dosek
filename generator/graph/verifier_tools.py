@@ -49,9 +49,9 @@ class RunningTaskToolbox:
         marked as visited"""
 
         syscall = self.syscall(function, syscall_name, arguments)
-        return self.__reachability(syscall, possible_subtasks)
+        return self.reachability_bare(syscall, possible_subtasks)
 
-    def __reachability(self, syscall, possible_subtasks):
+    def reachability_bare(self, syscall, possible_subtasks):
         reachable_subtasks = self.analysis.reachable_subtasks_from_abb(syscall)
         assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
             syscall.function.function_name, syscall.type,
@@ -59,6 +59,13 @@ class RunningTaskToolbox:
         self.checked_syscalls.add(syscall)
 
         return syscall
+
+    def reachability_abbs(self, syscall, targets):
+        reachable_abbs = syscall.get_outgoing_nodes('global')
+        assert(set(targets) == set(reachable_abbs)), "%s:%s(%s)::: %s != %s" %(
+            syscall.function.function_name, syscall.type,
+            syscall.arguments, list(targets), list(reachable_abbs))
+
 
     def activate(self, possible_subtasks, function):
         """Check which subtasks can activate a given function. The activating
@@ -73,4 +80,4 @@ class RunningTaskToolbox:
         for syscall in self.analysis.system.get_syscalls():
             # Some syscalls cannot reschedule
             if syscall.type in ("GetResource", "CancelAlarm", "SetRelAlarm"):
-                self.__reachability(syscall, [syscall.function.subtask])
+                self.reachability_bare(syscall, [syscall.function.subtask])

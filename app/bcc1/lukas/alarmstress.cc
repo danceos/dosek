@@ -121,7 +121,7 @@ TASK(Task4) {
 
 		// shutdown
 		debug << "shutdown\n" << endl;
-		Machine::shutdown();
+		ShutdownMachine();
 	}
 
 	TerminateTask();
