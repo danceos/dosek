@@ -15,6 +15,7 @@ IRQ::IRQ() {
     for(unsigned int i = 0; i < SIGMAX; i++)
         m_gate[i] = &panic;
 	ast_level = 0;
+	sigfillset(&full_mask);
 }
 
 void IRQ::set_handler(int signum, irq_handler_t handler) {
@@ -49,15 +50,11 @@ void IRQ::trigger_interrupt(int irq) {
 }
 
 void IRQ::disable_interrupts() {
-	sigset_t mask;
-	sigfillset(&mask);
-	syscall(SYS_rt_sigprocmask, SIG_BLOCK, &mask, NULL, 8);
+	syscall(SYS_rt_sigprocmask, SIG_BLOCK, &full_mask, NULL, 8);
 }
 
 void IRQ::enable_interrupts() {
-	sigset_t mask;
-	sigfillset(&mask);
-	syscall(SYS_rt_sigprocmask, SIG_UNBLOCK, &mask, NULL, 8);
+	syscall(SYS_rt_sigprocmask, SIG_UNBLOCK, &full_mask, NULL, 8);
 }
 
 

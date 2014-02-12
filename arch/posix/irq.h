@@ -9,6 +9,7 @@ namespace arch {
 class IRQ {
 	bool ast_requested;
 	int ast_level;
+	sigset_t full_mask;
 public:
 	typedef void (*irq_handler_t)(int);
     static const int IPISIG = SIGCHLD;
