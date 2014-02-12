@@ -14,7 +14,7 @@ from generator.graph.Sporadic import Alarm
 from generator.graph.Resource import Resource
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
-
+from generator.graph.AddFunctionCalls import AddFunctionCalls
 
 
 class SystemGraph(GraphObject):
@@ -44,6 +44,8 @@ class SystemGraph(GraphObject):
             sub_objects.update(set(task.graph_subobjects()))
 
         for function in self.functions.values():
+            if not self.passes["AddFunctionCalls"].is_relevant_function(function):
+                continue
             if not function in sub_objects:
                 objects.append(function)
         return objects
@@ -192,21 +194,6 @@ class SystemGraph(GraphObject):
             else:
                 function.set_exit_abb(ret_abbs[0])
 
-
-        # Add all 'normal' function call edges
-        for call in self.rtsc.get_calls():
-            calling_block = self.find_abb(call.abb)
-            function = self.functions[call.function]
-            called_block  = function.entry_abb
-            returned_block = calling_block.definite_after('local')
-            return_block = function.exit_abb
-            assert calling_block != None, "Could not find CallingBlock ABB%d" % call.abb
-            assert return_block != None, "Could not find FunctionCall return block"
-
-            calling_block.remove_cfg_edge(returned_block, 'local')
-            calling_block.add_cfg_edge(called_block, 'local')
-            return_block.add_cfg_edge(returned_block, 'local')
-
         # Add all system calls
         for syscall in self.rtsc.syscalls():
             abb = self.find_abb(syscall.abb)
@@ -215,6 +202,7 @@ class SystemGraph(GraphObject):
             assert abb.type != 'computation'
             assert abb in self.get_abbs()
         assert len(self.get_syscalls()) == len(self.rtsc.syscalls())
+
 
 
     def read_verify_script(self, path):

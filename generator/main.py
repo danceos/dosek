@@ -77,6 +77,7 @@ if __name__ == "__main__":
     graph.read_rtsc_analysis(rtsc_analysis)
     graph.add_system_objects()
 
+    graph.register_and_enqueue_analysis(AddFunctionCalls(rtsc_analysis.get_calls()))
     graph.register_analysis(EnsureComputationBlocks())
     graph.register_analysis(CurrentRunningSubtask())
     graph.register_and_enqueue_analysis(MoveFunctionsToTask())
