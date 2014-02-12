@@ -129,7 +129,7 @@ macro(fail_targets TNAME ELF TEST)
 	set(OBJDUMPED_FILE ${FAIL_DIR}/.objdumped.${TEST})
 	add_custom_command(
 		COMMAND ${FAIL_IMPORT} ${FAIL_OPTS} -t ${TRACEFILE} -i ObjdumpImporter
-			-e ${ELF} --objdump ${OBJDUMP}
+			-e ${ELF} --objdump ${OBJDUMP} --sources --debug
 		COMMAND ${CMAKE_COMMAND} -E touch ${OBJDUMPED_FILE}
 		COMMENT "Importing ${ELF} into database for ${FAIL_VARIANT}/${BENCHMARK}"
 		WORKING_DIRECTORY ${FAIL_DIR}
