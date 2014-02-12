@@ -21,6 +21,14 @@ class SignatureGenerator:
         assert x > 0
         self.used.add(x)
         return x
+    def morethan(self, other):
+        i = 1
+        while (other + i) in self.used:
+            i += 1
+        x = other + i
+        assert x > 0
+        self.used.add(x)
+        return x
 
 
 class Generator:

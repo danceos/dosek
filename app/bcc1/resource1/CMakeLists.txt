@@ -79,3 +79,12 @@ COREDOS_BINARY(
   TEST_ISO
   j.cc
 )
+
+COREDOS_BINARY(
+  NAME bcc1_resource1k
+  SYSTEM_XML system.xml
+  LIBS libtest
+  VERIFY verify_k.py
+  TEST_ISO
+  k.cc
+)

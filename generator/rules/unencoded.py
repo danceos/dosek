@@ -39,7 +39,7 @@ class UnencodedSystem(SimpleSystem):
 
             if subtask.autostart:
                 self.call_function(block,
-                                   "scheduler_.SetReady_impl",
+                                   "scheduler_.SetReadyFromSuspended_impl",
                                    "void", [self.objects[subtask]["task_descriptor"].name])
 
 

@@ -10,6 +10,7 @@ class CodeTemplate:
         self.generator = generator
         with open("%s/%s" % (generator.template_base, filename), "r") as fd:
             self.content = fd.read()
+            self.content = self.content.replace("\t", "    ")
         self.snippets = {}
         self.__find_snippets()
 
@@ -37,6 +38,8 @@ class CodeTemplate:
             args = match.group(2)
             if snippet:
                 args = args.split(",", len(snippet.args))
+            elif args:
+                args = args.split(",")
 
             nl   = match.start()
             while nl > 0 and text[nl] != '\n':
@@ -69,4 +72,7 @@ class CodeTemplate:
     def expand_snippet(self, snippet, **kwargs):
         if type(snippet) == str:
             snippet = self.snippets[snippet]
-        return snippet.body % kwargs
+        try:
+            return snippet.body % kwargs
+        except:
+            raise TypeError("Instanciation of %s failed" %snippet.name)

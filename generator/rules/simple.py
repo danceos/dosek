@@ -100,8 +100,8 @@ class SimpleSystem(BaseRules):
             alarm = DataObject("Alarm", "OS_%s_alarm" %( alarm_info.name),
                                "(%s, %s, %s, %d, %d)" % (counter, task,
                                                          str(alarm_info.initial_armed).lower(),
-                                                         alarm_info.initial_cycletime,
-                                                         alarm_info.initial_reltime))
+                                                         alarm_info.initial_reltime,
+                                                         alarm_info.initial_cycletime))
             self.generator.source_file.data_manager.add(alarm, namespace = ("os",))
             self.objects["alarm"][alarm_info.name] = alarm
 

@@ -26,10 +26,29 @@ struct TaskList : public TaskListStatic {
     return (%(name)s - prio).getCodedValue();
 } else }}}
 
-         {{{generate:task_set_call}}}{
+         {{{generate:task_set_call:task_set_entry}}}{
              assert(false);
              return 0;
          }
+    }
+
+	/** Set priority of task id to prio **/
+    // returns an encoded 0 with the signature (B) of the modified task - prio.B
+    template<typename T, typename S>
+		forceinline value_coded_t increasePrio(const T id, const S newprio) {
+		{{{snippet:task_increasePrio_entry:name|if(id == %(id)s) {
+    %(name)s.vc += 10;
+    updateMax<10, 11>(%(name)s, newprio);
+    %(name)s.vc -= 11;
+	value_coded_t ret = (%(name)s - newprio).getCodedValue();
+	assert (ret >= 0);
+	return ret;
+} else }}}
+
+		{{{generate:task_set_call:task_increasePrio_entry}}}{
+			assert(false);
+			return 0;
+		}
     }
 
     template<typename T, typename S>
@@ -75,10 +94,11 @@ assert(((signature - signature%(ii)s) %% S::A) == 0);
         return signature;
     }
 
-    template<typename T, typename S>
-    forceinline value_coded_t insert(const T& id, const S& prio) {
-        debug << "+++ Task " << id.decode() << " with priority " << prio.decode() << " is ready" << endl;
-        return set(id, prio);
+    template<typename TID, typename NewPrio>
+		forceinline value_coded_t insert(const TID& id, const NewPrio &newprio) {
+        debug << "+++ Task " << id.decode() << " with priority " << newprio.decode() << " is ready" << endl;
+		
+		return increasePrio(id, newprio);
     }
 
     template<typename T>
@@ -95,6 +115,11 @@ assert(((signature - signature%(ii)s) %% S::A) == 0);
         return set(id, newprio);
     }
 
+	void dump() {
+		{{{snippet:dump_entry:name|debug << "%(name)s: " << %(name)s.decode() << endl;
+}}}
+		{{{generate:task_set_call:dump_entry}}}
+	}
     /* unused by scheduler
     template<typename T, typename S>
     forceinline value_coded_t dequeue(T& id, S& prio) {
