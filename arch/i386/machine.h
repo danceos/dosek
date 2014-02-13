@@ -46,6 +46,7 @@ struct Machine
 	 */
 	static forceinline void debug_trap(void) {
 		asm volatile ("ud2");
+		__builtin_unreachable();
 	}
 
 	/**

@@ -21,7 +21,8 @@
     kout << "ASSERT " << __FILE__ << ":" << __LINE__ << " " << __func__ << endl; \
     Machine::halt();}}
 #else
-#define assert(x) { if((x)==0) Machine::debug_trap(); }
+#define assert(x) do { if((x)==0) Machine::debug_trap(); } while(0)
+// #define assert(x)
 #endif
 
 //! Static assert for compile-time checks

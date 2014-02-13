@@ -13,7 +13,7 @@ struct Scheduler  {
 
     forceinline void Reschedule(void) {
         // TODO: control flow check
-		tlist.dump();
+		//  tlist.dump();
 
         // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
         if (current_prio != scheduler_prio) {
@@ -38,12 +38,13 @@ struct Scheduler  {
         }
     }
 
-	template<typename T>
-    forceinline void SetReady_impl(const T id) {
+	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
+    forceinline void SetReady_impl(const Task t) {
+		auto id = t.enc_id<TASK_SIG>();
         // TODO: generated signature
 		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
 	value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(), %(task)s.enc_prio<%(prio_sig)s>());
-	assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% T::A == 0);
+	assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% decltype(id)::A == 0);
 } else }}}
         {{{generate:activate_task_foreach_task}}}{
             assert(false);
@@ -61,15 +62,11 @@ struct Scheduler  {
         }
     }
 
-    forceinline void SetReady_impl(const Task t) {
-        SetReady_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
-    }
-
-
+	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
     forceinline void SetSuspended_impl(const Task t) {
         t.tcb.reset();
 
-        tlist.remove(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
+        tlist.remove(t.enc_id<TASK_SIG>());
         if (t.preemptable == false) {
             // restore non-preemptable task to original priority
             // this is required for the optimization in Reschedule()
@@ -79,19 +76,17 @@ struct Scheduler  {
 
 	template<int TO_SIG = {{{generate:arbitrary_new_signature}}}>
     forceinline void ActivateTask_impl(const Task to) {
-		auto to_id = to.enc_id<TO_SIG>();
-		SetReady_impl(to_id);
+		SetReady_impl<TO_SIG>(to);
 		Schedule_impl();
     }
 
 	template<int FROM_SIG, int TO_SIG>
     forceinline void ChainTask_impl(const Task from, const Task to) {
         auto from_id = from.enc_id<FROM_SIG>();
-        auto to_id = to.enc_id<TO_SIG>();
         assert(from_id == current_task);
 
-        SetSuspended_impl(from);
-		SetReady_impl(to_id);
+        SetSuspended_impl<FROM_SIG>(from);
+		SetReady_impl<TO_SIG>(to);
 		Schedule_impl();
     }
 
