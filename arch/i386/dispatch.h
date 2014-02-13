@@ -84,7 +84,7 @@ public:
 
 	/** \brief Syscall to start idle loop (in ring 0) */
 	static forceinline void idle(void) {
-		syscall(&idle_loop, 0, true);
+		syscall<true>(&idle_loop);
 	}
 
 	/** \brief The idle loop

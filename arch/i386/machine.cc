@@ -11,6 +11,6 @@ noinline void __OS_trigger_syscall(uint8_t irq) {
 }
 
 void Machine::trigger_interrupt_from_user(uint8_t irq) {
-	arch::syscall(__OS_trigger_syscall, irq, true);
+	arch::syscall<true>(__OS_trigger_syscall, irq);
 }
 

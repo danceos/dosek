@@ -15,10 +15,10 @@ namespace arch {
 IRQ_HANDLER(IRQ_SYSCALL) {
 	// get arguments from registers
 	// also, store pointer to context in %esi before we change %esp
-	uint32_t fun, arg;
+	uint32_t fun, arg1, arg2, arg3;
 	bool direct;
 	cpu_context* ctx;
-	asm volatile("leal -4(%%esp), %0" : "=r"(ctx), "=c"(arg), "=b"(fun), "=d"(direct));
+	asm volatile("leal -4(%%esp), %0" : "=r"(ctx), "=c"(arg1), "=a"(arg2), "=D"(arg3), "=b"(fun), "=d"(direct));
 
 	// TODO: remove/reuse pushed CPU context?
 
@@ -42,13 +42,15 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 			save_sp = 0; // for detecting bugs, not stricly neccessary
 		}
 
-		// put syscall argument on top kernel stack
+		// put syscall arguments on top kernel stack
 		uint32_t* sp = (uint32_t*) (&_estack_os - 2048);
-		*sp = arg;
+		*sp = arg3;
+		*(sp-1) = arg2;
+		*(sp-2) = arg1;
 
 		// push the syscall stack address/segment
 		Machine::push(GDT::USER_DATA_SEGMENT | 0x3); // push stack segment, DPL3
-		Machine::push((uint32_t)(sp) - 4); // push stack pointer above argument
+		Machine::push((uint32_t)(sp-3)); // push stack pointer above argument
 
 		// push flags, IO privilege level 3
 		Machine::push(ctx->eflags | 0x3000);
@@ -74,7 +76,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		// call syscall function with argument
 		// C code does not work as compiler overwrites our return address with arg
 		//void (* f)(uint32_t) = (void (*)(uint32_t))fun; f(arg);
-		asm volatile("push %0; call *%1; pop %0" :: "r"(arg), "r"(fun));
+		asm volatile("push %3; push %2; push %1; call *%0; pop %1; pop %2; pop %3" :: "r"(fun), "r"(arg1), "r"(arg2), "r"(arg3));
 
 		// restore page directory
 		asm volatile("mov %0, %%cr3" :: "S"(pd));
