@@ -59,6 +59,7 @@
 #include <stdint.h>
 #include "util/encoded.h"
 #include "util/inline.h"
+#include "machine.h"
 #include "output.h"
 
 #define EXPECTED_VALUES_MAX 10
@@ -90,13 +91,16 @@ extern "C" {
 	//! buffer for expected result values
 	extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
 
+	// @}
+
+	//! interrupts were enabled before test checks
+	extern bool interrupts_suspended;
+
 	//! buffer for task activation records
 	extern char trace_table[256];
 
 	//! index for trace_table
 	extern unsigned char trace_table_idx;
-
-	// @}
 
 	/**
 	 * @name User supplied functions
@@ -141,6 +145,8 @@ inlinehint void test_start()
 
 inlinehint void test_start_check() {
 	marker_start_check();
+	interrupts_suspended = Machine::interrupts_enabled();
+	Machine::disable_interrupts();
 }
 
 inlinehint void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal)
@@ -203,6 +209,7 @@ inlinehint void __test_positive_tests(int pos_tests, int sign) {
 		kout.setcolor(Color::WHITE, Color::BLACK);
 	}
 
+	if(interrupts_suspended) Machine::enable_interrupts();
 	marker_stop_check();
 
 	for (int i = 0; i < EXPECTED_VALUES_MAX; i++) {
@@ -245,6 +252,32 @@ inlinehint void run_checkable_function(void (* volatile testfun)(void), expected
 	if(detectable) detected_error = (result_var != expected);
 
 	/* Check has to succeed */
+	test_positive_tests_gt(0);
+}
+
+// run one test with encoded result
+// forceinline used to inline this into test() function to stay within allowed text region
+// volatile used to prevent inlining of testfunction, which should stay separate
+template<typename T>
+inlinehint void run_checkable_function(void (* volatile testfun)(void), T& result_var, value_t expected) {
+	test_expect_store(0, expected);
+	encoded_storage = 0;
+	detected_error = false;
+
+	/* Start the testcase (including marker_start() */
+	test_start();
+	testfun();
+	test_start_check();
+	encoded_storage = result_var.vc;
+
+	/* Either the decoded value is equal to expected */
+	test_expect_eq(0, result_var.decode());
+
+	/* Or the check says: undecodable */
+	detected_error = !result_var.check();
+	test_assert(detected_error == true);
+
+	/* and at least one of the tests has to succeed */
 	test_positive_tests_gt(0);
 }
 
@@ -339,34 +372,6 @@ inlinehint void test_trace_assert(const char *expected) {
 	kout << endl;
 
 	test_assert(good);
-	test_positive_tests_gt(0);
-}
-
-// run one test with encoded result
-// forceinline used to inline this into test() function to stay within allowed text region
-// volatile used to prevent inlining of testfunction, which should
-// stay separate
-// run one test with encoded result
-// forceinline used to inline this into test() function to stay within allowed text region
-// volatile used to prevent inlining of testfunction, which should stay separate
-template<typename T>
-inlinehint void run_checkable_function(void (* volatile testfun)(void), T& result_var, value_t expected) {
-	test_expect_store(0, expected);
-	encoded_storage = 0;
-	detected_error = false;
-
-	/* Start the testcase (including marker_start() */
-	test_start();
-	testfun();
-	test_start_check();
-	encoded_storage = result_var.vc;
-
-	/* Either the decoded value is equal to expected */
-	test_expect_eq(0, result_var.decode());
-	/* Or the check says: undecodable */
-	detected_error = !result_var.check();
-	test_assert(detected_error == true);
-	/* and at least one of the tests has to succeed */
 	test_positive_tests_gt(0);
 }
 

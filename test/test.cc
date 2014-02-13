@@ -27,6 +27,9 @@ extern "C" {
 
 	// @}
 
+	//! interrupts were enabled before test checks
+	bool interrupts_suspended = false;
+
 	/**
 	 * @name User supplied functions
 	 */
