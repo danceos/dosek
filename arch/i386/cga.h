@@ -9,7 +9,6 @@
  * \brief CGA output
  */
 
-#include <stddef.h>
 #include <stdint.h>
 #include <stddef.h>
 #include "arch/generic/ostream.h"

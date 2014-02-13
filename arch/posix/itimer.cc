@@ -7,12 +7,9 @@
 #include "itimer.h"
 #include "machine.h"
 #include "os/counter.h"
-
+#include <cstdio>
 #include <signal.h>
-#include <string.h>
 #include <sys/time.h>
-
-#include <iostream>
 
 namespace arch {
 

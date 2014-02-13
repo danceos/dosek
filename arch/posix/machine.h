@@ -4,8 +4,6 @@
 
 #include "os/util/inline.h"
 
-
-
 /**
  *  @ingroup arch
  *  @defgroup posix Posix "Hardware" abstraction

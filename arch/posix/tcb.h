@@ -2,6 +2,7 @@
 #define __ARCH_POSIX_TCB
 
 #include  "machine.h"
+#include "os/util/assert.h"
 
 extern "C" void kickoff();
 

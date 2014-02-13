@@ -9,7 +9,6 @@
  * \brief POSIX TERMINAL output on terminal
  */
 
-#include <stddef.h>
 #include <stdint.h>
 #include "arch/generic/ostream.h"
 #include <unistd.h>

@@ -16,6 +16,11 @@ if(CPPCHECK)
     foreach(dir ${INCLUDEDIRS})
         file(APPEND ${CPPINCLUDES} "${dir}\n")
     endforeach()
+    if(BUILD_posix)
+        file(APPEND ${CPPINCLUDES} "/usr/include\n")
+        file(APPEND ${CPPINCLUDES} "/usr/include/linux\n")
+    endif()
+
 
     add_custom_target( cppcheck
         COMMAND ${CPPCHECK} --check-config --enable=all -q --enable=all --xml --std=c++11 ${PROJECT_SOURCE_DIR} --includes-file=${CPPINCLUDES} -i ${PROJECT_BINARY_DIR} 2> ${PROJECT_BINARY_DIR}/cppcheck-result.xml

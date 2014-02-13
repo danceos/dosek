@@ -9,7 +9,6 @@
  * \brief RS232 driver
  */
 
-#include <stddef.h>
 #include <stdint.h>
 #include "arch/generic/ostream.h"
 
