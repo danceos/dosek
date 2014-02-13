@@ -38,6 +38,19 @@ struct Scheduler {
         }
     }
 
+    template<typename T>
+    forceinline void SetReady_impl(const T id) {
+        // TODO: generated signature
+		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.id) {
+	tlist.insert(%(task)s.id,  %(task)s.prio);
+} else }}}
+
+        {{{generate:activate_task_foreach_task}}}{
+            assert(false);
+        }
+    }
+
+
     forceinline void Schedule_impl(void) {
         if(in_syscall()) {
             // in syscall: reschedule directly
@@ -65,7 +78,8 @@ struct Scheduler {
     }
 
     forceinline void ActivateTask_impl(const Task t) {
-        ActivateTask_impl(t.id);
+		SetReady_impl(t.id);
+        Schedule_impl();
     }
 
     forceinline void ChainTask_impl(const Task from, const Task to) {
@@ -74,8 +88,8 @@ struct Scheduler {
         assert(from_id == current_task);
 
         SetSuspended_impl(from);
-
-        ActivateTask_impl(to_id);
+		SetReady_impl(to_id);
+        Schedule_impl();
     }
 
     forceinline void TerminateTask_impl(const Task from) {
@@ -98,73 +112,13 @@ struct Scheduler {
         Schedule_impl();
     }
 
-    template<typename T>
-    forceinline void SetReady_impl(const T id) {
-        // TODO: generated signature
-{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.id) {
-    tlist.insert(%(task)s.id,  %(task)s.prio);
-} else }}}
-
-        {{{generate:activate_task_foreach_task}}}{
-            assert(false);
-        }
-    }
 
     forceinline void SetReadyFromSuspended_impl(const Task task) {
 		tlist.set(task.id, task.prio);
     }
-
-    template<typename T>
-    forceinline void ActivateTask_impl(const T id) {
-        SetReady_impl(id);
-        Schedule_impl();
-    }
-
 };
 
 constexpr Scheduler::prio_t Scheduler::scheduler_prio;
-
-extern Scheduler scheduler_;
-
-// TODO: more meaningful names
-// currently the "normal" name is a syscall wrapper for
-// the actual syscall which has ...C suffix
-
-template<typename T>
-noinline void ActivateTaskC_impl(const T id) {
-    scheduler_.ActivateTask_impl(id);
-}
-
-/**
- * @satisfies{13,2,3,1}
- */
-forceinline void ActivateTask_impl(const Task& t) {
-    auto id = t.id;
-
-    syscall(ActivateTaskC_impl<decltype(id)>, id);
-}
-
-forceinline void SetReady_impl(const Task& t) {
-    auto id = t.id;
-    scheduler_.SetReady_impl(id);
-}
-
-
-noinline void ScheduleC_impl(uint32_t dummy);
-
-/**
- * @satisfies{13,2,3,4}
- */
-forceinline void Schedule_impl() {
-    syscall(ScheduleC_impl);
-}
-
-}; // namespace scheduler
-}; // namespace os
-
-namespace os {
-namespace scheduler {
-
 Scheduler scheduler_;
 
 noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {

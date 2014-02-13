@@ -12,8 +12,10 @@ class UnencodedSystem(SimpleSystem):
     def id(self, subtask):
         """Returns a string that generates the task id"""
         task_desc = self.objects[subtask]["task_descriptor"].name
-        ret = "%s.id" % (task_desc)
-        return ret
+        return task_desc
+
+    def sigs(self, count):
+        return ""
 
     def generate_system_code(self):
         self.generator.source_file.includes.add(Include("os/scheduler/tasklist.h"))
@@ -76,18 +78,19 @@ class UnencodedSystem(SimpleSystem):
         return self.objects[abb.function.subtask]['task_descriptor']
 
     def TerminateTask(self, block, abb):
-        self.call_function(block, "scheduler_.TerminateTask_impl", "void",
+        self.call_function(block, "scheduler_.TerminateTask_impl",
+                           "void",
                            [self.objects[abb.function.subtask]['task_descriptor'].name])
 
     def ActivateTask(self, block, abb):
         self.call_function(block,
-                           "scheduler_.ActivateTask_impl",
+                           "scheduler_.ActivateTask_impl" + self.sigs(1),
                            "void",
                            [self.id(abb.arguments[0])])
 
     def ChainTask(self, block, abb):
         self.call_function(block,
-                           "scheduler_.ChainTask_impl",
+                           "scheduler_.ChainTask_impl" + self.sigs(2),
                            "void",
                            [self.get_calling_task_desc(abb).name,
                             self.objects[abb.arguments[0]]['task_descriptor'].name])

@@ -38,6 +38,18 @@ struct Scheduler  {
         }
     }
 
+	template<typename T>
+    forceinline void SetReady_impl(const T id) {
+        // TODO: generated signature
+		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
+	value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(), %(task)s.enc_prio<%(prio_sig)s>());
+	assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% T::A == 0);
+} else }}}
+        {{{generate:activate_task_foreach_task}}}{
+            assert(false);
+        }
+    }
+
     forceinline void Schedule_impl(void) {
         if(in_syscall()) {
             // in syscall: reschedule directly
@@ -53,6 +65,7 @@ struct Scheduler  {
         SetReady_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
     }
 
+
     forceinline void SetSuspended_impl(const Task t) {
         t.tcb.reset();
 
@@ -64,18 +77,22 @@ struct Scheduler  {
         }
     }
 
-    forceinline void ActivateTask_impl(const Task t) {
-        ActivateTask_impl(t.enc_id<{{{generate:arbitrary_new_signature}}}>());
+	template<int TO_SIG = {{{generate:arbitrary_new_signature}}}>
+    forceinline void ActivateTask_impl(const Task to) {
+		auto to_id = to.enc_id<TO_SIG>();
+		SetReady_impl(to_id);
+		Schedule_impl();
     }
 
+	template<int FROM_SIG, int TO_SIG>
     forceinline void ChainTask_impl(const Task from, const Task to) {
-        auto from_id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
-        auto to_id = to.enc_id<{{{generate:arbitrary_new_signature}}}>();
+        auto from_id = from.enc_id<FROM_SIG>();
+        auto to_id = to.enc_id<TO_SIG>();
         assert(from_id == current_task);
 
         SetSuspended_impl(from);
-
-        ActivateTask_impl(to_id);
+		SetReady_impl(to_id);
+		Schedule_impl();
     }
 
     forceinline void TerminateTask_impl(const Task from) {
@@ -102,82 +119,21 @@ struct Scheduler  {
 		Schedule_impl();
     }
 
-
-	template<typename T>
-    forceinline void SetReady_impl(const T id) {
-        // TODO: generated signature
-{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
-    value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(), %(task)s.enc_prio<%(prio_sig)s>());
-    assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% T::A == 0);
-} else }}}
-
-        {{{generate:activate_task_foreach_task}}}{
-            assert(false);
-        }
-    }
-
     forceinline void SetReadyFromSuspended_impl(const Task task) {
 		auto id = task.enc_id<1>();
 		auto new_prio_encoded = task.enc_prio<2>();
 		tlist.set(id, new_prio_encoded);
     }
-
-    template<typename T>
-    forceinline void ActivateTask_impl(const T id) {
-        SetReady_impl(id);
-        Schedule_impl();
-    }
-
 };
 
 constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> Scheduler::scheduler_prio;
-
-extern Scheduler scheduler_;
-
-// TODO: more meaningful names
-// currently the "normal" name is a syscall wrapper for
-// the actual syscall which has ...C suffix
-
-template<typename T>
-noinline void ActivateTaskC_impl(const T id) {
-    scheduler_.ActivateTask_impl(id);
-}
-
-/**
- * @satisfies{13,2,3,1}
- */
-forceinline void ActivateTask_impl(const Task& t) {
-    auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
-
-    syscall(ActivateTaskC_impl<decltype(id)>, id);
-}
-
-forceinline void SetReady_impl(const Task& t) {
-    auto id = t.enc_id<{{{generate:arbitrary_new_signature}}}>();
-    scheduler_.SetReady_impl(id);
-}
+Scheduler scheduler_;
 
 
-noinline void ScheduleC_impl(uint32_t dummy);
-
-/**
- * @satisfies{13,2,3,4}
- */
-forceinline void Schedule_impl() {
-    syscall(ScheduleC_impl);
+/* This is called from the AST */
+noinline void ScheduleC_impl(__attribute__((unused)) uint32_t dummy) {
+	scheduler_.Reschedule();
 }
 
 }; // namespace scheduler
 }; // namespace os
-
-namespace os {
-namespace scheduler {
-
-Scheduler scheduler_;
-
-noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
-    scheduler_.Reschedule();
-}
-
-}; // scheduler
-}; // os

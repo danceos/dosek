@@ -9,12 +9,9 @@ class EncodedSystem(UnencodedSystem):
         self.task_list = EncodedTaskListTemplate
         self.scheduler = EncodedSchedulerTemplate
 
-    def id(self, subtask):
-        """Returns a string that generates an encoded id"""
-        B = self.generator.signature_generator.new()
-        task_desc = self.objects[subtask]["task_descriptor"].name
-        ret = "%s.enc_id<%d>()" % (task_desc, B)
-        return ret
+    def sigs(self, count):
+        Bs = [str(self.generator.signature_generator.new()) for x in range(0, count)]
+        return "<%s>" %(", ".join(Bs))
 
     def generate_system_code(self):
         # The current_prio_sig has to be allocated before the tasklist
