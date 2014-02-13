@@ -12,6 +12,9 @@ class BaseRules:
         self.generator = generator
         self.system_graph = generator.system_graph
         self.objects = generator.objects
+        self.arch_rules = generator.arch_rules
+        self.os_rules   = generator.os_rules
+        self.syscall_rules = generator.syscall_rules
 
     def foreach_subtask(self, func):
         """Call func for every subtask, that is a real task and collect the

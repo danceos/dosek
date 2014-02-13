@@ -49,9 +49,6 @@ class SimpleSystem(BaseRules):
         if ret_var:
             self.return_statement(function, ret_var.name)
 
-    def StartOS(self, block):
-        pass
-
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
         self.generate_dataobjects_task_descriptors()

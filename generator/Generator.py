@@ -34,12 +34,13 @@ class SignatureGenerator:
 class Generator:
 
     """Base class of all generators"""
-    def __init__(self, system_graph, name, os_rules, arch_rules):
+    def __init__(self, system_graph, name, arch_rules, os_rules, syscall_rules):
         self.name = name
         self.system_graph = system_graph
         self.rtsc_analysis = system_graph.rtsc
-        self.os_rules = os_rules
         self.arch_rules = arch_rules
+        self.os_rules = os_rules
+        self.syscall_rules = syscall_rules
         self.rules = []
         self.__used_variable_names = set()
         self.template_base = None
@@ -59,7 +60,7 @@ class Generator:
 
         os_rules.set_generator(self)
         arch_rules.set_generator(self)
-
+        syscall_rules.set_generator(self)
 
     OSEK_CALLS = {
         "ActivateTask": ["StatusType", "TaskType"],
@@ -123,7 +124,7 @@ class Generator:
         # Generate a StartOS function and delegate it to the OS ruleset
         StartOS = Function("StartOS", "void", ["int"], extern_c = True)
         self.objects["StartOS"] = StartOS
-        self.os_rules.StartOS(StartOS)
+        self.syscall_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
 
         # find all syscalls

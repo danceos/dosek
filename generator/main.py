@@ -89,18 +89,22 @@ if __name__ == "__main__":
     graph.analyze("%s/gen_" % (options.prefix))
 
     if options.arch == "i386":
-        arch = X86Arch()
+        arch_rules = X86Arch()
     elif options.arch == "posix":
-        arch = PosixArch()
+        arch_rules = PosixArch()
     else:
         panic("Unknown --arch=%s", options.arch)
 
     if options.unencoded:
-        system = UnencodedSystem()
+        os_rules = UnencodedSystem()
     else:
-        system = EncodedSystem()
+        os_rules = EncodedSystem()
 
-    generator = Generator.Generator(graph, options.name, system, arch)
+    syscall_rules = FullSystemCalls()
+
+    generator = Generator.Generator(graph, options.name, arch_rules,
+                                    os_rules,
+                                    syscall_rules)
 
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)
