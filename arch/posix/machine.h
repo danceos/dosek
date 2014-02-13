@@ -84,6 +84,13 @@ public:
     }
 
 	/**
+	 * \brief Return if interrupts are enabled
+	 */
+	static forceinline bool interrupts_enabled(void) {
+		return arch::irq.interrupts_enabled();
+	}
+
+	/**
 	 * \brief Unreachable code
 	 * Will trigger interrupt if this is actually executed.
 	 */

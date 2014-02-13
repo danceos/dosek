@@ -57,6 +57,11 @@ void IRQ::enable_interrupts() {
 	syscall(SYS_rt_sigprocmask, SIG_UNBLOCK, &full_mask, NULL, 8);
 }
 
+bool IRQ::interrupts_enabled() {
+	sigset_t mask;
+	syscall(SYS_rt_sigprocmask, NULL, NULL, &mask, 8);
+	return !sigisemptyset(&mask);
+}
 
 void IRQ::guardian(int signum) {
 	/* Interrupts are prohibited during the ISR */

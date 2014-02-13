@@ -23,6 +23,7 @@ public:
 
     void enable_interrupts();
     void disable_interrupts();
+    bool interrupts_enabled();
 
 	bool forceinline in_interrupt() { return ast_level > 0;}
 
