@@ -53,12 +53,6 @@ struct Scheduler {
         SetReady_impl(t.id);
     }
 
-    forceinline void SetRunning_impl(const Task t) {
-        auto id = t.id;
-        auto prio = t.prio;
-        SetRunning_impl(id, prio);
-    }
-
     forceinline void SetSuspended_impl(const Task t) {
         t.tcb.reset();
 
@@ -68,12 +62,6 @@ struct Scheduler {
             // this is required for the optimization in Reschedule()
             current_prio = t.prio;
         }
-    }
-
-    template<typename Id, typename Prio>
-    forceinline void SetRunning_impl(const Id id, const Prio prio) {
-        current_task = id;
-        current_prio = prio;
     }
 
     forceinline void ActivateTask_impl(const Task t) {
@@ -120,6 +108,10 @@ struct Scheduler {
         {{{generate:activate_task_foreach_task}}}{
             assert(false);
         }
+    }
+
+    forceinline void SetReadyFromSuspended_impl(const Task task) {
+		tlist.set(task.id, task.prio);
     }
 
     template<typename T>

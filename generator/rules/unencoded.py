@@ -219,7 +219,7 @@ class TaskListTemplate(CodeTemplate):
 
     def task_set_call(self, snippet, args):
         def do(subtask):
-            return self.expand_snippet("task_set_entry",
+            return self.expand_snippet(args[0],
                                        name = subtask.name,
                                        id = self.objects[subtask]["task_id"])
 

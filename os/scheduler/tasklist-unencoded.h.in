@@ -28,9 +28,20 @@ struct TaskList : public UnencodedTaskListStatic {
 {{{snippet:task_set_entry:name|if(id == %(id)s) {
     %(name)s = prio;
 } else }}}
-         {{{generate:task_set_call}}}{
+         {{{generate:task_set_call:task_set_entry}}}{
              assert(false);
          }
+    }
+
+    /** Set priority of task id to prio **/
+    forceinline void increasePrio(const prio_t id, const prio_t prio) {
+		{{{snippet:task_increasePrio_entry:name|if(id == %(id)s) {
+	if (%(name)s < prio)
+		%(name)s = prio;
+} else }}}
+		{{{generate:task_set_call:task_increasePrio_entry}}}{
+			assert(false);
+		}
     }
 
     forceinline void head(id_t& id, prio_t& prio) const {
@@ -51,7 +62,7 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     forceinline void insert(const id_t& id, const prio_t& prio) {
-        set(id, prio);
+        increasePrio(id, prio);
     }
 
     forceinline void remove(const id_t& id) {
