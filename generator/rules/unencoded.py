@@ -23,28 +23,11 @@ class UnencodedSystem(SimpleSystem):
         self.generator.source_file.includes.add(Include("os/alarm.h"))
         self.generator.source_file.declarations.append(self.alarms(self).expand())
 
-
-    def encode_arguments(self, block, arguments):
-        encoded_count = len(arguments)
-        ## FIXME: We could use a custom struct here
-        var = VariableDefinition.new(self.generator, "uint16_t",
-                                     array_length = encoded_count)
-        encoding_block = Block("/* Arguments */ ")
-        block.prepend(encoding_block)
+    def convert_argument(self, block, argument):
+        var = VariableDefinition.new(self.generator, argument[1])
         block.prepend(var)
-
-        for i in range(0, len(arguments)):
-            arg = arguments[i][0]
-            encoding_block.add(Statement("%s[%d] = %s" % (var.name, i, arg)))
+        block.add(Statement("%s = %s" % (var.name, argument[0])))
         return var
-
-    def get_encoded_args(self, function, encoded_arguments, arg):
-        datatype = encoded_arguments.datatype + "*"
-        decl = VariableDefinition.new(self.generator, datatype)
-        function.add(decl)
-        function.add(Statement("%s = (%s) %s" %(decl.name, datatype, arg[0])))
-        return decl
-
 
     def systemcall(self, systemcall, userspace):
         """Generate systemcall into userspace"""
@@ -56,36 +39,34 @@ class UnencodedSystem(SimpleSystem):
 
 
         if systemcall.function == "TerminateTask":
-            syscall = func_syscall_block(userspace, subtask, abb_id)
+            syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.TerminateTask(syscall, systemcall.abb)
         elif systemcall.function == "ActivateTask":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, abb_id)
+            syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.ActivateTask(syscall, systemcall.abb)
         elif systemcall.function == "ChainTask":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, abb_id)
+            syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.ChainTask(syscall, systemcall.abb)
         elif systemcall.function == "CancelAlarm":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, abb_id)
+            syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.CancelAlarm(syscall, systemcall.abb)
         elif systemcall.function == "GetResource":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, abb_id)
+            syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.GetResource(syscall, systemcall.abb)
         elif systemcall.function == "ReleaseResource":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, abb_id)
+            syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.ReleaseResource(syscall, systemcall.abb)
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
-            # The SetRelAlarm systemcall needs two arguments from the
-            # userspace, so we encode them
-            encoded_args = self.encode_arguments(userspace, userspace.arguments()[1:])
-            # A Pointer to the encoded args is given
-            syscall = func_syscall_block(userspace, subtask, "&" + encoded_args.name)
-            self.syscall_rules.SetRelAlarm(syscall, systemcall.abb, encoded_args)
+            arg1 = self.convert_argument(userspace, userspace.arguments()[1])
+            arg2 = self.convert_argument(userspace, userspace.arguments()[2])
+            syscall = func_syscall_block(userspace, subtask, [arg1, arg2])
+            self.syscall_rules.SetRelAlarm(syscall, systemcall.abb, [arg1, arg2])
         else:
             assert False, "Not yet supported %s"% systemcall.function
 

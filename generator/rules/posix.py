@@ -58,11 +58,10 @@ class PosixArch(SimpleArch):
 
 
 
-    def syscall_block(self, function, subtask, argument):
+    def syscall_block(self, function, subtask, arguments):
         """When a systemcall is done from a app (synchronous syscall), then we
            disable interrupts. In the interrupt handler they are already
            disabled.
-
         """
 
         # System function can be executed directly in an isr
@@ -71,7 +70,7 @@ class PosixArch(SimpleArch):
             return function
 
         self.call_function(function, "Machine::disable_interrupts", "void", [])
-        block = Block(arguments = [(argument, "void *")])
+        block = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
         function.add(block)
         self.call_function(function, "Machine::enable_interrupts", "void", [])
 

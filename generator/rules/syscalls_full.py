@@ -58,15 +58,15 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(abb),
                             self.task_desc(abb.arguments[0])])
 
-    def SetRelAlarm(self, kernelspace, abb, encoded_args):
-        # We have to encode 2 arguments, there
-        args = self.os_rules.get_encoded_args(kernelspace, encoded_args, kernelspace.arguments()[0])
+    def SetRelAlarm(self, kernelspace, abb, arguments):
+        arg1 = kernelspace.arguments()[0]
+        arg2 = kernelspace.arguments()[1]
         alarm_id = abb.arguments[0]
         alarm_object = self.objects["alarm"][alarm_id]
         self.call_function(kernelspace, "%s.setRelativeTime" % alarm_object.name,
-                           "void", ["%s[0]" % args.name])
+                           "void", [arg1[0]])
         self.call_function(kernelspace, "%s.setCycleTime" % alarm_object.name,
-                           "void", ["%s[1]" % args.name])
+                           "void", [arg2[0]])
         self.call_function(kernelspace, "%s.setArmed" % alarm_object.name,
                            "void", ["true"])
         kernelspace.add(Comment("Dispatch directly back to Userland"))

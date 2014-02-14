@@ -23,19 +23,11 @@ class EncodedSystem(UnencodedSystem):
 
         UnencodedSystem.generate_system_code(self)
 
-    def encode_arguments(self, block, arguments):
-        encoded_count = len(arguments)
+    def convert_argument(self, block, argument):
         b = self.generator.signature_generator.new()
-        ## FIXME: We could use a custom struct here
-        var = VariableDefinition.new(self.generator, "Encoded_Static<A0, %d>" % b,
-                                     array_length = encoded_count)
-        encoding_block = Block("/* Encode Arguments */ ")
-        block.prepend(encoding_block)
+        var = VariableDefinition.new(self.generator, "Encoded_Static<A0, %d>" % b)
         block.prepend(var)
-
-        for i in range(0, len(arguments)):
-            arg = arguments[i][0]
-            encoding_block.add(Statement("%s[%d].encode(%s, 0 /* = D */)" % (var.name, i, arg)))
+        block.add(Statement("%s.encode(%s)" % (var.name, argument[0])))
         return var
 
 

@@ -75,14 +75,13 @@ class X86Arch(SimpleArch):
         # Call the end of interrupt function
         self.call_function(handler, "LAPIC::send_eoi", "void", [])
 
-    def syscall_block(self, function, subtask, argument):
+    def syscall_block(self, function, subtask, arguments):
         """When a systemcall is needed to execute code on kernel level, a new
            function is generated, and the new-functions block is
            returned. otherwise the argument is returned. This is
            useful for x86-bare, since an ActivateTask can be called
            directly from the ISR2, but must be invoked via an syscall
            form a TASK.
-
         """
 
         # System function can be executed directly in an isr
@@ -93,12 +92,12 @@ class X86Arch(SimpleArch):
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall
         syscall = Function("__OS_syscall_" + function.function_name,
-                           "void", ["int"], extern_c = True)
-        syscall.unused_parameter(0)
+                           "void", [arg.datatype for arg in arguments], extern_c = True)
+        #syscall.unused_parameter(0)
         self.generator.source_file.function_manager.add(syscall)
         # The syscall function is called from the function that will
         # be inlined into the application
-        self.call_function(function, "syscall", "void", [syscall.function_name, str(argument)])
+        self.call_function(function, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
 
         return syscall
 
