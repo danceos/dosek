@@ -16,10 +16,10 @@ if(CPPCHECK)
     foreach(dir ${INCLUDEDIRS})
         file(APPEND ${CPPINCLUDES} "${dir}\n")
     endforeach()
-    if(BUILD_posix)
+#    if(BUILD_posix)
         file(APPEND ${CPPINCLUDES} "/usr/include\n")
         file(APPEND ${CPPINCLUDES} "/usr/include/linux\n")
-    endif()
+#    endif()
 
 
     add_custom_target( cppcheck
