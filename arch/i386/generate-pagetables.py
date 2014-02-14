@@ -188,9 +188,6 @@ def main(options, args):
                                 Region("ioapic",    writeable = True , usermode  = False),
 
         ]
-        # The operating system can read the user stack
-        allowed_os         += [ Region("stack_" + task, writeable = False, usermode = True)]
-
 
     ptables = {}
     print "os"
