@@ -14,7 +14,7 @@ struct TaskList : public TaskListStatic {
     static constexpr auto idle_id   = EC({{{generate:idle_id_sig}}}, 0);
     static constexpr auto idle_prio = EC({{{generate:idle_prio_sig}}}, 0);
 
-    {{{snippet:ready_flag_init:name|, %(name)s(0,0)}}}
+    {{{snippet:ready_flag_init:name|, %(name)s(0)}}}
     TaskList() : TaskListStatic(){{{generate:ready_flag_constructor}}} {}
 
     /** Set priority of task id to prio **/

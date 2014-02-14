@@ -64,7 +64,6 @@ class Encoded_Static : Encoded
 {
 public:
 	value_coded_t vc;
-	D_t D;
 	static const value_coded_t max_vc = static_cast<value_coded_t>((_A * __V_MAX) + _B);
 
 	static const uint32_t MAXMODA = (__VC_MAX + 1ULL) % _A;
@@ -72,33 +71,32 @@ public:
 	static const A_t A = _A;
 	static const B_t B = _B;
 
-	Encoded_Static() : D(0)
+	Encoded_Static()
 	{
 		TAssert(_B > 0); // 0 Ist der RŸckgabewert des Voters falls kein Quorum mšglich war!
 		TAssert(_A > _B); // Sonst funktioniert der Trick mit dem % bei extractB() nicht!
 	};
 
-	constexpr Encoded_Static(value_t value) : vc(static_cast<value_coded_t>(value * _A) + _B) , D(0) {};
-	constexpr Encoded_Static(value_t value, uint8_t ts) : vc(static_cast<value_coded_t>(value * _A) + _B + ts) , D(ts) {};
+	constexpr Encoded_Static(value_t value) : vc(static_cast<value_coded_t>(value * _A) + _B) {};
 
 	bool check() const
 	{
-		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * _A) + _B + D);
-		bool noremainder = (((vc - _B - D) % _A) == 0);
+		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * _A) + _B + getD());
+		bool noremainder = (((vc - _B - getD()) % _A) == 0);
 
 		return  (nooverflow && noremainder);
 	};
 
-	void encode(value_t value, uint8_t timestamp)
+	void encode(value_t value, uint8_t timestamp=0)
 	{
-		D = timestamp;
+		setD(timestamp);
 		vc = static_cast<value_coded_t>(value * _A) + _B + timestamp;
 	}
 
 	value_t decode() const
 	{
 		assert(check());
-		return (vc - _B - D) / _A;
+		return (vc - _B - getD()) / _A;
 	};
 
 	value_coded_t getCodedValue() const
@@ -123,7 +121,11 @@ public:
 
 	D_t getD() const
 	{
-		return D;
+		return 0;
+	};
+
+	void setD(__attribute__((unused)) D_t val) const {
+		// nop
 	};
 
 	// Equality operators
@@ -148,7 +150,7 @@ public:
 			//r.vc -= (Beq - eq);
 			r.vc += (B - T::B);
 		}
-		r.D = D - t.D; // TODO
+		//r.D = D - t.D; // TODO
 		return r;
 	};
 
@@ -160,14 +162,14 @@ public:
 
 	bool operator==(const value_coded_t rhs) const
 	{
-		return vc - _B - D == _A * rhs;
+		return vc - _B - getD() == _A * rhs;
 	};
 
 	// Assignment operator
 	template<typename T>
 	void operator=(const T &rhs) {
 		vc = rhs.vc + (B - T::B);
-		D = rhs.D;
+		setD(rhs.getD());
 	};
 
 	// Arithmetic operator
@@ -176,7 +178,7 @@ public:
 	{
 		RET r;
 		r.vc = vc + t.vc;
-		r.D = D + t.D; // TODO
+		//r.D = D + t.D; // TODO
 		return r;
 	};
 
@@ -185,7 +187,7 @@ public:
 	{
 		RET r;
 		r.vc = vc - t.vc;
-		r.D = D - t.D; // TODO
+		//r.D = D - t.D; // TODO
 		return r;
 	};
 
@@ -214,7 +216,7 @@ public:
 		result /= _A;
 
 		r.vc = result;
-		r.D = 0; // TODO
+		//r.D = 0; // TODO
 		return r;
 	};
 
@@ -268,7 +270,7 @@ public:
 			r.vc += (sigPos - sigNeg);
 		}
 		r.vc += sigCond;
-		r.D = 0; // TODO
+		//r.D = 0; // TODO
 
 		return r;
 	};
@@ -298,10 +300,30 @@ public:
 			r.vc += (sigPos - sigNeg) + BIF;
 		}
 		r.vc += sigCond;
-		r.D = 0; // TODO
+		//r.D = 0; // TODO
 
 		return r;
 	};
+};
+
+template<A_t _A, B_t _B>
+class Encoded_Dynamic : Encoded_Static<_A, _B> {
+	D_t D;
+
+public:
+	Encoded_Dynamic() : Encoded_Static<_A, _B>(), D(0) {};
+
+	constexpr Encoded_Dynamic(value_t value, uint8_t ts) : Encoded_Static<_A, _B>(value), D(ts) {};
+
+	D_t getD() const
+	{
+		return D;
+	};
+
+	void setD(D_t val)
+	{
+		D = val;
+	}
 };
 
 // encoded constant

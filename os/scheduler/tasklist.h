@@ -28,8 +28,8 @@ public:
 		value_coded_t result;
 
 		// check correct a,x after subtracting signature B0
-		assert((a.vc - B0 - T::B - a.D) % T::A == 0);
-		assert((x.vc - B0 - U::B - x.D) % U::A == 0);
+		assert((a.vc - B0 - T::B - a.getD()) % T::A == 0);
+		assert((x.vc - B0 - U::B - x.getD()) % U::A == 0);
 
 		// unencoded comparison
 		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
@@ -72,7 +72,7 @@ public:
 		value_coded_t result;
 
 		// check correct a,x after subtracting signature B0
-		assert((a.vc - B0 - T::B - a.D) % T::A == 0);
+		assert((a.vc - B0 - T::B - a.getD()) % T::A == 0);
 
 		// unencoded comparison
 		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
