@@ -7,7 +7,6 @@
 #include "itimer.h"
 #include "machine.h"
 #include "os/counter.h"
-#include <cstdio>
 #include <signal.h>
 #include <sys/time.h>
 
@@ -54,7 +53,8 @@ void ITimer::set_periodic(uint16_t rateHz) {
 
     /* start timer: counting whenever process is executing! */
     if(setitimer(ITIMER_REAL, &timer, NULL) == -1 ) {
-        perror("setitimer failed in set_periodic.");
+        kout << "setitimer failed in set_periodic." << endl;
+        exit(EXIT_FAILURE);
     }
 }
 
