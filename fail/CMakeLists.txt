@@ -59,6 +59,9 @@ macro(fail_targets TNAME ELF TEST)
 	if(NOT ENCODED_SYSTEM)
 		set(BENCHMARK "${BENCHMARK}-unencoded")
 	endif()
+	if(NOT MPU_PROTECTION)
+		set(BENCHMARK "${BENCHMARK}-nompu")
+	endif()
 
 	# scripts
 	set(CLIENT_CMD ${PYTHON} ${PROJECT_SOURCE_DIR}/fail/fail-runner.py)
