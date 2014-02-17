@@ -107,6 +107,11 @@ struct Scheduler  {
     }
 
 	// Low level interface to the task list
+	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
+	forceinline void SetCurrentTask(const Task task) {
+		current_task = task.enc_id<TASK_SIG>();
+	}
+
 	forceinline void SetSystemPriority(const int new_prio) {
 		auto new_prio_encoded = EC(2, new_prio);
 		current_prio = new_prio_encoded;

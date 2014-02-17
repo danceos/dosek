@@ -104,4 +104,3 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb),
                             str(next_prio)])
-

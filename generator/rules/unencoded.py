@@ -37,7 +37,6 @@ class UnencodedSystem(SimpleSystem):
         abb_id  = systemcall.abb.abb_id
         func_syscall_block = self.generator.arch_rules.syscall_block
 
-
         if systemcall.function == "TerminateTask":
             syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.TerminateTask(syscall, systemcall.abb)

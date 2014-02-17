@@ -56,8 +56,10 @@ if __name__ == "__main__":
     parser.add_option('', '--verify', dest='verify', default = None,
                       help="verify script for the analysis results")
     parser.add_option('', '--unencoded', dest='unencoded', default = None,
-                      help="generate unencoded system")
+                      help="generate unencoded system",
+                      action="store_true")
     parser.add_option('', '--specialize-systemcalls', dest='specialize_systemcalls', default = None,
+                      action="store_true",
                       help="generate specialized systemcalls")
 
     (options, args) = parser.parse_args()

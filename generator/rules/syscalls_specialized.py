@@ -65,7 +65,7 @@ class SpecializedSystemCalls(FullSystemCalls):
         elif task.name == "Idle":
             kernelspace.add(Statement("scheduler_.current_task = TaskList::idle_id"))
         else:
-            kernelspace.add(Statement("scheduler_.current_task.encode(%s.id)" % self.task_desc(task)))
+            kernelspace.add(Statement("scheduler_.SetCurrentTask(%s)" % self.task_desc(task)))
 
         # Step 2: Determine the current system priority.
         abb_info = self.global_abb_info.for_abb(abb)
@@ -79,7 +79,7 @@ class SpecializedSystemCalls(FullSystemCalls):
                              "OPTIMIZATION: The system priority is determined."
                              + " Therefore we set it from a constant: %d == %s",
                              next_prio, self.system_graph.who_has_prio(next_prio))
-                kernelspace.add(Statement("scheduler_.current_prio.encode(%d)" % next_prio))
+                kernelspace.add(Statement("scheduler_.SetSystemPriority(%d)" % next_prio))
         else:
             # The current system priority is the priority of the next running task
             kernelspace.add(Statement("scheduler_.current_prio = scheduler_.tlist.%s" % task.name))
@@ -146,3 +146,20 @@ class SpecializedSystemCalls(FullSystemCalls):
             # If we have no information about this systemcall just
             # make a full-featured systemcall
             FullSystemCalls.ChainTask(self, kernelspace, abb)
+
+    def ReleaseResource(self, kernelspace, abb):
+        from_task = abb.function.subtask
+        next_prio = abb.definite_after('local').dynamic_priority
+
+        abb_info = self.global_abb_info.for_abb(abb)
+        if abb_info:
+            self.call_function(kernelspace, "scheduler_.SetPriority", "void",
+                               [self.task_desc(from_task), str(next_prio)])
+            self.call_function(kernelspace, "scheduler_.SetSystemPriority", "void",
+                               [str(next_prio)])
+            self.Schedule(kernelspace, abb)
+        else:
+            # If we have no information about this systemcall just
+            # make a full-featured systemcall
+            FullSystemCalls.ChainTask(self, kernelspace, abb)
+
