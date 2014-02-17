@@ -28,16 +28,13 @@ def main():
     parser.add_option('-g', '--generator', dest='GENERATOR', default = "make",
                       help="CMake Generator (make|ninja|eclipse)")
     parser.add_option('-a', '--arch', dest='ARCH', default = "i386",
-                      help="CMake Generator (i386|posix)")
-    parser.add_option('', '--no-encoded', dest='NO_ENCODED', default = False,
-                      action="store_true",
-                      help="Build an unencoded system (default: false)")
-    parser.add_option('', '--no-mpu', dest='NO_MPU', default = False,
-                      action="store_true",
-                      help="Build an unencoded system (default: false)")
-    parser.add_option('', '--specialize', dest='SPECIALIZE', default = False,
-                      action="store_true",
-                      help="Use system analysis for specialized system calls (default: false)")
+                      help="Architecture (i386|posix)")
+    parser.add_option('', '--encoded', dest='ENCODED', default = "yes",
+                      help="Build an unencoded system (default: yes)")
+    parser.add_option('', '--mpu', dest='MPU', default = "yes",
+                      help="Build an unencoded system (default: yes)")
+    parser.add_option('', '--specialize', dest='SPECIALIZE', default = "no",
+                      help="Use system analysis for specialized system calls (default: no)")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
     parser.add_option('-c', '--clean', dest='CLEAN', action="store_true",
@@ -58,9 +55,9 @@ def main():
 
     options.GENERATOR = generator_dict[options.GENERATOR]
     options.REPODIR   = base_dir
-    options.ENCODED_SYSTEM = cmake_bool(not options.NO_ENCODED)
-    options.MPU_PROTECTION = cmake_bool(not options.NO_MPU)
-    options.SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE)
+    options.ENCODED_SYSTEM = cmake_bool(options.ENCODED == "yes")
+    options.MPU_PROTECTION = cmake_bool(options.MPU == "yes")
+    options.SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE == "yes")
 
 
     logging.info("Build System: %s", options.GENERATOR)
