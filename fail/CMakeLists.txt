@@ -21,6 +21,7 @@ find_program(FAIL_SERVER "cored-tester-server" ${FAIL_TOOLS_DIR})
 find_program(FAIL_CLIENT "cored-tester-client" ${FAIL_TOOLS_DIR})
 find_program(OBJDUMP "objdump")
 find_program(NICE "nice")
+find_program(GIT "git")
 
 # DB options
 set(FAIL_DBOPTS "")
@@ -76,11 +77,29 @@ macro(fail_targets TNAME ELF TEST)
 		# TODO: make architecture independent
 		set(BOCHSRC "${PROJECT_BINARY_DIR}/startup_scripts/bochsrc-fail-${TNAME}-nogui")
 
+		# get git hash
+		set(GIT_REV_FILE ${FAIL_DIR}/.gitrev)
+		set(CHECK_WORKSPACE ${PROJECT_SOURCE_DIR}/fail/check-workspace.py)
+		if(NOT EXISTS ${GIT_REV_FILE})
+			execute_process(COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${GIT_REV_FILE} -g ${GIT} -f)
+		endif()
+		file(READ ${GIT_REV_FILE} GIT_REV)
+		string(STRIP ${GIT_REV} GIT_REV)
+
+		# re-run cmake if GIT_REV_FILE changes
+		configure_file(${GIT_REV_FILE} ${GIT_REV_FILE}.tmp COPYONLY)
+		file(REMOVE ${GIT_REV_FILE}.tmp) # discard dummy output file
+
+		# store git hash in FAIL_VARIANT
+		message(STATUS "[${PROJECT_NAME}] FAIL* git hash: ${GIT_REV}")
+		set(FAIL_VARIANT "${FAIL_VARIANT}-${GIT_REV}")
+
 		# tracing
 		set(TRACEFILE "${FAIL_DIR}/trace.pb")
 		set(STATEDIR "${FAIL_DIR}/state")
 		add_custom_command(
-			DEPENDS ${ELF} iso-fail-${TNAME}
+			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE}
+			COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${GIT_REV_FILE} -g ${GIT}
 			COMMAND ${CMAKE_COMMAND} -E remove_directory ${STATEDIR}
 			COMMAND ${FAIL_TRACE} -f ${BOCHSRC} -q
 				-Wf,--start-symbol=_trace_start_marker
