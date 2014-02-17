@@ -81,3 +81,12 @@ class RunningTaskToolbox:
             # Some syscalls cannot reschedule
             if syscall.type in ("GetResource", "CancelAlarm", "SetRelAlarm"):
                 self.reachability_bare(syscall, [syscall.function.subtask])
+        for abb in self.analysis.system.get_abbs():
+            abb_info = self.analysis.for_abb(abb)
+            if not abb_info:
+                continue
+            assert abb_info.state_before.current_abb == abb, "%s is weird"
+            for state in abb_info.states_after:
+                assert state.current_abb != None
+                assert state.current_abb in abb.get_outgoing_nodes('global')
+

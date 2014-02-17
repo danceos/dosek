@@ -80,6 +80,12 @@ public:
 		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)&task.tcb.sp);
 	}
 
+	static forceinline void StartToTask(const os::scheduler::Task& task) {
+		save_sp = (volatile void **) &task.tcb.sp;
+		// not resuming, pass task function
+		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)task.tcb.fun);
+	}
+
 	#if IDLE_HALT
 
 	/** \brief Syscall to start idle loop (in ring 0) */

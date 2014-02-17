@@ -91,6 +91,10 @@ public:
 		Dispatch(next);
 	}
 
+	static forceinline void StartToTask(const os::scheduler::Task& next) {
+		Dispatch(next);
+	}
+
 	static const TCB * getCurrent(void) {
 		return m_current;
 	}

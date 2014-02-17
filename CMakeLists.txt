@@ -23,6 +23,13 @@ else()
 	message(STATUS "[${PROJECT_NAME}] Building UNencoded system")
 endif()
 
+OPTION(SPECIALIZE_SYSTEMCALLS "Specialized systemcalls" OFF)
+if(SPECIALIZE_SYSTEMCALLS)
+	message(STATUS "[${PROJECT_NAME}] Specialized Systemcalls: ON")
+else()
+	message(STATUS "[${PROJECT_NAME}] Specialized Systemcalls: OFF")
+endif()
+
 
 # Verbose make
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)

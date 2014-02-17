@@ -35,6 +35,9 @@ def main():
     parser.add_option('', '--no-mpu', dest='NO_MPU', default = False,
                       action="store_true",
                       help="Build an unencoded system (default: false)")
+    parser.add_option('', '--specialize', dest='SPECIALIZE', default = False,
+                      action="store_true",
+                      help="Use system analysis for specialized system calls (default: false)")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
     parser.add_option('-c', '--clean', dest='CLEAN', action="store_true",
@@ -57,11 +60,15 @@ def main():
     options.REPODIR   = base_dir
     options.ENCODED_SYSTEM = cmake_bool(not options.NO_ENCODED)
     options.MPU_PROTECTION = cmake_bool(not options.NO_MPU)
+    options.SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE)
+
 
     logging.info("Build System: %s", options.GENERATOR)
     logging.info("Arch: %s", options.ARCH)
     logging.info("Encoded System: %s", options.ENCODED_SYSTEM)
     logging.info("MPU Protection: %s", options.MPU_PROTECTION)
+    logging.info("Specialized Systemcalls: %s", options.SPECIALIZE_SYSTEMCALLS)
+
 
 
 
@@ -80,6 +87,8 @@ def main():
                      "-G", options["GENERATOR"],
                      "-DENCODED_SYSTEM=%s" % options["ENCODED_SYSTEM"],
                      "-DMPU_PROTECTION=%s" % options["MPU_PROTECTION"],
+                     "-DSPECIALIZE_SYSTEMCALLS=%s" % options["SPECIALIZE_SYSTEMCALLS"],
+
                      options["REPODIR"]])
 
 if __name__ == '__main__':

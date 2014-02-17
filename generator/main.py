@@ -21,10 +21,8 @@ import optparse
 def setup_logging(log_level):
     """ setup the logging module with the given log_level """
 
-    l = logging.WARNING # default
-    if log_level == 1:
-        l = logging.INFO
-    elif log_level >= 2:
+    l = logging.INFO # default
+    if log_level >= 1:
         l = logging.DEBUG
 
     logging.basicConfig(level=l)
@@ -59,6 +57,8 @@ if __name__ == "__main__":
                       help="verify script for the analysis results")
     parser.add_option('', '--unencoded', dest='unencoded', default = None,
                       help="generate unencoded system")
+    parser.add_option('', '--specialize-systemcalls', dest='specialize_systemcalls', default = None,
+                      help="generate specialized systemcalls")
 
     (options, args) = parser.parse_args()
 
@@ -84,7 +84,8 @@ if __name__ == "__main__":
 
     graph.register_analysis(PrioritySpreadingPass())
     graph.register_analysis(DynamicPriorityAnalysis())
-    graph.register_and_enqueue_analysis(RunningTaskAnalysis())
+    global_abb_information = RunningTaskAnalysis()
+    graph.register_and_enqueue_analysis(global_abb_information)
     graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
     graph.analyze("%s/gen_" % (options.prefix))
 
@@ -100,7 +101,10 @@ if __name__ == "__main__":
     else:
         os_rules = EncodedSystem()
 
-    syscall_rules = FullSystemCalls()
+    if options.specialize_systemcalls:
+        syscall_rules = SpecializedSystemCalls(global_abb_information)
+    else:
+        syscall_rules = FullSystemCalls()
 
     generator = Generator.Generator(graph, options.name, arch_rules,
                                     os_rules,

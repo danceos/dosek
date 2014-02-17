@@ -190,7 +190,6 @@ def main(options, args):
         ]
 
     ptables = {}
-    print "os"
     ptables["os"] = generate_pagetables(regions, allowed_os)
     for task in allowed_task:
         if "VERBOSE" in os.environ:

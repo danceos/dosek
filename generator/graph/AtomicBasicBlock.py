@@ -95,7 +95,7 @@ class AtomicBasicBlock(GraphObject):
                 'prio': str(self.dynamic_priority)}
 
     def __repr__(self):
-        return "ABB%d"%(self.abb_id)
+        return "ABB%d/%s"%(self.abb_id, self.type)
 
 
 class ControlFlowEdge(Edge):

@@ -15,7 +15,21 @@ class SourceElement():
 class Comment(SourceElement):
     def __init__(self, text):
         SourceElement.__init__(self)
-        self.text = text
+        if len(text) > 72:
+            # Split text at 72 characters
+            current_line = 0
+            self.text = ""
+            for word in text.split(" "):
+                self.text += word
+                current_line += len(word) + 1
+                if current_line > 72:
+                    self.text += "\n"
+                    current_line = 0
+                else:
+                    self.text += " "
+            self.text = self.text.strip()
+        else:
+            self.text = text
     def expand(self, generator):
         if "\n" in self.text:
             # A multiline comment

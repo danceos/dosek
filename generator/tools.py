@@ -61,3 +61,7 @@ def merge_dict_tree(tree_a, tree_b, depth = 0):
                                        tree_b.get(key),
                                        depth - 1)
         return ret
+
+def unwrap_seq(seq):
+    assert len(seq) == 1
+    return list(seq)[0]

@@ -39,16 +39,8 @@ struct Scheduler  {
     }
 
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-    forceinline void SetReady_impl(const Task t) {
-		auto id = t.enc_id<TASK_SIG>();
-        // TODO: generated signature
-		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
-	value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(), %(task)s.enc_prio<%(prio_sig)s>());
-	assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% decltype(id)::A == 0);
-} else }}}
-        {{{generate:activate_task_foreach_task}}}{
-            assert(false);
-        }
+    forceinline void SetReady_impl(const Task task) {
+		IncreasePriority<TASK_SIG>(task, task.prio);
     }
 
     forceinline void Schedule_impl(void) {
@@ -100,25 +92,45 @@ struct Scheduler  {
     }
 
     forceinline void GetResource_impl(const Task current_task, const int new_prio) {
-		auto id = current_task.enc_id<1>();
-		auto new_prio_encoded = EC(2, new_prio);
-		tlist.promote(id, new_prio_encoded);
-		current_prio = new_prio_encoded;
+		SetPriority(current_task, new_prio);
+		SetSystemPriority(new_prio);
     }
 
     forceinline void ReleaseResource_impl(const Task current_task, const int new_prio) {
-		auto id = current_task.enc_id<1>();
-		auto new_prio_encoded = EC(2, new_prio);
-		tlist.promote(id, new_prio_encoded);
-		current_prio = new_prio_encoded;
+		SetPriority(current_task, new_prio);
+		SetSystemPriority(new_prio);
 		Schedule_impl();
     }
 
     forceinline void SetReadyFromSuspended_impl(const Task task) {
-		auto id = task.enc_id<1>();
-		auto new_prio_encoded = task.enc_prio<2>();
-		tlist.set(id, new_prio_encoded);
+		SetPriority(task, task.prio);
     }
+
+	// Low level interface to the task list
+	forceinline void SetSystemPriority(const int new_prio) {
+		auto new_prio_encoded = EC(2, new_prio);
+		current_prio = new_prio_encoded;
+	}
+
+
+	forceinline void SetPriority(const Task task, const int new_prio) {
+		auto id = task.enc_id<1>();
+		auto new_prio_encoded = EC(2, new_prio);
+		tlist.set(id, new_prio_encoded);
+	}
+
+	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
+	forceinline void IncreasePriority(const Task task, const int new_prio) {
+	auto id = task.enc_id<TASK_SIG>();
+        // TODO: generated signature
+		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
+	value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(), EC(%(prio_sig)s, new_prio));
+	assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% decltype(id)::A == 0);
+} else }}}
+        {{{generate:activate_task_foreach_task}}}{
+            assert(false);
+        }
+	}
 };
 
 constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> Scheduler::scheduler_prio;

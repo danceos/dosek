@@ -15,6 +15,9 @@ from generator.graph.Resource import Resource
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
 from generator.graph.AddFunctionCalls import AddFunctionCalls
+from generator.graph.GlobalControlFlowMetric import GlobalControlFlowMetric
+from generator.graph.SystemSemantic import *
+
 
 
 class SystemGraph(GraphObject):
@@ -315,6 +318,10 @@ class SystemGraph(GraphObject):
                 assert not name in ret
                 ret[name] = value
         return ret
+
+    def who_has_prio(self, priority):
+        assert self.passes["PrioritySpreadingPass"].valid
+        return self.passes["PrioritySpreadingPass"].prio_to_participant[priority]
 
     def fsck(self):
         functions = set()

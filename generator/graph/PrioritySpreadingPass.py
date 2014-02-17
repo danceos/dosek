@@ -10,6 +10,7 @@ class PrioritySpreadingPass(Analysis):
     """
     def __init__(self):
         Analysis.__init__(self)
+        self.prio_to_participant = {}
 
     def do(self):
         # Get list of all subtasks
@@ -30,6 +31,7 @@ class PrioritySpreadingPass(Analysis):
         for p in participants:
             p[0] = prio
             p[1].static_priority = prio
+            self.prio_to_participant[prio] = p[1]
             prio += 1
 
         assert participants[0][1] == self.system.get_subtask("Idle")

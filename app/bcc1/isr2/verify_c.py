@@ -10,17 +10,17 @@ def after_RunningTaskAnalysis(analysis):
     # In H2:
     AT3 = t.reachability(H2, "ActivateTask", [H3], # =>
                          [H2])
-    state_before_AT3 = analysis.for_abb(AT3)
-    state_after_AT3  = analysis.for_abb(AT3.definite_after('local'))
+    info_AT3 = analysis.for_abb(AT3)
+    info_after_AT3  = analysis.for_abb(AT3.definite_after('local'))
     # Could be entered by H3 or Idle loop
-    assert state_before_AT3.is_unsure_ready_state(H3)
-    assert state_after_AT3.is_surely_ready(H3)
+    assert info_AT3.state_before.is_unsure_ready_state(H3)
+    assert info_after_AT3.state_before.is_surely_ready(H3)
 
     ## Before ActivateTask(H1) the state of H3 is known
     AT1 = t.reachability(H2, "ActivateTask", [H1], # =>
                          [H1])
-    state_before_AT1 = analysis.for_abb(AT1)
-    assert state_before_AT1.is_surely_ready(H3)
+    info_before_AT1 = analysis.for_abb(AT1)
+    assert info_before_AT1.state_before.is_surely_ready(H3)
 
 
     TT3 = t.reachability(H2, "TerminateTask", [], # =>
