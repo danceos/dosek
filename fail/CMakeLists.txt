@@ -67,9 +67,6 @@ macro(fail_targets TNAME ELF TEST)
 	# scripts
 	set(CLIENT_CMD ${PYTHON} ${PROJECT_SOURCE_DIR}/fail/fail-runner.py)
 
-	# common options
-	set(FAIL_OPTS ${FAIL_DBOPTS} -v ${FAIL_VARIANT} -b ${BENCHMARK})
-
 	# common targets (create only once for all tests)
 	if(NOT FAIL_SETUP_${TNAME})
 		set(FAIL_SETUP_${TNAME} true CACHE INTERNAL "Common FAIL* targets alredy setup")
@@ -93,6 +90,9 @@ macro(fail_targets TNAME ELF TEST)
 		# store git hash in FAIL_VARIANT
 		message(STATUS "[${PROJECT_NAME}] FAIL* git hash: ${GIT_REV}")
 		set(FAIL_VARIANT "${FAIL_VARIANT}-${GIT_REV}")
+
+		# common options
+		set(FAIL_OPTS ${FAIL_DBOPTS} -v ${FAIL_VARIANT} -b ${BENCHMARK})
 
 		# tracing
 		set(TRACEFILE "${FAIL_DIR}/trace.pb")
