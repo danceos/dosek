@@ -150,6 +150,7 @@ class SchedulerTemplate(CodeTemplate):
         return "os/scheduler/scheduler-unencoded.h.in"
 
     def scheduler_prio(self, snippet, args):
+        
         max_prio = 0
         for subtask in self.system_graph.get_subtasks():
             if not subtask.is_real_thread():
@@ -158,6 +159,15 @@ class SchedulerTemplate(CodeTemplate):
                 max_prio = subtask.static_priority
 
         return str(max_prio+1)
+
+    def foreach_subtask_snippet(self, snippet, args):
+        def do(subtask):
+            return self.expand_snippet(args[0],
+                                       task = subtask.name,
+                                       desc = self.objects[subtask]["task_descriptor"].name)
+
+        return self.foreach_subtask(do)
+
 
     # Reschedule
     def reschedule_foreach_task(self, snippet, args):

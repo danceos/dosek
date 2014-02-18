@@ -51,13 +51,12 @@ struct TaskList : public TaskListStatic {
 		}
     }
 
-    template<typename T, typename S>
+    template<typename TargetHint, typename T, typename S>
     forceinline value_coded_t head(T& id, S& prio) const {
         // initialize control flow signature
         static volatile value_coded_t signature;
-
-		const value_coded_t signature0 = {{{generate:head_signature_vc}}};
-        signature = signature0;
+		value_coded_t signature_static = {{{generate:head_signature_vc}}};
+		signature = signature_static;
 
         // start with idle id/priority
         id = idle_id;
@@ -68,16 +67,29 @@ struct TaskList : public TaskListStatic {
         prio.vc += {{{generate:head_signature_vc}}};
 
 {{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
-// %(task)s >= prio?
-signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task_id_sig)s, %(task_id)s));
-const value_coded_t signature%(ii)s = signature%(i)s + updateMax_signature(%(next_sig)s, prio, %(task)s);
-assert(((signature - signature%(ii)s) %% S::A) == 0);
+// This branch is taken statically
+if (TargetHint::%(task)s_is_possible) {
+	// %(task)s >= prio?
+	signature        += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task_id_sig)s, %(task_id)s));
+	signature_static += updateMax_signature(%(next_sig)s, prio, %(task)s);
+	assert(((signature - signature_static) %% S::A) == 0);
+} else {
+	/* Fixup id and prio signature */
+	id.vc = id.vc + (%(next_sig)s - %(last_sig)s);
+	prio.vc = prio.vc + (%(next_sig)s - %(last_sig)s);
+}
 }}}
 {{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
-//  restore idle_id if idle_id >= prio
-signature += updateMax<%(last_sig)s, %(next_sig)s>(prio, idle_prio, id, idle_id);
-const value_coded_t signature%(ii)s = signature%(i)s + updateMax_signature(%(next_sig)s, prio, idle_prio);
-assert(((signature - signature%(ii)s) %% S::A) == 0);
+if (TargetHint::Idle_is_possible) {
+	//  restore idle_id if idle_id >= prio
+	signature        += updateMax<%(last_sig)s, %(next_sig)s>(prio, idle_prio, id, idle_id);
+	signature_static +=  updateMax_signature(%(next_sig)s, prio, idle_prio);
+	assert(((signature - signature_static) %% S::A) == 0);
+} else {
+	/* Fixup id and prio signature */
+	id.vc = id.vc + (%(next_sig)s - %(last_sig)s);
+	prio.vc = prio.vc + (%(next_sig)s - %(last_sig)s);
+}
 }}}
         {{{generate:head_update_max_cascade}}}
 

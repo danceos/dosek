@@ -88,6 +88,29 @@ class SpecializedSystemCalls(FullSystemCalls):
         self.Dispatch(kernelspace, abb, task)
 
 
+    def ScheduleTargetHint(self, tasks):
+        """Returns a SchedulerTargetHint template instanciation for a given
+           set of tasks"""
+        args = []
+        if self.system_graph.get_subtask("Idle") in tasks:
+            args.append("true")
+        else:
+            args.append("false")
+
+        def do(subtask):
+            if subtask in tasks:
+                args.append("true")
+            else:
+                args.append("false")
+
+            return ""
+        # We use foreach_subtask from BaseRules here, since it is also
+        # used in the Scheduler template to build the
+        # SchedulerTargetHint C++ template. By this we ensure the right order
+        self.foreach_subtask(do)
+        return "SchedulerTargetHint<%s>" %( ", ".join(args))
+
+
     def Schedule(self, kernelspace, abb):
         if abb.function.subtask.is_isr:
             # OPTIMIZATION: Each ABB is either in an ISR or not,
@@ -109,7 +132,12 @@ class SpecializedSystemCalls(FullSystemCalls):
             self.RescheduleTo(kernelspace, abb, next_subtask)
             return
 
-        self.call_function(kernelspace, "scheduler_.Reschedule",
+
+        self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s",
+                     abb_info.tasks_after.keys())
+        schedule_hint = self.ScheduleTargetHint(abb_info.tasks_after.keys())
+        self.call_function(kernelspace,
+                           "scheduler_.Reschedule< %s >" % (schedule_hint),
                            "void", []);
 
     def ActivateTask(self, kernelspace, abb):

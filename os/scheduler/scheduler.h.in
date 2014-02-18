@@ -3,6 +3,16 @@ namespace scheduler {
 
 using namespace os::tasks;
 
+{{{snippet:hint_arg:task,desc|, bool %(task)s = true}}}
+{{{snippet:hint_body:task,desc|static const bool %(task)s_is_possible = %(task)s;
+}}}
+
+template<bool Idle = true{{{generate:foreach_subtask_snippet:hint_arg}}}>
+struct SchedulerTargetHint {
+    static const bool Idle_is_possible = Idle;
+    {{{generate:foreach_subtask_snippet:hint_body}}}
+};
+
 struct Scheduler  {
     os::scheduler::TaskList tlist;
 
@@ -11,6 +21,7 @@ struct Scheduler  {
 
     static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{generate:scheduler_prio}}});
 
+    template<typename TargetHint = SchedulerTargetHint<> >
     forceinline void Reschedule(void) {
         // TODO: control flow check
 		//  tlist.dump();
@@ -18,20 +29,20 @@ struct Scheduler  {
         // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
         if (current_prio != scheduler_prio) {
             // set current (=next) task from task list
-            tlist.head(current_task, current_prio);
+            tlist.head<TargetHint>(current_task, current_prio);
         }
 
         // dispatch or enter idle
         // TODO: generated signature
-{{{snippet:reschedule_dispatch_task:task|if(current_task == %(task)s.enc_id<1>()) {
-    if (%(task)s.preemptable == false) {
+{{{snippet:reschedule_dispatch_task:task,desc|if(TargetHint::%(task)s_is_possible && current_task == %(desc)s.enc_id<1>()) {
+    if (%(desc)s.preemptable == false) {
         // promote non-preemptable task to RES_SCHEDULER
-        tlist.promote(%(task)s.enc_id<1>(), scheduler_prio);
+        tlist.promote(%(desc)s.enc_id<1>(), scheduler_prio);
         current_prio = scheduler_prio;
     }
-    Dispatcher::Dispatch(%(task)s);
+    Dispatcher::Dispatch(%(desc)s);
 } else }}}
-        {{{generate:reschedule_foreach_task}}}if(current_task == TaskList::idle_id) {
+        {{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(TargetHint::Idle_is_possible && current_task == TaskList::idle_id) {
             Dispatcher::idle();
         } else {
             assert(false);
