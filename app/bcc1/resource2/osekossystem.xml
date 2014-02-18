@@ -83,7 +83,7 @@
         <name>A1</name>
         <COUNTER>C1</COUNTER>
         <ARMED>TRUE</ARMED>
-        <CYCLETIME>1</CYCLETIME>
+        <CYCLETIME>100</CYCLETIME>
         <RELTIME>1000</RELTIME>
 
         <ACTIVATETASK>
