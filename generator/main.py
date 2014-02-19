@@ -88,6 +88,7 @@ if __name__ == "__main__":
     graph.register_analysis(DynamicPriorityAnalysis())
     global_abb_information = RunningTaskAnalysis()
     graph.register_and_enqueue_analysis(global_abb_information)
+    graph.register_and_enqueue_analysis(SymbolicSystemExecution())
     graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
     graph.analyze("%s/gen_" % (options.prefix))
 

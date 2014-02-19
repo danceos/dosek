@@ -17,6 +17,7 @@ from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
 from generator.graph.AddFunctionCalls import AddFunctionCalls
 from generator.graph.GlobalControlFlowMetric import GlobalControlFlowMetric
 from generator.graph.SystemSemantic import *
+from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution
 
 
 
@@ -295,6 +296,11 @@ class SystemGraph(GraphObject):
             # Dump graph as dot output
             with open("%s_%d_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
                 fd.write(self.dump_as_dot())
+
+            # Dump analysisgraph as dot output
+            if hasattr(front, "dump_as_dot"):
+                with open("%s_%d-pass_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
+                    fd.write(front.dump_as_dot())
 
             # Call afteranalyzer
             verifier_name = "after_" + front.name()

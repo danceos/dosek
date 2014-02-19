@@ -60,5 +60,5 @@ class Subtask(Function):
         return from_function
 
     def __repr__(self):
-        return "<Subtask %s>" %self.function_name
+        return "<Subtask %s>" %self.name
 

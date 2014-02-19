@@ -65,3 +65,9 @@ def merge_dict_tree(tree_a, tree_b, depth = 0):
 def unwrap_seq(seq):
     assert len(seq) == 1
     return list(seq)[0]
+
+class stack(list):
+    def push(self, item):
+        self.append(item)
+    def isEmpty(self):
+        return not self

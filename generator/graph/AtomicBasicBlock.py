@@ -87,15 +87,27 @@ class AtomicBasicBlock(GraphObject):
             assert self.system.find_abb(edge.source.abb_id) == edge.source
 
     def dump(self):
+        task = None
+        if self.function.subtask:
+            task = self.function.subtask.name
+
         if self.type == "computation":
             return {"type": self.type,
-                    "prio": str(self.dynamic_priority)}
+                    "prio": str(self.dynamic_priority),
+                    'task': task}
         return {'type': self.type,
                 'arguments': repr(self.arguments),
-                'prio': str(self.dynamic_priority)}
+                'prio': str(self.dynamic_priority),
+                'task': task}
 
     def __repr__(self):
         return "ABB%d/%s"%(self.abb_id, self.type)
+
+    def path(self):
+        """Returns a string that should be enable the user to find the atomic
+           basic block"""
+        return "%s/%s/ABB%s/%s" %(self.function.subtask, self.function,
+                                  self.abb_id, self.type)
 
 
 class ControlFlowEdge(Edge):

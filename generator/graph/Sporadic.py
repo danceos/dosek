@@ -5,8 +5,8 @@ class SporadicEvent:
         self.name = name
         self.triggered_in_abb = set()
 
-    def trigger(self, block, state):
-        self.triggered_in_abb.add(block)
+    def trigger(self, state):
+        self.triggered_in_abb.add(state.current_abb)
         return state
 
 class Alarm(SporadicEvent):
@@ -21,8 +21,8 @@ class Alarm(SporadicEvent):
         self.initial_reltime = alarm_info.reltime
 
 
-    def trigger(self, block, state):
-        SporadicEvent.trigger(self, block, state)
+    def trigger(self, state):
+        SporadicEvent.trigger(self, state)
         copy_state = state.copy()
         if not copy_state.is_surely_ready(self.subtask):
             copy_state.add_continuation(self.subtask, self.subtask.entry_abb)

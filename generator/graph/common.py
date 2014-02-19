@@ -21,6 +21,8 @@ class GraphObject:
         if hasattr(self, "dump"):
             data = self.dump()
             if data != None:
+                if type(data) == str:
+                    return data.replace("\n", "\\l")
                 lines = ["%s: %s" % x for x in data.items()]
                 return "\\l".join(lines)
         return self.__class__.__name__
@@ -60,6 +62,26 @@ class GraphObject:
             return ret, edges
 
 
+class GraphObjectContainer(GraphObject):
+    def __init__(self, label, color, subobjects = None, edges = None, data = None):
+        GraphObject.__init__(self, label, color)
+        if not edges:
+            edges = []
+        if not subobjects:
+            subobjects = []
+        self.data = data
+        self.subobjects = subobjects
+        self.edges = edges
+
+    def dump(self):
+        return self.data
+
+    def graph_subobjects(self):
+        return self.subobjects
+
+    def graph_edges(self):
+        return self.edges
+
 class Edge:
     def __init__(self, source, target, label='', color = 'black'):
         assert hasattr(source, "graph_dot_id")
@@ -70,7 +92,7 @@ class Edge:
         self.color = color
 
     def dump_as_dot(self):
-        ret = "Node_%s -> Node_%s[ltail=%s,lhead=%s,label=\"%s\",color=%s];" %(
+        ret = "Node_%s -> Node_%s[minlen=3,ltail=%s,lhead=%s,label=\"%s\",color=%s];" %(
             self.source.graph_dot_id(),
             self.target.graph_dot_id(),
             self.source.graph_dot_id(),

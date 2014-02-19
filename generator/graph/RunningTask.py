@@ -60,7 +60,7 @@ class RunningTaskAnalysis(Analysis):
         # Install the ISR handlers
         for subtask in self.system.get_subtasks():
             if subtask.is_isr:
-                isr = ISR(self, subtask)
+                isr = ISR(self.system, self.system_call_semantic, subtask)
                 self.sporadic_events.append(isr)
                 self.isrs.append(isr)
 
@@ -69,7 +69,7 @@ class RunningTaskAnalysis(Analysis):
 
         # Handle sporadic events
         for sporadic_event in self.sporadic_events:
-            after = sporadic_event.trigger(block, before)
+            after = sporadic_event.trigger(before)
             after.set_continuations(self.running_task.for_abb(block),
                                     block.get_outgoing_nodes('local'))
 
@@ -168,10 +168,9 @@ class RunningTaskAnalysis(Analysis):
 
 
 class ISR(SporadicEvent):
-    def __init__(self, analysis, isr_handler):
-        SporadicEvent.__init__(self, analysis.system, isr_handler.function_name)
-        self.analysis = analysis
-        self.system_call_semantic = self.analysis.system_call_semantic
+    def __init__(self, system_graph, system_call_semantic, isr_handler):
+        SporadicEvent.__init__(self, system_graph, isr_handler.function_name)
+        self.system_call_semantic = system_call_semantic
         self.handler = isr_handler
         self.idle = self.system.functions["Idle"]
         self.collected_states = {}
@@ -196,8 +195,8 @@ class ISR(SporadicEvent):
             self.before_abb_states[block] = before
         else:
             self.changed_current_block, before = \
-                self.analysis.update_before_state(self.edge_states,
-                                                  self.before_abb_states,
+                RunningTaskAnalysis.update_before_state(self.edge_states,
+                                                        self.before_abb_states,
                                                   block,
                                                   edge_type = 'irq')
 
@@ -237,8 +236,8 @@ class ISR(SporadicEvent):
 
         self.edge_states[(source, target)] = state
 
-    def trigger(self, block, state):
-        SporadicEvent.trigger(self, block, state)
+    def trigger(self, state):
+        SporadicEvent.trigger(self, state)
         self.result = state.new()
         self.start_state = state
         entry_abb = self.handler.entry_abb
@@ -265,6 +264,7 @@ class ISR(SporadicEvent):
 
         # IRET
         self.result.set_suspended(self.handler)
+        self.result.current_abb = state.current_abb
 
         return self.result
 

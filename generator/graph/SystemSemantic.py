@@ -14,6 +14,7 @@ class SystemCallSemantic:
             else:
                 state.set_suspended(subtask)
             state.set_continuation(subtask, subtask.entry_abb)
+        state.current_abb = block
         return [state]
 
     def do_ActivateTask(self, block, before):
@@ -134,7 +135,8 @@ class SystemCallSemantic:
             copy_state = state.copy()
             # Our target is surely running
             copy_state.set_ready(target.function.subtask)
-            copy_state.set_continuation(target.function.subtask, target)
+            # The currently running subtask has no saved continuations
+            copy_state.set_continuations(target.function.subtask, [])
 
             not_taken = set(possible_blocks[:i])
             # We can wipe out all continuations that are not taken, if
@@ -150,14 +152,17 @@ class SystemCallSemantic:
                     copy_state.set_continuation(subtask, subtask.entry_abb)
                     # print subtask, " cannot be running in ", target
 
+            copy_state.current_abb = target
+            # Mark the new state as frozen!
+            copy_state.frozen = True
             set_state_on_edge(source, target, copy_state)
 
         return
 
 
 class SystemState:
-    READY = 'RDY'
-    SUSPENDED = 'SPD'
+    READY = 1
+    SUSPENDED = 2
 
     def __init__(self, system):
         self.system = system
@@ -166,7 +171,7 @@ class SystemState:
         self.continuations = {}
         # {Subtask -> set([STATES])
         for subtask in self.system.get_subtasks():
-            self.states[subtask] = set()
+            self.states[subtask] = 0
             self.continuations[subtask] = set()
         self.current_abb = None
 
@@ -175,9 +180,11 @@ class SystemState:
 
     def copy(self):
         state = SystemState(self.system)
+        state.current_abb = self.current_abb
         for subtask in state.get_subtasks():
-            state.states[subtask] = self.states[subtask].copy()
+            state.states[subtask] = self.states[subtask]
             state.continuations[subtask] = self.continuations[subtask].copy()
+        assert self == state
         return state
 
     def get_subtasks(self):
@@ -190,23 +197,23 @@ class SystemState:
 
     def set_suspended(self, subtask):
         assert not self.frozen
-        self.states[subtask] = set([self.SUSPENDED])
+        self.states[subtask] = self.SUSPENDED
 
     def set_ready(self, subtask):
         assert not self.frozen
-        self.states[subtask] = set([self.READY])
+        self.states[subtask] = self.READY
 
     def is_surely_suspended(self, subtask):
-        return self.states[subtask] == set([self.SUSPENDED])
+        return self.states[subtask] == self.SUSPENDED
 
     def is_surely_ready(self, subtask):
-        return self.states[subtask] == set([self.READY])
+        return self.states[subtask] == self.READY
 
     def is_maybe_ready(self, subtask):
-        return self.READY in self.states[subtask]
+        return self.READY & self.states[subtask]
 
     def is_unsure_ready_state(self, subtask):
-        return len(self.states[subtask]) > 1
+        return bin(self.states[subtask]).count("1") > 1
 
     def get_continuations(self, subtask):
         return self.continuations[subtask]
@@ -235,16 +242,17 @@ class SystemState:
         """Returns a newly created state that is the result of the merge of
            self and the other state"""
         assert not self.frozen
-        assert self.current_abb == None or self.current_abb == other.current_abb
+        assert self.current_abb == None or self.current_abb == other.current_abb,\
+            "%s != %s" %(self.current_abb.path(), other.current_abb.path())
         self.current_abb = other.current_abb
         changed = False
         for subtask in self.get_subtasks():
-            state_count = len(self.states[subtask])
+            old_state = self.states[subtask]
             continuations_count = len(self.continuations[subtask])
             self.states[subtask] |= other.states[subtask]
             self.continuations[subtask] |= other.continuations[subtask]
             # Check whether one set has changed
-            if len(self.states[subtask]) != state_count \
+            if self.states[subtask] != old_state \
                or len(self.continuations[subtask]) != continuations_count:
                 changed = True
         return changed
@@ -264,15 +272,53 @@ class SystemState:
                 return False
         return True
 
+    def format_state(self, state):
+        ret = []
+        if state & self.READY:
+            ret.append("RDY")
+        if state & self.SUSPENDED:
+            ret.append("SPD")
+
+        return "|".join(ret)
+
     def __repr__(self):
         ret = "<SystemState: %s>\n" %(self.current_abb)
         for subtask in self.get_subtasks():
             ret += "  %02x%02x %s: %s in %s \n" %(
                 id(self.states[subtask]) % 256,
                 id(self.continuations[subtask]) % 256,
-                subtask, self.states[subtask],
+                subtask, self.format_state(self.states[subtask]),
                 self.continuations[subtask])
         ret += "</SystemState>\n"
         return ret
 
+    def __hash__(self):
+        assert self.frozen, "Only frozen states can be hashed"
+        ret = 0
+        # XOR does comute!
+        ret ^= hash(self.current_abb)
+        for state in self.states.values():
+            ret ^= hash(state)
+        for conts in self.continuations.values():
+            for cont in conts:
+                ret ^= hash(cont)
+
+        return ret
+
+    def __eq__(self, other):
+        if not isinstance(other, SystemState):
+            return False
+        # The Currently Running Task has to be equal
+        if not self.current_abb == other.current_abb:
+            return False
+
+        for subtask in self.states.keys():
+            # The subtask states have to equal
+            if not self.states[subtask] == other.states[subtask]:
+                return False
+            # The possible continuations have to be equal
+            if not self.continuations[subtask] == other.continuations[subtask]:
+                return False
+
+        return True
 
