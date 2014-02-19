@@ -108,7 +108,7 @@ class DynamicPriorityAnalysis(Analysis):
         for syscall in self.system.get_syscalls():
             precessors = syscall.get_incoming_nodes('local')
             if len(precessors) == 0:
-                assert syscall.type == "StartOS"
+                assert syscall.function.is_system_function
                 syscall.dynamic_priority = self.system.get_subtask("Idle").static_priority
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority

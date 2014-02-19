@@ -30,6 +30,8 @@ class Task(GraphObject):
     def add_function(self, function):
         function.task = self
         self.functions.append(function)
+        if not function in self.system.functions.values():
+            self.system.functions[function.function_name] = function
 
 
     def dump(self):

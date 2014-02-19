@@ -129,7 +129,7 @@ class Generator:
 
         # find all syscalls
         for syscall in self.system_graph.get_syscalls():
-            if syscall.type in ("Idle", "StartOS"):
+            if syscall.function.is_system_function or syscall.type == "Idle":
                 continue
             generated_function = "OSEKOS_%s__ABB%d" %(syscall.type, syscall.abb_id)
             rettype  = self.OSEK_CALLS[syscall.type][0]

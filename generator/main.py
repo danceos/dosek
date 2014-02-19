@@ -74,23 +74,24 @@ if __name__ == "__main__":
     rtsc_analysis = RTSCAnalysis.RTSCAnalysis(options.rtsc_analyze_xml)
 
     graph = SystemGraph()
-    graph.read_verify_script(options.verify)
+    pass_manager = graph
+    pass_manager.read_verify_script(options.verify)
     graph.read_system_description(system_description)
     graph.read_rtsc_analysis(rtsc_analysis)
     graph.add_system_objects()
 
-    graph.register_and_enqueue_analysis(AddFunctionCalls(rtsc_analysis.get_calls()))
-    graph.register_analysis(EnsureComputationBlocks())
-    graph.register_analysis(CurrentRunningSubtask())
-    graph.register_and_enqueue_analysis(MoveFunctionsToTask())
+    pass_manager.register_and_enqueue_analysis(AddFunctionCalls(rtsc_analysis.get_calls()))
+    pass_manager.register_analysis(EnsureComputationBlocks())
+    pass_manager.register_analysis(CurrentRunningSubtask())
+    pass_manager.register_and_enqueue_analysis(MoveFunctionsToTask())
 
-    graph.register_analysis(PrioritySpreadingPass())
-    graph.register_analysis(DynamicPriorityAnalysis())
+    pass_manager.register_analysis(PrioritySpreadingPass())
+    pass_manager.register_analysis(DynamicPriorityAnalysis())
     global_abb_information = RunningTaskAnalysis()
-    graph.register_and_enqueue_analysis(global_abb_information)
-    graph.register_and_enqueue_analysis(SymbolicSystemExecution())
-    graph.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
-    graph.analyze("%s/gen_" % (options.prefix))
+    pass_manager.register_and_enqueue_analysis(global_abb_information)
+    pass_manager.register_and_enqueue_analysis(SymbolicSystemExecution())
+    pass_manager.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
+    pass_manager.analyze("%s/gen_" % (options.prefix))
 
     if options.arch == "i386":
         arch_rules = X86Arch()

@@ -52,22 +52,23 @@ class AtomicBasicBlock(GraphObject):
                 self.outgoing_edges.remove(edge)
                 to_abb.incoming_edges.remove(edge)
 
-    def make_it_a_syscall(self, type, arguments):
-        if type.startswith("OSEKOS_"):
-            type = type[len("OSEKOS_"):]
-        self.type = type
+    def make_it_a_syscall(self, call, arguments):
+        if call.startswith("OSEKOS_"):
+            call = call[len("OSEKOS_"):]
+        self.type = call
         args = []
         # Make the string arguments references to system objects
         for x in arguments:
-            if x.startswith("OSEKOS_TASK_Struct_"):
-                handler_name = x[len("OSEKOS_TASK_Struct_"):]
-                x = self.system.functions["OSEKOS_TASK_" + handler_name]
-            elif x.startswith("OSEKOS_RESOURCE_Struct_"):
-                res_name = x[len("OSEKOS_RESOURCE_Struct_"):]
-                x = self.system.resources[res_name]
-            elif x.startswith("OSEKOS_ALARM_Struct_"):
-                alarm_name = x[len("OSEKOS_ALARM_Struct_"):]
-                x = alarm_name
+            if type(x) == str:
+                if x.startswith("OSEKOS_TASK_Struct_"):
+                    handler_name = x[len("OSEKOS_TASK_Struct_"):]
+                    x = self.system.functions["OSEKOS_TASK_" + handler_name]
+                elif x.startswith("OSEKOS_RESOURCE_Struct_"):
+                    res_name = x[len("OSEKOS_RESOURCE_Struct_"):]
+                    x = self.system.resources[res_name]
+                elif x.startswith("OSEKOS_ALARM_Struct_"):
+                    alarm_name = x[len("OSEKOS_ALARM_Struct_"):]
+                    x = alarm_name
             args.append(x)
         self.arguments = args
 

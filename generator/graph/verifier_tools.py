@@ -23,6 +23,11 @@ class RunningTaskToolbox:
         for syscall in self.analysis.system.get_syscalls():
             if syscall.type == "ShutdownOS":
                 self.checked_syscalls.add(syscall)
+
+        # All Systemcalls in alarms are automatically checked
+        for alarm in analysis.system.alarms:
+            self.checked_syscalls.add(alarm.handler.entry_abb)
+
         self.check_base_constraints()
 
     def mark_syscall(self, syscall):

@@ -1,7 +1,7 @@
 from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
-from generator.graph.Sporadic import SporadicEvent
+from generator.graph.Sporadic import SporadicEvent, ISR
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
 from generator.tools import panic
@@ -17,10 +17,9 @@ class RunningTaskAnalysis(Analysis):
         # States for the fixpoint iteration
         self.changed_current_block = False
         self.before_abb_states = None
+        self.edge_states = None
         self.system_call_semantic = None
         self.fixpoint = None
-        self.edge_states = None
-
 
     def requires(self):
         # We require all possible system edges to be contructed
@@ -60,7 +59,7 @@ class RunningTaskAnalysis(Analysis):
         # Install the ISR handlers
         for subtask in self.system.get_subtasks():
             if subtask.is_isr:
-                isr = ISR(self.system, self.system_call_semantic, subtask)
+                isr = RunningTask_ISR(self.system, self.system_call_semantic, subtask)
                 self.sporadic_events.append(isr)
                 self.isrs.append(isr)
 
@@ -69,10 +68,9 @@ class RunningTaskAnalysis(Analysis):
 
         # Handle sporadic events
         for sporadic_event in self.sporadic_events:
+            if not sporadic_event.can_trigger(before):
+                continue
             after = sporadic_event.trigger(before)
-            after.set_continuations(self.running_task.for_abb(block),
-                                    block.get_outgoing_nodes('local'))
-
             after_states.append(after)
 
         return after_states
@@ -167,17 +165,14 @@ class RunningTaskAnalysis(Analysis):
             return RunningTaskGlobalAbbInformation(self, abb)
 
 
-class ISR(SporadicEvent):
+class RunningTask_ISR(ISR):
     def __init__(self, system_graph, system_call_semantic, isr_handler):
-        SporadicEvent.__init__(self, system_graph, isr_handler.function_name)
+        ISR.__init__(self, system_graph, isr_handler)
         self.system_call_semantic = system_call_semantic
-        self.handler = isr_handler
-        self.idle = self.system.functions["Idle"]
         self.collected_states = {}
         self.collected_edge_states = {}
         for abb in self.handler.abbs:
             self.collected_states[abb] = SystemState(self.system)
-
 
         # Variables for the fixpoint iterations
         self.changed_current_block = True
@@ -209,6 +204,8 @@ class ISR(SporadicEvent):
         for after in after_states:
             self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
 
+        # When there is no further local abb node, we have reached the
+        # end of the interrupt handler
         if len(block.get_outgoing_edges('local')) == 0:
             assert len(after_states) == 0
             assert block.type == 'computation'
@@ -221,7 +218,7 @@ class ISR(SporadicEvent):
             for node in block.get_outgoing_nodes('irq'):
                 self.fixpoint.enqueue_soon(item = node)
 
-        assert block.function in (self.handler, self.idle)
+        assert block.function in (self.handler,)
 
 
     def set_state_on_edge(self, source, target, state):

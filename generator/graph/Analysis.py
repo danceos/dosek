@@ -112,7 +112,7 @@ class EnsureComputationBlocks(Analysis):
 
     def do(self):
         for syscall in self.system.get_syscalls():
-            if syscall.type == "StartOS":
+            if syscall.function.is_system_function:
                 continue# Do not sourround StartOS with computation blocks
             elif syscall.type == "Idle":
                 abb = self.system.new_abb()
