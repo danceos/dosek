@@ -150,6 +150,9 @@ macro(fail_targets TNAME ELF TEST)
 		)
 	endif()
 
+	# common options
+	set(FAIL_OPTS ${FAIL_DBOPTS} -v ${FAIL_VARIANT} -b ${BENCHMARK})
+
 	# import objdump
 	set(OBJDUMPED_FILE ${FAIL_DIR}/.objdumped.${TEST})
 	add_custom_command(
