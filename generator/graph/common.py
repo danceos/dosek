@@ -63,8 +63,8 @@ class GraphObject:
 
 
 class GraphObjectContainer(GraphObject):
-    def __init__(self, label, color, subobjects = None, edges = None, data = None):
-        GraphObject.__init__(self, label, color)
+    def __init__(self, label, color, subobjects = None, edges = None, data = None, root = False):
+        GraphObject.__init__(self, label, color, root)
         if not edges:
             edges = []
         if not subobjects:

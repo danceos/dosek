@@ -18,8 +18,7 @@ class DynamicPriorityAnalysis(Analysis):
         self.__res = None
 
     def requires(self):
-        return [EnsureComputationBlocks.name(), MoveFunctionsToTask.name(),
-                PrioritySpreadingPass.name()]
+        return ["PrioritySpreadingPass", "MoveFunctionsToTask"]
 
     StateVector = namedtuple("StateVector", ["free", "taken"])
 
@@ -48,7 +47,6 @@ class DynamicPriorityAnalysis(Analysis):
         if state != self.values[res][abb]:
             self.values[res][abb] = state
             fixpoint.enqueue_soon(items = abb.get_outgoing_nodes(E.task_level))
-        
 
     def do(self):
         start_basic_blocks = []

@@ -80,16 +80,17 @@ if __name__ == "__main__":
     graph.read_rtsc_analysis(rtsc_analysis)
     graph.add_system_objects()
 
-    pass_manager.register_and_enqueue_analysis(AddFunctionCalls(rtsc_analysis.get_calls()))
     pass_manager.register_analysis(EnsureComputationBlocks())
+
+    pass_manager.register_analysis(AddFunctionCalls(rtsc_analysis.get_calls()))
     pass_manager.register_analysis(CurrentRunningSubtask())
-    pass_manager.register_and_enqueue_analysis(MoveFunctionsToTask())
+    pass_manager.register_analysis(MoveFunctionsToTask())
 
     pass_manager.register_analysis(PrioritySpreadingPass())
     pass_manager.register_analysis(DynamicPriorityAnalysis())
     global_abb_information = RunningTaskAnalysis()
-    pass_manager.register_and_enqueue_analysis(global_abb_information)
-    pass_manager.register_and_enqueue_analysis(SymbolicSystemExecution())
+    pass_manager.register_analysis(global_abb_information)
+    pass_manager.register_analysis(SymbolicSystemExecution())
 
     pass_manager.register_and_enqueue_analysis(Combine_RunningTask_SSE())
 

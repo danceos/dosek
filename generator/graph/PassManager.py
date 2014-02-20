@@ -1,10 +1,28 @@
 import logging
+from generator.graph.common import *
 
 class PassManager:
     def __init__(self):
         self.passes = {}
         self.analysis_pipe = []
         self.verifiers = {}
+
+    def pass_graph(self):
+        graph = GraphObjectContainer("PassManager", 'black', root = True)
+
+
+        passes = {}
+        for target, P in self.passes.items():
+            passes[target] = GraphObjectContainer(repr(target), 'black', 
+                                                  data = P.__doc__)
+            graph.subobjects.append(passes[target])
+
+        ret = []
+        for target in self.passes:
+            for source in self.passes[target].requires():
+                ret.append(Edge(passes[source], passes[target]))
+        graph.edges = ret
+        return graph
 
     def register_analysis(self, analysis):
         analysis.set_system(self)
@@ -34,6 +52,10 @@ class PassManager:
     def analyze(self, basefilename):
         verifiers_called = set()
         pass_number = 0
+
+        # Dump graph as dot output
+        with open("%s_passes.dot" %(basefilename), "w+") as fd:
+            fd.write(self.pass_graph().dump_as_dot())
 
         # Dump graph as dot output
         with open("%s_%d_RTSC.dot" %(basefilename, pass_number), "w+") as fd:
@@ -83,3 +105,4 @@ class PassManager:
 
         assert verifiers_called == set(self.verifiers.keys()), "Not all verifieres were called (missing %s)" % \
             (set(self.verifiers.keys()) - set(verifiers_called))
+

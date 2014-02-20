@@ -68,10 +68,10 @@ class EnsureComputationBlocks(Analysis):
 
     def add_before(self, abb):
         nessecary = False
-        if len (abb.get_incoming_nodes(E.task_level)) > 1:
+        if len (abb.get_incoming_nodes(E.function_level)) > 1:
             nessecary = True
-        elif len (abb.get_incoming_nodes(E.task_level)) == 1:
-            if abb.definite_before(E.task_level).type != "computation":
+        elif len (abb.get_incoming_nodes(E.function_level)) == 1:
+            if abb.definite_before(E.function_level).type != "computation":
                 nessecary = True
         else:
             assert abb.function.entry_abb == abb
@@ -90,14 +90,14 @@ class EnsureComputationBlocks(Analysis):
             edge.source.add_cfg_edge(new, edge.level)
         if abb.function.entry_abb == abb:
             abb.function.entry_abb = new
-        new.add_cfg_edge(abb, E.task_level)
+        new.add_cfg_edge(abb, E.function_level)
 
     def add_after(self, abb):
         nessecary = False
-        if len (abb.get_outgoing_nodes(E.task_level)) > 1:
+        if len (abb.get_outgoing_nodes(E.function_level)) > 1:
             nessecary = True
-        elif len (abb.get_outgoing_nodes(E.task_level)) == 1 \
-             and abb.definite_after(E.task_level).type != "computation":
+        elif len (abb.get_outgoing_nodes(E.function_level)) == 1 \
+             and abb.definite_after(E.function_level).type != "computation":
             nessecary = True
         if not nessecary:
             return
@@ -106,10 +106,10 @@ class EnsureComputationBlocks(Analysis):
         new.type = 'computation'
         abb.function.add_atomic_basic_block(new)
         for edge in copy.copy(abb.outgoing_edges):
-            abb.remove_cfg_edge(edge.target, E.task_level)
-            new.add_cfg_edge(edge.target, E.task_level)
+            abb.remove_cfg_edge(edge.target, E.function_level)
+            new.add_cfg_edge(edge.target, E.function_level)
 
-        abb.add_cfg_edge(new, E.task_level)
+        abb.add_cfg_edge(new, E.function_level)
 
     def do(self):
         for syscall in self.system.get_syscalls():
@@ -119,8 +119,8 @@ class EnsureComputationBlocks(Analysis):
                 abb = self.system.new_abb()
                 abb.type = 'computation'
                 syscall.function.add_atomic_basic_block(abb)
-                abb.add_cfg_edge(syscall, E.task_level)
-                syscall.add_cfg_edge(abb, E.task_level)
+                abb.add_cfg_edge(syscall, E.function_level)
+                syscall.add_cfg_edge(abb, E.function_level)
                 # Do start the idle loop with an computation node
                 abb.function.entry_abb = abb
             elif syscall.type in ["ChainTask", "TerminateTask"]:
@@ -144,7 +144,7 @@ class CurrentRunningSubtask(Analysis):
         self.values = None
 
     def requires(self):
-        return [EnsureComputationBlocks.name()]
+        return ["AddFunctionCalls"]
 
     def for_abb(self, abb):
         x = list(self.values.get(abb, []))

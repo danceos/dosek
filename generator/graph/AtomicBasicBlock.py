@@ -41,7 +41,6 @@ class ControlFlowEdge(Edge):
         return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
                                      self.target, E.to_string(self.level))
 
- 
 class AtomicBasicBlock(GraphObject):
     def __init__(self, system, abb_id):
         GraphObject.__init__(self, "ABB%d" %(abb_id), color="red")

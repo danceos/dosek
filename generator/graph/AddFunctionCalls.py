@@ -3,10 +3,15 @@ from generator.graph.AtomicBasicBlock import E
 
 
 class AddFunctionCalls(Analysis):
+    """This task contructs the task_level contronl flor graph from the
+    function_level control graph"""
     def __init__(self, calls):
         Analysis.__init__(self)
         self.function_calls = calls
         self.relevant_functions = None
+
+    def requires(self):
+        return ["EnsureComputationBlocks"]
 
     def do(self):
         ## Mark all relevant functions
@@ -46,25 +51,33 @@ class AddFunctionCalls(Analysis):
                     changed = True
 
         self.relevant_functions = relevant_functions
-        # Add all 'normal' function call edges
-        for call in self.function_calls:
-            calling_block = self.system.find_abb(call.abb)
-            function = self.system.find_function(call.function)
-            if not function in relevant_functions:
-                continue
-            called_block  = function.entry_abb
-            returned_block = calling_block.definite_after(E.task_level)
-            return_block = function.exit_abb
-            assert calling_block.type == "computation"
-            assert calling_block != None, "Could not find CallingBlock ABB%d" % call.abb
-            assert return_block != None, "Could not find FunctionCall return block"
+        for abb in self.system.get_abbs():
+            # Add all 'normal' function call edges
+            handled = False
+            for call in self.function_calls:
+                calling_block = self.system.find_abb(call.abb)
+                # Not the current function ABB
+                if calling_block != abb:
+                    continue
+                function = self.system.find_function(call.function)
+                if not function in relevant_functions:
+                    continue
+                called_block  = function.entry_abb
+                returned_block = calling_block.definite_after(E.function_level)
+                return_block = function.exit_abb
+                assert calling_block.type == "computation"
+                assert calling_block != None, "Could not find CallingBlock ABB%d" % call.abb
+                assert return_block != None, "Could not find FunctionCall return block"
 
-            calling_block.remove_cfg_edge(returned_block, E.task_level)
-            # Transform the local edge to a virtal local edge, to
-            # preserve the return information
-            calling_block.add_cfg_edge(returned_block, E.function_level)
-            calling_block.add_cfg_edge(called_block, E.task_level)
-            return_block.add_cfg_edge(returned_block, E.task_level)
+                # Transform the local edge to a virtal local edge, to
+                # preserve the return information
+                calling_block.add_cfg_edge(called_block, E.task_level)
+                return_block.add_cfg_edge(returned_block, E.task_level)
+                handled = True
+                break
+            if not handled:
+                for target in abb.get_outgoing_nodes(E.function_level):
+                    abb.add_cfg_edge(target, E.task_level)
 
     def is_relevant_function(self, function):
         if not self.valid:

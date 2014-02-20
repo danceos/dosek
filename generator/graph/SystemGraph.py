@@ -174,13 +174,13 @@ class SystemGraph(GraphObject, PassManager):
         for dep in self.rtsc.get_edges():
             source = self.find_abb(dep.source)
             target = self.find_abb(dep.target)
-            source.add_cfg_edge(target, E.task_level)
+            source.add_cfg_edge(target, E.function_level)
 
         # Find all return blocks for functions
         for function in self.functions.values():
             ret_abbs = []
             for abb in function.abbs:
-                if len(abb.get_outgoing_edges(E.task_level)) == 0:
+                if len(abb.get_outgoing_edges(E.function_level)) == 0:
                     ret_abbs.append(abb)
 
             if len(ret_abbs) == 0:
@@ -199,9 +199,8 @@ class SystemGraph(GraphObject, PassManager):
                 iret = self.new_abb()
                 iret.make_it_a_syscall("iret", [function])
                 function.add_atomic_basic_block(iret)
-                function.exit_abb.add_cfg_edge(iret, E.task_level)
+                function.exit_abb.add_cfg_edge(iret, E.function_level)
                 function.set_exit_abb(iret)
-                
 
         # Add all system calls
         for syscall in self.rtsc.syscalls():
