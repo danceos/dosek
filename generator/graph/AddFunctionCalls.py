@@ -1,4 +1,5 @@
 from generator.graph.Analysis import Analysis
+from generator.graph.AtomicBasicBlock import E
 
 
 class AddFunctionCalls(Analysis):
@@ -52,15 +53,18 @@ class AddFunctionCalls(Analysis):
             if not function in relevant_functions:
                 continue
             called_block  = function.entry_abb
-            returned_block = calling_block.definite_after('local')
+            returned_block = calling_block.definite_after(E.task_level)
             return_block = function.exit_abb
             assert calling_block.type == "computation"
             assert calling_block != None, "Could not find CallingBlock ABB%d" % call.abb
             assert return_block != None, "Could not find FunctionCall return block"
 
-            calling_block.remove_cfg_edge(returned_block, 'local')
-            calling_block.add_cfg_edge(called_block, 'local')
-            return_block.add_cfg_edge(returned_block, 'local')
+            calling_block.remove_cfg_edge(returned_block, E.task_level)
+            # Transform the local edge to a virtal local edge, to
+            # preserve the return information
+            calling_block.add_cfg_edge(returned_block, E.function_level)
+            calling_block.add_cfg_edge(called_block, E.task_level)
+            return_block.add_cfg_edge(returned_block, E.task_level)
 
     def is_relevant_function(self, function):
         if not self.valid:

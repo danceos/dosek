@@ -4,6 +4,7 @@ from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.Sporadic import SporadicEvent, ISR
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
+from generator.graph.AtomicBasicBlock import E
 from generator.tools import panic
 
 
@@ -26,14 +27,14 @@ class RunningTaskAnalysis(Analysis):
         return [CurrentRunningSubtask.name(), DynamicPriorityAnalysis.name()]
 
     @staticmethod
-    def merge_inputs(edge_states, block, edge_type = 'global'):
+    def merge_inputs(edge_states, block, edge_type):
         input_abbs = block.get_incoming_nodes(edge_type)
         input_states = [edge_states[(source, block)]
                         for source in input_abbs]
         return SystemState.merge_many(block.system, input_states)
 
     @staticmethod
-    def update_before_state(edge_states, before_state_dict, block, edge_type = 'global'):
+    def update_before_state(edge_states, before_state_dict, block, edge_type):
         before = RunningTaskAnalysis.merge_inputs(edge_states, block, edge_type)
         changed = False
         if not block in before_state_dict:
@@ -44,8 +45,8 @@ class RunningTaskAnalysis(Analysis):
         return changed, before
 
     def set_state_on_edge(self, source, target, state):
-        if not target in source.get_outgoing_nodes('global'):
-            source.add_cfg_edge(target, 'global')
+        if not target in source.get_outgoing_nodes(E.system_level):
+            source.add_cfg_edge(target, E.system_level)
             self.changed_current_block = True
 
         # We say that on the edge from one ABB to the other one, the
@@ -88,7 +89,7 @@ class RunningTaskAnalysis(Analysis):
         self.changed_current_block, before = \
                 self.update_before_state(self.edge_states,
                                          self.before_abb_states,
-                                         block)
+                                         block, E.system_level)
 
         # If this block belongs to a task, it must the highest
         # available task for the input state. Otherwise we wouldn't
@@ -118,7 +119,7 @@ class RunningTaskAnalysis(Analysis):
         # This has to be done after the system call handling, since
         # new global links could have been introduced
         if self.changed_current_block:
-            for node in block.get_outgoing_nodes('global'):
+            for node in block.get_outgoing_nodes(E.system_level):
                 self.fixpoint.enqueue_soon(item = node)
         self.debug("}}}")
 
@@ -145,19 +146,19 @@ class RunningTaskAnalysis(Analysis):
         for isr in self.isrs:
             # Add IRQ edges from activating blocks
             # for triggered_in in isr.triggered_in_abb:
-            #    triggered_in.add_cfg_edge(isr.handler.entry_abb, 'irq')
+            #    triggered_in.add_cfg_edge(isr.handler.entry_abb, E.irq_level)
             for abb in isr.wrapped_isr.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
-                #for edge in abb.get_outgoing_edges('irq'):
-                #   if edge.type == 'irq':
-                #        edge.type = 'global'
+                #for edge in abb.get_outgoing_edges(E.irq_level):
+                #   if edge.level == E.irq_level:
+                #        edge.level = E.system_level
 
     ##
     ## Result getters for this analysis
     ##
     def reachable_subtasks_from_abb(self, abb):
         subtasks = set()
-        for reached in abb.get_outgoing_nodes('global'):
+        for reached in abb.get_outgoing_nodes(E.system_level):
             st = self.running_task.for_abb(reached)
             subtasks.add(st)
         return subtasks
@@ -165,7 +166,7 @@ class RunningTaskAnalysis(Analysis):
     def activating_subtasks(self, subtask):
         subtasks = set()
         abbs = set()
-        for reaching in subtask.entry_abb.get_incoming_nodes('global'):
+        for reaching in subtask.entry_abb.get_incoming_nodes(E.system_level):
             st = self.running_task.for_abb(reaching)
             if st == subtask:
                 continue
@@ -231,40 +232,42 @@ class RunningTask_ISR(SporadicEvent):
             self.changed_current_block, before = \
                 RunningTaskAnalysis.update_before_state(self.edge_states,
                                                         self.before_abb_states,
-                                                  block,
-                                                  edge_type = 'irq')
+                                                        block,
+                                                        edge_type = E.irq_level)
 
         after_states = self.system_call_semantic.do_SystemCall(
             block, before,
             {'ActivateTask': self.system_call_semantic.do_ActivateTask,
              'computation': self.system_call_semantic.do_computation,
-             'Idle': self.system_call_semantic.do_Idle})
+             'Idle': self.system_call_semantic.do_Idle,
+             'iret': self.do_iret})
         # Schedule depending on the possible output states
         for after in after_states:
             self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
 
-        # When there is no further local abb node, we have reached the
-        # end of the interrupt handler
-        if len(block.get_outgoing_edges('local')) == 0:
-            assert len(after_states) == 0
-            assert block.type == 'computation'
-            self.result.merge_with(before)
+
 
 
         # This has to be done after the system call handling, since
         # new irq links could have been introduced
         if self.changed_current_block:
-            for node in block.get_outgoing_nodes('irq'):
+            for node in block.get_outgoing_nodes(E.irq_level):
                 self.fixpoint.enqueue_soon(item = node)
 
         # Never leave the handler function here
         assert block.function.subtask == self.wrapped_isr.handler.subtask
 
+    def do_iret(self, block, before):
+        # When there is no further local abb node, we have reached the
+        # end of the interrupt handler
+        self.result.merge_with(before)
+        return []
+
 
     def set_state_on_edge(self, source, target, state):
 
-        if not target in source.get_outgoing_nodes('irq'):
-            source.add_cfg_edge(target, 'irq')
+        if not target in source.get_outgoing_nodes(E.irq_level):
+            source.add_cfg_edge(target, E.irq_level)
             self.changed_current_block = True
 
         # We say that on the edge from one ABB to the other one, the
@@ -288,8 +291,8 @@ class RunningTask_ISR(SporadicEvent):
 
         # Clean old IRQ edges
         for abb in self.wrapped_isr.handler.abbs:
-            for edge in abb.get_outgoing_edges('irq'):
-                abb.remove_cfg_edge(edge.target, 'irq')
+            for edge in abb.get_outgoing_edges(E.irq_level):
+                abb.remove_cfg_edge(edge.target, E.irq_level)
 
         self.edge_states = dict()
         self.before_abb_states = dict()
@@ -327,9 +330,9 @@ class RunningTaskGlobalAbbInformation(GlobalAbbInfo):
     @property
     def states_after(self):
         """Returns a list of possible next system states"""
-        if len(self.abb.get_outgoing_edges('irq')) > 0:
+        if len(self.abb.get_outgoing_edges(E.irq_level)) > 0:
             logging.warning("IRQs not yet supported!")
-        edges = set(self.abb.get_outgoing_edges('global'))
+        edges = set(self.abb.get_outgoing_edges(E.system_level))
 
         states = []
         for edge in edges:

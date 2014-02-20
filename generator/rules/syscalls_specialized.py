@@ -3,6 +3,7 @@ from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment
 
 from generator.tools import unwrap_seq
+from generator.graph.AtomicBasicBlock import E
 
 
 class SpecializedSystemCalls(FullSystemCalls):
@@ -177,7 +178,7 @@ class SpecializedSystemCalls(FullSystemCalls):
 
     def ReleaseResource(self, kernelspace, abb):
         from_task = abb.function.subtask
-        next_prio = abb.definite_after('local').dynamic_priority
+        next_prio = abb.definite_after(E.task_level).dynamic_priority
 
         abb_info = self.global_abb_info.for_abb(abb)
         if abb_info:

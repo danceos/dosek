@@ -1,6 +1,7 @@
 import logging
 import sys
 from generator.graph.common import *
+from generator.graph.AtomicBasicBlock import E
 import copy
 
 class Analysis:
@@ -67,10 +68,10 @@ class EnsureComputationBlocks(Analysis):
 
     def add_before(self, abb):
         nessecary = False
-        if len (abb.get_incoming_nodes('local')) > 1:
+        if len (abb.get_incoming_nodes(E.task_level)) > 1:
             nessecary = True
-        elif len (abb.get_incoming_nodes('local')) == 1:
-            if abb.definite_before('local').type != "computation":
+        elif len (abb.get_incoming_nodes(E.task_level)) == 1:
+            if abb.definite_before(E.task_level).type != "computation":
                 nessecary = True
         else:
             assert abb.function.entry_abb == abb
@@ -85,18 +86,18 @@ class EnsureComputationBlocks(Analysis):
         abb.function.add_atomic_basic_block(new)
         
         for edge in copy.copy(abb.incoming_edges):
-            edge.source.remove_cfg_edge(abb, edge.type)
-            edge.source.add_cfg_edge(new, edge.type)
+            edge.source.remove_cfg_edge(abb, edge.level)
+            edge.source.add_cfg_edge(new, edge.level)
         if abb.function.entry_abb == abb:
             abb.function.entry_abb = new
-        new.add_cfg_edge(abb, 'local')
+        new.add_cfg_edge(abb, E.task_level)
 
     def add_after(self, abb):
         nessecary = False
-        if len (abb.get_outgoing_nodes('local')) > 1:
+        if len (abb.get_outgoing_nodes(E.task_level)) > 1:
             nessecary = True
-        elif len (abb.get_outgoing_nodes('local')) == 1 \
-             and abb.definite_after('local').type != "computation":
+        elif len (abb.get_outgoing_nodes(E.task_level)) == 1 \
+             and abb.definite_after(E.task_level).type != "computation":
             nessecary = True
         if not nessecary:
             return
@@ -105,10 +106,10 @@ class EnsureComputationBlocks(Analysis):
         new.type = 'computation'
         abb.function.add_atomic_basic_block(new)
         for edge in copy.copy(abb.outgoing_edges):
-            abb.remove_cfg_edge(edge.target, edge.type)
-            new.add_cfg_edge(edge.target, edge.type)
+            abb.remove_cfg_edge(edge.target, E.task_level)
+            new.add_cfg_edge(edge.target, E.task_level)
 
-        abb.add_cfg_edge(new, 'local')
+        abb.add_cfg_edge(new, E.task_level)
 
     def do(self):
         for syscall in self.system.get_syscalls():
@@ -118,8 +119,8 @@ class EnsureComputationBlocks(Analysis):
                 abb = self.system.new_abb()
                 abb.type = 'computation'
                 syscall.function.add_atomic_basic_block(abb)
-                abb.add_cfg_edge(syscall, 'local')
-                syscall.add_cfg_edge(abb, 'local')
+                abb.add_cfg_edge(syscall, E.task_level)
+                syscall.add_cfg_edge(abb, E.task_level)
                 # Do start the idle loop with an computation node
                 abb.function.entry_abb = abb
             elif syscall.type in ["ChainTask", "TerminateTask"]:
@@ -160,7 +161,7 @@ class CurrentRunningSubtask(Analysis):
         # Gather all task objects from incoming edges
         possible_running_tasks = set(self.values.get(abb, []))
         changed = False
-        for incoming in abb.get_incoming_nodes('local'):
+        for incoming in abb.get_incoming_nodes(E.task_level):
             # Possible running task from incoming edges
             for x in self.values.get(incoming, []):
                 if not x in possible_running_tasks:
@@ -169,7 +170,7 @@ class CurrentRunningSubtask(Analysis):
         if changed:
             self.values[abb] = possible_running_tasks
             # New task have been added -> revisit child blocks
-            fixpoint.enqueue_soon(items = abb.get_outgoing_nodes('local'))
+            fixpoint.enqueue_soon(items = abb.get_outgoing_nodes(E.task_level))
 
     def do(self):
         start_basic_blocks = []
@@ -180,7 +181,7 @@ class CurrentRunningSubtask(Analysis):
             for subtask in task.subtasks:
                 # Start DFS at all entry nodes
                 self.values[subtask.entry_abb] = set([subtask])
-                start_basic_blocks.extend(subtask.entry_abb.get_outgoing_nodes('local'))
+                start_basic_blocks.extend(subtask.entry_abb.get_outgoing_nodes(E.task_level))
 
 
         fixpoint = FixpointIteraton(start_basic_blocks)

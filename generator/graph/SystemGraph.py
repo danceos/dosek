@@ -1,7 +1,7 @@
 import logging
 from generator.graph.Task import Task
 from generator.graph.Subtask import Subtask
-from generator.graph.AtomicBasicBlock import AtomicBasicBlock
+from generator.graph.AtomicBasicBlock import AtomicBasicBlock, E
 from generator.graph.Function import Function
 from generator.graph.PassManager import PassManager
 from generator.graph.Sporadic import Alarm, ISR
@@ -174,13 +174,13 @@ class SystemGraph(GraphObject, PassManager):
         for dep in self.rtsc.get_edges():
             source = self.find_abb(dep.source)
             target = self.find_abb(dep.target)
-            source.add_cfg_edge(target)
+            source.add_cfg_edge(target, E.task_level)
 
         # Find all return blocks for functions
         for function in self.functions.values():
             ret_abbs = []
             for abb in function.abbs:
-                if len(abb.get_outgoing_edges('local')) == 0:
+                if len(abb.get_outgoing_edges(E.task_level)) == 0:
                     ret_abbs.append(abb)
 
             if len(ret_abbs) == 0:
@@ -194,6 +194,14 @@ class SystemGraph(GraphObject, PassManager):
                 function.set_exit_abb(abb)
             else:
                 function.set_exit_abb(ret_abbs[0])
+            if isinstance(function, Subtask) and function.is_isr:
+                # All ISR function get an additional iret block
+                iret = self.new_abb()
+                iret.make_it_a_syscall("iret", [function])
+                function.add_atomic_basic_block(iret)
+                function.exit_abb.add_cfg_edge(iret, E.task_level)
+                function.set_exit_abb(iret)
+                
 
         # Add all system calls
         for syscall in self.rtsc.syscalls():
@@ -202,7 +210,7 @@ class SystemGraph(GraphObject, PassManager):
             abb.make_it_a_syscall(syscall.name, syscall.arguments)
             assert abb.type != 'computation'
             assert abb in self.get_abbs()
-        assert len(self.get_syscalls()) == len(self.rtsc.syscalls())
+        assert len(self.get_syscalls()) >= len(self.rtsc.syscalls())
 
     def new_abb(self):
         self.max_abb_id += 1

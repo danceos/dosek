@@ -11,7 +11,7 @@ def after_RunningTaskAnalysis(analysis):
     AT3 = t.reachability(H2, "ActivateTask", [H3], # =>
                          [H2])
     info_AT3 = analysis.for_abb(AT3)
-    info_after_AT3  = analysis.for_abb(AT3.definite_after('local'))
+    info_after_AT3  = analysis.for_abb(AT3.definite_after(E.task_level))
     # Could be entered by H3 or Idle loop
     assert info_AT3.state_before.is_unsure_ready_state(H3)
     assert info_after_AT3.state_before.is_surely_ready(H3)
@@ -25,7 +25,7 @@ def after_RunningTaskAnalysis(analysis):
 
     TT3 = t.reachability(H2, "TerminateTask", [], # =>
                          [H3])
-    returned_nodes = TT3.get_outgoing_nodes('global')
+    returned_nodes = TT3.get_outgoing_nodes(E.system_level)
     assert len(returned_nodes) == 1
     # When H3 was not preempted, then we start in the entry node
     assert H3.entry_abb in returned_nodes

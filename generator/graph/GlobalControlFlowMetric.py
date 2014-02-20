@@ -1,4 +1,5 @@
 from generator.graph.Analysis import Analysis
+from generator.graph.AtomicBasicBlock import E
 
 class GlobalControlFlowMetric(Analysis):
     def __init__(self, filename):
@@ -30,7 +31,7 @@ class GlobalControlFlowMetric(Analysis):
                 all_possible_neighbours_count += 1
                 if abb1.static_priority >= abb0.static_priority:
                     higher_priority_count +=1
-                if target in source.get_outgoing_nodes('global'):
+                if target in source.get_outgoing_nodes(E.system_level):
                     analyzed_edges_count += 1
 
         with open(self.filename, "w+") as fd:

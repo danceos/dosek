@@ -22,7 +22,7 @@ def after_RunningTaskAnalysis(analysis):
                    H2)
 
     # H2.entry can be reached by H3.entry, when alarm was running
-    assert H2.entry_abb in H3.entry_abb.get_outgoing_nodes('global')
+    assert H2.entry_abb in H3.entry_abb.get_outgoing_nodes(E.system_level)
 
     t.reachability(Idle, "Idle", [], # =>
          [Idle])

@@ -70,19 +70,11 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                                                  self.state_transition(source, state, target, new_state))
 
     def do_computation_with_sporadic_events(self, block, before):
-        after_states = self.system_call_semantic.do_computation(block, before)
+        after_states = self.system_call_semantic.do_computation_with_callstack(block, before)
 
         # When there is no further local abb node, we have reached the
         # end of the interrupt handler
         current_subtask = before.current_abb.function.subtask
-        if len(block.get_outgoing_edges('local')) == 0 \
-           and current_subtask.is_isr :
-            assert len(after_states) == 0
-            assert block.type == 'computation'
-            copy_state = before.copy()
-            copy_state.set_suspended(current_subtask)
-            copy_state.set_continuations(current_subtask, [current_subtask.entry_abb])
-            after_states.append(copy_state)
 
         # Handle sporadic events
         for sporadic_event in self.system.alarms + self.system.isrs:
@@ -92,7 +84,6 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             after_states.append(after)
 
         return after_states
-
 
     def do(self):
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
@@ -109,7 +100,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             'CancelAlarm': self.system_call_semantic.do_computation, # ignore
                             'GetResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
                             'ReleaseResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-                            'Idle': self.system_call_semantic.do_Idle}
+                            'Idle': self.system_call_semantic.do_Idle,
+                            'iret': self.system_call_semantic.do_TerminateTask}
 
         # Instanciate the big dict (State->[State])
         self.states_next = {}
@@ -117,6 +109,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         entry_abb = self.system.functions["StartOS"].entry_abb
         before_StartOS = SystemState(self.system)
         before_StartOS.current_abb = entry_abb
+        for subtask in before_StartOS.states.keys():
+            before_StartOS.call_stack[subtask] = stack()
         before_StartOS.frozen = True
 
         self.working_stack = stack()
@@ -168,7 +162,7 @@ class Combine_RunningTask_SSE(Analysis):
         self.removed_edges = []
         SSE = self.system.get_pass("SymbolicSystemExecution")
         for source_abb in SSE.states_by_abb:
-            old_global_nodes = set(source_abb.get_outgoing_nodes('global'))
+            old_global_nodes = set(source_abb.get_outgoing_nodes(E.system_level))
             followup_abbs    = set()
             for state in SSE.states_by_abb[source_abb]:
                 followup_abbs |= select_distinct(SSE.states_next[state], "current_abb")
@@ -184,7 +178,7 @@ class Combine_RunningTask_SSE(Analysis):
                 # sporadic actions, but those are not explicitly
                 # drawed in the RunningTaskGraph
                 if source_abb.type != "computation":
-                    edge = source_abb.remove_cfg_edge(target_abb, 'global')
+                    edge = source_abb.remove_cfg_edge(target_abb, E.system_level)
                     logging.debug("Removed Edge from %s -> %s", source_abb, target_abb)
                     self.removed_edges.append(edge)
 

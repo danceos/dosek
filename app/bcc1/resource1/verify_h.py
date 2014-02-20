@@ -39,7 +39,7 @@ def after_RunningTaskAnalysis(analysis):
 
     # The ChainTask in H1 can schedule to the protected block, but not
     # the unprotected one, and to the entry block of H2
-    t.reachability_abbs(ChainTask, [RES_ActivateTask.definite_after('local'),
+    t.reachability_abbs(ChainTask, [RES_ActivateTask.definite_after(E.task_level),
                                     H2.entry_abb])
 
     t.reachability(H4, "TerminateTask", [], # =>

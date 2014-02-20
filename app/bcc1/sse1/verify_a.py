@@ -24,7 +24,7 @@ def after_RunningTaskAnalysis(analysis):
                    [H5, Idle])
 
     # The dataflow analysis wrongly calculates this edge
-    assert H5.entry_abb in TT.get_outgoing_nodes('global')
+    assert H5.entry_abb in TT.get_outgoing_nodes(E.system_level)
 
     t.reachability(Idle, "Idle", [], # =>
          [Idle])

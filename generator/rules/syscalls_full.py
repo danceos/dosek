@@ -1,4 +1,5 @@
 from generator.rules.base import BaseRules
+from generator.graph.AtomicBasicBlock import E
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment
 
@@ -85,7 +86,7 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(abb)])
 
     def GetResource(self, kernelspace, abb):
-        next_prio = abb.definite_after('local').dynamic_priority
+        next_prio = abb.definite_after(E.task_level).dynamic_priority
         self.call_function(kernelspace,
                            "scheduler_.GetResource_impl",
                            "void",
@@ -98,7 +99,7 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(abb)])
 
     def ReleaseResource(self, kernelspace, abb):
-        next_prio = abb.definite_after('local').dynamic_priority
+        next_prio = abb.definite_after(E.task_level).dynamic_priority
         self.call_function(kernelspace,
                            "scheduler_.ReleaseResource_impl",
                            "void",

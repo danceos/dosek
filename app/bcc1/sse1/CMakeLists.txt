@@ -17,3 +17,13 @@ COREDOS_BINARY(
   TEST_ISO
   b.cc
 )
+
+
+COREDOS_BINARY(
+  NAME bcc1_sse1c
+  SYSTEM_XML system.xml
+  LIBS libtest
+  VERIFY verify_c.py
+  TEST_ISO
+  c.cc
+)

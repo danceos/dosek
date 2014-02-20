@@ -165,10 +165,6 @@ class FixpointIteraton:
             item = self.working_stack.pop()
             functor(self, item)
 
-def is_local_edge(edge):
-    return edge.is_local()
-
-
 # Hook for coloured tracebacks on the console :-)
 def myexcepthook(type, value, tb):
     import traceback

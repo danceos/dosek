@@ -2,6 +2,7 @@ from generator.graph.Analysis import Analysis, EnsureComputationBlocks,\
                                      FixpointIteraton, MoveFunctionsToTask
 
 from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
+from generator.graph.AtomicBasicBlock import E
 from collections import namedtuple
 from copy import copy
 
@@ -29,7 +30,7 @@ class DynamicPriorityAnalysis(Analysis):
         # KNOW ANYTHING" state
         taken, free = False, False
         # Merge Incoming
-        for incoming in abb.get_incoming_nodes('local'):
+        for incoming in abb.get_incoming_nodes(E.task_level):
             # Possible taken resources from incoming edges
             in_state = self.values[res][incoming]
             taken = taken or in_state.taken
@@ -46,7 +47,7 @@ class DynamicPriorityAnalysis(Analysis):
 
         if state != self.values[res][abb]:
             self.values[res][abb] = state
-            fixpoint.enqueue_soon(items = abb.get_outgoing_nodes('local'))
+            fixpoint.enqueue_soon(items = abb.get_outgoing_nodes(E.task_level))
         
 
     def do(self):
@@ -66,7 +67,7 @@ class DynamicPriorityAnalysis(Analysis):
                     = self.StateVector(free = True, taken = False)
 
                 # The children of the entry abb are our starting point.
-                successors = subtask.entry_abb.get_outgoing_nodes('local')
+                successors = subtask.entry_abb.get_outgoing_nodes(E.task_level)
                 start_basic_blocks.extend(successors)
 
             # After the System boots we also know that everything is fine
@@ -106,7 +107,7 @@ class DynamicPriorityAnalysis(Analysis):
         # there is no preceeding block (which is only true for
         # StartOS), the priority is the idle priority.
         for syscall in self.system.get_syscalls():
-            precessors = syscall.get_incoming_nodes('local')
+            precessors = syscall.get_incoming_nodes(E.task_level)
             if len(precessors) == 0:
                 assert syscall.function.is_system_function
                 syscall.dynamic_priority = self.system.get_subtask("Idle").static_priority

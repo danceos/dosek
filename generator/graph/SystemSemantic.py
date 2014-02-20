@@ -1,10 +1,14 @@
+from generator.tools import stack
+from copy import copy
+from generator.graph.AtomicBasicBlock import E
+
 class SystemCallSemantic:
     def __init__(self, system, running_task):
         self.running_task = running_task
         self.system = system
 
     def do_StartOS(self, block, before):
-        state = SystemState(self.system)
+        state = before.copy()
         # In the StartOS node all tasks are suspended before,
         # and afterwards the idle loop and the autostarted
         # tasks are ready
@@ -21,7 +25,7 @@ class SystemCallSemantic:
         after = before.copy()
         # EnsureComputationBlocks ensures that after an activate task
         # only one ABB can be located
-        cont = block.definite_after('local')
+        cont = block.definite_after(E.task_level)
         after.set_continuation(self.running_task.for_abb(block),
                                cont)
         activated = block.arguments[0]
@@ -55,7 +59,7 @@ class SystemCallSemantic:
         after = before.copy()
         # EnsureComputationBlocks ensures that after the Idle() function
         # only one ABB can be located
-        cont = block.definite_after('local')
+        cont = block.definite_after(E.task_level)
         after.set_continuation(self.running_task.for_abb(block),
                                cont)
         return [after]
@@ -63,11 +67,41 @@ class SystemCallSemantic:
     def do_computation(self, block, before):
         ret = []
         calling_task = self.running_task.for_abb(block)
-        for next_abb in block.get_outgoing_nodes('local'):
+        for next_abb in block.get_outgoing_nodes(E.task_level):
             after = before.copy()
             after.set_continuation(calling_task, next_abb)
             ret.append(after)
         return ret
+
+    def do_computation_with_callstack(self, block, before):
+        calling_task = self.running_task.for_abb(block)
+
+        if block.function.exit_abb == block:
+            # Function return is done from calling stack
+            after = before.copy()
+            next_abb = after.get_call_stack(calling_task).pop()
+            after.set_continuation(calling_task, next_abb)
+            # print "Return from %s -> %s" % (block, next_abb)
+            return [after]
+        else:
+            ret = []
+            for next_abb in block.get_outgoing_nodes(E.task_level):
+                after = before.copy()
+                # If next abb is entry node, push the current abb
+                if next_abb.function.entry_abb == next_abb:
+                    # CALL
+                    assert not next_abb in after.get_call_stack(calling_task), \
+                        "Recursive function calls are not allowed. Are you insane. This is a REAL-TIME System!"
+                    # We saved the virtual local control flow in the
+                    # AddFunction pass, otherwise we would have lost
+                    # the information about the abb to return to.
+                    return_to = before.current_abb.definite_after(E.function_level)
+                    after.call_stack[calling_task].push(return_to)
+                    # print "Call from %s -> %s" % (block, next_abb)
+
+                after.set_continuation(calling_task, next_abb)
+                ret.append(after)
+            return ret
 
     def do_SystemCall(self, block, before, system_calls):
         if block.type in system_calls:
@@ -169,10 +203,12 @@ class SystemState:
         self.frozen = False
         self.states = {}
         self.continuations = {}
+        self.call_stack = {}
         # {Subtask -> set([STATES])
         for subtask in self.system.get_subtasks():
             self.states[subtask] = 0
             self.continuations[subtask] = set()
+            self.call_stack[subtask] = None
         self.current_abb = None
 
     def new(self):
@@ -184,6 +220,9 @@ class SystemState:
         for subtask in state.get_subtasks():
             state.states[subtask] = self.states[subtask]
             state.continuations[subtask] = self.continuations[subtask].copy()
+
+            # Only used by SymbolicSystemExecution
+            state.call_stack[subtask] = copy(self.call_stack[subtask])
         assert self == state
         return state
 
@@ -235,6 +274,11 @@ class SystemState:
         assert not self.frozen
         self.continuations[subtask].add(abb)
 
+    def get_call_stack(self, subtask):
+        assert not self.frozen
+        assert not self.call_stack[subtask] is None
+        return self.call_stack[subtask]
+
     def freeze(self):
         self.frozen = True
 
@@ -255,6 +299,9 @@ class SystemState:
             if self.states[subtask] != old_state \
                or len(self.continuations[subtask]) != continuations_count:
                 changed = True
+
+            # We cannot merge call stacks!
+            self.call_stack[subtask] = None
         return changed
 
     @staticmethod
@@ -263,14 +310,6 @@ class SystemState:
         for x in states:
             state.merge_with(x)
         return state
-
-    def equal_to(self, other):
-        for subtask in self.get_subtasks():
-            if not(self.states[subtask] == other.states[subtask]):
-                return False
-            if not(self.continuations[subtask] == other.continuations[subtask]):
-                return False
-        return True
 
     def format_state(self, state):
         ret = []
@@ -302,6 +341,11 @@ class SystemState:
         for conts in self.continuations.values():
             for cont in conts:
                 ret ^= hash(cont)
+        for call_stack in self.call_stack.values():
+            if not call_stack:
+                continue
+            for go_back in call_stack:
+                ret ^= hash(go_back)
 
         return ret
 
@@ -319,6 +363,18 @@ class SystemState:
             # The possible continuations have to be equal
             if not self.continuations[subtask] == other.continuations[subtask]:
                 return False
+            # The call stack has to be equal
+            if not self.continuations[subtask] == other.continuations[subtask]:
+                return False
 
         return True
+
+    def is_definite(self):
+        for subtask in self.states.keys():
+            if self.is_unsure_ready_state(subtask):
+                return False
+            if len(self.continuations[subtask]) > 1:
+                return False
+        return True
+            
 
