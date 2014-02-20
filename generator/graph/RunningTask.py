@@ -103,6 +103,7 @@ class RunningTaskAnalysis(Analysis):
              'TerminateTask': self.system_call_semantic.do_TerminateTask,
              'ChainTask': self.system_call_semantic.do_ChainTask,
              'computation': self.do_computation_with_sporadic_events,
+             'kickoff': self.system_call_semantic.do_computation, # NO ISRS!
              'SetRelAlarm': self.system_call_semantic.do_computation, # ignore
              'CancelAlarm': self.system_call_semantic.do_computation, # ignore
              'GetResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
@@ -239,6 +240,7 @@ class RunningTask_ISR(SporadicEvent):
             block, before,
             {'ActivateTask': self.system_call_semantic.do_ActivateTask,
              'computation': self.system_call_semantic.do_computation,
+             'kickoff': self.system_call_semantic.do_computation,
              'Idle': self.system_call_semantic.do_Idle,
              'iret': self.do_iret})
         # Schedule depending on the possible output states

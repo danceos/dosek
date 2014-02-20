@@ -96,6 +96,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             'TerminateTask': self.system_call_semantic.do_TerminateTask,
                             'ChainTask': self.system_call_semantic.do_ChainTask,
                             'computation': self.do_computation_with_sporadic_events,
+                            'kickoff': self.system_call_semantic.do_computation, # NO ISRS
                             'SetRelAlarm': self.system_call_semantic.do_computation, # ignore
                             'CancelAlarm': self.system_call_semantic.do_computation, # ignore
                             'GetResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
@@ -177,7 +178,7 @@ class Combine_RunningTask_SSE(Analysis):
                 # FIXME: Jumps from computation might be the result of
                 # sporadic actions, but those are not explicitly
                 # drawed in the RunningTaskGraph
-                if source_abb.type != "computation":
+                if not source_abb.type in ("kickoff", "computation"):
                     edge = source_abb.remove_cfg_edge(target_abb, E.system_level)
                     logging.debug("Removed Edge from %s -> %s", source_abb, target_abb)
                     self.removed_edges.append(edge)

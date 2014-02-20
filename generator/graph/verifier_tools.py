@@ -25,7 +25,7 @@ class RunningTaskToolbox:
         self.analysis = analysis
         self.checked_syscalls = set()
         for syscall in self.analysis.system.get_syscalls():
-            if syscall.type == "ShutdownOS":
+            if syscall.type in ("ShutdownOS", "kickoff"):
                 self.checked_syscalls.add(syscall)
 
         # All Systemcalls in alarms are automatically checked
@@ -103,7 +103,7 @@ class RunningTaskToolbox:
             # must always be an computation block
             for next_abb in abb.get_outgoing_nodes(E.system_level):
                 if abb.function.subtask != next_abb.function.subtask:
-                    assert next_abb.type == "computation", \
+                    assert next_abb.type in ("kickoff", "computation"), \
                         "Target of an subtask subtask Transition must always be " \
                         + " an computation block (%s -> %s)" %(abb.path(), next_abb.path())
 

@@ -113,7 +113,7 @@ class EnsureComputationBlocks(Analysis):
 
     def do(self):
         for syscall in self.system.get_syscalls():
-            if syscall.function.is_system_function:
+            if syscall.function.is_system_function or syscall.type == "kickoff":
                 continue# Do not sourround StartOS with computation blocks
             elif syscall.type == "Idle":
                 abb = self.system.new_abb()
@@ -132,6 +132,15 @@ class EnsureComputationBlocks(Analysis):
                 # before and after
                 self.add_before(syscall)
                 self.add_after(syscall)
+
+        for subtask in self.system.get_subtasks():
+            kickoff = self.system.new_abb()
+            kickoff.make_it_a_syscall("kickoff", [subtask])
+            subtask.add_atomic_basic_block(kickoff)
+            kickoff.add_cfg_edge(subtask.entry_abb, E.function_level)
+            subtask.set_entry_abb(kickoff)
+
+
 
 class CurrentRunningSubtask(Analysis):
     """This pass does a local control flow propagation of the currently
