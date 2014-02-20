@@ -107,6 +107,6 @@ if __name__ == "__main__":
 
         start_ld(linker_flags, [system_object] + elf_files, args.output)
     finally:
-        # shutil.rmtree(tempdir)
+        shutil.rmtree(tempdir)
         pass
 
