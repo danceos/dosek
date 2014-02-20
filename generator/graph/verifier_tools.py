@@ -95,3 +95,11 @@ class RunningTaskToolbox:
                 assert state.current_abb != None
                 assert state.current_abb in abb.get_outgoing_nodes('global')
 
+            # When we have a subtask->subtask transition, the target
+            # must always be an computation block
+            for next_abb in abb.get_outgoing_nodes('global'):
+                if abb.function.subtask != next_abb.function.subtask:
+                    assert next_abb.type == "computation", \
+                        "Target of an subtask subtask Transition must always be " \
+                        + " an computation block (%s -> %s)" %(abb.path(), next_abb.path())
+

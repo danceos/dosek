@@ -28,6 +28,8 @@ class PassManager:
                 self.verifiers[x] = getattr(module, x)
         logging.info("Loaded %d verifier functions" % len(self.verifiers))
 
+    def get_pass(self, name):
+        return self.passes[name]
 
     def analyze(self, basefilename):
         verifiers_called = set()

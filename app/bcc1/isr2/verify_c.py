@@ -26,12 +26,9 @@ def after_RunningTaskAnalysis(analysis):
     TT3 = t.reachability(H2, "TerminateTask", [], # =>
                          [H3])
     returned_nodes = TT3.get_outgoing_nodes('global')
-    assert len(returned_nodes) == 2
+    assert len(returned_nodes) == 1
     # When H3 was not preempted, then we start in the entry node
     assert H3.entry_abb in returned_nodes
-    # When H3 was interrupted by ISR1, then it was preempted, and
-    # should continue after the computation block
-    assert H3.entry_abb.definite_after('local') in returned_nodes
 
     t.reachability(StartOS, "StartOS", [], # =>
                    [Idle])

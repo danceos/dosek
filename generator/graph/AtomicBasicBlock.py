@@ -19,6 +19,8 @@ class AtomicBasicBlock(GraphObject):
         return self.outgoing_edges
 
     def add_cfg_edge(self, target, type = 'local'):
+        assert not target in self.get_outgoing_edges(type), \
+            "Cannot add edge of the same type twice"
         edge = ControlFlowEdge(self, target, type = type)
         self.outgoing_edges.append(edge)
         target.incoming_edges.append(edge)
@@ -51,6 +53,7 @@ class AtomicBasicBlock(GraphObject):
             if edge.target == to_abb and edge.type == type:
                 self.outgoing_edges.remove(edge)
                 to_abb.incoming_edges.remove(edge)
+                return edge
 
     def make_it_a_syscall(self, call, arguments):
         if call.startswith("OSEKOS_"):
@@ -93,15 +96,17 @@ class AtomicBasicBlock(GraphObject):
             task = self.function.subtask.name
 
         if self.type == "computation":
-            return {"type": self.type,
+            return {"id": repr(self),
                     "prio": str(self.dynamic_priority),
                     'task': task}
-        return {'type': self.type,
+        return {'id': repr(self),
                 'arguments': repr(self.arguments),
                 'prio': str(self.dynamic_priority),
                 'task': task}
 
     def __repr__(self):
+        if self.type == "computation":
+            return "ABB%d" % (self.abb_id)
         return "ABB%d/%s"%(self.abb_id, self.type)
 
     def path(self):

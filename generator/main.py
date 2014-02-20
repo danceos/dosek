@@ -90,6 +90,9 @@ if __name__ == "__main__":
     global_abb_information = RunningTaskAnalysis()
     pass_manager.register_and_enqueue_analysis(global_abb_information)
     pass_manager.register_and_enqueue_analysis(SymbolicSystemExecution())
+
+    pass_manager.register_and_enqueue_analysis(Combine_RunningTask_SSE())
+
     pass_manager.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
     pass_manager.analyze("%s/gen_" % (options.prefix))
 

@@ -4,7 +4,7 @@ from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.Sporadic import SporadicEvent
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
-from generator.tools import panic, stack
+from generator.tools import panic, stack, unwrap_seq, group_by, select_distinct
 
 
 class SymbolicSystemExecution(Analysis, GraphObject):
@@ -12,6 +12,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         Analysis.__init__(self)
         GraphObject.__init__(self, "SymbolicSystemState", root = True)
         self.states_next = None
+        self.states_by_abb = None
 
         # A member for the RunningTask analysis
         self.running_task = None
@@ -22,8 +23,13 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         self.transitions = None
 
+    def requires(self):
+        # We require all possible system edges to be contructed
+        return [CurrentRunningSubtask.name(), DynamicPriorityAnalysis.name()]
+
+
     def graph_subobjects(self):
-        # Wrap each state in a graph subobject 
+        # Wrap each state in a graph subobject
         subobjects = dict([(x, StateGraphSubobject(self, x))
                            for x in self.states_next.keys()])
 
@@ -43,6 +49,10 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         return abbs.values()
 
     def state_transition(self, source_block, source_state, target_block, target_state):
+        # print source_block.path(),"->", target_block.path()
+        # Do not allow self loops
+        if source_state == target_state:
+            return
         self.states_next.setdefault(source_state, set())
         self.states_next[source_state].add(target_state)
         if not target_state in self.states_next:
@@ -59,6 +69,31 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                                                lambda source, target, new_state: \
                                                  self.state_transition(source, state, target, new_state))
 
+    def do_computation_with_sporadic_events(self, block, before):
+        after_states = self.system_call_semantic.do_computation(block, before)
+
+        # When there is no further local abb node, we have reached the
+        # end of the interrupt handler
+        current_subtask = before.current_abb.function.subtask
+        if len(block.get_outgoing_edges('local')) == 0 \
+           and current_subtask.is_isr :
+            assert len(after_states) == 0
+            assert block.type == 'computation'
+            copy_state = before.copy()
+            copy_state.set_suspended(current_subtask)
+            copy_state.set_continuations(current_subtask, [current_subtask.entry_abb])
+            after_states.append(copy_state)
+
+        # Handle sporadic events
+        for sporadic_event in self.system.alarms + self.system.isrs:
+            if not sporadic_event.can_trigger(before):
+                continue
+            after = sporadic_event.trigger(before)
+            after_states.append(after)
+
+        return after_states
+
+
     def do(self):
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
 
@@ -69,7 +104,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             'ActivateTask': self.system_call_semantic.do_ActivateTask,
                             'TerminateTask': self.system_call_semantic.do_TerminateTask,
                             'ChainTask': self.system_call_semantic.do_ChainTask,
-                            'computation': self.system_call_semantic.do_computation, # Ignore IRQs
+                            'computation': self.do_computation_with_sporadic_events,
                             'SetRelAlarm': self.system_call_semantic.do_computation, # ignore
                             'CancelAlarm': self.system_call_semantic.do_computation, # ignore
                             'GetResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
@@ -89,7 +124,12 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         while not self.working_stack.isEmpty():
             current = self.working_stack.pop()
+            if current in self.states_next:
+                continue
             self.state_functor(current)
+
+        # Group States by ABB
+        self.states_by_abb = group_by(self.states_next.keys(), "current_abb")
 
 
 class StateGraphSubobject(GraphObject):
@@ -107,5 +147,51 @@ class StateGraphSubobject(GraphObject):
         ret = {}
         for subtask, state in self.state.states.items():
             ret[subtask.name] = self.state.format_state(state)
+            conts = self.state.get_continuations(subtask)
+            assert len(conts) <= 1
+            if len(conts) == 1:
+                ret[subtask.name] += " " + str(unwrap_seq(conts))
+
 
         return ret
+
+class Combine_RunningTask_SSE(Analysis):
+    def __init__(self):
+        Analysis.__init__(self)
+        self.removed_edges = None
+
+    def requires(self):
+        # We require all possible system edges to be contructed
+        return ["RunningTaskAnalysis", "SymbolicSystemExecution"]
+
+    def do(self):
+        self.removed_edges = []
+        SSE = self.system.get_pass("SymbolicSystemExecution")
+        for source_abb in SSE.states_by_abb:
+            old_global_nodes = set(source_abb.get_outgoing_nodes('global'))
+            followup_abbs    = set()
+            for state in SSE.states_by_abb[source_abb]:
+                followup_abbs |= select_distinct(SSE.states_next[state], "current_abb")
+            # Are there edges that where discovered in SSE, that are not already in the graph?
+            more_in_SSE = followup_abbs - old_global_nodes
+            # Are there edges that where discovered in the graph but not by SSE
+            more_in_Graph = old_global_nodes - followup_abbs
+
+            # We can remove all edges from the graph, that are not in
+            # SSE, since SSE produces more precise results
+            for target_abb in more_in_Graph:
+                # FIXME: Jumps from computation might be the result of
+                # sporadic actions, but those are not explicitly
+                # drawed in the RunningTaskGraph
+                if source_abb.type != "computation":
+                    edge = source_abb.remove_cfg_edge(target_abb, 'global')
+                    logging.debug("Removed Edge from %s -> %s", source_abb, target_abb)
+                    self.removed_edges.append(edge)
+
+            for target_abb in more_in_SSE:
+                if source_abb.function.subtask.is_isr\
+                   or target_abb.function.subtask.is_isr:
+                    continue
+
+                panic("SSE has found more edges than RunningTask (%s -> %s)", 
+                      source_abb.path(), target_abb.path())

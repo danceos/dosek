@@ -94,7 +94,7 @@ class DynamicPriorityAnalysis(Analysis):
                 state = self.values[resource][abb]
                 assert not(state.free and state.taken), \
                     """The allocation state of resource have to be unambigious at every
-                    point. Do not make GetResource conditional (Resource %d in function %s)""" %\
+                    point. Do not make GetResource conditional (Resource %s in function %s)""" %\
                         (resource, abb.function)
                 if state.taken:
                     dynamic_priority = max(dynamic_priority, resource.static_priority)

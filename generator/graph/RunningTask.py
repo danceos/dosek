@@ -51,17 +51,23 @@ class RunningTaskAnalysis(Analysis):
         # We say that on the edge from one ABB to the other one, the
         # running abb is already the target
         state.current_abb = target
-        self.edge_states[(source, target)] = state
+        if (source, target) in self.edge_states:
+            self.edge_states[(source, target)].frozen = False
+            self.edge_states[(source, target)].merge_with(state)
+            self.edge_states[(source, target)].frozen = True
+        else:
+            self.edge_states[(source, target)] = state
 
     def install_sporadic_events(self):
         # Install the alarm handlers
-        self.sporadic_events.extend(list(self.system.alarms))
+        for alarm in self.system.alarms:
+            self.sporadic_events.append(RunningTask_Alarm(alarm))
+
         # Install the ISR handlers
-        for subtask in self.system.get_subtasks():
-            if subtask.is_isr:
-                isr = RunningTask_ISR(self.system, self.system_call_semantic, subtask)
-                self.sporadic_events.append(isr)
-                self.isrs.append(isr)
+        for isr in self.system.isrs:
+            wrapped_isr = RunningTask_ISR(isr, self.system_call_semantic)
+            self.sporadic_events.append(wrapped_isr)
+            self.isrs.append(wrapped_isr)
 
     def do_computation_with_sporadic_events(self, block, before):
         after_states = self.system_call_semantic.do_computation(block, before)
@@ -102,10 +108,13 @@ class RunningTaskAnalysis(Analysis):
              'ReleaseResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
              'Idle': self.system_call_semantic.do_Idle})
         # Merge all system call possibilities
-        after = SystemState.merge_many(self.system, after_states)
-        # Schedule depending on the possible output state
-        self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+        # after = SystemState.merge_many(self.system, after_states)
 
+        # Schedule depending on the possible output state
+        for after in after_states:
+            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+
+        
         # This has to be done after the system call handling, since
         # new global links could have been introduced
         if self.changed_current_block:
@@ -137,8 +146,11 @@ class RunningTaskAnalysis(Analysis):
             # Add IRQ edges from activating blocks
             # for triggered_in in isr.triggered_in_abb:
             #    triggered_in.add_cfg_edge(isr.handler.entry_abb, 'irq')
-            for abb in isr.handler.abbs:
+            for abb in isr.wrapped_isr.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
+                #for edge in abb.get_outgoing_edges('irq'):
+                #   if edge.type == 'irq':
+                #        edge.type = 'global'
 
     ##
     ## Result getters for this analysis
@@ -155,6 +167,8 @@ class RunningTaskAnalysis(Analysis):
         abbs = set()
         for reaching in subtask.entry_abb.get_incoming_nodes('global'):
             st = self.running_task.for_abb(reaching)
+            if st == subtask:
+                continue
             subtasks.add(st)
             abbs.add(reaching)
         return subtasks, abbs
@@ -164,15 +178,40 @@ class RunningTaskAnalysis(Analysis):
         if abb in self.before_abb_states:
             return RunningTaskGlobalAbbInformation(self, abb)
 
+class RunningTask_Alarm(SporadicEvent):
+    def __init__(self, wrapped_alarm):
+        SporadicEvent.__init__(self, wrapped_alarm.system_graph, wrapped_alarm.name)
+        self.wrapped_alarm = wrapped_alarm
 
-class RunningTask_ISR(ISR):
-    def __init__(self, system_graph, system_call_semantic, isr_handler):
-        ISR.__init__(self, system_graph, isr_handler)
+    def can_trigger(self, state):
+        return self.wrapped_alarm.can_trigger(state)
+
+    def trigger(self, state):
+        SporadicEvent.trigger(self, state)
+        subtask = self.wrapped_alarm.subtask
+        copy_state = state.copy()
+
+        # Save current IP
+        current_subtask = state.current_abb.function.subtask
+        copy_state.set_continuation(current_subtask, state.current_abb)
+
+        if not copy_state.is_surely_ready(subtask):
+            copy_state.set_continuation(subtask, subtask.entry_abb)
+        copy_state.set_ready(subtask)
+
+        return copy_state
+
+
+class RunningTask_ISR(SporadicEvent):
+    def __init__(self, wrapped_isr, system_call_semantic):
+        SporadicEvent.__init__(self, wrapped_isr.system_graph, wrapped_isr.name)
         self.system_call_semantic = system_call_semantic
+        self.wrapped_isr = wrapped_isr
+
         self.collected_states = {}
         self.collected_edge_states = {}
-        for abb in self.handler.abbs:
-            self.collected_states[abb] = SystemState(self.system)
+        for abb in self.wrapped_isr.handler.abbs:
+            self.collected_states[abb] = SystemState(self.system_graph)
 
         # Variables for the fixpoint iterations
         self.changed_current_block = True
@@ -183,10 +222,10 @@ class RunningTask_ISR(ISR):
         self.fixpoint = None
 
     def block_functor(self, fixpoint, block):
-        if block == self.handler.entry_abb:
+        if block == self.wrapped_isr.handler.entry_abb:
             self.changed_current_block = True
             before = self.start_state.copy()
-            before.set_ready(self.handler)
+            before.set_ready(self.wrapped_isr.handler)
             self.before_abb_states[block] = before
         else:
             self.changed_current_block, before = \
@@ -218,7 +257,8 @@ class RunningTask_ISR(ISR):
             for node in block.get_outgoing_nodes('irq'):
                 self.fixpoint.enqueue_soon(item = node)
 
-        assert block.function in (self.handler,)
+        # Never leave the handler function here
+        assert block.function.subtask == self.wrapped_isr.handler.subtask
 
 
     def set_state_on_edge(self, source, target, state):
@@ -233,14 +273,21 @@ class RunningTask_ISR(ISR):
 
         self.edge_states[(source, target)] = state
 
+    def can_trigger(self, state):
+        return self.wrapped_isr.can_trigger(state)
+
     def trigger(self, state):
         SporadicEvent.trigger(self, state)
         self.result = state.new()
         self.start_state = state
-        entry_abb = self.handler.entry_abb
+        entry_abb = self.wrapped_isr.handler.entry_abb
+
+        # Save current IP
+        current_subtask = state.current_abb.function.subtask
+        state.set_continuation(current_subtask, state.current_abb)
 
         # Clean old IRQ edges
-        for abb in self.handler.abbs:
+        for abb in self.wrapped_isr.handler.abbs:
             for edge in abb.get_outgoing_edges('irq'):
                 abb.remove_cfg_edge(edge.target, 'irq')
 
@@ -254,13 +301,13 @@ class RunningTask_ISR(ISR):
         self.before_abb_states[entry_abb].current_abb = entry_abb
 
         # Merge calculated before-block states into the merged states
-        for abb in self.handler.abbs:
+        for abb in self.wrapped_isr.handler.abbs:
             self.collected_states[abb].merge_with(
                 self.before_abb_states[abb]
                 )
 
         # IRET
-        self.result.set_suspended(self.handler)
+        self.result.set_suspended(self.wrapped_isr.handler)
         self.result.current_abb = state.current_abb
 
         return self.result

@@ -4,7 +4,7 @@ from generator.graph.Subtask import Subtask
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock
 from generator.graph.Function import Function
 from generator.graph.PassManager import PassManager
-from generator.graph.Sporadic import Alarm
+from generator.graph.Sporadic import Alarm, ISR
 from generator.graph.Resource import Resource
 from generator.graph.common import GraphObject
 
@@ -25,6 +25,7 @@ class SystemGraph(GraphObject, PassManager):
         self.system = None
         self.rtsc = None
         self.alarms = []
+        self.isrs = []
         self.resources = {}
 
     def graph_subobjects(self):
@@ -121,6 +122,8 @@ class SystemGraph(GraphObject, PassManager):
                     subtask.set_max_activations(1)
                     subtask.set_autostart(False)
                     subtask.set_is_isr(True, isr_osek.device)
+
+                    self.isrs.append(ISR(self, subtask))
                 else:
                     subtask_osek = system.getSubTask(subtask_name)
                     assert subtask_osek.static_priority != 0, "No user thread can have the thread ID 0, it is reserved for the Idle thread"
@@ -239,7 +242,6 @@ class SystemGraph(GraphObject, PassManager):
         for alarm in self.alarms:
             activate_task = self.new_abb()
             activate_task.make_it_a_syscall("ActivateTask", [alarm.subtask])
-            print "FOO", activate_task
             alarm.handler.add_atomic_basic_block(activate_task)
             alarm.handler.set_entry_abb(activate_task)
 

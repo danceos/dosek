@@ -71,3 +71,19 @@ class stack(list):
         self.append(item)
     def isEmpty(self):
         return not self
+
+def select_distinct(seq, field):
+    ret = set()
+    for item in seq:
+        key = getattr(item, field)
+        ret.add(key)
+    return ret
+
+
+def group_by(seq, field):
+    ret = {}
+    for item in seq:
+        key = getattr(item, field)
+        ret.setdefault(key, [])
+        ret[key].append(item)
+    return ret
