@@ -29,8 +29,15 @@ class PassManager:
         self.passes[analysis.name()] = analysis
 
     def enqueue_analysis(self, analysis):
-        assert analysis in self.passes.values()
-        self.analysis_pipe.append(analysis)
+        if analysis in self.passes.values():
+            self.analysis_pipe.append(analysis)
+            return analysis
+        elif analysis in self.passes:
+            # Analysis name was given
+            self.analysis_pipe.append(self.passes[analysis])
+            return self.passes[analysis]
+        else:
+            assert False
 
     def register_and_enqueue_analysis(self, analysis):
         self.register_analysis(analysis)
@@ -102,7 +109,4 @@ class PassManager:
 
 
             pass_number += 1
-
-        assert verifiers_called == set(self.verifiers.keys()), "Not all verifieres were called (missing %s)" % \
-            (set(self.verifiers.keys()) - set(verifiers_called))
 

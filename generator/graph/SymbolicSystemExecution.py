@@ -25,7 +25,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return [CurrentRunningSubtask.name(), DynamicPriorityAnalysis.name()]
+        return ["DynamicPriorityAnalysis"]
 
 
     def graph_subobjects(self):

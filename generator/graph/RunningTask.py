@@ -24,7 +24,7 @@ class RunningTaskAnalysis(Analysis):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return [CurrentRunningSubtask.name(), DynamicPriorityAnalysis.name()]
+        return [DynamicPriorityAnalysis.name()]
 
     @staticmethod
     def merge_inputs(edge_states, block, edge_type):

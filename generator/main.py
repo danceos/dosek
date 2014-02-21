@@ -80,22 +80,27 @@ if __name__ == "__main__":
     graph.read_rtsc_analysis(rtsc_analysis)
     graph.add_system_objects()
 
+    # Ensure that each systemcall is surrounded by computation blocks
     pass_manager.register_analysis(EnsureComputationBlocks())
 
+    # Constructing the task_level control flow graph
     pass_manager.register_analysis(AddFunctionCalls(rtsc_analysis.get_calls()))
+
+    # Task-Level: RunningSubtaskInformation
     pass_manager.register_analysis(CurrentRunningSubtask())
     pass_manager.register_analysis(MoveFunctionsToTask())
 
+    # Task-Level: Dynamic Priority spreading pass
     pass_manager.register_analysis(PrioritySpreadingPass())
-    pass_manager.register_analysis(DynamicPriorityAnalysis())
-    global_abb_information = RunningTaskAnalysis()
-    pass_manager.register_analysis(global_abb_information)
+    pass_manager.register_and_enqueue_analysis(DynamicPriorityAnalysis())
+
+    # System-Level: Analysis
+    pass_manager.register_analysis(RunningTaskAnalysis())
     pass_manager.register_analysis(SymbolicSystemExecution())
+    pass_manager.register_analysis(Combine_RunningTask_SSE())
 
-    pass_manager.register_and_enqueue_analysis(Combine_RunningTask_SSE())
+    # pass_manager.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
 
-    pass_manager.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
-    pass_manager.analyze("%s/gen_" % (options.prefix))
 
     if options.arch == "i386":
         arch_rules = X86Arch()
@@ -110,9 +115,15 @@ if __name__ == "__main__":
         os_rules = EncodedSystem()
 
     if options.specialize_systemcalls:
+        # Only when we want to specialize the system calls, run the
+        # System-Level analysises
+        pass_manager.enqueue_analysis("Combine_RunningTask_SSE")
+        global_abb_information = pass_manager.get_pass("RunningTaskAnalysis")
         syscall_rules = SpecializedSystemCalls(global_abb_information)
     else:
         syscall_rules = FullSystemCalls()
+
+    pass_manager.analyze("%s/gen_" % (options.prefix))
 
     generator = Generator.Generator(graph, options.name, arch_rules,
                                     os_rules,
