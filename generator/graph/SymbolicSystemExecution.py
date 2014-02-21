@@ -157,7 +157,7 @@ class Combine_RunningTask_SSE(Analysis):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return ["RunningTaskAnalysis", "SymbolicSystemExecution"]
+        return ["SystemStateFlow", "SymbolicSystemExecution"]
 
     def do(self):
         self.removed_edges = []

@@ -8,7 +8,7 @@ from generator.graph.AtomicBasicBlock import E
 from generator.tools import panic
 
 
-class RunningTaskAnalysis(Analysis):
+class SystemStateFlow(Analysis):
     def __init__(self):
         Analysis.__init__(self)
         self.sporadic_events = []
@@ -35,7 +35,7 @@ class RunningTaskAnalysis(Analysis):
 
     @staticmethod
     def update_before_state(edge_states, before_state_dict, block, edge_type):
-        before = RunningTaskAnalysis.merge_inputs(edge_states, block, edge_type)
+        before = SystemStateFlow.merge_inputs(edge_states, block, edge_type)
         changed = False
         if not block in before_state_dict:
             before_state_dict[block] = before
@@ -231,7 +231,7 @@ class RunningTask_ISR(SporadicEvent):
             self.before_abb_states[block] = before
         else:
             self.changed_current_block, before = \
-                RunningTaskAnalysis.update_before_state(self.edge_states,
+                SystemStateFlow.update_before_state(self.edge_states,
                                                         self.before_abb_states,
                                                         block,
                                                         edge_type = E.irq_level)

@@ -17,7 +17,7 @@ def after_MoveFunctionsToTask(analysis):
     # But is not yet moved to the Task of Handler11
     assert bar in Handler11.task.functions
 
-def after_RunningTaskAnalysis(analysis):
+def after_SystemStateFlow(analysis):
     # Find all three systemcall handlers
     (Handler11, Handler12, Handler13, bar, Idle, StartOS) = \
        get_functions(analysis.system, ["Handler11", "Handler12", "Handler13", "bar", "Idle", "StartOS"])

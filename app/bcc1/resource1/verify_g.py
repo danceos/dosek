@@ -1,6 +1,6 @@
 from generator.graph.verifier_tools import *
 
-def after_RunningTaskAnalysis(analysis):
+def after_SystemStateFlow(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
        get_functions(analysis.system, ["H1", "H2", "H3", "H4", "H5",

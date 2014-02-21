@@ -8,7 +8,7 @@ from generator.graph.Subtask import Subtask
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock
 from generator.graph.Function import Function
 from generator.graph.Analysis import *
-from generator.graph.RunningTask import *
+from generator.graph.SystemStateFlow import *
 from generator.graph.common import GraphObject
 from generator.graph.Sporadic import Alarm
 from generator.graph.Resource import Resource

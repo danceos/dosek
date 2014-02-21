@@ -95,7 +95,7 @@ if __name__ == "__main__":
     pass_manager.register_and_enqueue_analysis(DynamicPriorityAnalysis())
 
     # System-Level: Analysis
-    pass_manager.register_analysis(RunningTaskAnalysis())
+    pass_manager.register_analysis(SystemStateFlow())
     pass_manager.register_analysis(SymbolicSystemExecution())
     pass_manager.register_analysis(Combine_RunningTask_SSE())
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         # Only when we want to specialize the system calls, run the
         # System-Level analysises
         pass_manager.enqueue_analysis("Combine_RunningTask_SSE")
-        global_abb_information = pass_manager.get_pass("RunningTaskAnalysis")
+        global_abb_information = pass_manager.get_pass("SystemStateFlow")
         syscall_rules = SpecializedSystemCalls(global_abb_information)
     else:
         syscall_rules = FullSystemCalls()
