@@ -39,13 +39,14 @@ class Analysis:
         return a
 
     def analyze(self):
-        if not self.valid:
-            logging.info("Running %s analysis", self.name())
-            assert self.system != None
-            self.do()
-            self.valid = True
-        else:
-            logging.info("Is stil valid: %s analysis", self.name())
+        assert not self.valid
+        assert self.system != None
+        self.do()
+        self.valid = True
+
+    def get_edge_filter(self):
+        """Get a filter of edge types"""
+        return set([E.function_level])
 
     def do(self):
         pass
@@ -65,6 +66,9 @@ class EnsureComputationBlocks(Analysis):
 
     def __init__(self):
         Analysis.__init__(self)
+
+    def get_edge_filter(self):
+        return set([E.function_level])
 
     def add_before(self, abb):
         nessecary = False
@@ -154,6 +158,9 @@ class CurrentRunningSubtask(Analysis):
 
     def requires(self):
         return ["AddFunctionCalls"]
+
+    def get_edge_filter(self):
+        return set([E.function_level, E.task_level])
 
     def for_abb(self, abb):
         x = list(self.values.get(abb, []))

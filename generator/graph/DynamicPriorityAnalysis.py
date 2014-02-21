@@ -20,6 +20,9 @@ class DynamicPriorityAnalysis(Analysis):
     def requires(self):
         return ["PrioritySpreadingPass", "MoveFunctionsToTask"]
 
+    def get_edge_filter(self):
+        return set([E.function_level, E.task_level])
+
     StateVector = namedtuple("StateVector", ["free", "taken"])
 
     def block_functor(self, fixpoint, abb):

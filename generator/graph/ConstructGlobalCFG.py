@@ -31,8 +31,10 @@ class ConstructGlobalCFG(Analysis):
         assert ret, "At least one method for constructing a global flow information must be enabled"
         return ret
 
-    def global_abb_information_provider(self, system_graph):
-        self.set_system(system_graph)
+    def get_edge_filter(self):
+        return set([E.state_flow, E.state_flow_irq, E.system_level])
+
+    def global_abb_information_provider(self):
         self.requires()
         return self.sse or self.state_flow
 

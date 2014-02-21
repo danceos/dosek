@@ -32,6 +32,9 @@ class SystemStateFlow(Analysis):
         # We require all possible system edges to be contructed
         return [DynamicPriorityAnalysis.name()]
 
+    def get_edge_filter(self):
+        return set([E.task_level, E.state_flow, E.state_flow_irq])
+
     @staticmethod
     def merge_inputs(edge_states, block, edge_type):
         input_abbs = block.get_incoming_nodes(edge_type)

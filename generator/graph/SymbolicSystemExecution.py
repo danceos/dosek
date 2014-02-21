@@ -31,6 +31,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # We require all possible system edges to be contructed
         return ["DynamicPriorityAnalysis"]
 
+    def get_edge_filter(self):
+        return set([E.function_level, E.task_level])
 
     def graph_subobjects(self):
         # Wrap each state in a graph subobject

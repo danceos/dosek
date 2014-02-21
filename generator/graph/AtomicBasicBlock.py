@@ -1,6 +1,7 @@
 from generator.graph.common import GraphObject, Edge
+from generator.tools import Enum
 
-class E:
+class ControlFlowEdgeLevel(Enum):
     """All used edge types"""
     function_level = 1
     task_level = 2
@@ -13,36 +14,19 @@ class E:
     state_flow_irq = 21
 
 
-
-
-    @classmethod
-    def to_string(cls, level):
-        ret = {1: 'function_level',
-               2: 'task_level',
-               3: 'system_level',
-               4: 'irq_level',
-               
-               # Symbolic System Execution
-               10: 'state_transition',
-
-               # SystemStateFlow
-               20: 'state_flow',
-               21: 'state_flow_irq',
-        }
-        return ret[level]
-
     @classmethod
     def color(cls, level):
-        ret = {1: 'green',
-               2: 'black',
-               3: 'blue',
-               4: 'red',
-               10: 'black',
-               20: 'darkorchid2',
-               21: 'gold1',
+        ret = {cls.function_level: 'green',
+               cls.task_level: 'black',
+               cls.system_level: 'blue',
+               cls.irq_level: 'red',
+               cls.state_transition: 'black',
+               cls.state_flow: 'darkorchid2',
+               cls.state_flow_irq: 'gold1',
         }
         return ret[level]
 
+E = ControlFlowEdgeLevel
 
 class ControlFlowEdge(Edge):
     """Task level control flow edges are possible control flow transitions
@@ -55,7 +39,11 @@ class ControlFlowEdge(Edge):
 
     def __repr__(self):
         return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
-                                     self.target, E.to_string(self.level))
+                                     self.target, self.level.name)
+
+class SyscallType(Enum):
+    foo = 1
+S = SyscallType
 
 class AtomicBasicBlock(GraphObject):
     def __init__(self, system, abb_id):
@@ -72,11 +60,22 @@ class AtomicBasicBlock(GraphObject):
         # This is set by the DynamicPriorityAnalysis
         self.dynamic_priority = None
 
+    current_edge_filter = None
+    @classmethod
+    def set_edge_filter(cls, edge_filter):
+        cls.current_edge_filter = edge_filter
+
     def graph_edges(self):
+        if self.current_edge_filter:
+            return [edge for edge in self.outgoing_edges
+                    if edge.level in self.current_edge_filter]
         return self.outgoing_edges
 
     def add_cfg_edge(self, target, level):
-        assert isinstance(level, int)
+        assert isinstance(level, E)
+        assert not self.current_edge_filter or level in self.current_edge_filter,\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
         assert not target in self.get_outgoing_edges(level), \
             "Cannot add edge of the same type twice"
         edge = ControlFlowEdge(self, target, level)
@@ -84,24 +83,39 @@ class AtomicBasicBlock(GraphObject):
         target.incoming_edges.append(edge)
 
     def get_outgoing_edges(self, level):
-        assert isinstance(level, int)
+        assert isinstance(level, E)
+        assert not self.current_edge_filter or level in self.current_edge_filter,\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
         return [x for x in self.outgoing_edges if x.level == level]
 
     def get_incoming_edges(self, level):
-        assert isinstance(level, int)
+        assert isinstance(level, E)
+        assert not self.current_edge_filter or level in self.current_edge_filter,\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
         return [x for x in self.incoming_edges if x.level == level]
 
     def get_outgoing_nodes(self, level):
-        assert isinstance(level, int)
+        assert isinstance(level, E)
+        assert not self.current_edge_filter or level in self.current_edge_filter,\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
         return [x.target for x in self.outgoing_edges if x.level == level]
 
     def get_incoming_nodes(self, level):
-        assert isinstance(level, int)
+        assert not self.current_edge_filter or level in self.current_edge_filter,\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
+        assert isinstance(level, E)
         return [x.source for x in self.incoming_edges if x.level == level]
 
     def has_edge_to(self, abb, level):
         """Returns the edge of level to an specific abb"""
-        assert isinstance(level, int)
+        assert isinstance(level, E)
+        assert not self.current_edge_filter or level in self.current_edge_filter,\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
         for edge in self.outgoing_edges:
             if edge.level == level and edge.target == abb:
                 return edge
@@ -118,7 +132,7 @@ class AtomicBasicBlock(GraphObject):
 
 
     def remove_cfg_edge(self, to_abb, level):
-        assert isinstance(level, int)
+        assert isinstance(level, E)
         for edge in self.outgoing_edges:
             if edge.target == to_abb and edge.level == level:
                 self.outgoing_edges.remove(edge)

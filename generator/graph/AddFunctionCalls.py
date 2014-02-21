@@ -13,6 +13,9 @@ class AddFunctionCalls(Analysis):
     def requires(self):
         return ["EnsureComputationBlocks"]
 
+    def get_edge_filter(self):
+        return set([E.function_level, E.task_level])
+
     def do(self):
         ## Mark all relevant functions
 

@@ -122,7 +122,7 @@ if __name__ == "__main__":
         pass_manager.enqueue_analysis("SystemStateFlow")
 
         global_cfg = pass_manager.enqueue_analysis("ConstructGlobalCFG")
-        global_abb_information = global_cfg.global_abb_information_provider(graph)
+        global_abb_information = global_cfg.global_abb_information_provider()
         logging.info("Global control flow information is provided by %s",
                      global_abb_information.name())
         syscall_rules = SpecializedSystemCalls(global_abb_information)

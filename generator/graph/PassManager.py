@@ -1,4 +1,5 @@
 import logging
+from generator.graph.AtomicBasicBlock import AtomicBasicBlock
 from generator.graph.common import *
 from generator.tools import stack
 
@@ -80,11 +81,11 @@ class PassManager:
         pass_number = 0
 
         # Dump graph as dot output
-        with open("%s_passes.dot" %(basefilename), "w+") as fd:
+        with open("%s_00_passes.dot" %(basefilename), "w+") as fd:
             fd.write(self.pass_graph().dump_as_dot())
 
         # Dump graph as dot output
-        with open("%s_%d_RTSC.dot" %(basefilename, pass_number), "w+") as fd:
+        with open("%s_%02d_RTSC.dot" %(basefilename, pass_number), "w+") as fd:
             fd.write(self.dump_as_dot())
             pass_number += 1
 
@@ -95,37 +96,51 @@ class PassManager:
             if len(invalid) > 0:
                 self.analysis_pipe = invalid + self.analysis_pipe
                 continue
+            logging.info("-----")
             # Remove analysis from analysation pipeline
             del self.analysis_pipe[0]
             # Call before analyzer
             verifier_name = "before_" + front.name()
             if verifier_name in self.verifiers:
+                # Disable edge filter for the verifier
+                AtomicBasicBlock.set_edge_filter(None)
                 self.verifiers[verifier_name](front)
-                logging.info("Run %s verifier" % verifier_name)
+                logging.info(" + %s verifier" % verifier_name)
                 verifiers_called.add(verifier_name)
 
+            # We promise to only use the specified edge types
+            AtomicBasicBlock.set_edge_filter(front.get_edge_filter())
             # Call analyzer pass
+            logging.info("PASS: %s", front.name())
             front.analyze()
 
             # Check graph integrity
             self.fsck()
 
             # Dump graph as dot output
-            with open("%s_%d_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
+            with open("%s_%02d_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
                 fd.write(self.dump_as_dot())
 
             # Dump analysisgraph as dot output
             if hasattr(front, "dump_as_dot"):
-                with open("%s_%d-pass_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
+                with open("%s_%02d-pass_%s.dot" %(basefilename, pass_number, front.name()), "w+") as fd:
                     fd.write(front.dump_as_dot())
 
             # Call afteranalyzer
             verifier_name = "after_" + front.name()
             if verifier_name in self.verifiers:
+                # Disable edge filter for the verifier
+                AtomicBasicBlock.set_edge_filter(None)
                 self.verifiers[verifier_name](front)
-                logging.info("Run %s verifier" % verifier_name)
+                logging.info(" + %s verifier" % verifier_name)
                 verifiers_called.add(verifier_name)
 
 
             pass_number += 1
+
+        # Disable edge filter
+        AtomicBasicBlock.set_edge_filter(None)
+        with open("%s_%02d_final.dot" %(basefilename, pass_number+1), "w+") as fd:
+            fd.write(self.dump_as_dot())
+
 
