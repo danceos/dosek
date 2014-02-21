@@ -1,5 +1,5 @@
 from generator.graph.Analysis import Analysis
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E, S
 
 
 class AddFunctionCalls(Analysis):
@@ -68,7 +68,7 @@ class AddFunctionCalls(Analysis):
                 called_block  = function.entry_abb
                 returned_block = calling_block.definite_after(E.function_level)
                 return_block = function.exit_abb
-                assert calling_block.type == "computation"
+                assert calling_block.isA(S.computation)
                 assert calling_block != None, "Could not find CallingBlock ABB%d" % call.abb
                 assert return_block != None, "Could not find FunctionCall return block"
 

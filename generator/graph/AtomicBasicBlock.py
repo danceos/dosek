@@ -1,7 +1,9 @@
 from generator.graph.common import GraphObject, Edge
-from generator.tools import Enum
+from generator.tools import IntEnum, unique
+import collections
 
-class ControlFlowEdgeLevel(Enum):
+@unique
+class ControlFlowEdgeLevel(IntEnum):
     """All used edge types"""
     function_level = 1
     task_level = 2
@@ -40,9 +42,35 @@ class ControlFlowEdge(Edge):
     def __repr__(self):
         return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
                                      self.target, self.level.name)
+@unique
+class SyscallType(IntEnum):
+    # User code
+    computation = 1
 
-class SyscallType(Enum):
-    foo = 1
+    # This are artificial ABBs
+    StartOS = 2
+    kickoff = 3
+    Idle = 4
+    iret = 5
+
+    # real system calls
+    ActivateTask = 20
+    TerminateTask = 21
+    ChainTask = 22
+    SetRelAlarm = 23
+    CancelAlarm = 24
+    GetResource = 25
+    ReleaseResource = 26
+
+    def isRealSyscall(self):
+        return self.value >= SyscallType.ActivateTask
+
+    @classmethod
+    def fromString(cls, name):
+        if name.startswith("OSEKOS_"):
+            name = name[len("OSEKOS_"):]
+        return cls[name]
+
 S = SyscallType
 
 class AtomicBasicBlock(GraphObject):
@@ -55,10 +83,20 @@ class AtomicBasicBlock(GraphObject):
         self.outgoing_edges = []
         self.incoming_edges = []
 
-        self.type = "computation"
+        self.syscall_type = S.computation
         self.arguments = []
         # This is set by the DynamicPriorityAnalysis
         self.dynamic_priority = None
+
+    def isA(self, syscall_type):
+        if isinstance(syscall_type, str):
+            syscall_type = SyscallType.fromString(syscall_type)
+        if isinstance(syscall_type, collections.Iterable):
+            return self.syscall_type in syscall_type
+        return self.syscall_type == syscall_type
+
+    # Edge handling
+    ################################################################
 
     current_edge_filter = None
     @classmethod
@@ -139,10 +177,9 @@ class AtomicBasicBlock(GraphObject):
                 to_abb.incoming_edges.remove(edge)
                 return edge
 
-    def make_it_a_syscall(self, call, arguments):
-        if call.startswith("OSEKOS_"):
-            call = call[len("OSEKOS_"):]
-        self.type = call
+    def make_it_a_syscall(self, syscall_type, arguments):
+        assert isinstance(syscall_type, SyscallType)
+        self.syscall_type = syscall_type
         args = []
         # Make the string arguments references to system objects
         for x in arguments:
@@ -179,7 +216,7 @@ class AtomicBasicBlock(GraphObject):
         if self.function.subtask:
             task = self.function.subtask.name
 
-        if self.type == "computation":
+        if self.isA(S.computation):
             return {"id": repr(self),
                     "prio": str(self.dynamic_priority),
                     'task': task}
@@ -189,14 +226,14 @@ class AtomicBasicBlock(GraphObject):
                 'task': task}
 
     def __repr__(self):
-        if self.type == "computation":
+        if self.isA(S.computation):
             return "ABB%d" % (self.abb_id)
-        return "ABB%d/%s"%(self.abb_id, self.type)
+        return "ABB%d/%s"%(self.abb_id, self.syscall_type.name)
 
     def path(self):
         """Returns a string that should be enable the user to find the atomic
            basic block"""
         return "%s/%s/ABB%s/%s" %(self.function.subtask, self.function,
-                                  self.abb_id, self.type)
+                                  self.abb_id, self.syscall_type.name)
 
 

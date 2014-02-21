@@ -1,4 +1,5 @@
 from generator.graph.common import GraphObject, Edge
+from generator.graph.AtomicBasicBlock import S
 
 class Function(GraphObject):
     def __init__(self, functionname):
@@ -23,7 +24,7 @@ class Function(GraphObject):
 
     def get_syscalls(self):
         return [x for x in self.abbs
-                if x.type != 'computation']
+                if not x.isA(S.computation)]
 
     def add_atomic_basic_block(self, abb):
         abb.function = self

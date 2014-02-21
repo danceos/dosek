@@ -1,4 +1,4 @@
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E,S
 
 global E
 
@@ -25,12 +25,12 @@ class RunningTaskToolbox:
         self.analysis = analysis
         self.checked_syscalls = set()
         for syscall in self.analysis.system.get_syscalls():
-            if syscall.type in ("ShutdownOS", "kickoff"):
-                self.checked_syscalls.add(syscall)
-
-        # All Systemcalls in alarms are automatically checked
-        for alarm in analysis.system.alarms:
-            self.checked_syscalls.add(alarm.handler.entry_abb)
+            if syscall.syscall_type.isRealSyscall() \
+               and not syscall.function.is_system_function:
+                continue
+            if syscall.isA(S.computation):
+                continue
+            self.checked_syscalls.add(syscall)
 
         self.check_base_constraints()
 
@@ -44,8 +44,8 @@ class RunningTaskToolbox:
             self.mark_syscall(syscall)
 
     def promise_all_syscalls_checked(self):
-        assert set(self.analysis.system.get_syscalls()) == self.checked_syscalls, "missing %s" \
-            %(set(self.analysis.system.get_syscalls()) - self.checked_syscalls)
+        assert set(self.analysis.system.get_syscalls()) == self.checked_syscalls,\
+            "missing %s"%(set(self.analysis.system.get_syscalls()) ^ self.checked_syscalls)
 
     def syscall(self, function, syscall_name, arguments):
         """Tests wheter a syscall exists and returns it"""
@@ -63,7 +63,7 @@ class RunningTaskToolbox:
     def reachability_bare(self, syscall, possible_subtasks):
         reachable_subtasks = self.analysis.reachable_subtasks_from_abb(syscall)
         assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
-            syscall.function.function_name, syscall.type,
+            syscall.function.function_name, syscall.syscall_type.name,
             syscall.arguments, list(possible_subtasks), list(reachable_subtasks))
         self.checked_syscalls.add(syscall)
 
@@ -72,7 +72,7 @@ class RunningTaskToolbox:
     def reachability_abbs(self, syscall, targets):
         reachable_abbs = syscall.get_outgoing_nodes(E.state_flow)
         assert(set(targets) == set(reachable_abbs)), "%s:%s(%s)::: %s != %s" %(
-            syscall.function.function_name, syscall.type,
+            syscall.function.function_name, syscall.syscall_type.name,
             syscall.arguments, list(targets), list(reachable_abbs))
 
 
@@ -88,7 +88,7 @@ class RunningTaskToolbox:
     def check_base_constraints(self):
         for syscall in self.analysis.system.get_syscalls():
             # Some syscalls cannot reschedule
-            if syscall.type in ("GetResource", "CancelAlarm", "SetRelAlarm"):
+            if syscall.isA([S.GetResource, S.CancelAlarm, S.SetRelAlarm]):
                 self.reachability_bare(syscall, [syscall.function.subtask])
         for abb in self.analysis.system.get_abbs():
             abb_info = self.analysis.for_abb(abb)
@@ -103,7 +103,7 @@ class RunningTaskToolbox:
             # must always be an computation block
             for next_abb in abb.get_outgoing_nodes(E.state_flow):
                 if abb.function.subtask != next_abb.function.subtask:
-                    assert next_abb.type in ("kickoff", "computation"), \
+                    assert next_abb.isA([S.kickoff, S.computation]), \
                         "Target of an subtask subtask Transition must always be " \
                         + " an computation block (%s -> %s)" %(abb.path(), next_abb.path())
 

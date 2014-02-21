@@ -107,17 +107,17 @@ class SystemStateFlow(Analysis):
 
         after_states = self.system_call_semantic.do_SystemCall(
             block, before,
-            {'StartOS': self.system_call_semantic.do_StartOS,
-             'ActivateTask': self.system_call_semantic.do_ActivateTask,
-             'TerminateTask': self.system_call_semantic.do_TerminateTask,
-             'ChainTask': self.system_call_semantic.do_ChainTask,
-             'computation': self.do_computation_with_sporadic_events,
-             'kickoff': self.system_call_semantic.do_computation, # NO ISRS!
-             'SetRelAlarm': self.system_call_semantic.do_computation, # ignore
-             'CancelAlarm': self.system_call_semantic.do_computation, # ignore
-             'GetResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-             'ReleaseResource': self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-             'Idle': self.system_call_semantic.do_Idle})
+            {S.StartOS: self.system_call_semantic.do_StartOS,
+             S.ActivateTask: self.system_call_semantic.do_ActivateTask,
+             S.TerminateTask: self.system_call_semantic.do_TerminateTask,
+             S.ChainTask: self.system_call_semantic.do_ChainTask,
+             S.computation: self.do_computation_with_sporadic_events,
+             S.kickoff: self.system_call_semantic.do_computation, # NO ISRS!
+             S.SetRelAlarm: self.system_call_semantic.do_computation, # ignore
+             S.CancelAlarm: self.system_call_semantic.do_computation, # ignore
+             S.GetResource: self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
+             S.ReleaseResource: self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
+             S.Idle: self.system_call_semantic.do_Idle})
         # Merge all system call possibilities
         # after = SystemState.merge_many(self.system, after_states)
 
@@ -241,11 +241,11 @@ class SSF_ISR(SporadicEvent):
 
         after_states = self.system_call_semantic.do_SystemCall(
             block, before,
-            {'ActivateTask': self.system_call_semantic.do_ActivateTask,
-             'computation': self.system_call_semantic.do_computation,
-             'kickoff': self.system_call_semantic.do_computation,
-             'Idle': self.system_call_semantic.do_Idle,
-             'iret': self.do_iret})
+            {S.ActivateTask: self.system_call_semantic.do_ActivateTask,
+             S.computation: self.system_call_semantic.do_computation,
+             S.kickoff: self.system_call_semantic.do_computation,
+             S.Idle: self.system_call_semantic.do_Idle,
+             S.iret: self.do_iret})
         # Schedule depending on the possible output states
         for after in after_states:
             self.system_call_semantic.schedule(block, after, self.set_state_on_edge)

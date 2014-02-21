@@ -104,13 +104,13 @@ class SystemCallSemantic:
             return ret
 
     def do_SystemCall(self, block, before, system_calls):
-        if block.type in system_calls:
-            after = system_calls[block.type](block, before)
+        if block.syscall_type in system_calls:
+            after = system_calls[block.syscall_type](block, before)
             for x in after:
                 x.freeze()
             return after
         else:
-            panic("BlockType %s is not supported yet" % block.type)
+            panic("BlockType %s is not supported yet" % block.syscall_type)
 
     def find_possible_next_blocks(self, source, state):
         current_running = self.running_task.for_abb(source)

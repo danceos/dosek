@@ -1,7 +1,7 @@
 import logging
 import sys
 from generator.graph.common import *
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E, S
 import copy
 
 class Analysis:
@@ -75,7 +75,7 @@ class EnsureComputationBlocks(Analysis):
         if len (abb.get_incoming_nodes(E.function_level)) > 1:
             nessecary = True
         elif len (abb.get_incoming_nodes(E.function_level)) == 1:
-            if abb.definite_before(E.function_level).type != "computation":
+            if not abb.definite_before(E.function_level).isA(S.computation):
                 nessecary = True
         else:
             assert abb.function.entry_abb == abb
@@ -83,12 +83,11 @@ class EnsureComputationBlocks(Analysis):
 
         if not nessecary:
             return
-        #print "add_before", abb
 
         new = self.system.new_abb()
-        new.type = 'computation'
+        new.syscall_type = S.computation
         abb.function.add_atomic_basic_block(new)
-        
+
         for edge in copy.copy(abb.incoming_edges):
             edge.source.remove_cfg_edge(abb, edge.level)
             edge.source.add_cfg_edge(new, edge.level)
@@ -101,13 +100,12 @@ class EnsureComputationBlocks(Analysis):
         if len (abb.get_outgoing_nodes(E.function_level)) > 1:
             nessecary = True
         elif len (abb.get_outgoing_nodes(E.function_level)) == 1 \
-             and abb.definite_after(E.function_level).type != "computation":
+             and not abb.definite_after(E.function_level).isA(S.computation):
             nessecary = True
         if not nessecary:
             return
         #print "add_after", abb
         new = self.system.new_abb()
-        new.type = 'computation'
         abb.function.add_atomic_basic_block(new)
         for edge in copy.copy(abb.outgoing_edges):
             abb.remove_cfg_edge(edge.target, E.function_level)
@@ -117,17 +115,18 @@ class EnsureComputationBlocks(Analysis):
 
     def do(self):
         for syscall in self.system.get_syscalls():
-            if syscall.function.is_system_function or syscall.type == "kickoff":
-                continue# Do not sourround StartOS with computation blocks
-            elif syscall.type == "Idle":
+            if syscall.isA(S.Idle):
                 abb = self.system.new_abb()
-                abb.type = 'computation'
+                abb.syscall_type = S.computation
                 syscall.function.add_atomic_basic_block(abb)
                 abb.add_cfg_edge(syscall, E.function_level)
                 syscall.add_cfg_edge(abb, E.function_level)
                 # Do start the idle loop with an computation node
                 abb.function.entry_abb = abb
-            elif syscall.type in ["ChainTask", "TerminateTask"]:
+            elif not syscall.syscall_type.isRealSyscall() \
+                 or syscall.function.is_system_function:
+                continue
+            elif syscall.isA(S.ChainTask) or syscall.isA(S.TerminateTask):
                 # This two syscalls immediatly return the control flow
                 # to the system
                 self.add_before(syscall)
@@ -139,7 +138,7 @@ class EnsureComputationBlocks(Analysis):
 
         for subtask in self.system.get_subtasks():
             kickoff = self.system.new_abb()
-            kickoff.make_it_a_syscall("kickoff", [subtask])
+            kickoff.make_it_a_syscall(S.kickoff, [subtask])
             subtask.add_atomic_basic_block(kickoff)
             kickoff.add_cfg_edge(subtask.entry_abb, E.function_level)
             subtask.set_entry_abb(kickoff)

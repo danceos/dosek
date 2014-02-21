@@ -39,4 +39,4 @@ def after_Combine_RunningTask_SSE(analysis):
     assert len(analysis.removed_edges) == 1
     # The edge from TerminateTask/H4 to H5.entry is removed
     assert analysis.removed_edges[0].target == H5.entry_abb
-    assert analysis.removed_edges[0].source.type == "TerminateTask"
+    assert analysis.removed_edges[0].source.isA("TerminateTask")

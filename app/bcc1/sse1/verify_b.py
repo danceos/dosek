@@ -28,7 +28,7 @@ def after_SystemStateFlow(analysis):
 
     # There are two terminate tasks in H1
     for syscall in H1.get_syscalls():
-        if not syscall.type == "TerminateTask":
+        if not syscall.isA("TerminateTask"):
             continue
         t.reachability_abbs(syscall,
                             [H2.entry_abb])
@@ -54,7 +54,7 @@ def after_ConstructGlobalCFG(analysis):
     # The edge from TerminateTask/H4 to H5.entry is removed
     assert analysis.removed_edges[0].target == H5.entry_abb
     assert analysis.removed_edges[1].target == H5.entry_abb
-    assert analysis.removed_edges[0].source.type == "TerminateTask"
-    assert analysis.removed_edges[1].source.type == "TerminateTask"
+    assert analysis.removed_edges[0].source.isA("TerminateTask")
+    assert analysis.removed_edges[1].source.isA("TerminateTask")
 
 

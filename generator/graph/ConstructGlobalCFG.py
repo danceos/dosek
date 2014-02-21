@@ -1,5 +1,5 @@
 from generator.graph.Analysis import Analysis
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E, S
 from generator.tools import panic, stack, unwrap_seq, group_by, select_distinct
 from generator.graph.common import Edge
 import logging
@@ -82,7 +82,7 @@ class ConstructGlobalCFG(Analysis):
                     # FIXME: Jumps from computation might be the result of
                     # sporadic actions, but those are not explicitly
                     # drawed in the RunningTaskGraph
-                    if not source_abb.type in ("kickoff", "computation"):
+                    if not source_abb.isA([S.kickoff, S.computation]):
                         edge = Edge(source_abb, target_abb)
                         logging.debug("Saved edge from %s -> %s", source_abb, target_abb)
                         self.removed_edges.append(edge)

@@ -1,7 +1,7 @@
 import logging
 from generator.graph.Task import Task
 from generator.graph.Subtask import Subtask
-from generator.graph.AtomicBasicBlock import AtomicBasicBlock, E
+from generator.graph.AtomicBasicBlock import AtomicBasicBlock, E, S
 from generator.graph.Function import Function
 from generator.graph.PassManager import PassManager
 from generator.graph.Sporadic import Alarm, ISR
@@ -74,10 +74,10 @@ class SystemGraph(GraphObject, PassManager):
                     return subtask
 
 
-    def find_syscall(self, function, type, arguments, multiple = False):
+    def find_syscall(self, function, syscall_type, arguments, multiple = False):
         abbs = []
         for abb in function.abbs:
-            if abb.type == type \
+            if abb.isA(syscall_type) \
                and abb.arguments == arguments:
                 abbs.append(abb)
         if multiple:
@@ -87,7 +87,7 @@ class SystemGraph(GraphObject, PassManager):
 
     def get_syscalls(self):
         return [x for x in self.get_abbs()
-                if x.type != "computation"]
+                if not x.isA(S.computation)]
 
     def scheduler_priority(self):
         """The scheduler priority is higher than the highest task"""
@@ -197,7 +197,7 @@ class SystemGraph(GraphObject, PassManager):
             if isinstance(function, Subtask) and function.is_isr:
                 # All ISR function get an additional iret block
                 iret = self.new_abb()
-                iret.make_it_a_syscall("iret", [function])
+                iret.make_it_a_syscall(S.iret, [function])
                 function.add_atomic_basic_block(iret)
                 function.exit_abb.add_cfg_edge(iret, E.function_level)
                 function.set_exit_abb(iret)
@@ -205,9 +205,9 @@ class SystemGraph(GraphObject, PassManager):
         # Add all system calls
         for syscall in self.rtsc.syscalls():
             abb = self.find_abb(syscall.abb)
-            assert abb.type == 'computation'
-            abb.make_it_a_syscall(syscall.name, syscall.arguments)
-            assert abb.type != 'computation'
+            assert abb.isA(S.computation)
+            abb.make_it_a_syscall(S.fromString(syscall.name), syscall.arguments)
+            assert not abb.isA(S.computation)
             assert abb in self.get_abbs()
         assert len(self.get_syscalls()) >= len(self.rtsc.syscalls())
 
@@ -218,14 +218,14 @@ class SystemGraph(GraphObject, PassManager):
 
 
     def add_system_objects(self):
-        def system_function(name):
-            function = Function(name)
-            self.functions[name] = function
+        def system_function(syscall_type):
+            function = Function(syscall_type.name)
+            self.functions[syscall_type.name] = function
             abb = self.new_abb()
             function.add_atomic_basic_block(abb)
             function.set_entry_abb(abb)
             function.is_system_function = True
-            abb.make_it_a_syscall(name, [])
+            abb.make_it_a_syscall(syscall_type, [])
             return function
 
         # Add Idle Task
@@ -240,15 +240,15 @@ class SystemGraph(GraphObject, PassManager):
         subtask.add_atomic_basic_block(abb)
         subtask.set_entry_abb(abb)
         subtask.set_autostart(True)
-        abb.make_it_a_syscall("Idle", [])
+        abb.make_it_a_syscall(S.Idle, [])
         # System Functions
-        StartOS = system_function("StartOS")
+        StartOS = system_function(S.StartOS)
         system_task.add_function(StartOS)
 
         # Generate an ActivateTask systemcall for the subtask
         for alarm in self.alarms:
             activate_task = self.new_abb()
-            activate_task.make_it_a_syscall("ActivateTask", [alarm.subtask])
+            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
             alarm.handler.add_atomic_basic_block(activate_task)
             alarm.handler.set_entry_abb(activate_task)
 

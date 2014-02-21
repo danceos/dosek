@@ -2,7 +2,7 @@ from generator.graph.Analysis import Analysis, EnsureComputationBlocks,\
                                      FixpointIteraton, MoveFunctionsToTask
 
 from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E, S
 from collections import namedtuple
 from copy import copy
 
@@ -38,10 +38,10 @@ class DynamicPriorityAnalysis(Analysis):
             taken = taken or in_state.taken
             free  = free  or in_state.free
 
-        if abb.type == "GetResource" and abb.arguments[0] == res:
+        if abb.isA(S.GetResource) and abb.arguments[0] == res:
             # Has an influence on the current resource
             state = self.StateVector(free = False, taken = True)
-        elif abb.type == "ReleaseResource" and abb.arguments[0] == res:
+        elif abb.isA(S.ReleaseResource) and abb.arguments[0] == res:
             # Has an influence on the current resource
             state = self.StateVector(free = True, taken = False)
         else:
@@ -109,7 +109,7 @@ class DynamicPriorityAnalysis(Analysis):
         # StartOS), the priority is the idle priority.
         for syscall in self.system.get_syscalls():
             precessors = syscall.get_incoming_nodes(E.task_level)
-            if syscall.type == "kickoff":
+            if syscall.isA(S.kickoff):
                 syscall.dynamic_priority = syscall.function.subtask.static_priority
             elif len(precessors) == 0:
                 assert syscall.function.is_system_function
@@ -117,4 +117,5 @@ class DynamicPriorityAnalysis(Analysis):
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority
             else:
-                assert False, "Weird Systemcall %s %s, Check EnsureComputationBlocks for bugs!" %(syscall, syscall.type)
+                assert False, "Weird Systemcall %s, Check EnsureComputationBlocks for bugs!"\
+                    %(syscall)
