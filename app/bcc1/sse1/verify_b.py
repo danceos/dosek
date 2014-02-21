@@ -45,7 +45,7 @@ def after_SystemStateFlow(analysis):
 
     t.promise_all_syscalls_checked()
 
-def after_Combine_RunningTask_SSE(analysis):
+def after_ConstructGlobalCFG(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
        get_functions(analysis.system, ["H1", "H2", "H3", "H4", "H5",

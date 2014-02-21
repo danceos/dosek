@@ -9,13 +9,26 @@ class E:
 
     state_transition = 10
 
+    state_flow = 20
+    state_flow_irq = 21
+
+
+
+
     @classmethod
     def to_string(cls, level):
         ret = {1: 'function_level',
                2: 'task_level',
                3: 'system_level',
                4: 'irq_level',
-               10: 'state_transition'}
+               
+               # Symbolic System Execution
+               10: 'state_transition',
+
+               # SystemStateFlow
+               20: 'state_flow',
+               21: 'state_flow_irq',
+        }
         return ret[level]
 
     @classmethod
@@ -24,7 +37,10 @@ class E:
                2: 'black',
                3: 'blue',
                4: 'red',
-               10: 'black'}
+               10: 'black',
+               20: 'darkorchid2',
+               21: 'gold1',
+        }
         return ret[level]
 
 
@@ -82,6 +98,13 @@ class AtomicBasicBlock(GraphObject):
     def get_incoming_nodes(self, level):
         assert isinstance(level, int)
         return [x.source for x in self.incoming_edges if x.level == level]
+
+    def has_edge_to(self, abb, level):
+        """Returns the edge of level to an specific abb"""
+        assert isinstance(level, int)
+        for edge in self.outgoing_edges:
+            if edge.level == level and edge.target == abb:
+                return edge
 
     def definite_after(self, level):
         nodes = self.get_outgoing_nodes(level)

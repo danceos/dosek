@@ -1,5 +1,6 @@
 import logging
 from generator.graph.common import *
+from generator.tools import stack
 
 class PassManager:
     def __init__(self):
@@ -10,18 +11,31 @@ class PassManager:
     def pass_graph(self):
         graph = GraphObjectContainer("PassManager", 'black', root = True)
 
+        ws = stack()
+
+        ws.extend([x.name() for x in self.analysis_pipe])
+        for p in self.passes.values():
+            if p.valid:
+                ws.push(p.name())
 
         passes = {}
-        for target, P in self.passes.items():
-            passes[target] = GraphObjectContainer(repr(target), 'black', 
-                                                  data = P.__doc__)
-            graph.subobjects.append(passes[target])
 
-        ret = []
-        for target in self.passes:
-            for source in self.passes[target].requires():
-                ret.append(Edge(passes[source], passes[target]))
-        graph.edges = ret
+        edges = []
+        while not ws.isEmpty():
+            p  = ws.pop()
+            if not p in passes:
+                P = self.passes[p]
+                passes[p] = GraphObjectContainer(p, 'black', 
+                                                 data = P.__doc__)
+                graph.subobjects.append(passes[p])
+                for requires in P.requires():
+                    ws.push(requires)
+                    edges.append((p, requires))
+
+
+        for edge in edges:
+            graph.edges.append(Edge(passes[edge[1]], passes[edge[0]]))
+
         return graph
 
     def register_analysis(self, analysis):
@@ -53,8 +67,13 @@ class PassManager:
                 self.verifiers[x] = getattr(module, x)
         logging.info("Loaded %d verifier functions" % len(self.verifiers))
 
-    def get_pass(self, name):
-        return self.passes[name]
+    def get_pass(self, name, only_enqueued = False):
+        P = self.passes.get(name, None)
+        if only_enqueued:
+            if P in self.analysis_pipe or P.valid:
+                return P
+            return None
+        return P
 
     def analyze(self, basefilename):
         verifiers_called = set()

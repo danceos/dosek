@@ -17,7 +17,8 @@ from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
 from generator.graph.AddFunctionCalls import AddFunctionCalls
 from generator.graph.GlobalControlFlowMetric import GlobalControlFlowMetric
 from generator.graph.SystemSemantic import *
-from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution, Combine_RunningTask_SSE
+from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution
+from generator.graph.ConstructGlobalCFG import ConstructGlobalCFG
 from generator.graph.SystemGraph import SystemGraph
 
 

@@ -70,7 +70,7 @@ class RunningTaskToolbox:
         return syscall
 
     def reachability_abbs(self, syscall, targets):
-        reachable_abbs = syscall.get_outgoing_nodes(E.system_level)
+        reachable_abbs = syscall.get_outgoing_nodes(E.state_flow)
         assert(set(targets) == set(reachable_abbs)), "%s:%s(%s)::: %s != %s" %(
             syscall.function.function_name, syscall.type,
             syscall.arguments, list(targets), list(reachable_abbs))
@@ -97,11 +97,11 @@ class RunningTaskToolbox:
             assert abb_info.state_before.current_abb == abb, "%s is weird"
             for state in abb_info.states_after:
                 assert state.current_abb != None
-                assert state.current_abb in abb.get_outgoing_nodes(E.system_level)
+                assert state.current_abb in abb.get_outgoing_nodes(E.state_flow)
 
             # When we have a subtask->subtask transition, the target
             # must always be an computation block
-            for next_abb in abb.get_outgoing_nodes(E.system_level):
+            for next_abb in abb.get_outgoing_nodes(E.state_flow):
                 if abb.function.subtask != next_abb.function.subtask:
                     assert next_abb.type in ("kickoff", "computation"), \
                         "Target of an subtask subtask Transition must always be " \

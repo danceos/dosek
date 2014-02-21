@@ -9,6 +9,12 @@ from generator.tools import panic
 
 
 class SystemStateFlow(Analysis):
+    """This pass lets the system state flow through the system. It should
+       be faster than the symbolic execution, but lead to a more
+       imprecise global cfg, since it merges states at function calls
+       and join nodes.
+
+    """
     def __init__(self):
         Analysis.__init__(self)
         self.sporadic_events = []
@@ -45,8 +51,8 @@ class SystemStateFlow(Analysis):
         return changed, before
 
     def set_state_on_edge(self, source, target, state):
-        if not target in source.get_outgoing_nodes(E.system_level):
-            source.add_cfg_edge(target, E.system_level)
+        if not target in source.get_outgoing_nodes(E.state_flow):
+            source.add_cfg_edge(target, E.state_flow)
             self.changed_current_block = True
 
         # We say that on the edge from one ABB to the other one, the
@@ -62,11 +68,11 @@ class SystemStateFlow(Analysis):
     def install_sporadic_events(self):
         # Install the alarm handlers
         for alarm in self.system.alarms:
-            self.sporadic_events.append(RunningTask_Alarm(alarm))
+            self.sporadic_events.append(SSF_Alarm(alarm))
 
         # Install the ISR handlers
         for isr in self.system.isrs:
-            wrapped_isr = RunningTask_ISR(isr, self.system_call_semantic)
+            wrapped_isr = SSF_ISR(isr, self.system_call_semantic)
             self.sporadic_events.append(wrapped_isr)
             self.isrs.append(wrapped_isr)
 
@@ -89,7 +95,7 @@ class SystemStateFlow(Analysis):
         self.changed_current_block, before = \
                 self.update_before_state(self.edge_states,
                                          self.before_abb_states,
-                                         block, E.system_level)
+                                         block, E.state_flow)
 
         # If this block belongs to a task, it must the highest
         # available task for the input state. Otherwise we wouldn't
@@ -120,7 +126,7 @@ class SystemStateFlow(Analysis):
         # This has to be done after the system call handling, since
         # new global links could have been introduced
         if self.changed_current_block:
-            for node in block.get_outgoing_nodes(E.system_level):
+            for node in block.get_outgoing_nodes(E.state_flow):
                 self.fixpoint.enqueue_soon(item = node)
         self.debug("}}}")
 
@@ -145,21 +151,15 @@ class SystemStateFlow(Analysis):
 
         # Merge ISRs
         for isr in self.isrs:
-            # Add IRQ edges from activating blocks
-            # for triggered_in in isr.triggered_in_abb:
-            #    triggered_in.add_cfg_edge(isr.handler.entry_abb, E.irq_level)
             for abb in isr.wrapped_isr.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
-                #for edge in abb.get_outgoing_edges(E.irq_level):
-                #   if edge.level == E.irq_level:
-                #        edge.level = E.system_level
 
     ##
     ## Result getters for this analysis
     ##
     def reachable_subtasks_from_abb(self, abb):
         subtasks = set()
-        for reached in abb.get_outgoing_nodes(E.system_level):
+        for reached in abb.get_outgoing_nodes(E.state_flow):
             st = self.running_task.for_abb(reached)
             subtasks.add(st)
         return subtasks
@@ -167,7 +167,7 @@ class SystemStateFlow(Analysis):
     def activating_subtasks(self, subtask):
         subtasks = set()
         abbs = set()
-        for reaching in subtask.entry_abb.get_incoming_nodes(E.system_level):
+        for reaching in subtask.entry_abb.get_incoming_nodes(E.state_flow):
             st = self.running_task.for_abb(reaching)
             if st == subtask:
                 continue
@@ -178,9 +178,9 @@ class SystemStateFlow(Analysis):
     def for_abb(self, abb):
         """Return a GlobalAbbInformation object for this object"""
         if abb in self.before_abb_states:
-            return RunningTaskGlobalAbbInformation(self, abb)
+            return SSF_GlobalAbbInformation(self, abb)
 
-class RunningTask_Alarm(SporadicEvent):
+class SSF_Alarm(SporadicEvent):
     def __init__(self, wrapped_alarm):
         SporadicEvent.__init__(self, wrapped_alarm.system_graph, wrapped_alarm.name)
         self.wrapped_alarm = wrapped_alarm
@@ -204,7 +204,7 @@ class RunningTask_Alarm(SporadicEvent):
         return copy_state
 
 
-class RunningTask_ISR(SporadicEvent):
+class SSF_ISR(SporadicEvent):
     def __init__(self, wrapped_isr, system_call_semantic):
         SporadicEvent.__init__(self, wrapped_isr.system_graph, wrapped_isr.name)
         self.system_call_semantic = system_call_semantic
@@ -234,7 +234,7 @@ class RunningTask_ISR(SporadicEvent):
                 SystemStateFlow.update_before_state(self.edge_states,
                                                         self.before_abb_states,
                                                         block,
-                                                        edge_type = E.irq_level)
+                                                        edge_type = E.state_flow_irq)
 
         after_states = self.system_call_semantic.do_SystemCall(
             block, before,
@@ -247,13 +247,10 @@ class RunningTask_ISR(SporadicEvent):
         for after in after_states:
             self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
 
-
-
-
         # This has to be done after the system call handling, since
         # new irq links could have been introduced
         if self.changed_current_block:
-            for node in block.get_outgoing_nodes(E.irq_level):
+            for node in block.get_outgoing_nodes(E.state_flow_irq):
                 self.fixpoint.enqueue_soon(item = node)
 
         # Never leave the handler function here
@@ -268,8 +265,8 @@ class RunningTask_ISR(SporadicEvent):
 
     def set_state_on_edge(self, source, target, state):
 
-        if not target in source.get_outgoing_nodes(E.irq_level):
-            source.add_cfg_edge(target, E.irq_level)
+        if not target in source.get_outgoing_nodes(E.state_flow_irq):
+            source.add_cfg_edge(target, E.state_flow_irq)
             self.changed_current_block = True
 
         # We say that on the edge from one ABB to the other one, the
@@ -293,15 +290,15 @@ class RunningTask_ISR(SporadicEvent):
 
         # Clean old IRQ edges
         for abb in self.wrapped_isr.handler.abbs:
-            for edge in abb.get_outgoing_edges(E.irq_level):
-                abb.remove_cfg_edge(edge.target, E.irq_level)
+            for edge in abb.get_outgoing_edges(E.state_flow_irq):
+                abb.remove_cfg_edge(edge.target, E.state_flow_irq)
 
         self.edge_states = dict()
         self.before_abb_states = dict()
 
         self.fixpoint = FixpointIteraton([entry_abb])
         self.fixpoint.do(self.block_functor)
-        
+
         # fixup current running abb for entry_abb
         self.before_abb_states[entry_abb].current_abb = entry_abb
 
@@ -318,12 +315,12 @@ class RunningTask_ISR(SporadicEvent):
         return self.result
 
 
-class RunningTaskGlobalAbbInformation(GlobalAbbInfo):
+class SSF_GlobalAbbInformation(GlobalAbbInfo):
     def __init__(self, analysis, abb):
         GlobalAbbInfo.__init__(self)
         self.analysis = analysis
         self.abb      = abb
-        assert self.analysis.valid, "Running Task Analysis is not valid"
+        assert self.analysis.valid, "SystemStateFlow is not valid"
 
     @property
     def state_before(self):
@@ -332,9 +329,7 @@ class RunningTaskGlobalAbbInformation(GlobalAbbInfo):
     @property
     def states_after(self):
         """Returns a list of possible next system states"""
-        if len(self.abb.get_outgoing_edges(E.irq_level)) > 0:
-            logging.warning("IRQs not yet supported!")
-        edges = set(self.abb.get_outgoing_edges(E.system_level))
+        edges = set(self.abb.get_outgoing_edges(E.state_flow))
 
         states = []
         for edge in edges:

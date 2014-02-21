@@ -7,7 +7,7 @@ class GlobalControlFlowMetric(Analysis):
         self.filename = filename
     def requires(self):
         # We require all possible system edges to be contructed
-        return ["Combine_RunningTask_SSE"]
+        return ["ConstructGlobalCFG"]
 
     def do(self):
         current_task = self.get_analysis("CurrentRunningSubtask")

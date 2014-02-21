@@ -22,7 +22,8 @@ def after_SystemStateFlow(analysis):
                    H2)
 
     # H2.entry can be reached by H3.entry, when alarm was running
-    assert H2.entry_abb in H3.entry_abb.definite_after(E.function_level).get_outgoing_nodes(E.system_level)
+    assert H2.entry_abb in H3.entry_abb.definite_after(E.function_level)\
+                                       .get_outgoing_nodes(E.state_flow)
 
     t.reachability(Idle, "Idle", [], # =>
          [Idle])

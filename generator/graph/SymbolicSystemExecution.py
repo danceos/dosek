@@ -6,8 +6,12 @@ from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
 from generator.tools import panic, stack, unwrap_seq, group_by, select_distinct
 
-
 class SymbolicSystemExecution(Analysis, GraphObject):
+    """This pass executes the system state symbolic. The whole system
+       state space is explored. This is more precise than the state
+       flow analysis, but may take longer, since it might explode.
+
+    """
     def __init__(self):
         Analysis.__init__(self)
         GraphObject.__init__(self, "SymbolicSystemState", root = True)
@@ -126,8 +130,44 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Group States by ABB
         self.states_by_abb = group_by(self.states_next.keys(), "current_abb")
 
+    def for_abb(self, abb):
+        """Return a GlobalAbbInformation object for this object"""
+        assert self.valid
+        if abb in self.states_by_abb:
+            return SSE_GlobalAbbInfo(self, abb)
+
+
+
+class SSE_GlobalAbbInfo(GlobalAbbInfo):
+    def __init__(self, analysis, abb):
+        GlobalAbbInfo.__init__(self)
+        self.analysis = analysis
+        self.abb      = abb
+        assert self.analysis.valid, "SymbolicSystemExecution is not valid"
+
+        # The saved states is always before the effect of the abb has
+        # taken place
+        states_in_this_abb = self.analysis.states_by_abb[abb]
+
+        self.__cached_state_before = \
+            SystemState.merge_many(self.analysis.system, states_in_this_abb)
+
+        self.__cached_states_after = set()
+        for source_state in states_in_this_abb:
+            self.__cached_states_after.update(self.analysis.states_next[source_state])
+
+    @property
+    def state_before(self):
+        return self.__cached_state_before
+
+    @property
+    def states_after(self):
+        """Returns a list of possible next system states"""
+        return self.__cached_states_after
+
 
 class StateGraphSubobject(GraphObject):
+    """Just a helper class to print the state graph"""
     def __init__(self, analysis, state):
         GraphObject.__init__(self, "State",
                              color = 'green')
@@ -149,44 +189,3 @@ class StateGraphSubobject(GraphObject):
 
 
         return ret
-
-class Combine_RunningTask_SSE(Analysis):
-    def __init__(self):
-        Analysis.__init__(self)
-        self.removed_edges = None
-
-    def requires(self):
-        # We require all possible system edges to be contructed
-        return ["SystemStateFlow", "SymbolicSystemExecution"]
-
-    def do(self):
-        self.removed_edges = []
-        SSE = self.system.get_pass("SymbolicSystemExecution")
-        for source_abb in SSE.states_by_abb:
-            old_global_nodes = set(source_abb.get_outgoing_nodes(E.system_level))
-            followup_abbs    = set()
-            for state in SSE.states_by_abb[source_abb]:
-                followup_abbs |= select_distinct(SSE.states_next[state], "current_abb")
-            # Are there edges that where discovered in SSE, that are not already in the graph?
-            more_in_SSE = followup_abbs - old_global_nodes
-            # Are there edges that where discovered in the graph but not by SSE
-            more_in_Graph = old_global_nodes - followup_abbs
-
-            # We can remove all edges from the graph, that are not in
-            # SSE, since SSE produces more precise results
-            for target_abb in more_in_Graph:
-                # FIXME: Jumps from computation might be the result of
-                # sporadic actions, but those are not explicitly
-                # drawed in the RunningTaskGraph
-                if not source_abb.type in ("kickoff", "computation"):
-                    edge = source_abb.remove_cfg_edge(target_abb, E.system_level)
-                    logging.debug("Removed Edge from %s -> %s", source_abb, target_abb)
-                    self.removed_edges.append(edge)
-
-            for target_abb in more_in_SSE:
-                if source_abb.function.subtask.is_isr\
-                   or target_abb.function.subtask.is_isr:
-                    continue
-
-                panic("SSE has found more edges than RunningTask (%s -> %s)", 
-                      source_abb.path(), target_abb.path())

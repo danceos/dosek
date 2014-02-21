@@ -25,7 +25,7 @@ def after_SystemStateFlow(analysis):
 
     TT3 = t.reachability(H2, "TerminateTask", [], # =>
                          [H3])
-    returned_nodes = TT3.get_outgoing_nodes(E.system_level)
+    returned_nodes = TT3.get_outgoing_nodes(E.state_flow)
     assert len(returned_nodes) == 2
     # When H3 was preempted we continue in entry_abb+1
     assert H3.entry_abb.definite_after(E.function_level) in returned_nodes

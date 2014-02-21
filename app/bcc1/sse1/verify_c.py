@@ -15,7 +15,7 @@ def after_SystemStateFlow(analysis):
         t.reachability_abbs(syscall,
                             [H2.entry_abb, H3.entry_abb])
         # Change at these two points is equal
-        assert len(syscall.get_outgoing_nodes(E.system_level)) == 2
+        assert len(syscall.get_outgoing_nodes(E.state_flow)) == 2
 
     t.reachability(H3, "TerminateTask", [], # =>
                    [H4] )
@@ -27,7 +27,7 @@ def after_SystemStateFlow(analysis):
     # WE DO NOT PROMISE THSI!
     # t.promise_all_syscalls_checked()
 
-def after_Combine_RunningTask_SSE(analysis):
+def after_ConstructGlobalCFG(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
        get_functions(analysis.system, ["H1", "H2", "H3", "H4", "H5",
@@ -45,5 +45,3 @@ def after_Combine_RunningTask_SSE(analysis):
         if syscall.definite_after(E.system_level) == H3.entry_abb:
             syscalls_found[1] = True
     assert all(syscalls_found), "Not all ReleaseResource dispatches where found (to H2/H3)"
-    
-

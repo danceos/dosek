@@ -13,7 +13,7 @@ class PrioritySpreadingPass(Analysis):
         self.prio_to_participant = {}
 
     def requires(self):
-        return ["AddFunctionCalls"]
+        return []
 
     def do(self):
         # Get list of all subtasks

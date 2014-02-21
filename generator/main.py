@@ -97,9 +97,10 @@ if __name__ == "__main__":
     # System-Level: Analysis
     pass_manager.register_analysis(SystemStateFlow())
     pass_manager.register_analysis(SymbolicSystemExecution())
-    pass_manager.register_analysis(Combine_RunningTask_SSE())
+    pass_manager.register_analysis(ConstructGlobalCFG())
 
-    # pass_manager.register_and_enqueue_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
+    # Statistics modules
+    pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
 
 
     if options.arch == "i386":
@@ -117,8 +118,13 @@ if __name__ == "__main__":
     if options.specialize_systemcalls:
         # Only when we want to specialize the system calls, run the
         # System-Level analysises
-        pass_manager.enqueue_analysis("Combine_RunningTask_SSE")
-        global_abb_information = pass_manager.get_pass("SystemStateFlow")
+        pass_manager.enqueue_analysis("SymbolicSystemExecution")
+        pass_manager.enqueue_analysis("SystemStateFlow")
+
+        global_cfg = pass_manager.enqueue_analysis("ConstructGlobalCFG")
+        global_abb_information = global_cfg.global_abb_information_provider(graph)
+        logging.info("Global control flow information is provided by %s",
+                     global_abb_information.name())
         syscall_rules = SpecializedSystemCalls(global_abb_information)
     else:
         syscall_rules = FullSystemCalls()

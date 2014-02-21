@@ -24,7 +24,7 @@ def after_SystemStateFlow(analysis):
                    [H5, Idle])
 
     # The dataflow analysis wrongly calculates this edge
-    assert H5.entry_abb in TT.get_outgoing_nodes(E.system_level)
+    assert H5.entry_abb in TT.get_outgoing_nodes(E.state_flow)
 
     t.reachability(Idle, "Idle", [], # =>
          [Idle])
