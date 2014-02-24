@@ -52,12 +52,6 @@ public:
 		// unblock ISR2s by lowering APIC task priority
 		// TODO: do this at end of syscall, not here?
 		LAPIC::set_task_prio(0);
-
-		// should never come here when called from userspace
-		// TODO: remove this check?
-		if(Machine::current_ring() > 0) {
-			Machine::unreachable();
-		}
 	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
