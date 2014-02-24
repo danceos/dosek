@@ -103,9 +103,9 @@ macro(fail_targets TNAME ELF TEST)
 			COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${GIT_REV_FILE} -g ${GIT}
 			COMMAND ${CMAKE_COMMAND} -E remove_directory ${STATEDIR}
 			COMMAND ${FAIL_TRACE} -f ${BOCHSRC} -q
-				-Wf,--start-symbol=_trace_start_marker
-				-Wf,--save-symbol=_trace_start_marker
-				-Wf,--end-symbol=_trace_end_marker
+				-Wf,--start-symbol=test
+				-Wf,--save-symbol=test
+				-Wf,--end-symbol=test_finish
 				-Wf,--trace-file=trace.pb
 				-Wf,--elf-file=${ELF}
 			COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"
