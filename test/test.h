@@ -67,31 +67,17 @@ typedef unsigned int expected_value_t;
 
 
 extern "C" {
-	/**
-	 * @name FAIL* interface variables
-	 * These are not changed during injection time as they are outside of fail namespace
-	 */
-	// @{
-
-	//! encoded result value (result.vc) will be copied here
-	extern value_t encoded_storage;
-
-	//! test check function detected error in result
-	extern bool detected_error;
-
 	//! all tests (so far) passed
 	extern bool global_all_ok;
 
 	//! number of positive checks in this test
-	extern	int positive_tests;
+	extern int positive_tests;
 
 	//! number of current experiment
-	extern	int experiment_number;
+	extern int experiment_number;
 
 	//! buffer for expected result values
 	extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
-
-	// @}
 
 	//! interrupts were enabled before test checks
 	extern bool interrupts_suspended;
@@ -106,26 +92,17 @@ extern "C" {
 	 * @name User supplied functions
 	 */
 	// @{
-      	//! user-supplied prepare function
+    //! user-supplied prepare function
 	void test_prepare(void);
 
 	//! user-supplied test function
 	noinline void test(void);
 	// @}
 
-	/**
-	 * @name FAIL* markers
-	 */
-	// @{
-	extern void (*marker_start)();
-	extern void (*marker_start_check)();
-	extern void (*marker_stop_check)();
-	extern void (*trace_start_marker)();
-	extern void (*trace_end_marker)();
-	// @}
+    noinline void test_finish(int tests=0);
 
-	extern char trace_table[256];
-	extern unsigned char trace_table_idx;
+    //! FAIL* trace location for FAIL* test compatibility
+    extern volatile uint32_t fail_trace;
 }
 
 
@@ -138,13 +115,9 @@ inlinehint void test_start()
 	kout.setcolor(Color::WHITE, Color::BLACK);
 	kout << endl << "Test " << (unsigned) experiment_number << ": " << endl;
 	kout.setcolor(Color::YELLOW, Color::BLACK);
-
-	/* Set a marker for starting the test */
-	marker_start();
 }
 
 inlinehint void test_start_check() {
-	marker_start_check();
 	interrupts_suspended = Machine::interrupts_enabled();
 	Machine::disable_interrupts();
 }
@@ -210,7 +183,6 @@ inlinehint void __test_positive_tests(int pos_tests, int sign) {
 	}
 
 	if(interrupts_suspended) Machine::enable_interrupts();
-	marker_stop_check();
 
 	for (int i = 0; i < EXPECTED_VALUES_MAX; i++) {
 		expected_values[i] = 0xAAAA5555;
@@ -231,25 +203,18 @@ inlinehint void test_positive_tests_gt(int positive_tests) {
 
 
 // run one test with unencoded result
-// detectable can be set if the result value is known and error could be detected to set detected_error
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
-inlinehint void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected, bool detectable) {
+inlinehint void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected) {
 	test_expect_store(0, expected);
-	encoded_storage = 0;
-	detected_error = false;
 
 	/* Start the testcase (including marker_start() */
 	test_start();
 	testfun();
 	test_start_check();
-	encoded_storage = result_var;
 
 	/* Chcek if result value is equal to expected */
 	test_expect_eq(0, result_var);
-
-	/* If the result value is known and the error would be detected set detected_error */
-	if(detectable) detected_error = (result_var != expected);
 
 	/* Check has to succeed */
 	test_positive_tests_gt(0);
@@ -261,20 +226,17 @@ inlinehint void run_checkable_function(void (* volatile testfun)(void), expected
 template<typename T>
 inlinehint void run_checkable_function(void (* volatile testfun)(void), T& result_var, value_t expected) {
 	test_expect_store(0, expected);
-	encoded_storage = 0;
-	detected_error = false;
 
 	/* Start the testcase (including marker_start() */
 	test_start();
 	testfun();
 	test_start_check();
-	encoded_storage = result_var.vc;
 
 	/* Either the decoded value is equal to expected */
 	test_expect_eq(0, result_var.decode());
 
 	/* Or the check says: undecodable */
-	detected_error = !result_var.check();
+	bool detected_error = !result_var.check();
 	test_assert(detected_error == true);
 
 	/* and at least one of the tests has to succeed */
@@ -290,25 +252,6 @@ inlinehint void test_init(void) {
 	global_all_ok = true;
 	if (test_prepare != 0) {
 		test_prepare();
-	}
-
-	// run tests
-	trace_start_marker();
-}
-
-
-
-inlinehint void test_finish(int tests=0) {
-	trace_end_marker();
-
-	if((tests > 0) && (tests != experiment_number)) {
-		kout << "INCORRECT NUMBER of tests run: ";
-		kout << dec << experiment_number << " instead of " << tests;
-		kout << endl;
-	} else {
-		kout << "Tests finished: ";
-		kout << (global_all_ok ? "ALL OK" : "some tests failed");
-		kout << endl;
 	}
 }
 
@@ -336,6 +279,7 @@ inlinehint void test_main(void)
 }
 
 inlinehint void test_trace(char chr) {
+    fail_trace = (uint32_t) chr;
 	if (trace_table_idx < 0xff)
 		trace_table[trace_table_idx++] = chr;
 }
