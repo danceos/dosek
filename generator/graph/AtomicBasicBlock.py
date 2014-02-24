@@ -62,6 +62,13 @@ class SyscallType(IntEnum):
     GetResource = 25
     ReleaseResource = 26
 
+    DisableAllInterrupts = 27
+    EnableAllInterrupts  = 28
+    SuspendAllInterrupts = 29
+    ResumeAllInterrupts  = 30
+    SuspendOSInterrupts  = 31
+    ResumeOSInterrupts   = 32
+
     def isRealSyscall(self):
         return self.value >= SyscallType.ActivateTask
 
@@ -88,12 +95,20 @@ class AtomicBasicBlock(GraphObject):
         # This is set by the DynamicPriorityAnalysis
         self.dynamic_priority = None
 
+        # This is set by InterruptControlAnalysis
+        self.interrupt_block_all = None
+        self.interrupt_block_os  = None
+
     def isA(self, syscall_type):
         if isinstance(syscall_type, str):
             syscall_type = SyscallType.fromString(syscall_type)
         if isinstance(syscall_type, collections.Iterable):
             return self.syscall_type in syscall_type
         return self.syscall_type == syscall_type
+
+    @property
+    def interrupt_block(self):
+        return self.interrupt_block_all or self.interrupt_block_os
 
     # Edge handling
     ################################################################
@@ -216,14 +231,21 @@ class AtomicBasicBlock(GraphObject):
         if self.function.subtask:
             task = self.function.subtask.name
 
-        if self.isA(S.computation):
-            return {"id": repr(self),
-                    "prio": str(self.dynamic_priority),
-                    'task': task}
-        return {'id': repr(self),
-                'arguments': repr(self.arguments),
-                'prio': str(self.dynamic_priority),
-                'task': task}
+        ret = {"id": repr(self),
+               "prio": str(self.dynamic_priority),
+               "task": task}
+
+        if self.arguments:
+            ret["arguments"] = str(self.arguments)
+        if self.interrupt_block_os or self.interrupt_block_all:
+            x = []
+            if self.interrupt_block_os:
+                x += ["OS"]
+            if self.interrupt_block_all:
+                x += ["All"]
+            ret["block-irq"] = "|".join(x)
+
+        return ret
 
     def __repr__(self):
         if self.isA(S.computation):

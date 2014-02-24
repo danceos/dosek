@@ -29,7 +29,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return ["DynamicPriorityAnalysis"]
+        return ["DynamicPriorityAnalysis", "InterruptControlAnalysis"]
 
     def get_edge_filter(self):
         return set([E.function_level, E.task_level])
@@ -96,19 +96,29 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         # Instanciate a new system call semantic
         self.system_call_semantic = SystemCallSemantic(self.system, self.running_task)
+        scc = self.system_call_semantic
 
-        self.transitions = {S.StartOS: self.system_call_semantic.do_StartOS,
-                            S.ActivateTask: self.system_call_semantic.do_ActivateTask,
-                            S.TerminateTask: self.system_call_semantic.do_TerminateTask,
-                            S.ChainTask: self.system_call_semantic.do_ChainTask,
-                            S.computation: self.do_computation_with_sporadic_events,
-                            S.kickoff: self.system_call_semantic.do_computation, # NO ISRS
-                            S.SetRelAlarm: self.system_call_semantic.do_computation, # ignore
-                            S.CancelAlarm: self.system_call_semantic.do_computation, # ignore
-                            S.GetResource: self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-                            S.ReleaseResource: self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-                            S.Idle: self.system_call_semantic.do_Idle,
-                            S.iret: self.system_call_semantic.do_TerminateTask}
+        self.transitions = {S.StartOS         : scc.do_StartOS,
+                            S.ActivateTask    : scc.do_ActivateTask,
+                            S.TerminateTask   : scc.do_TerminateTask,
+                            S.ChainTask       : scc.do_ChainTask,
+                            S.computation     : self.do_computation_with_sporadic_events,
+                            S.kickoff         : scc.do_computation, # NO ISRS
+                            S.SetRelAlarm     : scc.do_computation, # ignore
+                            S.CancelAlarm     : scc.do_computation, # ignore
+                            # Done in DynamicPriorityAnalysis
+                            S.GetResource          : scc.do_computation,
+                            S.ReleaseResource      : scc.do_computation,
+                            # Done in InterruptControlAnalysis
+                            S.DisableAllInterrupts : scc.do_computation,
+                            S.EnableAllInterrupts  : scc.do_computation,
+                            S.SuspendAllInterrupts : scc.do_computation,
+                            S.ResumeAllInterrupts  : scc.do_computation,
+                            S.SuspendOSInterrupts  : scc.do_computation,
+                            S.ResumeOSInterrupts   : scc.do_computation,
+
+                            S.Idle            : scc.do_Idle,
+                            S.iret            : scc.do_TerminateTask}
 
         # Instanciate the big dict (State->[State])
         self.states_next = {}

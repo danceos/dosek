@@ -30,7 +30,7 @@ class SystemStateFlow(Analysis):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return [DynamicPriorityAnalysis.name()]
+        return [DynamicPriorityAnalysis.name(), "InterruptControlAnalysis"]
 
     def get_edge_filter(self):
         return set([E.task_level, E.state_flow, E.state_flow_irq])
@@ -104,22 +104,30 @@ class SystemStateFlow(Analysis):
         # available task for the input state. Otherwise we wouldn't
         # have been scheduled (or the current task is non-preemptable)
         calling_task = self.running_task.for_abb(block)
+        scc = self.system_call_semantic
 
-        after_states = self.system_call_semantic.do_SystemCall(
+        after_states = scc.do_SystemCall(
             block, before,
-            {S.StartOS: self.system_call_semantic.do_StartOS,
-             S.ActivateTask: self.system_call_semantic.do_ActivateTask,
-             S.TerminateTask: self.system_call_semantic.do_TerminateTask,
-             S.ChainTask: self.system_call_semantic.do_ChainTask,
-             S.computation: self.do_computation_with_sporadic_events,
-             S.kickoff: self.system_call_semantic.do_computation, # NO ISRS!
-             S.SetRelAlarm: self.system_call_semantic.do_computation, # ignore
-             S.CancelAlarm: self.system_call_semantic.do_computation, # ignore
-             S.GetResource: self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-             S.ReleaseResource: self.system_call_semantic.do_computation, # Done in DynamicPriorityAnalysis
-             S.Idle: self.system_call_semantic.do_Idle})
-        # Merge all system call possibilities
-        # after = SystemState.merge_many(self.system, after_states)
+            {S.StartOS         : scc.do_StartOS,
+             S.ActivateTask    : scc.do_ActivateTask,
+             S.TerminateTask   : scc.do_TerminateTask,
+             S.ChainTask       : scc.do_ChainTask,
+             S.computation     : self.do_computation_with_sporadic_events,
+             S.kickoff         : scc.do_computation, # NO ISRS!
+             S.SetRelAlarm     : scc.do_computation, # ignore
+             S.CancelAlarm     : scc.do_computation, # ignore
+             # Done in DynamicPriorityAnalysis
+             S.GetResource     : scc.do_computation,
+             S.ReleaseResource : scc.do_computation,
+             # Done in InterruptControlAnalysis
+             S.DisableAllInterrupts : scc.do_computation,
+             S.EnableAllInterrupts  : scc.do_computation,
+             S.SuspendAllInterrupts : scc.do_computation,
+             S.ResumeAllInterrupts  : scc.do_computation,
+             S.SuspendOSInterrupts  : scc.do_computation,
+             S.ResumeOSInterrupts   : scc.do_computation,
+
+             S.Idle            : scc.do_Idle})
 
         # Schedule depending on the possible output state
         for after in after_states:

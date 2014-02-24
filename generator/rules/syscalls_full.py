@@ -105,3 +105,38 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb),
                             str(next_prio)])
+
+    # Interrupt Handling
+    def disable_irq(self, block, abb):
+        before = abb.get_incoming_nodes(E.task_level)
+        disabled = [x.interrupt_block_all or x.interrupt_block_os
+                    for x in before]
+        # If the interrupts were blocked before do not a thing
+        if any(disabled):
+            assert all(disabled)
+            return
+
+        self.call_function(block,
+                           "Machine::disable_interrupts",
+                           "void", [])
+
+    def enable_irq(self, block, abb):
+        before = abb.get_outgoing_nodes(E.task_level)
+        disabled = [x.interrupt_block_all or x.interrupt_block_os
+                    for x in before]
+        # If the interrupts were unblocked before do not a thing
+        if any(disabled):
+            assert all(disabled)
+            return
+
+        self.call_function(block,
+                           "Machine::enable_interrupts",
+                           "void", [])
+
+    def DisableAllInterrupts(self, userspace, abb):
+        self.disable_irq(userspace, abb)
+
+    def EnableAllInterrupts(self, userspace, abb):
+        self.enable_irq(userspace, abb)
+
+

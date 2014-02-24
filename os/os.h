@@ -202,6 +202,21 @@ typedef uint16_t TickType;
 #define ShutdownOS(STATUS)			\
   OSEKOS_ShutdownOS(STATUS)
 
+#define DisableAllInterrupts()                  \
+  OSEKOS_DisableAllInterrupts()
+#define EnableAllInterrupts()                  \
+  OSEKOS_EnableAllInterrupts()
+#define SuspendAllInterrupts()                  \
+  OSEKOS_SuspendAllInterrupts()
+#define ResumeAllInterrupts()                   \
+  OSEKOS_ResumeAllInterrupts()
+#define SuspendOSInterrupts()                  \
+  OSEKOS_SuspendOSInterrupts()
+#define ResumeOSInterrupts()                   \
+  OSEKOS_ResumeOSInterrupts()
+
+
+
 /******************************************************************************
  *                                                                            *
  * API Definitions                                                            *
@@ -330,6 +345,21 @@ extern StatusType OSEKOS_ReceiveDynamicMessage(MessageIdentifier m,void *data,un
  * \brief Send a message without content
  **/
 extern StatusType OSEKOS_SendZeroMessage(MessageIdentifier m);
+
+/**
+ * \brief Methods for interrupt disabling/enabling. This pair cannot
+ *        be stacked.
+ **/
+extern void OSEKOS_DisableAllInterrupts();
+extern void OSEKOS_EnableAllInterrupts();
+
+/**
+ * \brief Same as disable/enable but can be stacked.
+ **/
+extern void OSEKOS_SuspendAllInterrupts();
+extern void OSEKOS_ResumeAllInterrupts();
+extern void OSEKOS_SuspendOSInterrupts();
+extern void OSEKOS_ResumeOSInterrupts();
 
 /******************************************************************************
  *                                                                            *

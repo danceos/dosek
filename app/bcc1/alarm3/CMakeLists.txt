@@ -1,0 +1,45 @@
+COREDOS_BINARY(
+  NAME bcc1_alarm3a
+  SYSTEM_XML system.xml
+  VERIFY verify_a.py
+  LIBS libtest
+  TEST_ISO
+  a.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_alarm3b
+  SYSTEM_XML system.xml
+  VERIFY verify_b.py
+  LIBS libtest
+  TEST_ISO
+  b.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_alarm3c
+  SYSTEM_XML system.xml
+  VERIFY verify_c.py
+  LIBS libtest
+  TEST_ISO
+  c.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_alarm3d
+  SYSTEM_XML system.xml
+  VERIFY verify_d.py
+  LIBS libtest
+  TEST_ISO
+  d.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_alarm3e
+  SYSTEM_XML system.xml
+  VERIFY verify_e.py
+  LIBS libtest
+  TEST_ISO
+  e.cc
+)
+

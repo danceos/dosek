@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock
 from generator.graph.common import *
 from generator.tools import stack
@@ -62,7 +64,10 @@ class PassManager:
         if not path:
             return
         import imp
+        old_path = sys.path
+        sys.path = sys.path + [os.path.dirname(path)]
         module = imp.load_source('generator.verifier', path)
+        sys.path = old_path
         for x in dir(module):
             if x.startswith('after') or x.startswith('before'):
                 self.verifiers[x] = getattr(module, x)

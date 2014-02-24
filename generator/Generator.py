@@ -70,12 +70,12 @@ class Generator:
         "GetTaskID": None, # ["StatusType", "TaskRefType"],
         "GetTaskState": None, # ["StatusType", "TaskType", "TaskStateRefType"],
 
-        "EnableAllInterrupts": None, # ["void"],
-        "DisableAllInterrupts": None, # ["void"],
-        "ResumeAllInterrupts": None, # ["void"],
-        "SuspendAllInterrupts": None, # ["void"],
-        "ResumeOSInterrupts":  None, # ["void"],
-        "SuspendOSInterrupts": None, #["void"],
+        "EnableAllInterrupts"  : ["void"],
+        "DisableAllInterrupts" : ["void"],
+        "ResumeAllInterrupts"  : ["void"],
+        "SuspendAllInterrupts" : ["void"],
+        "ResumeOSInterrupts"   : ["void"],
+        "SuspendOSInterrupts"  : ["void"],
 
         "GetResource": ["StatusType", "ResourceType"],
         "ReleaseResource": ["StatusType", "ResourceType"],

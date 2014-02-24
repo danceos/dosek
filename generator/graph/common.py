@@ -23,8 +23,8 @@ class GraphObject:
             if data != None:
                 if type(data) == str:
                     return data.replace("\n", "\\l")
-                lines = ["%s: %s" % x for x in data.items()]
-                return "\\l".join(lines)
+                lines = sorted(["%s: %s" % x for x in data.items()])
+                return "\\l".join(lines) + "\\l"
         return self.__class__.__name__
 
     def dump_as_dot(self, current_depth = 0):

@@ -61,6 +61,20 @@ class UnencodedSystem(SimpleSystem):
             userspace.unused_parameter(0)
             syscall = func_syscall_block(userspace, subtask, [])
             self.syscall_rules.ReleaseResource(syscall, systemcall.abb)
+        # Interrupt Handling
+        elif systemcall.function == "DisableAllInterrupts":
+            self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
+        elif systemcall.function == "EnableAllInterrupts":
+            self.syscall_rules.EnableAllInterrupts(userspace, systemcall.abb)
+        elif systemcall.function == "SuspendAllInterrupts":
+            self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
+        elif systemcall.function == "ResumeAllInterrupts":
+            self.syscall_rules.EnableAllInterrupts(userspace, systemcall.abb)
+        elif systemcall.function == "SuspendOSInterrupts":
+            self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
+        elif systemcall.function == "ResumeOSInterrupts":
+            self.syscall_rules.EnableAllInterrupts(userspace, systemcall.abb)
+        # Alarms
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
             arg1 = self.convert_argument(userspace, userspace.arguments()[1])

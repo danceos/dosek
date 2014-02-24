@@ -90,6 +90,10 @@ if __name__ == "__main__":
     pass_manager.register_analysis(CurrentRunningSubtask())
     pass_manager.register_analysis(MoveFunctionsToTask())
 
+    # Task-level: Enable/Disable IRQ control
+    pass_manager.register_and_enqueue_analysis(InterruptControlAnalysis())
+
+
     # Task-Level: Dynamic Priority spreading pass
     pass_manager.register_analysis(PrioritySpreadingPass())
     pass_manager.register_and_enqueue_analysis(DynamicPriorityAnalysis())

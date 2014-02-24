@@ -1,4 +1,5 @@
 from generator.graph.AtomicBasicBlock import E,S
+from generator.graph.SystemStateFlow import SystemStateFlow
 
 global E
 
@@ -22,6 +23,7 @@ def get_objects(system, names):
 
 class RunningTaskToolbox:
     def __init__(self, analysis):
+        assert isinstance(analysis, SystemStateFlow)
         self.analysis = analysis
         self.checked_syscalls = set()
         for syscall in self.analysis.system.get_syscalls():
@@ -106,4 +108,5 @@ class RunningTaskToolbox:
                     assert next_abb.isA([S.kickoff, S.computation]), \
                         "Target of an subtask subtask Transition must always be " \
                         + " an computation block (%s -> %s)" %(abb.path(), next_abb.path())
+
 

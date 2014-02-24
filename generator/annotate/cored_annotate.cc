@@ -121,4 +121,24 @@ void OSEKOS_ShutdownOS(StatusType m) {
 
 }
 
+void OSEKOS_DisableAllInterrupts() {
+    rtsc_systemcall();
+}
+void OSEKOS_EnableAllInterrupts() {
+    rtsc_systemcall();
+}
+void OSEKOS_SuspendAllInterrupts() {
+    rtsc_systemcall();
+}
+void OSEKOS_ResumeAllInterrupts() {
+    rtsc_systemcall();
+}
+void OSEKOS_SuspendOSInterrupts() {
+    rtsc_systemcall();
+}
+void OSEKOS_ResumeOSInterrupts() {
+    rtsc_systemcall();
+}
+
+
 }

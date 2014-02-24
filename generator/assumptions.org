@@ -2,3 +2,6 @@ Here we collect all assumptions that are used during development. All
 of them should be tested in a verification pass.
 
 - No TerminateTask in ISR2
+
+* System Graph
+  - Ein Nachfolger/Vorgaenger pro Systemcall
