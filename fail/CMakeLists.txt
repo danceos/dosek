@@ -88,7 +88,7 @@ macro(fail_targets TNAME ELF TEST)
 		file(REMOVE ${GIT_REV_FILE}.tmp) # discard dummy output file
 
 		# store git hash in FAIL_VARIANT
-		message(STATUS "[${PROJECT_NAME}] FAIL* git hash: ${GIT_REV}")
+		message(STATUS "[${PROJECT_NAME}] FAIL* git hash for ${TNAME}: ${GIT_REV}")
 		set(FAIL_VARIANT "${FAIL_VARIANT}-${GIT_REV}")
 
 		# common options
@@ -96,6 +96,7 @@ macro(fail_targets TNAME ELF TEST)
 
 		# tracing
 		set(TRACEFILE "${FAIL_DIR}/trace.pb")
+		set(CHECKPOINTFILE "${FAIL_DIR}/checkpoint.trace")
 		set(STATEDIR "${FAIL_DIR}/state")
 		add_custom_command(
 			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE}
@@ -109,7 +110,7 @@ macro(fail_targets TNAME ELF TEST)
 				-Wf,--elf-file=${ELF}
 			COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"
 			WORKING_DIRECTORY ${FAIL_DIR}
-			OUTPUT ${TRACEFILE} ${STATEDIR}
+			OUTPUT ${TRACEFILE} ${CHECKPOINTFILE} ${STATEDIR}
 		)
 		add_custom_target(fail-trace-${TNAME} DEPENDS ${TRACEFILE})
 
@@ -140,13 +141,13 @@ macro(fail_targets TNAME ELF TEST)
 				-e ${ELF} -f ${FAIL_CLIENT} -S ${FAIL_SERVERNAME}
 			COMMENT "Starting FAIL* test clients..."
 			WORKING_DIRECTORY ${FAIL_DIR}
-			DEPENDS ${ELF} ${STATEDIR}
+			DEPENDS ${ELF} ${STATEDIR} ${CHECKPOINTFILE}
 		)
 		add_custom_target(fail-client-oneshot-${TNAME}
 			COMMAND ${CLIENT_CMD} -e ${ELF} -f ${FAIL_CLIENT} -1 -S ${FAIL_SERVERNAME}
 			COMMENT "Starting one FAIL* test client..."
 			WORKING_DIRECTORY ${FAIL_DIR}
-			DEPENDS ${ELF} ${STATEDIR}
+			DEPENDS ${ELF} ${STATEDIR} ${CHECKPOINTFILE}
 		)
 	endif()
 
@@ -224,7 +225,7 @@ macro(fail_targets TNAME ELF TEST)
 	add_custom_target(fail-${BENCHMARK}
 		COMMAND ${PARALLEL_CMD} ${CLIENT_CMD} -e ${ELF} -f ${FAIL_CLIENT}
 			-S ${FAIL_SERVERNAME} -s \"${FAIL_SERVER} ${FAIL_OPTS} -p ${FAIL_PRUNER}\"
-		DEPENDS ${PRUNED_FILE} ${ELF} ${STATEDIR}
+		DEPENDS ${PRUNED_FILE} ${ELF} ${STATEDIR} ${CHECKPOINTFILE}
 		COMMENT "Starting FAIL* test server (on ${FAIL_SERVERNAME}) and clients..."
 		WORKING_DIRECTORY ${FAIL_DIR}
 	)

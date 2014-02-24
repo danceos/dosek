@@ -46,11 +46,11 @@ def startServer(options, args):
             return 0
 
     # run server
-    print hostname + ": STARTING SERVER"
+    print hostname + ": starting server"
     p = Popen(options.fail_server.split(' '))
     p.wait()
 
-    print hostname + ": SERVER DONE"
+    print hostname + ": server done"
     sys.exit(p.returncode)
 
 def runClient(options, args):
@@ -74,25 +74,27 @@ def runClient(options, args):
     p.wait()
     return p.returncode
 
-def startClients(options, args):
+def startClients(options, args, i):
     # wait for server to start
     if(options.fail_server):
         time.sleep(3)
 
     hostname = platform.node()
-    print datetime.datetime.now().time().isoformat() + ":" + hostname + ": STARTING CLIENT"
+    print "{}: {}: starting client {}".format(datetime.datetime.now().time().isoformat(), hostname, i)
 
     if options.forever:
         while True:
-            res = runClient(options, args)
-            if res != 0:
+            ret = runClient(options, args)
+            if ret != 0:
                 break
-
-        ret = 0
     else:
         ret = runClient(options, args)
 
-    print datetime.datetime.now().time().isoformat() + ":" + hostname + ": CLIENT DONE"
+    if(ret == 0):
+        status = "done"
+    else:
+        status = "ABORTED"
+    print "{}: {}: client {} {}".format(datetime.datetime.now().time().isoformat(), hostname, i, status)
     sys.exit(ret)
 
 def main(options, pargs):
@@ -110,12 +112,12 @@ def main(options, pargs):
 
     # server
     if(options.fail_server):
-        p = multiprocessing.Process(target=startServer, args=(options, pargs))
+        p = multiprocessing.Process(target=startServer, name="Server", args=(options, pargs))
         processes.append(p)
 
     # clients
     for i in xrange(count):
-        p = multiprocessing.Process(target=startClients, args=(options, pargs))
+        p = multiprocessing.Process(target=startClients, name="Client "+str(i), args=(options, pargs, i+1))
         processes.append(p)
 
     # start them all
@@ -126,6 +128,8 @@ def main(options, pargs):
     # wait for completion (or SIGINT)
     for p in processes:
         p.join()
+        if(p.name=="Server"):
+            sys.exit(0)
 
 def signal_handler(signal, frame):
     print "Terminating!"
