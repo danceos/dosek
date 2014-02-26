@@ -65,7 +65,7 @@ struct Machine
 	 */
 	static forceinline void push(uint32_t val) {
 		// try immediate operand first, use register if not possible
-		asm volatile("push %0" :: "ir"(val));
+		asm volatile("push %0" :: "ir"(val) : "esp");
 	}
 
 	/**

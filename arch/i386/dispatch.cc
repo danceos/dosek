@@ -21,10 +21,6 @@ volatile uint32_t dispatch_ip;
  * and performs the actual dispatching in ring 0.
  */
 IRQ_HANDLER(IRQ_DISPATCH) {
-	// get CPU context stored at top of stack
-	cpu_context *ctx;
-	asm volatile("leal -4(%%esp), %0" : "=r"(ctx)); // subtract missing error code
-
 	// get dispatch values
 	uint32_t id = dispatch_pagedir;
 	uint32_t fun = dispatch_ip;
@@ -40,7 +36,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 	// push flags, IO privilege level 3
 	// TODO: always enable interrupts? (0x3200)
-	Machine::push(ctx->eflags | 0x3000);
+	uint32_t flags; // flags are at %esp+16 because of pushed values
+	asm volatile("mov 16(%%esp), %0" : "=r"(flags));
+	Machine::push(flags | 0x3000);
 
 	// push code segment, DPL3
 	Machine::push(GDT::USER_CODE_SEGMENT | 0x3);
