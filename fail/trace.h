@@ -31,6 +31,9 @@ noinline void test_finish()
 {
     #ifndef FAIL
     kout << "-- Trace done" << endl;
+    #else
+    // to prevent compiler from optimizing the call
+    Machine::nop();
     #endif
 }
 
