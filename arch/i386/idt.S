@@ -65,6 +65,7 @@ irq_handler_\num:
 	mov %esp, %eax # save interrupt stackpointer in eax
 	mov 20(%esp), %esp # switch (back) to userspace stack
 	push 8(%eax) # save return address on stack
+	push 16(%eax) # save flags on stack
 	pusha # save all registers
 	mov %esp, %ebx # put context pointer in %ebx
 	push $irq_resume # push irq_resume fragment as "new" return address
@@ -189,6 +190,9 @@ handler_exit:
 irq_resume:
 	# restore and remove saved context
 	popa
+
+	# restore saved flags
+	popf
 
 	# remove and jump back to saved instruction pointer
 	ret
