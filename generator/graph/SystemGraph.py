@@ -100,6 +100,7 @@ class SystemGraph(GraphObject, PassManager):
         for task_desc in system.getTasks():
             task = Task(self, "Task:by-event:" + task_desc.event[0])
             task.set_event(task_desc.event)
+            task.set_promises(task_desc.promises)
             self.tasks.append(task)
             for subtask_name, deadline in task_desc.subtasks.items():
                 isISR = system.isISR(subtask_name)
@@ -126,7 +127,8 @@ class SystemGraph(GraphObject, PassManager):
                     self.isrs.append(ISR(self, subtask))
                 else:
                     subtask_osek = system.getSubTask(subtask_name)
-                    assert subtask_osek.static_priority != 0, "No user thread can have the thread ID 0, it is reserved for the Idle thread"
+                    assert subtask_osek.static_priority != 0,  \
+                        "No user thread can have the thread ID 0, it is reserved for the Idle thread"
                     subtask.set_static_priority(subtask_osek.static_priority)
                     subtask.set_preemptable(subtask_osek.preemptable)
                     subtask.set_basic_task(subtask_osek.is_basic)

@@ -57,8 +57,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
     def state_transition(self, source_block, source_state, target_block, target_state):
         # print source_block.path(),"->", target_block.path()
         # Do not allow self loops
-        if source_state == target_state:
-            return
+        #if source_state == target_state:
+        #    return
         self.states_next.setdefault(source_state, set())
         self.states_next[source_state].add(target_state)
         if not target_state in self.states_next:
@@ -164,9 +164,14 @@ class SSE_GlobalAbbInfo(GlobalAbbInfo):
         self.__cached_state_before = \
             SystemState.merge_many(self.analysis.system, states_in_this_abb)
 
+        self.__cached_abbs_before = set()
         self.__cached_states_after = set()
         for source_state in states_in_this_abb:
             self.__cached_states_after.update(self.analysis.states_next[source_state])
+            # Find the ABBs that lead to this abb
+            for prev_state, following in self.analysis.states_next.items():
+                if source_state in following:
+                    self.__cached_abbs_before.add(prev_state.current_abb)
 
     @property
     def state_before(self):
@@ -177,6 +182,10 @@ class SSE_GlobalAbbInfo(GlobalAbbInfo):
         """Returns a list of possible next system states"""
         return self.__cached_states_after
 
+    @property
+    def abbs_before(self):
+        """Returns list of possible source ABBS"""
+        return self.__cached_abbs_before
 
 class StateGraphSubobject(GraphObject):
     """Just a helper class to print the state graph"""

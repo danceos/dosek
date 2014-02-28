@@ -193,7 +193,8 @@ class SystemStateFlow(Analysis):
 
 class SSF_Alarm(SporadicEvent):
     def __init__(self, wrapped_alarm):
-        SporadicEvent.__init__(self, wrapped_alarm.system_graph, wrapped_alarm.name)
+        SporadicEvent.__init__(self, wrapped_alarm.system_graph,
+                               wrapped_alarm.name, wrapped_alarm.task)
         self.wrapped_alarm = wrapped_alarm
 
     def can_trigger(self, state):
@@ -217,7 +218,7 @@ class SSF_Alarm(SporadicEvent):
 
 class SSF_ISR(SporadicEvent):
     def __init__(self, wrapped_isr, system_call_semantic):
-        SporadicEvent.__init__(self, wrapped_isr.system_graph, wrapped_isr.name)
+        SporadicEvent.__init__(self, wrapped_isr.system_graph, wrapped_isr.name, wrapped_isr.task)
         self.system_call_semantic = system_call_semantic
         self.wrapped_isr = wrapped_isr
 
@@ -347,3 +348,6 @@ class SSF_GlobalAbbInformation(GlobalAbbInfo):
             states.append(self.analysis.edge_states[(edge.source, edge.target)])
         return states
 
+    @property
+    def abbs_before(self):
+        return self.abb.get_incoming_nodes(E.state_flow)

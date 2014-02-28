@@ -15,6 +15,11 @@ class GlobalAbbInfo:
         raise NotImplemented()
 
     @property
+    def abbs_before(self):
+        """Returns list of possible source ABBS"""
+        raise NotImplemented()
+
+    @property
     def abbs_after(self):
         """Returns list of possible continuations"""
         next_abbs  = set([state.current_abb for state in self.states_after])
@@ -33,5 +38,20 @@ class GlobalAbbInfo:
             next_subtasks[subtask].append(next_abb)
 
         return next_subtasks
+
+
+    @property
+    def tasks_before(self):
+        """Returns dict (Subtask->ABB) of possible tasks before"""
+        prev_abbs  = self.abbs_before
+
+        # All following tasks (Subtask->ABB)
+        prev_subtasks = {}
+        for prev_abb in prev_abbs:
+            subtask = prev_abb.function.subtask
+            prev_subtasks.setdefault(subtask, [])
+            prev_subtasks[subtask].append(next_abb)
+
+        return prev_subtasks
 
 

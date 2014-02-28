@@ -1,8 +1,9 @@
 class SporadicEvent:
-    def __init__(self, system_graph, name):
+    def __init__(self, system_graph, name, task):
         self.system_graph = system_graph
         self.name = name
         self.triggered_in_abb = set()
+        self.task = task
 
     def can_trigger(self, state):
         return True
@@ -11,9 +12,20 @@ class SporadicEvent:
         self.triggered_in_abb.add(state.current_abb)
         return state
 
+    def all_task_subtasks_suspended(self, state):
+        """Returns whether all subtasks in the belonging task are suspended in
+           the given systemstate. All sutbasks must be surely suspended.
+        """
+        for subtask in self.task.subtasks:
+            if state.is_maybe_suspended(subtask):
+               continue
+            return False
+        return True
+
 class Alarm(SporadicEvent):
     def __init__(self, system_graph, alarm_handler, alarm_info, subtask):
-        SporadicEvent.__init__(self, system_graph, alarm_info.name)
+        # A alarm belongs to the subtask it activates!
+        SporadicEvent.__init__(self, system_graph, alarm_info.name, subtask.task)
         # FIXME: when events are supported
         assert alarm_info.event == None
         # An alarm handler is a function with one activate task
@@ -33,6 +45,13 @@ class Alarm(SporadicEvent):
         if state.current_abb.interrupt_block_all \
            or state.current_abb.interrupt_block_os:
             return False
+
+        # If the belonging task promises to be serialized, this event
+        # cannot trigger, when any of the subtasks of hat tasks may be running.
+        if self.task.does_promise("serialized"):
+            if not self.all_task_subtasks_suspended(state):
+                return False
+
         return True
 
     def trigger(self, state):
@@ -48,7 +67,7 @@ class Alarm(SporadicEvent):
 
 class ISR(SporadicEvent):
     def __init__(self, system_graph, isr_handler):
-        SporadicEvent.__init__(self, system_graph, isr_handler.function_name)
+        SporadicEvent.__init__(self, system_graph, isr_handler.function_name, isr_handler.task)
         self.handler = isr_handler
 
     def can_trigger(self, state):

@@ -9,6 +9,7 @@ class Task(GraphObject):
         self.subtasks = []
         self.functions = []
         self.event = {}
+        self.promises = {'serialized': False}
 
     def graph_subobjects(self):
         return self.subtasks + self.functions
@@ -22,6 +23,13 @@ class Task(GraphObject):
             self.event = dict(zip(["name", "type"], event))
         else:
             assert False
+
+    def set_promises(self, promises):
+        assert promises.keys() == self.promises.keys()
+        self.promises = promises
+
+    def does_promise(self, promise):
+        return self.promises[promise]
 
     def add_subtask(self, subtask):
         subtask.task = self

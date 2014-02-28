@@ -30,10 +30,11 @@ class SystemDescription:
         return hooks
 
     class Task:
-        def __init__(self, event_element, root_subtask_name, subtasks):
+        def __init__(self, event_element, root_subtask_name, subtasks, promises):
             self.event = event_element
             self.root_subtask = root_subtask_name
             self.subtasks = subtasks
+            self.promises = promises
 
     def getEvent(self, name):
         for event in self.system_dom.periodicevent:
@@ -48,7 +49,13 @@ class SystemDescription:
         tasks = []
         for task in self.system_dom.task:
             event = self.getEvent(task.event)
-            assert event != None
+            assert event != None, "Every Task must be associated with an Event"
+            promises = {'serialized': False}
+            for attribute, value in task.items():
+                if attribute.startswith("promise-"):
+                    promise = attribute[len("promise-"):]
+                    assert promise in promises, "Unkown promise: %s" % attribute
+                    promises[promise] = (value == "true")
             subtasks = {}
             root_subtask = None
             for subtask in task.subtask:
@@ -58,7 +65,7 @@ class SystemDescription:
                 subtasks[subtask.handler] = deadline
                 if "root" in subtask.keys():
                     root_subtask = subtask.handler
-            tasks.append(self.Task(event, root_subtask, subtasks))
+            tasks.append(self.Task(event, root_subtask, subtasks, promises))
         return tasks
 
     def isISR(self, name):

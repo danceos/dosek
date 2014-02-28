@@ -1,5 +1,7 @@
 from generator.graph.AtomicBasicBlock import E,S
 from generator.graph.SystemStateFlow import SystemStateFlow
+from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution
+
 
 global E
 
@@ -21,20 +23,19 @@ def get_objects(system, names):
             ret.append(system.resources[x])
     return ret
 
-class RunningTaskToolbox:
-    def __init__(self, analysis):
-        assert isinstance(analysis, SystemStateFlow)
-        self.analysis = analysis
+class GlobalABBInfoToolbox:
+    def __init__(self, system_graph, abb_info_provider):
+        self.system_graph = system_graph
+        self.abb_info_provider = abb_info_provider
+
         self.checked_syscalls = set()
-        for syscall in self.analysis.system.get_syscalls():
+        for syscall in self.system_graph.get_syscalls():
             if syscall.syscall_type.isRealSyscall() \
                and not syscall.function.is_system_function:
                 continue
             if syscall.isA(S.computation):
                 continue
             self.checked_syscalls.add(syscall)
-
-        self.check_base_constraints()
 
     def mark_syscall(self, syscall):
         """Mark syscall as checked"""
@@ -46,12 +47,12 @@ class RunningTaskToolbox:
             self.mark_syscall(syscall)
 
     def promise_all_syscalls_checked(self):
-        assert set(self.analysis.system.get_syscalls()) == self.checked_syscalls,\
-            "missing %s"%(set(self.analysis.system.get_syscalls()) ^ self.checked_syscalls)
+        assert set(self.system_graph.get_syscalls()) == self.checked_syscalls,\
+            "missing %s"%(set(self.system_graph.get_syscalls()) ^ self.checked_syscalls)
 
     def syscall(self, function, syscall_name, arguments):
         """Tests wheter a syscall exists and returns it"""
-        syscall = self.analysis.system.find_syscall(function, syscall_name, arguments)
+        syscall = self.system_graph.find_syscall(function, syscall_name, arguments)
         assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
         return syscall
 
@@ -63,7 +64,7 @@ class RunningTaskToolbox:
         return self.reachability_bare(syscall, possible_subtasks)
 
     def reachability_bare(self, syscall, possible_subtasks):
-        reachable_subtasks = self.analysis.reachable_subtasks_from_abb(syscall)
+        reachable_subtasks = self.abb_info_provider.for_abb(syscall).tasks_after.keys()
         assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
             syscall.function.function_name, syscall.syscall_type.name,
             syscall.arguments, list(possible_subtasks), list(reachable_subtasks))
@@ -72,7 +73,7 @@ class RunningTaskToolbox:
         return syscall
 
     def reachability_abbs(self, syscall, targets):
-        reachable_abbs = syscall.get_outgoing_nodes(E.state_flow)
+        reachable_abbs = self.abb_info_provider.for_abb(syscall).abbs_after
         assert(set(targets) == set(reachable_abbs)), "%s:%s(%s)::: %s != %s" %(
             syscall.function.function_name, syscall.syscall_type.name,
             syscall.arguments, list(targets), list(reachable_abbs))
@@ -81,18 +82,43 @@ class RunningTaskToolbox:
     def activate(self, possible_subtasks, function):
         """Check which subtasks can activate a given function. The activating
         ABBs are returned"""
-        activating_subtasks, activating_abbs = self.analysis.activating_subtasks(function)
+        activating_subtasks = set()
+        activating_abbs = self.abb_info_provider.for_abb(function.entry_abb).abbs_before
+        for abb in activating_abbs:
+            activating_subtasks.add(abb.function.subtask)
         assert(set(activating_subtasks) == set(possible_subtasks)), "SetReady(%s):: %s != %s" %(
             function.function_name, list(activating_subtasks), list(possible_subtasks))
 
         return activating_abbs
 
+    def self_loop_abbs(self, function, level):
+        """Returns all ABBs with a self loop in the function on the edge level"""
+        ret = []
+        for abb in function.abbs:
+            if abb in abb.get_outgoing_nodes(level):
+                ret.append(abb)
+        return ret
+
+class ConstructGlobalCFGToolbox(GlobalABBInfoToolbox):
+    def __init__(self, analysis):
+        GlobalABBInfoToolbox.__init__(self, analysis.system,
+                                      analysis.global_abb_information_provider())
+
+
+class RunningTaskToolbox(GlobalABBInfoToolbox):
+    def __init__(self, analysis):
+        GlobalABBInfoToolbox.__init__(self, analysis.system, analysis)
+        assert isinstance(analysis, SystemStateFlow) or isinstance(analysis, SymbolicSystemExecution)
+        self.analysis = analysis
+        self.system_graph = analysis.system
+        self.check_base_constraints()
+
     def check_base_constraints(self):
-        for syscall in self.analysis.system.get_syscalls():
+        for syscall in self.system_graph.get_syscalls():
             # Some syscalls cannot reschedule
             if syscall.isA([S.GetResource, S.CancelAlarm, S.SetRelAlarm]):
                 self.reachability_bare(syscall, [syscall.function.subtask])
-        for abb in self.analysis.system.get_abbs():
+        for abb in self.system_graph.get_abbs():
             abb_info = self.analysis.for_abb(abb)
             if not abb_info:
                 continue
@@ -108,5 +134,6 @@ class RunningTaskToolbox:
                     assert next_abb.isA([S.kickoff, S.computation]), \
                         "Target of an subtask subtask Transition must always be " \
                         + " an computation block (%s -> %s)" %(abb.path(), next_abb.path())
+
 
 

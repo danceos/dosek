@@ -251,6 +251,9 @@ class SystemState:
     def is_maybe_ready(self, subtask):
         return self.READY & self.states[subtask]
 
+    def is_maybe_suspended(self, subtask):
+        return self.SUSPENDED & self.states[subtask]
+
     def is_unsure_ready_state(self, subtask):
         return bin(self.states[subtask]).count("1") > 1
 
