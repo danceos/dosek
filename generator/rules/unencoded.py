@@ -1,6 +1,6 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
-    Block, Statement, Comment
+    Block, Statement, Comment, Function
 
 class UnencodedSystem(SimpleSystem):
     def __init__(self):
@@ -36,31 +36,42 @@ class UnencodedSystem(SimpleSystem):
         subtask = systemcall.abb.function.subtask
         abb_id  = systemcall.abb.abb_id
         syscall_type = systemcall.abb.syscall_type
-        func_syscall_block = self.generator.arch_rules.syscall_block
+        def generate_kernelspace(args):
+            kernelspace = self.generator.arch_rules.syscall_block(userspace,
+                                                                  subtask, args)
+            if isinstance(kernelspace, Function):
+                self.stats.add_data(systemcall.abb, "generated-function",
+                                    kernelspace.name)
+            return kernelspace
 
         if systemcall.function == "TerminateTask":
-            syscall = func_syscall_block(userspace, subtask, [])
-            self.syscall_rules.TerminateTask(syscall, systemcall.abb)
+            kernelspace = generate_kernelspace([])
+            self.syscall_rules.TerminateTask(kernelspace, systemcall.abb)
+
         elif systemcall.function == "ActivateTask":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, [])
-            self.syscall_rules.ActivateTask(syscall, systemcall.abb)
+            kernelspace = generate_kernelspace([])
+            self.syscall_rules.ActivateTask(kernelspace, systemcall.abb)
+
         elif systemcall.function == "ChainTask":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, [])
-            self.syscall_rules.ChainTask(syscall, systemcall.abb)
+            kernelspace = generate_kernelspace([])
+            self.syscall_rules.ChainTask(kernelspace, systemcall.abb)
+
         elif systemcall.function == "CancelAlarm":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, [])
-            self.syscall_rules.CancelAlarm(syscall, systemcall.abb)
+            kernelspace = generate_kernelspace([])
+            self.syscall_rules.CancelAlarm(kernelspace, systemcall.abb)
+
         elif systemcall.function == "GetResource":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, [])
-            self.syscall_rules.GetResource(syscall, systemcall.abb)
+            kernelspace = generate_kernelspace([])
+            self.syscall_rules.GetResource(kernelspace, systemcall.abb)
+
         elif systemcall.function == "ReleaseResource":
             userspace.unused_parameter(0)
-            syscall = func_syscall_block(userspace, subtask, [])
-            self.syscall_rules.ReleaseResource(syscall, systemcall.abb)
+            kernelspace = generate_kernelspace([])
+            self.syscall_rules.ReleaseResource(kernelspace, systemcall.abb)
         # Interrupt Handling
         elif systemcall.function == "DisableAllInterrupts":
             self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
@@ -79,8 +90,8 @@ class UnencodedSystem(SimpleSystem):
             userspace.unused_parameter(0)
             arg1 = self.convert_argument(userspace, userspace.arguments()[1])
             arg2 = self.convert_argument(userspace, userspace.arguments()[2])
-            syscall = func_syscall_block(userspace, subtask, [arg1, arg2])
-            self.syscall_rules.SetRelAlarm(syscall, systemcall.abb, [arg1, arg2])
+            kernelspace = generate_kernelspace([arg1, arg2])
+            self.syscall_rules.SetRelAlarm(kernelspace, systemcall.abb, [arg1, arg2])
         else:
             assert False, "Not yet supported %s"% systemcall.function
 

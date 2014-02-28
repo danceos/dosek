@@ -32,18 +32,19 @@ class SystemDescription:
     class Task:
         def __init__(self, event_element, root_subtask_name, subtasks, promises):
             self.event = event_element
-            self.root_subtask = root_subtask_name
+            self.root_subtask = str(root_subtask_name)
             self.subtasks = subtasks
             self.promises = promises
 
     def getEvent(self, name):
         for event in self.system_dom.periodicevent:
             if event.identifier == name:
-                return (name, "periodic", event.period, event.phase, event.jitter)
+                return (str(name), "periodic", int(event.period), int(event.phase), 
+                        int(event.jitter))
 
         for event in self.system_dom.nonperiodicevent:
             if event.identifier == name:
-                return (name, "nonperiodic", event.interarrivaltime)
+                return (str(name), "nonperiodic", int(event.interarrivaltime))
 
     def getTasks(self):
         tasks = []
@@ -59,10 +60,10 @@ class SystemDescription:
             subtasks = {}
             root_subtask = None
             for subtask in task.subtask:
-                deadline = (subtask.deadline.type,
-                            subtask.deadline.relative,
-                            subtask.deadline.deadline)
-                subtasks[subtask.handler] = deadline
+                deadline = (str(subtask.deadline.type),
+                            int(subtask.deadline.relative),
+                            int(subtask.deadline.deadline))
+                subtasks[str(subtask.handler)] = deadline
                 if "root" in subtask.keys():
                     root_subtask = subtask.handler
             tasks.append(self.Task(event, root_subtask, subtasks, promises))

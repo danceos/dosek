@@ -24,6 +24,7 @@ class Analysis:
 
     def set_system(self, system):
         self.system = system
+        self.stats = system.stats
 
     @classmethod
     def name(cls):
@@ -227,6 +228,10 @@ class MoveFunctionsToTask(Analysis):
                 subtask.task.add_function(abb.function)
                 abb.function.subtask = subtask
                 logging.debug("Moving %s to %s", abb.function, subtask.task)
+
+            if subtask:
+                self.stats.add_child(subtask, "abb", abb)
+
 
 
 

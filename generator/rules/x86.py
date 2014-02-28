@@ -93,6 +93,7 @@ class X86Arch(SimpleArch):
         # but is specific for this systemcall
         syscall = Function("__OS_syscall_" + function.function_name,
                            "void", [arg.datatype for arg in arguments], extern_c = True)
+
         #syscall.unused_parameter(0)
         self.generator.source_file.function_manager.add(syscall)
         # The syscall function is called from the function that will

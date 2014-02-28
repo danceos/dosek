@@ -66,6 +66,11 @@ def unwrap_seq(seq):
     assert len(seq) == 1
     return list(seq)[0]
 
+def wrap_in_list(seq):
+    if type(seq) == list:
+        return seq
+    return [seq]
+
 class stack(list):
     def push(self, item):
         self.append(item)
@@ -88,6 +93,20 @@ def group_by(seq, field):
         ret[key].append(item)
     return ret
 
+
+def dict_walker(obj, visitor):
+    if type(obj) == dict:
+        for k,v in obj.items():
+            ret = visitor.dict_item(k, v)
+            if ret:
+                dict_walker(v, visitor)
+    elif type(obj) == list:
+        for v in obj:
+            ret = visitor.list_item(v)
+            if ret:
+                dict_walker(v, visitor)
+    else:
+        visitor.leaf(obj)
 
 # Author: Ethan Furman
 # Home Page: https://pypi.python.org/pypi/enum34

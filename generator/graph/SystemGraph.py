@@ -7,7 +7,7 @@ from generator.graph.PassManager import PassManager
 from generator.graph.Sporadic import Alarm, ISR
 from generator.graph.Resource import Resource
 from generator.graph.common import GraphObject
-
+from generator.statistics import Statistics
 
 
 class SystemGraph(GraphObject, PassManager):
@@ -27,6 +27,7 @@ class SystemGraph(GraphObject, PassManager):
         self.alarms = []
         self.isrs = []
         self.resources = {}
+        self.stats = Statistics(self)
 
     def graph_subobjects(self):
         objects = []
@@ -102,6 +103,7 @@ class SystemGraph(GraphObject, PassManager):
             task.set_event(task_desc.event)
             task.set_promises(task_desc.promises)
             self.tasks.append(task)
+            self.stats.add_child(self, "task", task)
             for subtask_name, deadline in task_desc.subtasks.items():
                 isISR = system.isISR(subtask_name)
                 if isISR:
@@ -112,6 +114,8 @@ class SystemGraph(GraphObject, PassManager):
                 task.add_subtask(subtask)
                 # Every subtask is also an function
                 self.functions[subtask.function_name] = subtask
+                self.stats.add_child(task, "subtask", subtask)
+
 
                 subtask.set_deadline(deadline)
                 if isISR:
@@ -254,6 +258,9 @@ class SystemGraph(GraphObject, PassManager):
             alarm.handler.add_atomic_basic_block(activate_task)
             alarm.handler.set_entry_abb(activate_task)
 
+        # Structure for Statistics logging
+        self.stats.add_child(self, "task", system_task)
+        self.stats.add_child(system_task, "task", subtask)
 
 
     def who_has_prio(self, priority):

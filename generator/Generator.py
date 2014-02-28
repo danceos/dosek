@@ -1,4 +1,5 @@
 from generator.elements import *
+from generator.statistics import Statistics
 import logging
 
 class SignatureGenerator:
@@ -37,6 +38,7 @@ class Generator:
     def __init__(self, system_graph, name, arch_rules, os_rules, syscall_rules):
         self.name = name
         self.system_graph = system_graph
+        self.stats = system_graph.stats
         self.rtsc_analysis = system_graph.rtsc
         self.arch_rules = arch_rules
         self.os_rules = os_rules
@@ -56,7 +58,6 @@ class Generator:
             if not subtask in self.objects:
                 self.objects[subtask] = {}
                 self.objects[subtask]["generated_functions"] = []
-
 
         os_rules.set_generator(self)
         arch_rules.set_generator(self)
@@ -102,6 +103,7 @@ class Generator:
         self.file_prefix = output_file_prefix
         self.source_file = SourceFile()
         self.source_files["coredos.cc"] = self.source_file
+        
 
         #include "os.h"
         self.source_file.includes.add(Include("os.h"))
@@ -142,6 +144,7 @@ class Generator:
                                 rettype,
                                 argtypes,
                                 extern_c = True)
+            self.stats.add_data(syscall, "generated-function", function.name)
 
             assert abb.function.subtask != None, "The calling subtask must be set"
             self.objects[abb.function.subtask]["generated_functions"].append(function)

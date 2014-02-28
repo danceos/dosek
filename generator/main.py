@@ -141,3 +141,5 @@ if __name__ == "__main__":
 
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)
+
+    graph.stats.save(options.prefix + "/stats.dict.py")

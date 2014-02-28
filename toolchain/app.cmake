@@ -102,6 +102,7 @@ if(SPECIALIZE_SYSTEMCALLS)
        --arch ${COREDOS_ARCHITECTURE}
        ${COREDOS_GENERATOR_ARGS}
      -vv
+   
      COMMAND
         if [ x"$$EDIT" != x"" ]; then vim ${COREDOS_GENERATED_SOURCE}\; fi
   COMMENT "[${PROJECT_NAME}/${NAME}] Generating COREDOS source code"
@@ -132,6 +133,11 @@ if(SPECIALIZE_SYSTEMCALLS)
     DEFINITIONS ${DEFINITIONS}
     LINKER_SCRIPT ${COREDOS_GENERATED_LINKER}
     )
+
+  add_custom_command(TARGET ${NAME} POST_BUILD
+    COMMAND ${COREDOS_GENERATOR_DIR}/stats_binary.py
+            --stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
+            --elf ${PROJECT_BINARY_DIR}/${NAME})
 
 ENDMACRO()
 

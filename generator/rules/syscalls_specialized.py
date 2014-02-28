@@ -22,12 +22,16 @@ class SpecializedSystemCalls(FullSystemCalls):
             self.Comment(kernelspace, "OPTIMIZATION: We surely know that the task is suspended")
             self.call_function(kernelspace, "scheduler_.SetReadyFromSuspended_impl",
                                "void", [self.task_desc(task)]);
+            self.stats.add_data(abb, "opt:SetReady:fromSuspended", task)
         elif abb_info.state_before.is_surely_ready(task):
             self.Comment(kernelspace, "OPTIMIZATION: Task %s is surely ready, we do not have to activate it.",
                          task)
+            self.stats.add_data(abb, "opt:SetReady:not-needed", task)
         else:
             self.call_function(kernelspace, "scheduler_.SetReady_impl",
                                "void", [self.task_desc(task)]);
+            self.stats.add_data(abb, "opt:SetReady:general", task)
+
 
     def SetSuspended(self, kernelspace, abb, task):
         abb_info = self.global_abb_info.for_abb(abb)
@@ -48,13 +52,17 @@ class SpecializedSystemCalls(FullSystemCalls):
                 self.Comment(kernelspace, "OPTIMIZATION: The task is surely no paused. We can surely start it from scratch.")
                 self.call_function(kernelspace, "Dispatcher::StartToTask", "void",
                                    [self.task_desc(task)])
+                self.stats.add_data(abb, "opt:Dispatch:StartToTask", True)
             elif all([not x for x in is_entry_abb]): # Only continuing
                 self.Comment(kernelspace, "OPTIMIZATION: The task is surely ready, just resume it.")
                 self.call_function(kernelspace, "Dispatcher::ResumeToTask", "void",
                                    [self.task_desc(task)])
+                self.stats.add_data(abb, "opt:Dispatcher:ResumeToTask", True)
             else:
                 self.call_function(kernelspace, "Dispatcher::Dispatch", "void",
                                    [self.task_desc(task)])
+                self.stats.add_data(abb, "opt:Dispatcher:general", True)
+
 
     def RescheduleTo(self, kernelspace, abb, task):
         """Reschedule to a specific task"""
@@ -75,15 +83,18 @@ class SpecializedSystemCalls(FullSystemCalls):
             next_prio = unwrap_seq(priorities)
             if next_prio == abb.dynamic_priority:
                 self.Comment(kernelspace, "OPTIMIZATION: We do not have to update the current system priority")
+                self.stats.add_data(abb, "opt:SetSystemPriority:not-needed", next_prio)
             else:
                 self.Comment(kernelspace, 
                              "OPTIMIZATION: The system priority is determined."
                              + " Therefore we set it from a constant: %d == %s",
                              next_prio, self.system_graph.who_has_prio(next_prio))
                 kernelspace.add(Statement("scheduler_.SetSystemPriority(%d)" % next_prio))
+                self.stats.add_data(abb, "opt:SetSystemPriority:constant", next_prio)
         else:
             # The current system priority is the priority of the next running task
             kernelspace.add(Statement("scheduler_.current_prio = scheduler_.tlist.%s" % task.name))
+            self.stats.add_data(abb, "opt:SetSystemPriority:general", True)
 
         # Step 3: Call the dispatcher!
         self.Dispatch(kernelspace, abb, task)
@@ -114,9 +125,10 @@ class SpecializedSystemCalls(FullSystemCalls):
 
     def Schedule(self, kernelspace, abb):
         if abb.function.subtask.is_isr:
-            # OPTIMIZATION: Each ABB is either in an ISR or not,
-            # therefore we can surely decide if we have to reschedule
-            # in the AST or not
+            self.Comment(kernelspace, """OPTIMIZATION: Each ABB is either in an
+                ISR or not, therefore we can surely decide if we have to
+                reschedule in the AST or not""")
+            self.stats.add_data(abb, "opt:Schedule:in-ast", True)
             self.call_function(kernelspace, "request_reschedule_ast",
                                "void", [])
             return
@@ -130,13 +142,17 @@ class SpecializedSystemCalls(FullSystemCalls):
             self.Comment(kernelspace,
                          "OPTIMIZATION: There is only one possible subtask continuing"
                          + " to, we directly dispatch to that task: %s", next_subtask)
+            self.stats.add_data(abb, "opt:Schedule:possible-tasks", 1)
             self.RescheduleTo(kernelspace, abb, next_subtask)
             return
 
 
-        self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s",
-                     abb_info.tasks_after.keys())
-        schedule_hint = self.ScheduleTargetHint(abb_info.tasks_after.keys())
+        tasks = abb_info.tasks_after.keys()
+        self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s", 
+                     tasks)
+        schedule_hint = self.ScheduleTargetHint(tasks)
+        self.stats.add_data(abb, "opt:Schedule:possible-tasks", len(tasks))
+
         self.call_function(kernelspace,
                            "scheduler_.Reschedule< %s >" % (schedule_hint),
                            "void", []);
