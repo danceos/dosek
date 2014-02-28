@@ -13,7 +13,7 @@ import copy
 HEADER = """#include "arch/i386/paging.h"\nusing namespace arch;\n\n"""
 
 ## common page directory/table attributes
-ATTRIBUTES = """extern "C" const __attribute__ ((aligned (4096))) __attribute__((section(".paging")))"""
+ATTRIBUTES = """extern "C" const __attribute__ ((aligned (4096)))\n   __attribute__((section(".paging")))\n   """
 
 ## page table definition
 PAGETABLE = ATTRIBUTES + """ PageTableEntry pagetable_{}[1024] = {{\n"""
