@@ -1,10 +1,8 @@
 from generator.graph.common import *
 from generator.graph.Analysis import *
-from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
-from generator.graph.Sporadic import SporadicEvent
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
-from generator.tools import panic, stack, unwrap_seq, group_by, select_distinct
+from generator.tools import stack, unwrap_seq, group_by
 
 class SymbolicSystemExecution(Analysis, GraphObject):
     """This pass executes the system state symbolic. The whole system
@@ -79,10 +77,6 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
     def do_computation_with_sporadic_events(self, block, before):
         after_states = self.system_call_semantic.do_computation_with_callstack(block, before)
-
-        # When there is no further local abb node, we have reached the
-        # end of the interrupt handler
-        current_subtask = before.current_abb.function.subtask
 
         # Handle sporadic events
         for sporadic_event in self.system_graph.alarms + self.system_graph.isrs:

@@ -1,7 +1,6 @@
 from generator.rules.unencoded import UnencodedSystem, TaskListTemplate, \
     SchedulerTemplate
-from generator.elements import CodeTemplate, Include, VariableDefinition, \
-    Block, Statement, Comment
+from generator.elements import VariableDefinition, Statement
 
 class EncodedSystem(UnencodedSystem):
     def __init__(self):
@@ -10,7 +9,7 @@ class EncodedSystem(UnencodedSystem):
         self.scheduler = EncodedSchedulerTemplate
 
     def sigs(self, count):
-        Bs = [str(self.generator.signature_generator.new()) for x in range(0, count)]
+        Bs = [str(self.generator.signature_generator.new()) for _ in range(0, count)]
         return "<%s>" %(", ".join(Bs))
 
     def generate_system_code(self):

@@ -4,9 +4,13 @@ from generator.elements import *
 
 class BaseRules:
     def __init__(self):
-        self.generator = None
-        self.system_graph = None
-        self.objects = None
+        self.generator     = None
+        self.system_graph  = None
+        self.objects       = None
+        self.arch_rules    = None
+        self.os_rules      = None
+        self.syscall_rules = None
+        self.stats         = None
 
     def set_generator(self, generator):
         self.generator = generator

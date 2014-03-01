@@ -1,6 +1,4 @@
-from generator.graph.Analysis import Analysis, EnsureComputationBlocks, \
-                        FixpointIteraton, MoveFunctionsToTask
-
+from generator.graph.Analysis import Analysis
 
 class PrioritySpreadingPass(Analysis):
     """This pass reallocated the priorities in the way, that every

@@ -1,12 +1,9 @@
-from generator.graph.Analysis import Analysis, EnsureComputationBlocks,\
-                                     FixpointIteraton, MoveFunctionsToTask
-
-from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
+from generator.graph.Analysis import Analysis, FixpointIteraton
 from generator.graph.AtomicBasicBlock import E, S
 from generator.tools import panic
 
 from collections import namedtuple
-from copy import copy
+
 
 class InterruptControlAnalysis(Analysis):
     """This pass decides for each computation abb, whether interrupts are
@@ -90,7 +87,7 @@ class InterruptControlAnalysis(Analysis):
             All, OS = self.values[abb]
             if not abb.isA(S.computation):
                 All = 1
-                Os  = 1
+                OS  = 1
             abb.interrupt_block_all = All > 0
             abb.interrupt_block_os  = OS > 0 
 

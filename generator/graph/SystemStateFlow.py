@@ -1,11 +1,10 @@
 from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
-from generator.graph.Sporadic import SporadicEvent, ISR
+from generator.graph.Sporadic import SporadicEvent
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
 from generator.graph.AtomicBasicBlock import E
-from generator.tools import panic
 
 
 class SystemStateFlow(Analysis):
@@ -103,7 +102,6 @@ class SystemStateFlow(Analysis):
         # If this block belongs to a task, it must the highest
         # available task for the input state. Otherwise we wouldn't
         # have been scheduled (or the current task is non-preemptable)
-        calling_task = self.running_task.for_abb(block)
         scc = self.system_call_semantic
 
         after_states = scc.do_SystemCall(

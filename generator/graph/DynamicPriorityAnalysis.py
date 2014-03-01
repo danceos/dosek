@@ -1,10 +1,6 @@
-from generator.graph.Analysis import Analysis, EnsureComputationBlocks,\
-                                     FixpointIteraton, MoveFunctionsToTask
-
-from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
+from generator.graph.Analysis import Analysis, FixpointIteraton
 from generator.graph.AtomicBasicBlock import E, S
 from collections import namedtuple
-from copy import copy
 
 class DynamicPriorityAnalysis(Analysis):
     """This pass does a local control flow propagation of the dynamic

@@ -1,13 +1,10 @@
 #!/usr/bin/python
 
-import sys
-
 import os
 import sys
 import optparse
 import subprocess
 from collections import namedtuple
-import pprint
 
 Symbol = namedtuple("Symbol", ["name", "addr", "size", "segment", "type"])
 
@@ -32,7 +29,7 @@ def read_symbols(elffile):
                       ))
     return ret
 
-def find_symbol(symbols, name):
+def find_symbol(name):
     for symbol in symbols:
         if name == symbol.name:
             return symbol
@@ -66,7 +63,7 @@ if __name__ == "__main__":
             continue
         abb["generated-codesize"] = 0
         for func in abb['generated-function']:
-            func = find_symbol(symbols, func)
+            func = find_symbol(func)
             abb["generated-codesize"] += func.size
 
     stats.save(options.stats_dict)

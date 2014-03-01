@@ -1,5 +1,4 @@
 from generator.elements import *
-from generator.statistics import Statistics
 import logging
 
 class SignatureGenerator:

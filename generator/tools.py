@@ -1,10 +1,4 @@
-#!/usr/bin/python
-
-"""
-    @file
-    @ingroup rules
-    @brief
-"""
+#pylint: disable-all
 
 import sys
 import logging

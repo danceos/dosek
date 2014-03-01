@@ -9,6 +9,7 @@ class Analysis:
         self.valid = False
         self.debug = self.__log_void
         self.system_graph = None
+        self.stats = None
 
     def __log_void(self, *args, **kwargs):
         pass
@@ -219,8 +220,6 @@ class MoveFunctionsToTask(Analysis):
         return [CurrentRunningSubtask.name()]
 
     def do(self):
-        idle = self.system_graph.find_function("Idle")
-
         subtask_analysis = self.get_analysis("CurrentRunningSubtask")
         for abb in self.system_graph.get_abbs():
             subtask = subtask_analysis.for_abb(abb)

@@ -1,7 +1,6 @@
 from generator.rules.base import BaseRules
 from generator.graph.AtomicBasicBlock import E
-from generator.elements import CodeTemplate, Include, VariableDefinition, \
-    Block, Statement, Comment
+from generator.elements import Statement, Comment
 
 
 class FullSystemCalls(BaseRules):

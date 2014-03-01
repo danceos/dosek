@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 class SystemCall:
     def __init__(self, syscall, abb, rettype, arguments):
         self.name = syscall

@@ -1,4 +1,3 @@
-from generator.tools import stringify
 from generator.elements import *
 from generator.rules.base import BaseRules
 from collections import namedtuple
@@ -27,7 +26,7 @@ class SimpleSystem(BaseRules):
 
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
@@ -135,7 +134,7 @@ class SimpleArch(BaseRules):
     KernelSpace = namedtuple("KernelSpace", ["pre_hook", "system", "post_hook"])
     def generate_kernelspace(self, userspace, abb, arguments):
         """returns a KernelSpace object"""
-        raise NotImplemented()
+        raise NotImplementedError()
 
 class AlarmTemplate(CodeTemplate):
     def __init__(self, rules):

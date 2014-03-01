@@ -16,7 +16,7 @@ class SystemGraph(GraphObject, PassManager):
 
     def __init__(self):
         GraphObject.__init__(self, "SystemGraph", root = True)
-        PassManager.__init__(self)
+        PassManager.__init__(self, self)
         self.counters = []
         self.tasks = []
         self.functions = {}

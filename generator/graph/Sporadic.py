@@ -18,7 +18,7 @@ class SporadicEvent:
         """
         for subtask in self.task.subtasks:
             if state.is_maybe_suspended(subtask):
-               continue
+                continue
             return False
         return True
 

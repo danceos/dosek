@@ -7,17 +7,17 @@ class GlobalAbbInfo:
     @property
     def state_before(self):
         """Returns the system state before the ABB is executed"""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
     def states_after(self):
         """Returns a list of possible next system states"""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
     def abbs_before(self):
         """Returns list of possible source ABBS"""
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
     def abbs_after(self):
@@ -50,7 +50,7 @@ class GlobalAbbInfo:
         for prev_abb in prev_abbs:
             subtask = prev_abb.function.subtask
             prev_subtasks.setdefault(subtask, [])
-            prev_subtasks[subtask].append(next_abb)
+            prev_subtasks[subtask].append(prev_abb)
 
         return prev_subtasks
 

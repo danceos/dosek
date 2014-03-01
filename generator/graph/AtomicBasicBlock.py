@@ -91,7 +91,6 @@ class AtomicBasicBlock(GraphObject):
         self.abb_id = abb_id
         self.system_graph = system_graph
         self.function = None
-        self.artificial = False
         self.outgoing_edges = []
         self.incoming_edges = []
 

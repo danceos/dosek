@@ -1,6 +1,6 @@
 from generator.graph.Analysis import Analysis
 from generator.graph.AtomicBasicBlock import E, S
-from generator.tools import panic, stack, unwrap_seq, group_by, select_distinct
+from generator.tools import panic, select_distinct
 from generator.graph.common import Edge
 import logging
 
@@ -15,6 +15,8 @@ class ConstructGlobalCFG(Analysis):
     def __init__(self):
         Analysis.__init__(self)
         self.removed_edges = None
+        self.state_flow    = None
+        self.sse           = None
 
     def requires(self):
         # We require all passes that are enqueued

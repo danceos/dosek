@@ -1,6 +1,5 @@
 from generator.rules.syscalls_full import FullSystemCalls
-from generator.elements import CodeTemplate, Include, VariableDefinition, \
-    Block, Statement, Comment
+from generator.elements import Statement, Comment
 
 from generator.tools import unwrap_seq
 from generator.graph.AtomicBasicBlock import E
@@ -21,7 +20,7 @@ class SpecializedSystemCalls(FullSystemCalls):
         if abb_info.state_before.is_surely_suspended(task):
             self.Comment(kernelspace, "OPTIMIZATION: We surely know that the task is suspended")
             self.call_function(kernelspace, "scheduler_.SetReadyFromSuspended_impl",
-                               "void", [self.task_desc(task)]);
+                               "void", [self.task_desc(task)])
             self.stats.add_data(abb, "opt:SetReady:fromSuspended", task)
         elif abb_info.state_before.is_surely_ready(task):
             self.Comment(kernelspace, "OPTIMIZATION: Task %s is surely ready, we do not have to activate it.",
@@ -29,7 +28,7 @@ class SpecializedSystemCalls(FullSystemCalls):
             self.stats.add_data(abb, "opt:SetReady:not-needed", task)
         else:
             self.call_function(kernelspace, "scheduler_.SetReady_impl",
-                               "void", [self.task_desc(task)]);
+                               "void", [self.task_desc(task)])
             self.stats.add_data(abb, "opt:SetReady:general", task)
 
 
@@ -37,7 +36,7 @@ class SpecializedSystemCalls(FullSystemCalls):
         abb_info = self.global_abb_info.for_abb(abb)
         assert abb_info.state_before.is_surely_ready(task)
         self.call_function(kernelspace, "scheduler_.SetSuspended_impl",
-                           "void", [self.task_desc(task)]);
+                           "void", [self.task_desc(task)])
 
     def Dispatch(self, kernelspace, abb, task):
         abb_info = self.global_abb_info.for_abb(abb)
@@ -155,7 +154,7 @@ class SpecializedSystemCalls(FullSystemCalls):
 
         self.call_function(kernelspace,
                            "scheduler_.Reschedule< %s >" % (schedule_hint),
-                           "void", []);
+                           "void", [])
 
     def ActivateTask(self, kernelspace, abb):
         subtask = abb.arguments[0]

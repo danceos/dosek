@@ -1,5 +1,5 @@
 from generator.graph.Analysis import Analysis
-from generator.graph.AtomicBasicBlock import E, S
+from generator.graph.AtomicBasicBlock import E
 from generator.tools import Enum
 import logging
 
@@ -9,29 +9,29 @@ class AssertionType(Enum):
 
 class Assertion:
     def __init__(self, _type, _arguments):
-        self.__type = _type
-        self.__arguments = _arguments
+        self.Type = _type
+        self.arguments = _arguments
 
     def __repr__(self):
-        return "<assert.%s%s>" %(self.__type.name, self.__arguments)
+        return "<assert.%s%s>" %(self.Type.name, self.arguments)
 
     def __hash__(self):
-        return hash(self.__type)
+        return hash(self.Type)
 
     def __eq__(self, other):
         if not isinstance(other, Assertion):
             return False
-        if self.__type != other.__type:
+        if self.Type != other.Type:
             return False
-        if self.__arguments != other.__arguments:
+        if self.arguments != other.arguments:
             return False
         return True
 
     def isA(self, _type):
-        return _type == self.__type
+        return _type == self.Type
 
     def get_arguments(self):
-        return self.__arguments
+        return self.arguments
 
 
 
@@ -43,9 +43,9 @@ class GenerateAssertionsPass(Analysis):
 
     def __init__(self):
         Analysis.__init__(self)
-
+        self.abb_info          = None
         self.assertions_before = None
-        self.assertions_after = None
+        self.assertions_after  = None
 
     def requires(self):
         return ["ConstructGlobalCFG"]
