@@ -72,6 +72,11 @@ class SyscallType(IntEnum):
     def isRealSyscall(self):
         return self.value >= SyscallType.ActivateTask
 
+    def doesTerminateTask(self):
+        if self in (SyscallType.TerminateTask, SyscallType.ChainTask):
+            return True
+        return False
+
     @classmethod
     def fromString(cls, name):
         if name.startswith("OSEKOS_"):
@@ -81,10 +86,10 @@ class SyscallType(IntEnum):
 S = SyscallType
 
 class AtomicBasicBlock(GraphObject):
-    def __init__(self, system, abb_id):
+    def __init__(self, system_graph, abb_id):
         GraphObject.__init__(self, "ABB%d" %(abb_id), color="red")
         self.abb_id = abb_id
-        self.system = system
+        self.system_graph = system_graph
         self.function = None
         self.artificial = False
         self.outgoing_edges = []
@@ -201,10 +206,10 @@ class AtomicBasicBlock(GraphObject):
             if type(x) == str:
                 if x.startswith("OSEKOS_TASK_Struct_"):
                     handler_name = x[len("OSEKOS_TASK_Struct_"):]
-                    x = self.system.functions["OSEKOS_TASK_" + handler_name]
+                    x = self.system_graph.functions["OSEKOS_TASK_" + handler_name]
                 elif x.startswith("OSEKOS_RESOURCE_Struct_"):
                     res_name = x[len("OSEKOS_RESOURCE_Struct_"):]
-                    x = self.system.resources[res_name]
+                    x = self.system_graph.resources[res_name]
                 elif x.startswith("OSEKOS_ALARM_Struct_"):
                     alarm_name = x[len("OSEKOS_ALARM_Struct_"):]
                     x = alarm_name
@@ -212,19 +217,19 @@ class AtomicBasicBlock(GraphObject):
         self.arguments = args
 
     def fsck(self):
-        assert self.system.find_abb(self.abb_id) == self
+        assert self.system_graph.find_abb(self.abb_id) == self
         assert self.function != None
         assert self in self.function.abbs
         for edge in self.outgoing_edges:
             assert edge.source == self
             assert edge in edge.target.incoming_edges
             # Target Edge can be found
-            assert self.system.find_abb(edge.target.abb_id) == edge.target
+            assert self.system_graph.find_abb(edge.target.abb_id) == edge.target
         for edge in self.incoming_edges:
             assert edge.target == self
             assert edge in edge.source.outgoing_edges
             # Source abb can be found
-            assert self.system.find_abb(edge.source.abb_id) == edge.source
+            assert self.system_graph.find_abb(edge.source.abb_id) == edge.source
 
     def dump(self):
         task = None

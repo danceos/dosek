@@ -3,7 +3,7 @@ from generator.graph.verifier_tools import *
 def after_SystemStateFlow(analysis):
     # Find all three systemcall handlers
     (Handler11, Handler12, Handler13, Idle, StartOS) = \
-       get_functions(analysis.system, ["Handler11", "Handler12", "Handler13", "Idle", "StartOS"])
+       get_functions(analysis.system_graph, ["Handler11", "Handler12", "Handler13", "Idle", "StartOS"])
 
     t = RunningTaskToolbox(analysis)
 
@@ -23,7 +23,7 @@ def after_SystemStateFlow(analysis):
                  [Handler11])
 
     # There are two TerminateTasks in Handler11
-    syscalls = analysis.system.find_syscall(Handler11, "TerminateTask", [],
+    syscalls = analysis.system_graph.find_syscall(Handler11, "TerminateTask", [],
                                             multiple = True)
     for x in syscalls:
         tasks = set(analysis.reachable_subtasks_from_abb(x))

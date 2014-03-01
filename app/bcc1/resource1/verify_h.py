@@ -3,10 +3,10 @@ from generator.graph.verifier_tools import *
 def after_SystemStateFlow(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
-       get_functions(analysis.system, ["H1", "H2", "H3", "H4", "H5",
+       get_functions(analysis.system_graph, ["H1", "H2", "H3", "H4", "H5",
                                        "Idle", "StartOS"])
     (RES_SCHEDULER, R345, R234) = \
-        get_objects(analysis.system, ["RES_SCHEDULER", "R345", "R234"])
+        get_objects(analysis.system_graph, ["RES_SCHEDULER", "R345", "R234"])
 
     t = RunningTaskToolbox(analysis)
     t.mark_syscalls_in_function(H3);

@@ -40,7 +40,7 @@ class SystemStateFlow(Analysis):
         input_abbs = block.get_incoming_nodes(edge_type)
         input_states = [edge_states[(source, block)]
                         for source in input_abbs]
-        return SystemState.merge_many(block.system, input_states)
+        return SystemState.merge_many(block.system_graph, input_states)
 
     @staticmethod
     def update_before_state(edge_states, before_state_dict, block, edge_type):
@@ -70,11 +70,11 @@ class SystemStateFlow(Analysis):
 
     def install_sporadic_events(self):
         # Install the alarm handlers
-        for alarm in self.system.alarms:
+        for alarm in self.system_graph.alarms:
             self.sporadic_events.append(SSF_Alarm(alarm))
 
         # Install the ISR handlers
-        for isr in self.system.isrs:
+        for isr in self.system_graph.isrs:
             wrapped_isr = SSF_ISR(isr, self.system_call_semantic)
             self.sporadic_events.append(wrapped_isr)
             self.isrs.append(wrapped_isr)
@@ -149,11 +149,11 @@ class SystemStateFlow(Analysis):
         # ABB -> SystemState
         self.before_abb_states = {}
 
-        self.system_call_semantic = SystemCallSemantic(self.system, self.running_task)
+        self.system_call_semantic = SystemCallSemantic(self.system_graph, self.running_task)
 
         self.install_sporadic_events()
 
-        entry_abb = self.system.functions["StartOS"].entry_abb
+        entry_abb = self.system_graph.functions["StartOS"].entry_abb
         self.fixpoint = FixpointIteraton([entry_abb])
         self.fixpoint.do(self.block_functor)
 

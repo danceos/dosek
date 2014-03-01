@@ -3,9 +3,9 @@ from generator.graph.verifier_tools import *
 def after_SystemStateFlow(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, H4, H5, Idle, StartOS, bar) = \
-       get_functions(analysis.system, ["H1", "H2", "H3", "H4", "H5", 
+       get_functions(analysis.system_graph, ["H1", "H2", "H3", "H4", "H5", 
                                        "Idle", "StartOS", "bar"])
-    (RES_SCHEDULER,) = get_objects(analysis.system, ["RES_SCHEDULER"])
+    (RES_SCHEDULER,) = get_objects(analysis.system_graph, ["RES_SCHEDULER"])
 
     t = RunningTaskToolbox(analysis)
     # There are two terminate tasks in H1
@@ -30,7 +30,7 @@ def after_SystemStateFlow(analysis):
 def after_ConstructGlobalCFG(analysis):
     # Find all three systemcall handlers
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
-       get_functions(analysis.system, ["H1", "H2", "H3", "H4", "H5",
+       get_functions(analysis.system_graph, ["H1", "H2", "H3", "H4", "H5",
                                        "Idle", "StartOS"])
     assert len(analysis.removed_edges) == 3
     # There are two terminate tasks in H1

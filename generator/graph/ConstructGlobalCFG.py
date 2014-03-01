@@ -18,9 +18,9 @@ class ConstructGlobalCFG(Analysis):
 
     def requires(self):
         # We require all passes that are enqueued
-        self.state_flow = self.system.get_pass("SystemStateFlow",
+        self.state_flow = self.system_graph.get_pass("SystemStateFlow",
                                                only_enqueued = True)
-        self.sse        = self.system.get_pass("SymbolicSystemExecution",
+        self.sse        = self.system_graph.get_pass("SymbolicSystemExecution",
                                                only_enqueued = True)
 
         ret = []
@@ -64,7 +64,7 @@ class ConstructGlobalCFG(Analysis):
 
     def do(self):
         self.removed_edges = []
-        for source_abb in self.system.get_abbs():
+        for source_abb in self.system_graph.get_abbs():
             in_state_flow = set(self.edges_in_state_flow(source_abb))
             in_sse = set(self.edges_in_sse(source_abb))
 

@@ -101,16 +101,16 @@ class GlobalABBInfoToolbox:
 
 class ConstructGlobalCFGToolbox(GlobalABBInfoToolbox):
     def __init__(self, analysis):
-        GlobalABBInfoToolbox.__init__(self, analysis.system,
+        GlobalABBInfoToolbox.__init__(self, analysis.system_graph,
                                       analysis.global_abb_information_provider())
 
 
 class RunningTaskToolbox(GlobalABBInfoToolbox):
     def __init__(self, analysis):
-        GlobalABBInfoToolbox.__init__(self, analysis.system, analysis)
-        assert isinstance(analysis, SystemStateFlow) or isinstance(analysis, SymbolicSystemExecution)
+        GlobalABBInfoToolbox.__init__(self, analysis.system_graph, analysis)
+        assert isinstance(analysis, SystemStateFlow)
         self.analysis = analysis
-        self.system_graph = analysis.system
+        self.system_graph = analysis.system_graph
         self.check_base_constraints()
 
     def check_base_constraints(self):

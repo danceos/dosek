@@ -20,29 +20,29 @@ class AddFunctionCalls(Analysis):
         ## Mark all relevant functions
 
         # All subtasks are relevant
-        relevant_functions = set(self.system.get_subtasks())
+        relevant_functions = set(self.system_graph.get_subtasks())
 
         # All functions that belong to tasks are relevant:
-        for task in self.system.tasks:
+        for task in self.system_graph.tasks:
             relevant_functions.update(task.functions)
 
         # All functions that contain at least one systemcall are relevant
-        for function in self.system.functions.values():
+        for function in self.system_graph.functions.values():
             if len(function.get_syscalls()) > 0:
                 relevant_functions.add(function)
 
         for name in ("os_main", "StartOS"):
-            if name in self.system.functions:
-                relevant_functions.add(self.system.find_function(name))
+            if name in self.system_graph.functions:
+                relevant_functions.add(self.system_graph.find_function(name))
 
 
         changed = True
         while changed:
             changed = False
             for call in self.function_calls:
-                calling_block = self.system.find_abb(call.abb)
+                calling_block = self.system_graph.find_abb(call.abb)
                 calling_function = calling_block.function
-                called_function = self.system.find_function(call.function)
+                called_function = self.system_graph.find_function(call.function)
 
                 assert called_function, "All called functions have to exist"
                 assert calling_function, "All calling functions have to exist"
@@ -54,15 +54,15 @@ class AddFunctionCalls(Analysis):
                     changed = True
 
         self.relevant_functions = relevant_functions
-        for abb in self.system.get_abbs():
+        for abb in self.system_graph.get_abbs():
             # Add all 'normal' function call edges
             handled = False
             for call in self.function_calls:
-                calling_block = self.system.find_abb(call.abb)
+                calling_block = self.system_graph.find_abb(call.abb)
                 # Not the current function ABB
                 if calling_block != abb:
                     continue
-                function = self.system.find_function(call.function)
+                function = self.system_graph.find_function(call.function)
                 if not function in relevant_functions:
                     continue
                 called_block  = function.entry_abb

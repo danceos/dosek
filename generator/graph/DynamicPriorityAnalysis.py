@@ -56,13 +56,13 @@ class DynamicPriorityAnalysis(Analysis):
         # AtomicBasicBlock -> set([Resource])
         self.values = {}
         # All Atomic basic blocks have a start value
-        for resource in self.system.resources.values():
+        for resource in self.system_graph.resources.values():
             self.values[resource] = {}
-            for abb in self.system.get_abbs():
+            for abb in self.system_graph.get_abbs():
                 # The default is that we do not know anything
                 self.values[resource][abb] \
                     = self.StateVector(free = False, taken = False)
-            for subtask in self.system.get_subtasks():
+            for subtask in self.system_graph.get_subtasks():
                 # At the entry point of a subtask every resource is free
                 self.values[resource][subtask.entry_abb] \
                     = self.StateVector(free = True, taken = False)
@@ -72,10 +72,10 @@ class DynamicPriorityAnalysis(Analysis):
                 start_basic_blocks.extend(successors)
 
             # After the System boots we also know that everything is fine
-            self.values[resource][self.system.functions["StartOS"].entry_abb] \
+            self.values[resource][self.system_graph.functions["StartOS"].entry_abb] \
                 = self.StateVector(free = True, taken = False)
 
-        for resource in self.system.resources.values():
+        for resource in self.system_graph.resources.values():
             self.__res = resource
             fixpoint = FixpointIteraton(start_basic_blocks)
             fixpoint.do(self.block_functor)
@@ -87,12 +87,12 @@ class DynamicPriorityAnalysis(Analysis):
         # ...
         # if (X)
         #    ReleaseResource(A)
-        for abb in self.system.get_abbs():
+        for abb in self.system_graph.get_abbs():
             if abb.function.subtask == None:
                 # Not reachable from a subtask
                 continue
             dynamic_priority = abb.function.subtask.static_priority
-            for resource in self.system.resources.values():
+            for resource in self.system_graph.resources.values():
                 state = self.values[resource][abb]
                 assert not(state.free and state.taken), \
                     """The allocation state of resource have to be unambigious at every
@@ -107,13 +107,13 @@ class DynamicPriorityAnalysis(Analysis):
         # Each systemcall has the priority of the preceeding block, if
         # there is no preceeding block (which is only true for
         # StartOS), the priority is the idle priority.
-        for syscall in self.system.get_syscalls():
+        for syscall in self.system_graph.get_syscalls():
             precessors = syscall.get_incoming_nodes(E.task_level)
             if syscall.isA(S.kickoff):
                 syscall.dynamic_priority = syscall.function.subtask.static_priority
             elif len(precessors) == 0:
                 assert syscall.function.is_system_function
-                syscall.dynamic_priority = self.system.get_subtask("Idle").static_priority
+                syscall.dynamic_priority = self.system_graph.get_subtask("Idle").static_priority
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority
             else:

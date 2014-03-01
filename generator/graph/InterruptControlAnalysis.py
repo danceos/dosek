@@ -68,7 +68,7 @@ class InterruptControlAnalysis(Analysis):
         # AtomicBasicBlock -> BlockingCounter
         self.values = {}
         # All Atomic basic blocks have a start value
-        for abb in self.system.get_abbs():
+        for abb in self.system_graph.get_abbs():
             # The default is that interrupts are allowed
             self.values[abb] = self.BlockingCounter(0, 0)
             if "Interrupts" in abb.syscall_type.name:
@@ -77,7 +77,7 @@ class InterruptControlAnalysis(Analysis):
         fixpoint = FixpointIteraton(start_basic_blocks)
         fixpoint.do(self.block_functor)
 
-        for abb in self.system.get_abbs():
+        for abb in self.system_graph.get_abbs():
             states_incoming = [self.values[x] for x in abb.get_incoming_nodes(E.task_level)]
             if len(states_incoming) > 0:
                 first = states_incoming[0]

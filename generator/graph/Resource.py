@@ -1,12 +1,12 @@
 class Resource:
-    def __init__(self, system, name, tasks):
+    def __init__(self, system_graph, name, tasks):
         """Constructs a resource that belongs to system (SystemGraph), that
            has a name and the tasks can obtain this resource"""
-        self.system = system
+        self.system_graph = system_graph
         self.name = name
         self.subtasks = []
         for t in tasks:
-            subtask = self.system.get_subtask(t)
+            subtask = self.system_graph.get_subtask(t)
             assert subtask, "Subtask %s not found, that uses resource %s" % (t, name)
             self.subtasks.append(subtask)
 

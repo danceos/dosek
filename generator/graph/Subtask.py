@@ -1,9 +1,9 @@
 from generator.graph.Function import Function
 
 class Subtask(Function):
-    def __init__(self, system, name, function_name):
+    def __init__(self, system_graph, name, function_name):
         Function.__init__(self, function_name)
-        self.system = system
+        self.system_graph = system_graph
         self.name = name
         self.task = None
         self.subtask = self
@@ -50,7 +50,7 @@ class Subtask(Function):
         return str(4096) # FIXME: Should be user configurable
 
     def fsck(self):
-        assert self.task in self.system.tasks
+        assert self.task in self.system_graph.tasks
 
     def dump(self):
         from_function = Function.dump(self)

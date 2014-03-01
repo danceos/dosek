@@ -8,7 +8,7 @@ class Analysis:
     def __init__(self):
         self.valid = False
         self.debug = self.__log_void
-        self.system = None
+        self.system_graph = None
 
     def __log_void(self, *args, **kwargs):
         pass
@@ -22,9 +22,9 @@ class Analysis:
         else:
             self.debug = self.__log_void
 
-    def set_system(self, system):
-        self.system = system
-        self.stats = system.stats
+    def set_system(self, system_graph):
+        self.system_graph = system_graph
+        self.stats = system_graph.stats
 
     @classmethod
     def name(cls):
@@ -35,13 +35,13 @@ class Analysis:
         return []
 
     def get_analysis(self, name):
-        a = self.system.passes[name]
+        a = self.system_graph.passes[name]
         assert a.valid
         return a
 
     def analyze(self):
         assert not self.valid
-        assert self.system != None
+        assert self.system_graph != None
         self.do()
         self.valid = True
 
@@ -85,7 +85,7 @@ class EnsureComputationBlocks(Analysis):
         if not nessecary:
             return
 
-        new = self.system.new_abb()
+        new = self.system_graph.new_abb()
         new.syscall_type = S.computation
         abb.function.add_atomic_basic_block(new)
 
@@ -103,10 +103,13 @@ class EnsureComputationBlocks(Analysis):
         elif len (abb.get_outgoing_nodes(E.function_level)) == 1 \
              and not abb.definite_after(E.function_level).isA(S.computation):
             nessecary = True
+        elif len (abb.get_outgoing_nodes(E.function_level)) == 0:
+            nessecary = True
+
         if not nessecary:
             return
         #print "add_after", abb
-        new = self.system.new_abb()
+        new = self.system_graph.new_abb()
         abb.function.add_atomic_basic_block(new)
         for edge in copy.copy(abb.outgoing_edges):
             abb.remove_cfg_edge(edge.target, E.function_level)
@@ -115,19 +118,19 @@ class EnsureComputationBlocks(Analysis):
         abb.add_cfg_edge(new, E.function_level)
 
     def do(self):
-        for syscall in self.system.get_syscalls():
+        for syscall in self.system_graph.get_syscalls():
             if syscall.isA(S.Idle):
-                abb = self.system.new_abb()
+                abb = self.system_graph.new_abb()
                 abb.syscall_type = S.computation
                 syscall.function.add_atomic_basic_block(abb)
                 abb.add_cfg_edge(syscall, E.function_level)
                 syscall.add_cfg_edge(abb, E.function_level)
                 # Do start the idle loop with an computation node
                 abb.function.entry_abb = abb
-            elif not syscall.syscall_type.isRealSyscall() \
+            elif not syscall.syscall_type.isRealSyscall()\
                  or syscall.function.is_system_function:
                 continue
-            elif syscall.isA(S.ChainTask) or syscall.isA(S.TerminateTask):
+            elif syscall.syscall_type.doesTerminateTask():
                 # This two syscalls immediatly return the control flow
                 # to the system
                 self.add_before(syscall)
@@ -137,8 +140,8 @@ class EnsureComputationBlocks(Analysis):
                 self.add_before(syscall)
                 self.add_after(syscall)
 
-        for subtask in self.system.get_subtasks():
-            kickoff = self.system.new_abb()
+        for subtask in self.system_graph.get_subtasks():
+            kickoff = self.system_graph.new_abb()
             kickoff.make_it_a_syscall(S.kickoff, [subtask])
             subtask.add_atomic_basic_block(kickoff)
             kickoff.add_cfg_edge(subtask.entry_abb, E.function_level)
@@ -193,7 +196,7 @@ class CurrentRunningSubtask(Analysis):
         # AtomicBasicBlock -> set([Subtask])
         self.values = {}
         # All Atomic basic blocks have a start value
-        for task in self.system.tasks:
+        for task in self.system_graph.tasks:
             for subtask in task.subtasks:
                 # Start DFS at all entry nodes
                 self.values[subtask.entry_abb] = set([subtask])
@@ -216,10 +219,10 @@ class MoveFunctionsToTask(Analysis):
         return [CurrentRunningSubtask.name()]
 
     def do(self):
-        idle = self.system.find_function("Idle")
+        idle = self.system_graph.find_function("Idle")
 
         subtask_analysis = self.get_analysis("CurrentRunningSubtask")
-        for abb in self.system.get_abbs():
+        for abb in self.system_graph.get_abbs():
             subtask = subtask_analysis.for_abb(abb)
             # The function belongs to a single subtask. If it is a
             # normal function and not yet moved to a task, move it there.

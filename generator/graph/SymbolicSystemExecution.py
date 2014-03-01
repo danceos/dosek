@@ -83,7 +83,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         current_subtask = before.current_abb.function.subtask
 
         # Handle sporadic events
-        for sporadic_event in self.system.alarms + self.system.isrs:
+        for sporadic_event in self.system_graph.alarms + self.system_graph.isrs:
             if not sporadic_event.can_trigger(before):
                 continue
             after = sporadic_event.trigger(before)
@@ -95,7 +95,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
 
         # Instanciate a new system call semantic
-        self.system_call_semantic = SystemCallSemantic(self.system, self.running_task)
+        self.system_call_semantic = SystemCallSemantic(self.system_graph, self.running_task)
         scc = self.system_call_semantic
 
         self.transitions = {S.StartOS         : scc.do_StartOS,
@@ -123,8 +123,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Instanciate the big dict (State->[State])
         self.states_next = {}
 
-        entry_abb = self.system.functions["StartOS"].entry_abb
-        before_StartOS = SystemState(self.system)
+        entry_abb = self.system_graph.functions["StartOS"].entry_abb
+        before_StartOS = SystemState(self.system_graph)
         before_StartOS.current_abb = entry_abb
         for subtask in before_StartOS.states.keys():
             before_StartOS.call_stack[subtask] = stack()
@@ -162,7 +162,7 @@ class SSE_GlobalAbbInfo(GlobalAbbInfo):
         states_in_this_abb = self.analysis.states_by_abb[abb]
 
         self.__cached_state_before = \
-            SystemState.merge_many(self.analysis.system, states_in_this_abb)
+            SystemState.merge_many(self.analysis.system_graph, states_in_this_abb)
 
         self.__cached_abbs_before = set()
         self.__cached_states_after = set()

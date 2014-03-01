@@ -273,10 +273,10 @@ class SystemGraph(GraphObject, PassManager):
         abbs = set()
         for task in self.tasks:
             task.fsck()
-            assert task.system == self
+            assert task.system_graph == self
             for subtask in task.subtasks:
                 subtask.fsck()
-                assert subtask.system == self
+                assert subtask.system_graph == self
                 functions.add(subtask)
                 abbs.update(set(subtask.abbs))
 

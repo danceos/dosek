@@ -17,11 +17,11 @@ class PrioritySpreadingPass(Analysis):
 
     def do(self):
         # Get list of all subtasks
-        subtasks = self.system.get_subtasks()
+        subtasks = self.system_graph.get_subtasks()
 
         # Resources and priorities take part in the priority protocol
         participants = [[x.static_priority * 2, x] for x in subtasks]
-        for resource in self.system.resources.values():
+        for resource in self.system_graph.resources.values():
             prio = 2*max([x.static_priority for x in resource.subtasks]) + 1
             participants.append( [prio, resource] )
 
@@ -37,4 +37,4 @@ class PrioritySpreadingPass(Analysis):
             self.prio_to_participant[prio] = p[1]
             prio += 1
 
-        assert participants[0][1] == self.system.get_subtask("Idle")
+        assert participants[0][1] == self.system_graph.get_subtask("Idle")

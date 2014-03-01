@@ -3,16 +3,16 @@ from copy import copy
 from generator.graph.AtomicBasicBlock import E
 
 class SystemCallSemantic:
-    def __init__(self, system, running_task):
+    def __init__(self, system_graph, running_task):
         self.running_task = running_task
-        self.system = system
+        self.system_graph = system_graph
 
     def do_StartOS(self, block, before):
         state = before.copy()
         # In the StartOS node all tasks are suspended before,
         # and afterwards the idle loop and the autostarted
         # tasks are ready
-        for subtask in self.system.get_subtasks():
+        for subtask in self.system_graph.get_subtasks():
             if subtask.autostart:
                 state.set_ready(subtask)
             else:
@@ -198,24 +198,24 @@ class SystemState:
     READY = 1
     SUSPENDED = 2
 
-    def __init__(self, system):
-        self.system = system
+    def __init__(self, system_graph):
+        self.system_graph = system_graph
         self.frozen = False
         self.states = {}
         self.continuations = {}
         self.call_stack = {}
         # {Subtask -> set([STATES])
-        for subtask in self.system.get_subtasks():
+        for subtask in self.system_graph.get_subtasks():
             self.states[subtask] = 0
             self.continuations[subtask] = set()
             self.call_stack[subtask] = None
         self.current_abb = None
 
     def new(self):
-        return SystemState(self.system)
+        return SystemState(self.system_graph)
 
     def copy(self):
-        state = SystemState(self.system)
+        state = SystemState(self.system_graph)
         state.current_abb = self.current_abb
         for subtask in state.get_subtasks():
             state.states[subtask] = self.states[subtask]
@@ -228,7 +228,7 @@ class SystemState:
 
     def get_subtasks(self):
         """Sorted by priority"""
-        return sorted(self.system.get_subtasks(),
+        return sorted(self.system_graph.get_subtasks(),
                       key=lambda x: x.static_priority, reverse = True)
 
     def get_task_states(self, subtask):

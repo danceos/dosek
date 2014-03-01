@@ -2,9 +2,9 @@ from generator.graph.common import GraphObject
 
 class Task(GraphObject):
     """A Task represents a whole set of SubTasks. All subtasks belong logically together"""
-    def __init__(self, system, label):
+    def __init__(self, system_graph, label):
         GraphObject.__init__(self, label, color = "blue")
-        self.system = system
+        self.system_graph = system_graph
         self.label = label
         self.subtasks = []
         self.functions = []
@@ -38,15 +38,15 @@ class Task(GraphObject):
     def add_function(self, function):
         function.task = self
         self.functions.append(function)
-        if not function in self.system.functions.values():
-            self.system.functions[function.function_name] = function
+        if not function in self.system_graph.functions.values():
+            self.system_graph.functions[function.function_name] = function
 
 
     def dump(self):
         return self.event
 
     def fsck(self):
-        assert self in self.system.tasks
+        assert self in self.system_graph.tasks
 
     def __repr__(self):
         return "<" + str(self.__class__) + " " + self.label + ">"
