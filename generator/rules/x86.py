@@ -1,7 +1,7 @@
 from generator.rules.simple import SimpleArch
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
     Include, FunctionDeclaration, Comment, Function, DataObject, \
-    DataObjectArray
+    DataObjectArray, Hook, Block
 
 class X86Arch(SimpleArch):
     def __init__(self):
@@ -75,32 +75,38 @@ class X86Arch(SimpleArch):
         # Call the end of interrupt function
         self.call_function(handler, "LAPIC::send_eoi", "void", [])
 
-    def syscall_block(self, function, subtask, arguments):
-        """When a systemcall is needed to execute code on kernel level, a new
-           function is generated, and the new-functions block is
-           returned. otherwise the argument is returned. This is
-           useful for x86-bare, since an ActivateTask can be called
-           directly from the ISR2, but must be invoked via an syscall
-           form a TASK.
+    def generate_kernelspace(self, userspace, abb, arguments):
+        """When a systemcall is done from a app (synchroanous syscall), then we
+           disable interrupts. In the interrupt handler they are already
+           disabled.
         """
+        pre_hook  = Hook("SystemEnterHook")
+        post_hook = Hook("SystemLeaveHook")
 
-        # System function can be executed directly in an isr
-        if subtask.is_isr:
-            function.add(Comment("Called from ISR, no syscall required!"))
-            return function
+        if abb.function.subtask.is_isr:
+            userspace.add(Comment("Called from ISR, no disable interrupts required!"))
+
+            system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
+
+            userspace.add(pre_hook)
+            userspace.add(system)
+            userspace.add(post_hook)
+
+            return self.KernelSpace(pre_hook, system, post_hook)
 
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall
-        syscall = Function("__OS_syscall_" + function.function_name,
+        syscall = Function("__OS_syscall_" + userspace.function_name,
                            "void", [arg.datatype for arg in arguments], extern_c = True)
 
-        #syscall.unused_parameter(0)
         self.generator.source_file.function_manager.add(syscall)
         # The syscall function is called from the function that will
         # be inlined into the application
-        self.call_function(function, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
+        self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
+        syscall.add(pre_hook)
+        self.call_function(userspace, "Machine::enable_interrupts", "void", [])
 
-        return syscall
+        return self.KernelSpace(pre_hook, syscall, None)
 
 
 

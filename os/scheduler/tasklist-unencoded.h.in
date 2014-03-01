@@ -23,6 +23,15 @@ struct TaskList : public UnencodedTaskListStatic {
     {{{snippet:ready_flag_init:name|, %(name)s(0)}}}
     TaskList() : UnencodedTaskListStatic() {{{generate:ready_flag_constructor}}} {}
 
+    forceinline void isSuspended(const prio_t id) {
+	{{{snippet:task_set_entry:name|if(id == %(id)s) {
+	return %(name)s == 0;
+} else }}}
+		{{{generate:task_set_call:task_set_entry}}}{
+			assert(false);
+		}
+    }
+
     /** Set priority of task id to prio **/
     forceinline void set(const prio_t id, const prio_t prio) {
 {{{snippet:task_set_entry:name|if(id == %(id)s) {
@@ -32,6 +41,8 @@ struct TaskList : public UnencodedTaskListStatic {
              assert(false);
          }
     }
+
+
 
     /** Set priority of task id to prio **/
     forceinline void increasePrio(const prio_t id, const prio_t prio) {

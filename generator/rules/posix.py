@@ -1,5 +1,5 @@
 from generator.elements import Include, FunctionDeclaration, Comment, \
-                               DataObject, Block
+                               DataObject, Block, Hook
 
 from generator.rules.simple import SimpleArch
 
@@ -55,23 +55,28 @@ class PosixArch(SimpleArch):
                            prepend = True)
 
 
-
-
-
-    def syscall_block(self, function, subtask, arguments):
-        """When a systemcall is done from a app (synchronous syscall), then we
+    def generate_kernelspace(self, userspace, abb, arguments):
+        """When a systemcall is done from a app (synchroanous syscall), then we
            disable interrupts. In the interrupt handler they are already
            disabled.
         """
+        if abb.function.subtask.is_isr:
+            userspace.add(Comment("Called from ISR, no disable interrupts required!"))
+        else:
+            self.call_function(userspace, "Machine::disable_interrupts", "void", [])
 
-        # System function can be executed directly in an isr
-        if subtask.is_isr:
-            function.add(Comment("Called from ISR, no disable interrupts required!"))
-            return function
+        pre_hook  = Hook("SystemEnterHook")
+        system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
+        post_hook = Hook("SystemEnterHook")
 
-        self.call_function(function, "Machine::disable_interrupts", "void", [])
-        block = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
-        function.add(block)
-        self.call_function(function, "Machine::enable_interrupts", "void", [])
+        userspace.add(pre_hook)
+        userspace.add(system)
+        userspace.add(post_hook)
 
-        return block
+        if abb.function.subtask.is_isr:
+            userspace.add(Comment("Called from ISR, no enable interrupts required!"))
+        else:
+            self.call_function(userspace, "Machine::enable_interrupts", "void", [])
+
+        return self.KernelSpace(pre_hook, system, post_hook)
+

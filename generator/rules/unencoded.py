@@ -1,6 +1,7 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment, Function
+from generator.graph.AtomicBasicBlock import S
 
 class UnencodedSystem(SimpleSystem):
     def __init__(self):
@@ -31,74 +32,87 @@ class UnencodedSystem(SimpleSystem):
 
     def systemcall(self, systemcall, userspace):
         """Generate systemcall into userspace"""
-        self.system_enter_hook(userspace)
 
         subtask = systemcall.abb.function.subtask
-        abb_id  = systemcall.abb.abb_id
+        abb  = systemcall.abb
         syscall_type = systemcall.abb.syscall_type
-        def generate_kernelspace(args):
-            kernelspace = self.generator.arch_rules.syscall_block(userspace,
-                                                                  subtask, args)
-            if isinstance(kernelspace, Function):
-                self.stats.add_data(systemcall.abb, "generated-function",
-                                    kernelspace.name)
-            return kernelspace
+
+        kernelspace = None
+        if abb.isA([S.TerminateTask, S.ActivateTask, S.ChainTask,
+                    S.CancelAlarm, S.GetResource, S.ReleaseResource]):
+            # Need a kernelspace
+            kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, [])
 
         if systemcall.function == "TerminateTask":
-            kernelspace = generate_kernelspace([])
-            self.syscall_rules.TerminateTask(kernelspace, systemcall.abb)
+            self.syscall_rules.TerminateTask(kernelspace.system, abb)
 
         elif systemcall.function == "ActivateTask":
             userspace.unused_parameter(0)
-            kernelspace = generate_kernelspace([])
-            self.syscall_rules.ActivateTask(kernelspace, systemcall.abb)
+            self.syscall_rules.ActivateTask(kernelspace.system, abb)
 
         elif systemcall.function == "ChainTask":
             userspace.unused_parameter(0)
-            kernelspace = generate_kernelspace([])
-            self.syscall_rules.ChainTask(kernelspace, systemcall.abb)
+            self.syscall_rules.ChainTask(kernelspace.system, abb)
 
         elif systemcall.function == "CancelAlarm":
             userspace.unused_parameter(0)
-            kernelspace = generate_kernelspace([])
-            self.syscall_rules.CancelAlarm(kernelspace, systemcall.abb)
+            self.syscall_rules.CancelAlarm(kernelspace.system, abb)
 
         elif systemcall.function == "GetResource":
             userspace.unused_parameter(0)
-            kernelspace = generate_kernelspace([])
-            self.syscall_rules.GetResource(kernelspace, systemcall.abb)
+            self.syscall_rules.GetResource(kernelspace.system, abb)
 
         elif systemcall.function == "ReleaseResource":
             userspace.unused_parameter(0)
-            kernelspace = generate_kernelspace([])
-            self.syscall_rules.ReleaseResource(kernelspace, systemcall.abb)
+            self.syscall_rules.ReleaseResource(kernelspace.system, abb)
         # Interrupt Handling
         elif systemcall.function == "DisableAllInterrupts":
-            self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
+            self.syscall_rules.DisableAllInterrupts(userspace, abb)
         elif systemcall.function == "EnableAllInterrupts":
-            self.syscall_rules.EnableAllInterrupts(userspace, systemcall.abb)
+            self.syscall_rules.EnableAllInterrupts(userspace, abb)
         elif systemcall.function == "SuspendAllInterrupts":
-            self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
+            self.syscall_rules.DisableAllInterrupts(userspace, abb)
         elif systemcall.function == "ResumeAllInterrupts":
-            self.syscall_rules.EnableAllInterrupts(userspace, systemcall.abb)
+            self.syscall_rules.EnableAllInterrupts(userspace, abb)
         elif systemcall.function == "SuspendOSInterrupts":
-            self.syscall_rules.DisableAllInterrupts(userspace, systemcall.abb)
+            self.syscall_rules.DisableAllInterrupts(userspace, abb)
         elif systemcall.function == "ResumeOSInterrupts":
-            self.syscall_rules.EnableAllInterrupts(userspace, systemcall.abb)
+            self.syscall_rules.EnableAllInterrupts(userspace, abb)
         # Alarms
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
             arg1 = self.convert_argument(userspace, userspace.arguments()[1])
             arg2 = self.convert_argument(userspace, userspace.arguments()[2])
-            kernelspace = generate_kernelspace([arg1, arg2])
-            self.syscall_rules.SetRelAlarm(kernelspace, systemcall.abb, [arg1, arg2])
+            kernelspace = self.arch_rules.\
+                          generate_kernelspace(userspace, abb, [arg1, arg2])
+            self.syscall_rules.SetRelAlarm(kernelspace.system, abb, [arg1, arg2])
         else:
             assert False, "Not yet supported %s"% systemcall.function
 
-        self.system_leave_hook(userspace)
+        # Fill up the hooks
+        if kernelspace and kernelspace.pre_hook:
+            self.system_enter_hook(abb, kernelspace.pre_hook)
+        if kernelspace and kernelspace.post_hook:
+            self.system_leave_hook(abb, kernelspace.post_hook)
+
 
         if systemcall.rettype != 'void':
             self.return_statement(userspace, "E_OK")
+
+    def system_enter_hook(self, abb, hook):
+        asserts = self.system_graph.get_pass("GenerateAssertionsPass",
+                                              only_enqueued = True)
+        # Have we collected asserts?
+        if asserts:
+            asserts.system_enter_hook(self.generator, abb, hook)
+
+    def system_leave_hook(self, abb, hook):
+        asserts = self.system_graph.get_pass("GenerateAssertionsPass",
+                                              only_enqueued = True)
+        # Have we collected asserts?
+        if asserts:
+            asserts.system_leave_hook(self.generator, abb, hook)
+
 
 
 class TaskListTemplate(CodeTemplate):

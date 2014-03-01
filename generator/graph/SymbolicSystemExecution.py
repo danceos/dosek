@@ -12,6 +12,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
        flow analysis, but may take longer, since it might explode.
 
     """
+    pass_alias = "sse"
+
     def __init__(self):
         Analysis.__init__(self)
         GraphObject.__init__(self, "SymbolicSystemState", root = True)

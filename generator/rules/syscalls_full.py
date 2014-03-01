@@ -139,4 +139,12 @@ class FullSystemCalls(BaseRules):
     def EnableAllInterrupts(self, userspace, abb):
         self.enable_irq(userspace, abb)
 
+    # Assertions
+    def assert_TaskIsReady(self, block, task):
+        """Generate an assert for the fact that a specific task is running"""
+        block.add(Statement("assert(! scheduler_.isSuspended(%s))" % self.task_desc(task)))
+    def assert_TaskIsSuspended(self, block, task):
+        """Generate an assert for the fact that a specific task is running"""
+        block.add(Statement("assert(scheduler_.isSuspended(%s))" % self.task_desc(task)))
+
 

@@ -129,6 +129,10 @@ struct Scheduler {
 		tlist.set(task.id, new_prio);
 	}
 
+	forceinline bool isSuspended(const Task task) {
+		return tlist.isSuspended(task.id);
+	}
+
     forceinline void IncreasePriority(const Task task, const int new_prio) {
 		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (task.id == %(task)s.id) {
 	tlist.insert(%(task)s.id,  new_prio);

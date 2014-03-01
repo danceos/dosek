@@ -135,6 +135,12 @@ struct Scheduler  {
 		tlist.set(id, new_prio_encoded);
 	}
 
+	forceinline bool isSuspended(const Task task) {
+		auto id = task.enc_id<1>();
+		return tlist.isSuspended(id);
+	}
+
+
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
 	forceinline void IncreasePriority(const Task task, const int new_prio) {
 	auto id = task.enc_id<TASK_SIG>();

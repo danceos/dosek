@@ -3,7 +3,7 @@ COREDOS_BINARY(
   SYSTEM_XML system.xml
   VERIFY verify_a.py
   LIBS libtest
-  GENERATOR_ARGS -fgen-asserts
+  GENERATOR_ARGS -fgen-asserts -fsse
   TEST_ISO
   a.cc
 )

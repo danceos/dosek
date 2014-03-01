@@ -1,6 +1,7 @@
 from generator.tools import stringify
 from generator.elements import *
 from generator.rules.base import BaseRules
+from collections import namedtuple
 
 class SimpleSystem(BaseRules):
     def __init__(self):
@@ -24,30 +25,9 @@ class SimpleSystem(BaseRules):
         com = self.object_COM()
         block.add( Statement("%s << %s" % (com, " << ".join(expressions))))
 
-    def system_enter_hook(self, function):
-        hook = Hook("SystemEnterHook")
-        function.add(hook)
-        return hook
-
-    def system_leave_hook(self, function):
-        hook = Hook("SystemLeaveHook")
-        function.add(hook)
-        return hook
-
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""
-        self.system_enter_hook(function)
-
-        ret_var = self.call_function(function,
-                                     "OSEKOS_" + systemcall.function,
-                                     systemcall.rettype,
-                                     [x[0] for x in systemcall.arguments])
-
-        self.kout(function, stringify(systemcall.function + "was called\n"))
-        self.system_leave_hook(function)
-
-        if ret_var:
-            self.return_statement(function, ret_var.name)
+        raise NotImplemented()
 
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
@@ -152,20 +132,10 @@ class SimpleArch(BaseRules):
             self.generator.source_file.function_manager.add(entry_function)
             self.objects[subtask]["entry_function"] = entry_function
 
-    def syscall_block(self, function, subtask, argument):
-        """When a systemcall is needed to execute code on kernel level, a new
-           function is generated, and the new-functions block is
-           returned. otherwise the argument is returned. This is
-           useful for x86-bare, since an ActivateTask can be called
-           directly from the ISR2, but must be invoked via an syscall
-           form a TASK.
-
-        """
-        return function
-
-
-
-
+    KernelSpace = namedtuple("KernelSpace", ["pre_hook", "system", "post_hook"])
+    def generate_kernelspace(self, userspace, abb, arguments):
+        """returns a KernelSpace object"""
+        raise NotImplemented()
 
 class AlarmTemplate(CodeTemplate):
     def __init__(self, rules):

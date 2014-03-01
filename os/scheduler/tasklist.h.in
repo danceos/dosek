@@ -19,6 +19,20 @@ struct TaskList : public TaskListStatic {
 
     /** Set priority of task id to prio **/
     // returns an encoded 0 with the signature (B) of the modified task - prio.B
+    template<typename T>
+	forceinline value_coded_t isSuspended(const T id) {
+		{{{snippet:task_get_entry:name|if(id == %(id)s) {
+	return %(name)s.getCodedValue() == EC(decltype(%(name)s)::B, 0).getCodedValue();
+} else }}}
+
+		{{{generate:task_set_call:task_get_entry}}}{
+			assert(false);
+			return 0;
+		}
+    }
+
+    /** Set priority of task id to prio **/
+    // returns an encoded 0 with the signature (B) of the modified task - prio.B
     template<typename T, typename S>
     forceinline value_coded_t set(const T id, const S prio) {
 {{{snippet:task_set_entry:name|if(id == %(id)s) {

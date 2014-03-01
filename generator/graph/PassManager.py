@@ -76,7 +76,7 @@ class PassManager:
 
     def get_pass(self, name, only_enqueued = False):
         P = self.passes.get(name, None)
-        if only_enqueued:
+        if only_enqueued and P:
             if P in self.analysis_pipe or P.valid:
                 return P
             return None
@@ -105,6 +105,8 @@ class PassManager:
             logging.info("-----")
             # Remove analysis from analysation pipeline
             del self.analysis_pipe[0]
+            if front.valid:
+                continue
             # Call before analyzer
             verifier_name = "before_" + front.name()
             if verifier_name in self.verifiers:
