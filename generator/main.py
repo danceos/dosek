@@ -13,6 +13,7 @@
     @brief Main entry point
 """
 import os
+import re
 import sys
 import logging
 import optparse
@@ -61,6 +62,12 @@ if __name__ == "__main__":
     parser.add_option('', '--specialize-systemcalls', dest='specialize_systemcalls', default = None,
                       action="store_true",
                       help="generate specialized systemcalls")
+    parser.add_option('-f', '--add-pass', dest='additional_passes', default = [],
+                      action="append",
+                      help="additional passes (can also be given by setting SGFLAGS)")
+
+    if "SGFLAGS" in os.environ:
+        sys.argv.extend(re.split("[ \t:;,]+", os.environ["SGFLAGS"]))
 
     (options, args) = parser.parse_args()
 
@@ -103,6 +110,9 @@ if __name__ == "__main__":
     pass_manager.register_analysis(SymbolicSystemExecution())
     pass_manager.register_analysis(ConstructGlobalCFG())
 
+    # System-Level: Exploitation
+    pass_manager.register_analysis(GenerateAssertionsPass())
+
     # Statistics modules
     pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
 
@@ -132,6 +142,15 @@ if __name__ == "__main__":
         syscall_rules = SpecializedSystemCalls(global_abb_information)
     else:
         syscall_rules = FullSystemCalls()
+
+    # From command line
+    additional_passes = options.additional_passes
+
+    for each in additional_passes:
+        P = pass_manager.get_pass(each)
+        if not P:
+            panic("No such compiler pass: %s", each)
+        pass_manager.enqueue_analysis(P)
 
     pass_manager.analyze("%s/gen_" % (options.prefix))
 

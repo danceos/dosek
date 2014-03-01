@@ -16,24 +16,22 @@ class PassManager:
 
         ws = stack()
 
-        ws.extend([x.name() for x in self.analysis_pipe])
-        for p in self.passes.values():
-            if p.valid:
-                ws.push(p.name())
+        ws.extend(self.analysis_pipe)
+        ws.extend([x for x in self.passes.values() if x.valid])
 
         passes = {}
-
         edges = []
         while not ws.isEmpty():
-            p  = ws.pop()
-            if not p in passes:
-                P = self.passes[p]
-                passes[p] = GraphObjectContainer(p, 'black', 
-                                                 data = P.__doc__)
-                graph.subobjects.append(passes[p])
-                for requires in P.requires():
+            cur  = ws.pop()
+            if not cur in passes:
+                passes[cur] = GraphObjectContainer(cur.name(), 'black', 
+                                                 data = cur.__doc__)
+                graph.subobjects.append(passes[cur])
+                for requires in cur.requires():
+                    # Requires returns strings
+                    requires = self.passes[requires]
                     ws.push(requires)
-                    edges.append((p, requires))
+                    edges.append((cur, requires))
 
 
         for edge in edges:
@@ -44,17 +42,20 @@ class PassManager:
     def register_analysis(self, analysis):
         analysis.set_system(self)
         self.passes[analysis.name()] = analysis
+        if hasattr(analysis, "pass_alias"):
+            self.passes[analysis.pass_alias] = analysis
 
     def enqueue_analysis(self, analysis):
-        if analysis in self.passes.values():
-            self.analysis_pipe.append(analysis)
+        if analysis in self.passes:
+            analysis = self.passes[analysis]
+        assert analysis in self.passes.values(), "unregistered pass: %s" % analysis
+
+        if analysis in self.analysis_pipe:
+            logging.warning("Pass was enqueued more than once, ignore: %s", analysis)
             return analysis
-        elif analysis in self.passes:
-            # Analysis name was given
-            self.analysis_pipe.append(self.passes[analysis])
-            return self.passes[analysis]
-        else:
-            assert False
+
+        self.analysis_pipe.append(analysis)
+        return analysis
 
     def register_and_enqueue_analysis(self, analysis):
         self.register_analysis(analysis)
