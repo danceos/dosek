@@ -1,6 +1,6 @@
 from generator.tools import stack
 from copy import copy
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E, S
 
 class SystemCallSemantic:
     def __init__(self, system_graph, running_task):
@@ -242,6 +242,8 @@ class SystemState:
         assert not self.frozen
         self.states[subtask] = self.READY
 
+    ## Ready state accessors
+
     def is_surely_suspended(self, subtask):
         return self.states[subtask] == self.SUSPENDED
 
@@ -257,6 +259,7 @@ class SystemState:
     def is_unsure_ready_state(self, subtask):
         return bin(self.states[subtask]).count("1") > 1
 
+    ## Continuations
     def get_continuations(self, subtask):
         return self.continuations[subtask]
 
@@ -281,6 +284,23 @@ class SystemState:
         assert not self.frozen
         assert not self.call_stack[subtask] is None
         return self.call_stack[subtask]
+
+    ## Continuation accesors
+    def was_surely_not_kickoffed(self, subtask):
+        """Returns whether a task can only continue in the kickoff block."""
+        assert subtask.entry_abb.isA(S.kickoff)
+        is_entry = [subtask.entry_abb == x for x in self.get_continuations(subtask)]
+        return all(is_entry)
+
+    def was_surely_kickoffed(self, subtask):
+        """Returns whether a task can only be continued."""
+        assert subtask.entry_abb.isA(S.kickoff)
+        is_not_entry = [subtask.entry_abb != x for x in self.get_continuations(subtask)]
+        return all(is_not_entry)
+
+    @property
+    def current_subtask(self):
+        return self.current_abb.function.subtask
 
     def freeze(self):
         self.frozen = True

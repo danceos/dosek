@@ -168,3 +168,6 @@ class Hook(Block):
     def expand(self, generator):
         return [Comment("Hook: " + self.name), Block.expand(self, generator)]
 
+    def __str__(self):
+        return "<Hook: %s>" % self.name
+

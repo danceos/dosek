@@ -1,6 +1,9 @@
 from generator.rules.base import BaseRules
 from generator.graph.AtomicBasicBlock import E
 from generator.elements import Statement, Comment
+from generator.graph.GenerateAssertions import AssertionType
+from generator.tools import panic
+
 
 
 class FullSystemCalls(BaseRules):
@@ -139,11 +142,24 @@ class FullSystemCalls(BaseRules):
         self.enable_irq(userspace, abb)
 
     # Assertions
-    def assert_TaskIsReady(self, block, task):
-        """Generate an assert for the fact that a specific task is running"""
-        block.add(Statement("assert(! scheduler_.isSuspended(%s))" % self.task_desc(task)))
-    def assert_TaskIsSuspended(self, block, task):
-        """Generate an assert for the fact that a specific task is running"""
-        block.add(Statement("assert(scheduler_.isSuspended(%s))" % self.task_desc(task)))
+    def do_assertion(self, block, assertion):
+        if assertion.isA(AssertionType.TaskIsSuspended):
+            task = assertion.get_arguments()[0]
+            block.add(Statement("assert(scheduler_.isSuspended(%s))" \
+                                % self.task_desc(task)))
+        elif assertion.isA(AssertionType.TaskIsReady):
+            task = assertion.get_arguments()[0]
+            block.add(Statement("assert(!scheduler_.isSuspended(%s))" \
+                                % self.task_desc(task)))
+        elif assertion.isA(AssertionType.TaskWasKickoffed):
+            task = assertion.get_arguments()[0]
+            block.add(Statement("assert(%s.tcb.is_running())" \
+                                % self.task_desc(task)))
+        elif assertion.isA(AssertionType.TaskWasNotKickoffed):
+            task = assertion.get_arguments()[0]
+            block.add(Statement("assert(! %s.tcb.is_running())" \
+                                % self.task_desc(task)))
+        else:
+            panic("Unsupported assert type %s in %s", assertion, block)
 
 

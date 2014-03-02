@@ -6,6 +6,9 @@ import logging
 class AssertionType(Enum):
     TaskIsReady = 0
     TaskIsSuspended = 1
+    TaskWasKickoffed = 2
+    TaskWasNotKickoffed = 3
+
 
 class Assertion:
     def __init__(self, _type, _arguments):
@@ -63,6 +66,14 @@ class GenerateAssertionsPass(Analysis):
                 ret.append(Assertion(AssertionType.TaskIsReady, [subtask]))
             if state.is_surely_suspended(subtask):
                 ret.append(Assertion(AssertionType.TaskIsSuspended, [subtask]))
+
+            # Since we come from the current stack, it is quite sure,
+            # were we came from
+            if state.current_subtask != subtask:
+                if state.was_surely_not_kickoffed(subtask):
+                    ret.append(Assertion(AssertionType.TaskWasNotKickoffed, [subtask]))
+                if state.was_surely_kickoffed(subtask):
+                    ret.append(Assertion(AssertionType.TaskWasKickoffed, [subtask]))
         return ret
 
     def state_assertions_before(self, abb):
@@ -149,23 +160,16 @@ class GenerateAssertionsPass(Analysis):
         logging.info("  + %d/%d assertions generated", count_before, count_after)
 
 
-    def do_assertion(self, generator, hook, assertion):
-        if assertion.isA(AssertionType.TaskIsSuspended):
-            generator.syscall_rules.assert_TaskIsSuspended(hook, assertion.get_arguments()[0])
-        elif assertion.isA(AssertionType.TaskIsReady):
-            generator.syscall_rules.assert_TaskIsReady(hook, assertion.get_arguments()[0])
-
     def system_enter_hook(self, generator, abb, hook):
         """This function is called by the code generation, when the system
            enter hook should be filled"""
         for each in self.assertions_before[abb]:
-            self.do_assertion(generator, hook, each)
-
+            generator.syscall_rules.do_assertion(hook, each)
 
     def system_leave_hook(self, generator, abb, hook):
         """This function is called by the code generation, when the system
            leave hook should be filled"""
         for each in self.assertions_after[abb]:
-            self.do_assertion(generator, hook, each)
+            generator.syscall_rules.do_assertion(hook, each)
 
 
