@@ -23,12 +23,13 @@ struct TaskList : public UnencodedTaskListStatic {
     {{{snippet:ready_flag_init:name|, %(name)s(0)}}}
     TaskList() : UnencodedTaskListStatic() {{{generate:ready_flag_constructor}}} {}
 
-    forceinline void isSuspended(const prio_t id) {
-	{{{snippet:task_set_entry:name|if(id == %(id)s) {
+    forceinline bool isSuspended(const prio_t id) {
+	{{{snippet:task_get_entry:name|if(id == %(id)s) {
 	return %(name)s == 0;
 } else }}}
-		{{{generate:task_set_call:task_set_entry}}}{
+		{{{generate:task_set_call:task_get_entry}}}{
 			assert(false);
+			return false;
 		}
     }
 
