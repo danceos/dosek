@@ -1,6 +1,6 @@
 from generator.graph.Analysis import Analysis
 from generator.graph.AtomicBasicBlock import E, S
-from generator.tools import panic, select_distinct
+from generator.tools import panic, stack
 from generator.graph.common import Edge
 import logging
 
@@ -57,9 +57,22 @@ class ConstructGlobalCFG(Analysis):
             followup_abbs    = set()
             if not source_abb in self.sse.states_by_abb:
                 return []
+            ws = stack()
+            # When a state is in interrupt level, follow it until we
+            # return to user level
             for state in self.sse.states_by_abb[source_abb]:
-                followup_abbs |= select_distinct(self.sse.states_next[state],
-                                                 "current_abb")
+                ws.extend(self.sse.states_next[state])
+            while not ws.isEmpty():
+                state = ws.pop()
+                # We only follow in when we come from userland
+                if source_abb.function.subtask == None \
+                   or source_abb.function.subtask.is_isr \
+                   or not state.current_subtask.is_isr:
+                    # Reached Userlevel again
+                    followup_abbs.add(state.current_abb)
+                else:
+                    ws.extend(self.sse.states_next[state])
+
             return followup_abbs
         return []
 
@@ -88,6 +101,7 @@ class ConstructGlobalCFG(Analysis):
                         edge = Edge(source_abb, target_abb)
                         logging.debug("  + saved edge from %s -> %s", source_abb, target_abb)
                         self.removed_edges.append(edge)
+
 
             for target_abb in more_in_sse:
                 # Returns from or to interrupts are not part of the system_level flow
