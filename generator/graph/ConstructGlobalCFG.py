@@ -99,7 +99,7 @@ class ConstructGlobalCFG(Analysis):
                     # drawed in the RunningTaskGraph
                     if not source_abb.isA([S.kickoff, S.computation]):
                         edge = Edge(source_abb, target_abb)
-                        logging.debug("  + saved edge from %s -> %s", source_abb, target_abb)
+                        logging.debug(" + saved edge from %s -> %s", source_abb, target_abb)
                         self.removed_edges.append(edge)
 
 

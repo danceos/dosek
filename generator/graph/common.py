@@ -1,4 +1,5 @@
 import sys
+from generator.tools import wrap_in_list
 
 class GraphObject:
     """Any Object that is used within the graph an can be dumped as dot"""
@@ -6,6 +7,9 @@ class GraphObject:
         self.__label = label
         self.__color = color
         self.__root = root
+
+    def set_color(self, color):
+        self.__color = color
 
     def graph_dot_id(self):
         return "cluster"+self.__class__.__name__ + "_%x"%(abs(hash(self))% (1 << 24))
@@ -81,6 +85,29 @@ class GraphObjectContainer(GraphObject):
 
     def graph_edges(self):
         return self.edges
+
+    @staticmethod
+    def from_dict(label, color, edge_dict, reverse = False):
+        subobject = GraphObjectContainer(label = label, color="black")
+        objs = {}
+        # Construct the control flow edges
+        for _from, _ in edge_dict.items():
+            objs[_from] = GraphObjectContainer(label = str(_from),
+                                             color = color,
+                                             data = _from.dump())
+        for _from, targets in edge_dict.items():
+            if targets is None:
+                continue
+            targets = wrap_in_list(targets)
+            for _to in targets:
+                edge = Edge(objs[_from], objs[_to])
+                if reverse:
+                    edge.source, edge.target = edge.target, edge.source
+                subobject.edges.append(edge)
+
+        subobject.subobjects = objs.values()
+        return subobject
+
 
 class Edge:
     def __init__(self, source, target, label='', color = 'black'):

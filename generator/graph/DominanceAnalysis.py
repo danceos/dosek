@@ -1,7 +1,8 @@
 from generator.graph.Analysis           import Analysis
 from generator.graph.common             import dfs, GraphObject, Edge, GraphObjectContainer
-from generator.graph.AtomicBasicBlock   import E
-
+from generator.tools                    import stack
+from generator.graph.AtomicBasicBlock   import E,S
+import logging
 
 class DominanceAnalysis(Analysis, GraphObject):
     """Implements a dominator analysis on the system level control flow
@@ -100,24 +101,106 @@ class DominanceAnalysis(Analysis, GraphObject):
 
             self.immdom_tree[self.blocks[w]] = self.blocks[self.imm_dominators[w]]
 
-
     # Accessors
     def graph_subobjects(self):
         # All visited Atomic Basic Blocks
-        subobject = GraphObjectContainer(label = "Container", color="green")
-        abbs = {}
-        # Construct the control flow edges
-        for abb, immdom in self.immdom_tree.items():
-            abbs[abb] = GraphObjectContainer(label = str(abb),
-                                             color = 'red',
-                                             data = abb.dump())
-        for abb, immdom in self.immdom_tree.items():
-            if immdom is None:
+        _all = GraphObjectContainer.from_dict("DominatorTree[All]", "red",
+                                              self.dominator_tree().tree)
+        _syscall = GraphObjectContainer.from_dict("DominatorTree[Syscall]", "red",
+                                                  self.syscall_dominator_tree().tree)
+        _all.set_color("green")
+        _syscall.set_color("green")
+
+        ret = [_all, _syscall]
+        regions = self.syscall_dominance_regions()
+        max_region = max([len(x) for x in regions])
+        for region in regions:
+            if len(region) in (1, max_region):
                 continue
-            edge = Edge(abbs[immdom], abbs[abb])
-            subobject.edges.append(edge)
+            _region = GraphObjectContainer.from_dict(repr(region), "red",
+                                                     region.tree)
+            _region.set_color("green")
+            ret.append(_region)
 
-        subobject.subobjects = abbs.values()
-        return [subobject]
+        logging.info(" + Found %d syscall regions (interesting: %d)",
+                     len(regions), len(ret) - 2)
+        return ret
 
+    def __reverse_tree(self, _tree):
+        tree = {}
+        root = None
+        for _from, _to in _tree.items():
+            tree.setdefault(_from, [])
+
+            if _to != None:
+                tree.setdefault(_to, [])
+                tree[_to].append(_from)
+            else:
+                assert root == None
+                root = _from
+        return root, tree
+
+    def dominator_tree(self):
+        root, tree = self.__reverse_tree(self.immdom_tree)
+        return DominatorTree(root, tree)
+
+    def syscall_dominator_tree(self):
+        """The dominator tree filtered to only contian real syscalls"""
+        syscall_immdom_tree = {}
+        for _from in self.immdom_tree.keys():
+            if _from.syscall_type.isRealSyscall() or \
+               _from.isA(S.StartOS):
+                _to = self.immdom_tree[_from]
+                while _to:
+                    if _to.syscall_type.isRealSyscall() or \
+                       _to.isA(S.StartOS):
+                        break
+                    _to = self.immdom_tree[_to]
+                syscall_immdom_tree[_from] = _to
+        root, tree = self.__reverse_tree(syscall_immdom_tree)
+        return DominatorTree(root, tree)
+
+    def syscall_dominance_regions(self):
+        """Returns all subtrees of the syscall_immdom_tree"""
+        syscall_tree = self.syscall_dominator_tree()
+
+        # Find all regions
+        ws = stack()
+        ws.push((syscall_tree.root, syscall_tree.tree))
+        ret = []
+        while not ws.isEmpty():
+            root, tree = ws.pop()
+            # Construct current region
+            region = DominatorTree(root, tree)
+            # For each chilren of root, we slice the subtree into a new dict
+            for child in tree[root]:
+                ws.push((child, tree))
+            ret.append(region)
+        return ret
+
+class DominatorTree:
+    def __init__(self, root, tree):
+        self.root = root
+        self.tree = self.__slice_subtree(tree)
+        self.leaf = [k for k,v in self.tree.items() if v == []]
+
+    def __slice_subtree(self, tree):
+        "Slices all entries of the tree dict, that are below root"
+        ret = {}
+        ws = stack()
+        ws.push(self.root)
+        while not ws.isEmpty():
+            cur = ws.pop()
+            ret[cur]  = list(tree[cur])
+            ws.extend(tree[cur])
+        return ret
+
+    def __len__(self):
+        return len(self.tree)
+
+    def __repr__(self):
+        return "<DominanceRegion root:%s, size: %d>" % (self.root, len(self))
+
+    def __contains__(self, abb):
+        return abb in self.tree
 
