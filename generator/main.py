@@ -111,6 +111,7 @@ if __name__ == "__main__":
     pass_manager.register_analysis(ConstructGlobalCFG())
 
     # System-Level: Exploitation
+    pass_manager.register_analysis(DominanceAnalysis())
     pass_manager.register_analysis(GenerateAssertionsPass())
 
     # Statistics modules

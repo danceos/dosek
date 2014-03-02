@@ -21,6 +21,8 @@ from generator.graph.SystemGraph import SystemGraph
 from generator.graph.SystemSemantic import *
 from generator.graph.SystemStateFlow import *
 from generator.graph.GenerateAssertions import *
+from generator.graph.DominanceAnalysis import *
+
 
 from generator.graph.Task import Task
 from generator.graph.common import GraphObject

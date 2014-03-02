@@ -39,6 +39,12 @@ class ControlFlowEdge(Edge):
         Edge.__init__(self, source, target, color = E.color(level))
         self.level = level
 
+    def isA(self, edge_level):
+        if isinstance(edge_level, collections.Iterable):
+            return self.level in edge_level
+        return self.level == edge_level
+
+
     def __repr__(self):
         return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
                                      self.target, self.level.name)
@@ -122,6 +128,15 @@ class AtomicBasicBlock(GraphObject):
     def set_edge_filter(cls, edge_filter):
         cls.current_edge_filter = edge_filter
 
+    def check_edge_filter(self, level):
+        assert isinstance(level, E) or isinstance(level, collections.Iterable)
+        assert not self.current_edge_filter \
+            or level in self.current_edge_filter\
+            or (isinstance(level, collections.Iterable) \
+                and set(level).issubset(self.current_edge_filter)),\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
+
     def graph_edges(self):
         if self.current_edge_filter:
             return [edge for edge in self.outgoing_edges
@@ -129,10 +144,7 @@ class AtomicBasicBlock(GraphObject):
         return self.outgoing_edges
 
     def add_cfg_edge(self, target, level):
-        assert isinstance(level, E)
-        assert not self.current_edge_filter or level in self.current_edge_filter,\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
+        self.check_edge_filter(level)
         assert not target in self.get_outgoing_edges(level), \
             "Cannot add edge of the same type twice"
         edge = ControlFlowEdge(self, target, level)
@@ -140,41 +152,27 @@ class AtomicBasicBlock(GraphObject):
         target.incoming_edges.append(edge)
 
     def get_outgoing_edges(self, level):
-        assert isinstance(level, E)
-        assert not self.current_edge_filter or level in self.current_edge_filter,\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
-        return [x for x in self.outgoing_edges if x.level == level]
+        self.check_edge_filter(level)
+        return [x for x in self.outgoing_edges if x.isA(level)]
 
     def get_incoming_edges(self, level):
-        assert isinstance(level, E)
-        assert not self.current_edge_filter or level in self.current_edge_filter,\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
-        return [x for x in self.incoming_edges if x.level == level]
+        self.check_edge_filter(level)
+        return [x for x in self.incoming_edges if x.isA(level)]
 
     def get_outgoing_nodes(self, level):
-        assert isinstance(level, E)
-        assert not self.current_edge_filter or level in self.current_edge_filter,\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
-        return [x.target for x in self.outgoing_edges if x.level == level]
+        self.check_edge_filter(level)
+        return [x.target for x in self.outgoing_edges if x.isA(level)]
 
     def get_incoming_nodes(self, level):
-        assert not self.current_edge_filter or level in self.current_edge_filter,\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
-        assert isinstance(level, E)
-        return [x.source for x in self.incoming_edges if x.level == level]
+        self.check_edge_filter(level)
+        return [x.source for x in self.incoming_edges if x.isA(level)]
 
     def has_edge_to(self, abb, level):
         """Returns the edge of level to an specific abb"""
-        assert isinstance(level, E)
-        assert not self.current_edge_filter or level in self.current_edge_filter,\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
+        self.check_edge_filter(level)
+
         for edge in self.outgoing_edges:
-            if edge.level == level and edge.target == abb:
+            if edge.isA(level) and edge.target == abb:
                 return edge
 
     def definite_after(self, level):
@@ -191,7 +189,7 @@ class AtomicBasicBlock(GraphObject):
     def remove_cfg_edge(self, to_abb, level):
         assert isinstance(level, E)
         for edge in self.outgoing_edges:
-            if edge.target == to_abb and edge.level == level:
+            if edge.target == to_abb and edge.isA(level):
                 self.outgoing_edges.remove(edge)
                 to_abb.incoming_edges.remove(edge)
                 return edge
