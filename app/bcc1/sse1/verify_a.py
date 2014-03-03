@@ -36,7 +36,8 @@ def after_Combine_RunningTask_SSE(analysis):
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
        get_functions(analysis.system_graph, ["H1", "H2", "H3", "H4", "H5", 
                                        "Idle", "StartOS"])
-    assert len(analysis.removed_edges) == 1
-    # The edge from TerminateTask/H4 to H5.entry is removed
-    assert analysis.removed_edges[0].target == H5.entry_abb
-    assert analysis.removed_edges[0].source.isA("TerminateTask")
+    if analysis.sse and analysis.state_flow:
+        assert len(analysis.removed_edges) == 1
+        # The edge from TerminateTask/H4 to H5.entry is removed
+        assert analysis.removed_edges[0].target == H5.entry_abb
+        assert analysis.removed_edges[0].source.isA("TerminateTask")

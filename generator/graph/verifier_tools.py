@@ -36,6 +36,8 @@ class GlobalABBInfoToolbox:
             if syscall.isA(S.computation):
                 continue
             self.checked_syscalls.add(syscall)
+        for alarm in self.system_graph.alarms:
+            self.checked_syscalls.add(alarm.carried_syscall)
 
     def mark_syscall(self, syscall):
         """Mark syscall as checked"""

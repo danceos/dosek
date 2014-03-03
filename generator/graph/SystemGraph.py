@@ -144,15 +144,24 @@ class SystemGraph(GraphObject, PassManager):
         self.counters = system.getHardwareCounters()
 
         for alarm in system.getAlarms():
-            subtask = self.functions["OSEKOS_TASK_" + alarm.task]
+            activated_subtask = self.functions["OSEKOS_TASK_" + alarm.task]
+            belongs_to_task = activated_subtask.task
 
-            # Generate a Alarm Handler Function
-            alarm_handler = Function("OSEKOS_ALARM_HANDLER_" + alarm.name)
-            alarm_handler.is_system_function = True
+            # Generate a Alarm Handler SubTask
+            name = "OSEKOS_ALARM_HANDLER_" + alarm.name
+            subtask = Subtask(self, alarm.name, name)
+            subtask.set_static_priority(1<<31)
+            subtask.set_preemptable(False)
+            subtask.set_basic_task(True)
+            subtask.set_max_activations(1)
+            subtask.set_autostart(False)
+            subtask.set_is_isr(True)
+
             # And add it to the task where the activated task belongs to
-            subtask.task.add_function(alarm_handler)
+            belongs_to_task.add_subtask(subtask)
+            self.functions[subtask.function_name] = subtask
 
-            self.alarms.append(Alarm(self, alarm_handler, alarm, subtask))
+            self.alarms.append(Alarm(self, subtask, alarm, activated_subtask))
 
         for res in system.getResources():
             self.resources[res.name] = Resource(self, res.name, res.tasks)
@@ -175,6 +184,19 @@ class SystemGraph(GraphObject, PassManager):
             function.add_atomic_basic_block(abb)
             if abb_xml.func_entry:
                 function.set_entry_abb(abb)
+
+        # Generate an ActivateTask for every alarm
+        for alarm in self.alarms:
+            activate_task = self.new_abb()
+            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
+            alarm.handler.add_atomic_basic_block(activate_task)
+            alarm.handler.set_entry_abb(activate_task)
+            alarm.carried_syscall = activate_task
+
+            # Statistic generation
+            self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)
+            #self.stats.add_child(alarm.handler, "abb", activate_task)
+
 
         # Add all implicit intra function control flow graphs
         for dep in self.rtsc.get_edges():
@@ -237,32 +259,25 @@ class SystemGraph(GraphObject, PassManager):
         # Add Idle Task
         system_task = Task(self, "OSEK")
         self.tasks.append(system_task)
-        subtask = Subtask(self, "Idle", "Idle")
-        self.functions["Idle"] = subtask
-        self.idle_subtask = subtask
-        subtask.set_static_priority(0)
-        subtask.set_preemptable(True)
-        system_task.add_subtask(subtask)
+        idle_subtask = Subtask(self, "Idle", "Idle")
+        self.functions["Idle"] = idle_subtask
+        self.idle_subtask = idle_subtask
+        idle_subtask.set_static_priority(0)
+        idle_subtask.set_preemptable(True)
+        system_task.add_subtask(idle_subtask)
+        # The idle systemcall
         abb = self.new_abb()
-        subtask.add_atomic_basic_block(abb)
-        subtask.set_entry_abb(abb)
-        subtask.set_autostart(True)
+        idle_subtask.add_atomic_basic_block(abb)
+        idle_subtask.set_entry_abb(abb)
+        idle_subtask.set_autostart(True)
         abb.make_it_a_syscall(S.Idle, [])
         # System Functions
         StartOS = system_function(S.StartOS)
         system_task.add_function(StartOS)
 
-        # Generate an ActivateTask systemcall for the subtask
-        for alarm in self.alarms:
-            activate_task = self.new_abb()
-            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
-            alarm.handler.add_atomic_basic_block(activate_task)
-            alarm.handler.set_entry_abb(activate_task)
-
         # Structure for Statistics logging
         self.stats.add_child(self, "task", system_task)
-        self.stats.add_child(system_task, "task", subtask)
-
+        self.stats.add_child(system_task, "subtask", idle_subtask)
 
     def who_has_prio(self, priority):
         # We Inherit PassManager!

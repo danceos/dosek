@@ -135,12 +135,50 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                 continue
             self.state_functor(current)
 
+        self.transform_isr_transitions()
+
         # Group States by ABB
         self.states_by_abb = group_by(self.states_next.keys(), "current_abb")
 
+    def transform_isr_transitions(self):
+        # Special casing of sporadic events What happens here: In
+        # order to seperate interrupt space from the application
+        # space, we purge all state transitions from the application
+        # level to interrupt level. We connect the interrupt handler
+        # continuation with the block that activates the interrupt.
+        def is_isr_state(state):
+            if not state.current_abb.function.subtask:
+                return False
+            return state.current_abb.function.subtask.is_isr
+        del_edges = []
+        add_edges = []
+        for app_level in filter(lambda x: not is_isr_state(x), self.states_next):
+            for isr_level in filter(is_isr_state, self.states_next[app_level]):
+                # Mark the edge that enteres the isr level as to be removed
+                del_edges.append((app_level, isr_level))
+                # Now we have to find all iret states that can
+                # follow. We do this in depth-first-search
+                ws = stack([isr_level])
+                exits = set()
+                while not ws.isEmpty():
+                    iret = ws.pop()
+                    if iret.current_abb.isA(S.iret):
+                        for retpoint in self.states_next[iret]:
+                            del_edges.append((iret, retpoint))
+                            add_edges.append((app_level, retpoint))
+                    else:
+                        # Not an IRET
+                        ws.extend(self.states_next[iret])
+        # Remove and add new edges
+        for _from, _to in del_edges:
+            self.states_next[_from].discard(_to)
+        for _from, _to in set(add_edges):
+            self.states_next[_from].add(_to)
+
+
     def for_abb(self, abb):
         """Return a GlobalAbbInformation object for this object"""
-        assert self.valid
+        assert self.valid, "The analysis is not valid"
         if abb in self.states_by_abb:
             return SSE_GlobalAbbInfo(self, abb)
 

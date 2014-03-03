@@ -18,6 +18,7 @@ class SystemStateFlow(Analysis):
         Analysis.__init__(self)
         self.sporadic_events = []
         self.isrs = []
+        self.alarms = []
         # A member for the RunningTask analysis
         self.running_task = None
         # States for the fixpoint iteration
@@ -70,11 +71,13 @@ class SystemStateFlow(Analysis):
     def install_sporadic_events(self):
         # Install the alarm handlers
         for alarm in self.system_graph.alarms:
-            self.sporadic_events.append(SSF_Alarm(alarm))
+            wrapped_alarm = SSF_SporadicEvent(alarm, self.system_call_semantic)
+            self.sporadic_events.append(wrapped_alarm)
+            self.alarms.append(wrapped_alarm)
 
         # Install the ISR handlers
         for isr in self.system_graph.isrs:
-            wrapped_isr = SSF_ISR(isr, self.system_call_semantic)
+            wrapped_isr = SSF_SporadicEvent(isr, self.system_call_semantic)
             self.sporadic_events.append(wrapped_isr)
             self.isrs.append(wrapped_isr)
 
@@ -158,10 +161,13 @@ class SystemStateFlow(Analysis):
         # Fixup StartOS Node, otherwise usage of this pointer gets more complicated
         self.before_abb_states[entry_abb].current_abb = entry_abb
 
-        # Merge ISRs
-        for isr in self.isrs:
-            for abb in isr.wrapped_isr.handler.abbs:
+        # Merge SporadicEvents
+        for isr in self.sporadic_events:
+            for abb in isr.wrapped_event.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
+                for next_abb in abb.get_outgoing_nodes(E.state_flow_irq):
+                    self.edge_states[(abb, next_abb)] \
+                        = isr.collected_edge_states[(abb, next_abb)]
 
     ##
     ## Result getters for this analysis
@@ -189,41 +195,22 @@ class SystemStateFlow(Analysis):
         if abb in self.before_abb_states:
             return SSF_GlobalAbbInformation(self, abb)
 
-class SSF_Alarm(SporadicEvent):
-    def __init__(self, wrapped_alarm):
-        SporadicEvent.__init__(self, wrapped_alarm.system_graph,
-                               wrapped_alarm.name, wrapped_alarm.task)
-        self.wrapped_alarm = wrapped_alarm
-
-    def can_trigger(self, state):
-        return self.wrapped_alarm.can_trigger(state)
-
-    def trigger(self, state):
-        SporadicEvent.trigger(self, state)
-        subtask = self.wrapped_alarm.subtask
-        copy_state = state.copy()
-
-        # Save current IP
-        current_subtask = state.current_abb.function.subtask
-        copy_state.set_continuation(current_subtask, state.current_abb)
-
-        if not copy_state.is_surely_ready(subtask):
-            copy_state.set_continuation(subtask, subtask.entry_abb)
-        copy_state.set_ready(subtask)
-
-        return copy_state
-
-
-class SSF_ISR(SporadicEvent):
-    def __init__(self, wrapped_isr, system_call_semantic):
-        SporadicEvent.__init__(self, wrapped_isr.system_graph, wrapped_isr.name, wrapped_isr.task)
+class SSF_SporadicEvent(SporadicEvent):
+    def __init__(self, wrapped_event, system_call_semantic):
+        SporadicEvent.__init__(self, wrapped_event.system_graph, \
+                               wrapped_event.name, wrapped_event.task,
+                               wrapped_event.handler)
         self.system_call_semantic = system_call_semantic
-        self.wrapped_isr = wrapped_isr
+        self.wrapped_event = wrapped_event
 
         self.collected_states = {}
         self.collected_edge_states = {}
-        for abb in self.wrapped_isr.handler.abbs:
+        # Initialize empty states for merging collected states into
+        for abb in self.wrapped_event.handler.abbs:
             self.collected_states[abb] = SystemState(self.system_graph)
+            for next_abb in abb.get_outgoing_nodes(E.task_level):
+                self.collected_edge_states[(abb, next_abb)] \
+                    = SystemState(self.system_graph)
 
         # Variables for the fixpoint iterations
         self.changed_current_block = True
@@ -234,10 +221,10 @@ class SSF_ISR(SporadicEvent):
         self.fixpoint = None
 
     def block_functor(self, fixpoint, block):
-        if block == self.wrapped_isr.handler.entry_abb:
+        if block == self.wrapped_event.handler.entry_abb:
             self.changed_current_block = True
             before = self.start_state.copy()
-            before.set_ready(self.wrapped_isr.handler)
+            before.set_ready(self.wrapped_event.handler)
             self.before_abb_states[block] = before
         else:
             self.changed_current_block, before = \
@@ -264,7 +251,7 @@ class SSF_ISR(SporadicEvent):
                 self.fixpoint.enqueue_soon(item = node)
 
         # Never leave the handler function here
-        assert block.function.subtask == self.wrapped_isr.handler.subtask
+        assert block.function.subtask == self.wrapped_event.handler.subtask
 
     def do_iret(self, block, before):
         # When there is no further local abb node, we have reached the
@@ -286,20 +273,20 @@ class SSF_ISR(SporadicEvent):
         self.edge_states[(source, target)] = state
 
     def can_trigger(self, state):
-        return self.wrapped_isr.can_trigger(state)
+        return self.wrapped_event.can_trigger(state)
 
     def trigger(self, state):
         SporadicEvent.trigger(self, state)
         self.result = state.new()
         self.start_state = state
-        entry_abb = self.wrapped_isr.handler.entry_abb
+        entry_abb = self.wrapped_event.handler.entry_abb
 
         # Save current IP
         current_subtask = state.current_abb.function.subtask
         state.set_continuation(current_subtask, state.current_abb)
 
         # Clean old IRQ edges
-        for abb in self.wrapped_isr.handler.abbs:
+        for abb in self.wrapped_event.handler.abbs:
             for edge in abb.get_outgoing_edges(E.state_flow_irq):
                 abb.remove_cfg_edge(edge.target, E.state_flow_irq)
 
@@ -313,13 +300,17 @@ class SSF_ISR(SporadicEvent):
         self.before_abb_states[entry_abb].current_abb = entry_abb
 
         # Merge calculated before-block states into the merged states
-        for abb in self.wrapped_isr.handler.abbs:
+        for abb in self.wrapped_event.handler.abbs:
             self.collected_states[abb].merge_with(
                 self.before_abb_states[abb]
                 )
+            for next_abb in abb.get_outgoing_nodes(E.state_flow_irq):
+                self.collected_edge_states[(abb, next_abb)].merge_with(
+                    self.edge_states[(abb, next_abb)]
+                )
 
         # IRET
-        self.result.set_suspended(self.wrapped_isr.handler)
+        self.result.set_suspended(self.wrapped_event.handler)
         self.result.current_abb = state.current_abb
 
         return self.result

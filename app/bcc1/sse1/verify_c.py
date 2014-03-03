@@ -32,16 +32,17 @@ def after_ConstructGlobalCFG(analysis):
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
        get_functions(analysis.system_graph, ["H1", "H2", "H3", "H4", "H5",
                                        "Idle", "StartOS"])
-    assert len(analysis.removed_edges) == 3
-    # There are two terminate tasks in H1
-    syscalls_found = [False, False]
-    for syscall in H4.get_syscalls():
-        if not syscall.isA("ReleaseResource"):
-            continue
-        # One ReleaseResource was executed with an ActivateTask
-        # before, the other one was not.
-        if syscall.definite_after(E.system_level) == H2.entry_abb:
-            syscalls_found[0] = True
-        if syscall.definite_after(E.system_level) == H3.entry_abb:
-            syscalls_found[1] = True
-    assert all(syscalls_found), "Not all ReleaseResource dispatches where found (to H2/H3)"
+    if analysis.sse and analysis.state_flow:
+        assert len(analysis.removed_edges) == 3
+        # There are two terminate tasks in H1
+        syscalls_found = [False, False]
+        for syscall in H4.get_syscalls():
+            if not syscall.isA("ReleaseResource"):
+                continue
+            # One ReleaseResource was executed with an ActivateTask
+            # before, the other one was not.
+            if syscall.definite_after(E.system_level) == H2.entry_abb:
+                syscalls_found[0] = True
+            if syscall.definite_after(E.system_level) == H3.entry_abb:
+                syscalls_found[1] = True
+        assert all(syscalls_found), "Not all ReleaseResource dispatches where found (to H2/H3)"

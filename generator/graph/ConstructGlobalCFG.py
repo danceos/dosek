@@ -57,22 +57,9 @@ class ConstructGlobalCFG(Analysis):
             followup_abbs    = set()
             if not source_abb in self.sse.states_by_abb:
                 return []
-            ws = stack()
-            # When a state is in interrupt level, follow it until we
-            # return to user level
             for state in self.sse.states_by_abb[source_abb]:
-                ws.extend(self.sse.states_next[state])
-            while not ws.isEmpty():
-                state = ws.pop()
-                # We only follow in when we come from userland
-                if source_abb.function.subtask == None \
-                   or source_abb.function.subtask.is_isr \
-                   or not state.current_subtask.is_isr:
-                    # Reached Userlevel again
-                    followup_abbs.add(state.current_abb)
-                else:
-                    ws.extend(self.sse.states_next[state])
-
+                for next_state in self.sse.states_next[state]:
+                    followup_abbs.add(next_state.current_abb)
             return followup_abbs
         return []
 
@@ -90,25 +77,24 @@ class ConstructGlobalCFG(Analysis):
             more_in_state_flow = in_state_flow - in_sse
             more_in_sse = in_sse - in_state_flow
 
-            if self.sse:
-                for target_abb in more_in_state_flow:
-                    # Found in the dataflow analysis but not by the sse
+            for target_abb in more_in_state_flow:
+                # Found in the dataflow analysis but not by the sse
 
-                    # FIXME: Jumps from computation might be the result of
-                    # sporadic actions, but those are not explicitly
-                    # drawed in the RunningTaskGraph
-                    if not source_abb.isA([S.kickoff, S.computation]):
-                        edge = Edge(source_abb, target_abb)
-                        logging.debug(" + saved edge from %s -> %s", source_abb, target_abb)
-                        self.removed_edges.append(edge)
-
+                if self.sse:
+                    edge = Edge(source_abb, target_abb)
+                    logging.debug(" + saved edge from %s -> %s", source_abb, target_abb)
+                    self.removed_edges.append(edge)
+                else:
+                    # If no symbolic analysis is done we use the
+                    # edges build by symbolic execution
+                    source_abb.add_cfg_edge(target_abb, E.system_level)
 
             for target_abb in more_in_sse:
                 # Returns from or to interrupts are not part of the system_level flow
                 if not source_abb.function.is_system_function and \
                    (bool(source_abb.function.subtask.is_isr) \
                     ^ bool(target_abb.function.subtask.is_isr)):
-                    continue
+                    assert False, "Invalid application/ISR transition"
 
                 # There should not be more edges in the symbolic
                 # execution, besides a few exceptions

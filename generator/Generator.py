@@ -130,7 +130,7 @@ class Generator:
 
         # find all syscalls
         for syscall in self.system_graph.get_syscalls():
-            if not syscall.syscall_type.isRealSyscall() or syscall.function.is_system_function:
+            if not syscall.syscall_type.isRealSyscall():
                 continue
             generated_function = "OSEKOS_%s__ABB%d" %(syscall.syscall_type.name, syscall.abb_id)
             rettype  = self.OSEK_CALLS[syscall.syscall_type.name][0]
@@ -146,7 +146,8 @@ class Generator:
             self.stats.add_data(syscall, "generated-function", function.name)
 
             assert abb.function.subtask != None, "The calling subtask must be set"
-            self.objects[abb.function.subtask]["generated_functions"].append(function)
+            if not abb.function.subtask.is_system_function:
+                self.objects[abb.function.subtask]["generated_functions"].append(function)
 
             syscall = SystemCall(syscall.syscall_type.name, abb, rettype, function.arguments())
             self.os_rules.systemcall(syscall, function)
@@ -158,10 +159,8 @@ class Generator:
 
         # Generate systemcalls
         for isr in self.system_graph.get_subtasks():
-            if not isr.is_isr:
-                continue
-
-            self.arch_rules.generate_isr(isr)
+            if isr.is_isr and isr.isr_device:
+                self.arch_rules.generate_isr(isr)
 
 
         # Write source files to file
