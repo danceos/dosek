@@ -256,6 +256,7 @@ class SystemGraph(GraphObject, PassManager):
 
         # Add Idle Task
         system_task = Task(self, "OSEK")
+        self.system_task = system_task
         self.tasks.append(system_task)
         idle_subtask = Subtask(self, "Idle", "Idle")
         self.functions["Idle"] = idle_subtask

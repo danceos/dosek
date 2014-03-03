@@ -12,10 +12,6 @@
 #include "dispatch.h"
 #include "reschedule-ast.h"
 
-namespace os { namespace scheduler {
-
-extern void ScheduleC_impl(uint32_t dummy);
-
-}};
+extern "C" void __OS_ASTSchedule (int dummy);
 
 #endif // __SCHEDULER_H__

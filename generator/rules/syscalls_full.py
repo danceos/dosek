@@ -1,6 +1,6 @@
 from generator.rules.base import BaseRules
 from generator.graph.AtomicBasicBlock import E
-from generator.elements import Statement, Comment
+from generator.elements import Statement, Comment, Function
 from generator.graph.GenerateAssertions import AssertionType
 from generator.tools import panic
 
@@ -39,9 +39,25 @@ class FullSystemCalls(BaseRules):
                 highestTask = subtask
 
         self.call_function(block, "Machine::enable_interrupts", "void", [])
-        # Call a full reschedule
-        self.call_function(block, "syscall", "void", ["os::scheduler::ScheduleC_impl", "0"])
+        # Bootstrap Do the initial syscall
+        dispatch_func = Function("__OS_StartOS_dispatch", "void", ["int"], extern_c = True)
+        self.objects["__OS_StartOS_dispatch"] = dispatch_func
+        self.generator.source_file.function_manager.add(dispatch_func)
+        self.InitialSyscall(dispatch_func)
+
+        self.call_function(block, "syscall", "void", 
+                           [dispatch_func.function_name, "0"])
         self.call_function(block, "Machine::unreachable", "void", [])
+
+    def InitialSyscall(self, kernelspace):
+        kernelspace.unused_parameter(0)
+        self.call_function(kernelspace, "scheduler_.Reschedule", 
+                           "void", [])
+
+    def ASTSchedule(self, kernelspace):
+        kernelspace.unused_parameter(0)
+        self.call_function(kernelspace, "scheduler_.Reschedule",
+                           "void", [])
 
     def TerminateTask(self, block, abb):
         self.call_function(block, "scheduler_.TerminateTask_impl",

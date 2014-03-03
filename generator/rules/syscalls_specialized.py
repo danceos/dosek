@@ -1,8 +1,8 @@
 from generator.rules.syscalls_full import FullSystemCalls
 from generator.elements import Statement, Comment
-
 from generator.tools import unwrap_seq
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E,S
+from generator.graph.SystemSemantic import SystemState
 
 
 class SpecializedSystemCalls(FullSystemCalls):
@@ -151,6 +151,27 @@ class SpecializedSystemCalls(FullSystemCalls):
                      tasks)
         schedule_hint = self.ScheduleTargetHint(tasks)
         self.stats.add_data(abb, "opt:Schedule:possible-tasks", len(tasks))
+
+        self.call_function(kernelspace,
+                           "scheduler_.Reschedule< %s >" % (schedule_hint),
+                           "void", [])
+
+    def ASTSchedule(self, kernelspace):
+        kernelspace.unused_parameter(0)
+        irets = [x for x in self.system_graph.get_abbs()
+                 if x.isA(S.iret)]
+
+        # Collect all tasks that may be ready, after an interrupt is processed
+        maybe_ready = set()
+        for iret in irets:
+            abb_info = self.global_abb_info.for_abb(iret)
+            for subtask in self.system_graph.get_subtasks():
+                if abb_info.state_before.is_maybe_ready(subtask):
+                    maybe_ready.add(subtask)
+
+        schedule_hint = self.ScheduleTargetHint(maybe_ready)
+        self.stats.add_data(self.system_graph.system_task,
+                            "opt:ASTSchedule:possible-tasks", len(maybe_ready))
 
         self.call_function(kernelspace,
                            "scheduler_.Reschedule< %s >" % (schedule_hint),

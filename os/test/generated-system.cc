@@ -14,7 +14,7 @@ namespace scheduler {
 noinline void TerminateTaskC_impl(__attribute__ ((unused)) uint32_t dummy) {
 }
 
-noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) 
+noinline extern "C" void __OS_ASTSchedule(__attribute__ ((unused)) int dummy) 
 {
 }
 

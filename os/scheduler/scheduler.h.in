@@ -159,10 +159,5 @@ constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> Scheduler::sched
 Scheduler scheduler_;
 
 
-/* This is called from the AST */
-noinline void ScheduleC_impl(__attribute__((unused)) uint32_t dummy) {
-	scheduler_.Reschedule();
-}
-
 }; // namespace scheduler
 }; // namespace os

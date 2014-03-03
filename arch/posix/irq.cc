@@ -70,7 +70,7 @@ void IRQ::guardian(int signum) {
 	irq.ast_level--;
 	if (irq.ast_level == 0 && irq.ast_requested) {
 		irq.ast_requested = false;
-		os::scheduler::ScheduleC_impl(0);
+		__OS_ASTSchedule(0);
 	}
 }
 

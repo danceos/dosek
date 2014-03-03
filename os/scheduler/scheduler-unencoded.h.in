@@ -148,9 +148,5 @@ struct Scheduler {
 constexpr Scheduler::prio_t Scheduler::scheduler_prio;
 Scheduler scheduler_;
 
-noinline void ScheduleC_impl(__attribute__ ((unused)) uint32_t dummy) {
-    scheduler_.Reschedule();
-}
-
 }; // scheduler
 }; // os

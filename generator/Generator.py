@@ -128,6 +128,12 @@ class Generator:
         self.syscall_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
 
+        # Generate the interrupt scheduler
+        ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c = True)
+        self.objects["ASTSchedule"] = ASTSchedule
+        self.syscall_rules.ASTSchedule(ASTSchedule)
+        self.source_file.function_manager.add(ASTSchedule)
+
         # find all syscalls
         for syscall in self.system_graph.get_syscalls():
             if not syscall.syscall_type.isRealSyscall():
