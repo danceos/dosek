@@ -187,6 +187,13 @@ class SystemCallSemantic:
                     # print subtask, " cannot be running in ", target
 
             copy_state.current_abb = target
+            # If the target is not in the idle loop, we reset the idle
+            # loop, since it always starts from the beginning.
+            if not target.function.subtask or \
+               target.function.subtask != self.system_graph.idle_subtask:
+                copy_state.set_continuation(self.system_graph.idle_subtask,
+                                            self.system_graph.idle_subtask.entry_abb)
+
             # Mark the new state as frozen!
             copy_state.frozen = True
             set_state_on_edge(source, target, copy_state)

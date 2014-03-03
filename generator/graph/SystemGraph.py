@@ -239,6 +239,7 @@ class SystemGraph(GraphObject, PassManager):
         self.tasks.append(system_task)
         subtask = Subtask(self, "Idle", "Idle")
         self.functions["Idle"] = subtask
+        self.idle_subtask = subtask
         subtask.set_static_priority(0)
         subtask.set_preemptable(True)
         system_task.add_subtask(subtask)

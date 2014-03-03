@@ -67,7 +67,7 @@ class PosixArch(SimpleArch):
 
         pre_hook  = Hook("SystemEnterHook")
         system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
-        post_hook = Hook("SystemEnterHook")
+        post_hook = Hook("SystemLeaveHook")
 
         userspace.add(pre_hook)
         userspace.add(system)
