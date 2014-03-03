@@ -168,7 +168,7 @@ class AlarmTemplate(CodeTemplate):
                 decl = FunctionDeclaration(callback_name, "void", [], extern_c = True)
                 self.generator.source_file.function_manager.add(decl)
                 ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
-            ret += self.expand_snippet("alarm_activate_task", **args) + "\n"
+            ret += "    " + alarm.carried_syscall.generated_function_name() + "(0);\n"
             ret += self.expand_snippet("endif_alarm", **args) + "\n"
 
 

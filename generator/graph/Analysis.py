@@ -128,8 +128,7 @@ class EnsureComputationBlocks(Analysis):
                 syscall.add_cfg_edge(abb, E.function_level)
                 # Do start the idle loop with an computation node
                 abb.function.entry_abb = abb
-            elif not syscall.syscall_type.isRealSyscall()\
-                 or syscall.function.is_system_function:
+            elif not syscall.syscall_type.isRealSyscall():
                 continue
             elif syscall.syscall_type.doesTerminateTask():
                 # This two syscalls immediatly return the control flow

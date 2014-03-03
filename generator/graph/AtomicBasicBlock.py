@@ -260,4 +260,9 @@ class AtomicBasicBlock(GraphObject):
         return "%s/%s/ABB%s/%s" %(self.function.subtask, self.function,
                                   self.abb_id, self.syscall_type.name)
 
+    def generated_function_name(self):
+        generated_function = "OSEKOS_%s__ABB%d" %(self.syscall_type.name, self.abb_id)
+        return generated_function
+
+
 

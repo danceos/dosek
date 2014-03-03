@@ -10,8 +10,6 @@ class Function(GraphObject):
         self.abbs = []
         self.entry_abb = None
         self.exit_abb = None
-        self.is_system_function = False
-
 
     def graph_subobjects(self):
         return self.abbs

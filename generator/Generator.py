@@ -132,7 +132,7 @@ class Generator:
         for syscall in self.system_graph.get_syscalls():
             if not syscall.syscall_type.isRealSyscall():
                 continue
-            generated_function = "OSEKOS_%s__ABB%d" %(syscall.syscall_type.name, syscall.abb_id)
+            generated_function = syscall.generated_function_name()
             rettype  = self.OSEK_CALLS[syscall.syscall_type.name][0]
             argtypes = self.OSEK_CALLS[syscall.syscall_type.name][1:]
             abb      = syscall
@@ -146,8 +146,7 @@ class Generator:
             self.stats.add_data(syscall, "generated-function", function.name)
 
             assert abb.function.subtask != None, "The calling subtask must be set"
-            if not abb.function.subtask.is_system_function:
-                self.objects[abb.function.subtask]["generated_functions"].append(function)
+            self.objects[abb.function.subtask]["generated_functions"].append(function)
 
             syscall = SystemCall(syscall.syscall_type.name, abb, rettype, function.arguments())
             self.os_rules.systemcall(syscall, function)

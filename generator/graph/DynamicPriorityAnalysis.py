@@ -107,11 +107,9 @@ class DynamicPriorityAnalysis(Analysis):
             precessors = syscall.get_incoming_nodes(E.task_level)
             if syscall.isA(S.kickoff):
                 syscall.dynamic_priority = syscall.function.subtask.static_priority
-            elif len(precessors) == 0:
-                assert syscall.function.is_system_function
-                syscall.dynamic_priority = self.system_graph.get_subtask("Idle").static_priority
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority
             else:
-                assert False, "Weird Systemcall %s, Check EnsureComputationBlocks for bugs!"\
+                assert syscall.isA(S.StartOS), \
+                    "Weird Systemcall %s, Check EnsureComputationBlocks for bugs!"\
                     %(syscall)

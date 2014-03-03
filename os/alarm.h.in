@@ -17,8 +17,7 @@ Alarm::checkCounter(%(name)s);
 void inlinehint Alarm::checkCounter(const Counter &counter) {
 	(void) counter; // unused argument warning might happen
 
-	{{{snippet:alarm_activate_task:alarm|    os::scheduler::scheduler_.ActivateTask_impl(*%(alarm)s.task_);}}}
-	{{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
+    {{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
     {{{snippet:if_alarm:counter,alarm|if ((&counter == &%(counter)s) && %(alarm)s.checkTrigger(&%(counter)s)) {
     debug << "Alarm triggered" << endl;}}}
     {{{snippet:endif_alarm:counter,alarm|} }}}

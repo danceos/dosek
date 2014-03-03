@@ -8,8 +8,7 @@ class SporadicEvent:
 
     def can_trigger(self, state):
         # ISRs can only trigger, if we're not in an isr
-        if state.current_abb.function.subtask.is_isr \
-           or state.current_abb.function.is_system_function:
+        if state.current_abb.function.subtask.is_isr: \
             return False
         # Cannot triggger in region with blocked interrupts
         if state.current_abb.interrupt_block_all \

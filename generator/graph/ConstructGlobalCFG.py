@@ -91,7 +91,7 @@ class ConstructGlobalCFG(Analysis):
 
             for target_abb in more_in_sse:
                 # Returns from or to interrupts are not part of the system_level flow
-                if not source_abb.function.is_system_function and \
+                if source_abb.function.subtask and \
                    (bool(source_abb.function.subtask.is_isr) \
                     ^ bool(target_abb.function.subtask.is_isr)):
                     assert False, "Invalid application/ISR transition"

@@ -195,7 +195,6 @@ class SystemGraph(GraphObject, PassManager):
 
             # Statistic generation
             self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)
-            #self.stats.add_child(alarm.handler, "abb", activate_task)
 
 
         # Add all implicit intra function control flow graphs
@@ -252,7 +251,6 @@ class SystemGraph(GraphObject, PassManager):
             abb = self.new_abb()
             function.add_atomic_basic_block(abb)
             function.set_entry_abb(abb)
-            function.is_system_function = True
             abb.make_it_a_syscall(syscall_type, [])
             return function
 

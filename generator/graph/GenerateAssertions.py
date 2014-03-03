@@ -115,8 +115,7 @@ class GenerateAssertionsPass(Analysis):
             self.assertions_before[abb] = []
             self.assertions_after[abb]  = []
 
-            if abb.syscall_type.isRealSyscall() and \
-               not abb.function.is_system_function:
+            if abb.syscall_type.isRealSyscall():
                 working_abbs.append(abb)
 
         # Generate Assertions from inferred system_state
