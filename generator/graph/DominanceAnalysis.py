@@ -103,9 +103,10 @@ class DominanceAnalysis(Analysis, GraphObject):
 
     # Accessors
     def graph_subobjects(self):
+        domtree = self.dominator_tree()
         # All visited Atomic Basic Blocks
         _all = GraphObjectContainer.from_dict("DominatorTree[All]", "red",
-                                              self.dominator_tree().tree)
+                                              domtree.tree)
         _syscall = GraphObjectContainer.from_dict("DominatorTree[Syscall]", "red",
                                                   self.syscall_dominator_tree().tree)
         _all.set_color("green")
@@ -117,6 +118,7 @@ class DominanceAnalysis(Analysis, GraphObject):
         for region in regions:
             if len(region) in (1, max_region):
                 continue
+
             _region = GraphObjectContainer.from_dict(repr(region), "red",
                                                      region.tree)
             _region.set_color("green")
@@ -124,6 +126,7 @@ class DominanceAnalysis(Analysis, GraphObject):
 
         logging.info(" + Found %d syscall regions (interesting: %d)",
                      len(regions), len(ret) - 2)
+
         return ret
 
     def __reverse_tree(self, _tree):
@@ -142,7 +145,7 @@ class DominanceAnalysis(Analysis, GraphObject):
 
     def dominator_tree(self):
         root, tree = self.__reverse_tree(self.immdom_tree)
-        return DominatorTree(root, tree)
+        return DominatorTree(root, tree, self.edge_levels, sparse=False)
 
     def syscall_dominator_tree(self):
         """The dominator tree filtered to only contian real syscalls"""
@@ -158,7 +161,7 @@ class DominanceAnalysis(Analysis, GraphObject):
                     _to = self.immdom_tree[_to]
                 syscall_immdom_tree[_from] = _to
         root, tree = self.__reverse_tree(syscall_immdom_tree)
-        return DominatorTree(root, tree)
+        return DominatorTree(root, tree, self.edge_levels)
 
     def syscall_dominance_regions(self):
         """Returns all subtrees of the syscall_immdom_tree"""
@@ -171,18 +174,28 @@ class DominanceAnalysis(Analysis, GraphObject):
         while not ws.isEmpty():
             root, tree = ws.pop()
             # Construct current region
-            region = DominatorTree(root, tree)
+            region = DominatorTree(root, tree, self.edge_levels)
             # For each chilren of root, we slice the subtree into a new dict
             for child in tree[root]:
                 ws.push((child, tree))
             ret.append(region)
         return ret
 
+
 class DominatorTree:
-    def __init__(self, root, tree):
+    def __init__(self, root, tree, edge_levels, sparse=True):
         self.root = root
         self.tree = self.__slice_subtree(tree)
         self.leaf = [k for k,v in self.tree.items() if v == []]
+        self.edge_levels = edge_levels
+        self.sparse = sparse
+        self.__dominance_border = {}
+
+        # dict that maps a child to its parent (same information as .tree)
+        self.__back_tree = {}
+        for parent, children in self.tree.items():
+            for child in children:
+                self.__back_tree[child] = parent
 
     def __slice_subtree(self, tree):
         "Slices all entries of the tree dict, that are below root"
@@ -199,8 +212,38 @@ class DominatorTree:
         return len(self.tree)
 
     def __repr__(self):
-        return "<DominanceRegion root:%s, size: %d>" % (self.root, len(self))
+        return "<DominatorTree root:%s, size: %d>" % (self.root, len(self))
 
     def __contains__(self, abb):
         return abb in self.tree
 
+    def get_imm_dom(self, abb):
+        """Get the ImmDom of abb"""
+        return self.__back_tree[abb]
+
+    def get_imm_dominated(self, abb):
+        """Get all blocks that are directly dominated by abb"""
+        return self.tree[abb]
+
+    def dominance_border(self, abb):
+        """Get the dominance border of tree"""
+        assert not self.sparse, "Can compute dominance border only on none sparse dominator tree"
+        # Return cached dominance border
+        if abb in self.__dominance_border:
+            return self.__dominance_border[abb]
+
+        dc = set()
+        for succ in abb.get_outgoing_nodes(self.edge_levels):
+            # All direct neighbours that are not directly dominated by us
+            if self.get_imm_dom(succ) != abb:
+                dc.add(succ)
+
+        for direct_dom in self.get_imm_dominated(abb):
+            for candidate in self.dominance_border(direct_dom):
+                if self.get_imm_dom(candidate) != abb and candidate != abb:
+                    dc.add(candidate)
+
+        # Cache the result
+        self.__dominance_border[abb] = dc
+
+        return dc
