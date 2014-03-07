@@ -33,6 +33,9 @@ class SimpleSystem(BaseRules):
         self.generate_dataobjects_task_descriptors()
         self.generate_dataobjects_counters_and_alarms()
 
+        # Give the passes the chance to generate dataobjects
+        self.callback_in_valid_passes("generate_dataobjects")
+
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
         task_id = 1

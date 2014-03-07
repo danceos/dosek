@@ -170,5 +170,3 @@ class GenerateAssertionsPass(Analysis):
            leave hook should be filled"""
         for each in self.assertions_after[abb]:
             generator.syscall_rules.do_assertion(hook, each)
-
-

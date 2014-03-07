@@ -21,6 +21,12 @@ class BaseRules:
         self.syscall_rules = generator.syscall_rules
         self.stats         = self.system_graph.stats
 
+    def callback_in_valid_passes(self, callback_name, *arguments):
+        """Call functions in all passes that are valid"""
+        for each in self.system_graph.valid_passes():
+            if each.valid and hasattr(each, callback_name):
+                getattr(each, callback_name)(self.generator, *arguments)
+
     def foreach_subtask(self, func):
         """Call func for every subtask, that is a real task and collect the
         results in a list."""

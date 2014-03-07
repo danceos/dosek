@@ -83,6 +83,13 @@ class PassManager:
             return None
         return P
 
+    def valid_passes(self):
+        ret = set()
+        for each in self.passes.values():
+            if each.valid:
+                ret.add(each)
+        return list(ret)
+
     def analyze(self, basefilename):
         verifiers_called = set()
         pass_number = 0
@@ -103,11 +110,11 @@ class PassManager:
             if len(invalid) > 0:
                 self.analysis_pipe = invalid + self.analysis_pipe
                 continue
-            logging.info("-----")
             # Remove analysis from analysation pipeline
             del self.analysis_pipe[0]
             if front.valid:
                 continue
+            logging.info("-----")
             # Call before analyzer
             verifier_name = "before_" + front.name()
             if verifier_name in self.verifiers:

@@ -22,6 +22,7 @@ from generator.graph.SystemSemantic import *
 from generator.graph.SystemStateFlow import *
 from generator.graph.GenerateAssertions import *
 from generator.graph.DominanceAnalysis import *
+from generator.graph.CFGRegions import CFGRegions
 
 
 from generator.graph.Task import Task

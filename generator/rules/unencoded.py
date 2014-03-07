@@ -100,20 +100,10 @@ class UnencodedSystem(SimpleSystem):
             self.return_statement(userspace, "E_OK")
 
     def system_enter_hook(self, abb, hook):
-        asserts = self.system_graph.get_pass("GenerateAssertionsPass",
-                                              only_enqueued = True)
-        # Have we collected asserts?
-        if asserts:
-            asserts.system_enter_hook(self.generator, abb, hook)
+        self.callback_in_valid_passes("system_enter_hook", abb, hook)
 
     def system_leave_hook(self, abb, hook):
-        asserts = self.system_graph.get_pass("GenerateAssertionsPass",
-                                              only_enqueued = True)
-        # Have we collected asserts?
-        if asserts:
-            asserts.system_leave_hook(self.generator, abb, hook)
-
-
+        self.callback_in_valid_passes("system_leave_hook", abb, hook)
 
 class TaskListTemplate(CodeTemplate):
     def __init__(self, rules):

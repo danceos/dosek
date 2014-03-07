@@ -5,6 +5,7 @@ class Function(GraphObject):
     def __init__(self, functionname):
         GraphObject.__init__(self, functionname, color = "brown")
         self.function_name = functionname
+        self.name = functionname
         self.task = None
         self.subtask = None
         self.abbs = []

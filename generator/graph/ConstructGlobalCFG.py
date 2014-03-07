@@ -25,6 +25,10 @@ class ConstructGlobalCFG(Analysis):
         self.sse        = self.system_graph.get_pass("SymbolicSystemExecution",
                                                only_enqueued = True)
 
+        # Default is SSE
+        if not self.sse and not self.state_flow:
+            self.sse = self.system_graph.enqueue_analysis("SymbolicSystemExecution")
+
         ret = []
         if self.sse:
             ret.append(self.sse.name())

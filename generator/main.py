@@ -112,6 +112,7 @@ if __name__ == "__main__":
 
     # System-Level: Exploitation
     pass_manager.register_analysis(DominanceAnalysis())
+    pass_manager.register_analysis(CFGRegions())
     pass_manager.register_analysis(GenerateAssertionsPass())
 
     # Statistics modules
