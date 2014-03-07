@@ -6,9 +6,7 @@ import logging
 
 class DominanceAnalysis(Analysis, GraphObject):
     """Implements a dominator analysis on the system level control flow
-    graph. At the moment Lengauer/Tarjan is implemented (A fast
-    algorithm for finding dominators in a flowgraph,
-    langauer:79:toplas)
+    graph. A quadradic algorithm for determining the immdoms is used.
 
     """
     pass_alias = "dom-tree-system"
@@ -19,8 +17,8 @@ class DominanceAnalysis(Analysis, GraphObject):
         self.edge_levels = edge_levels
 
         self.blocks = None
-        self.semi_dominators = None
-        self.imm_dominators = None
+        self.semi = None
+        self.idom = None
         self.ancestor = None
         self.parents = None
         self.buckets = None
@@ -35,71 +33,67 @@ class DominanceAnalysis(Analysis, GraphObject):
     def get_edge_filter(self):
         return self.edge_levels
 
-    def dfs_visitor(self, to_edge, block):
-        v = self.dfs_count
-        self.dfs_count += 1
-        # The parent in the dfs tree
-        if to_edge:
-            self.parents[v] = self.dfs_block_to_number[to_edge.source]
-        else:
-            self.parents[v] = 0
-        self.blocks[v] = block
-        self.dfs_block_to_number[block] = v
-        self.semi_dominators[v] = v
+    def find_dominators(self):
+        # Each node is mapped to the set of its dominators
+        dom = {}
+        start_nodes = set()
+        for abb in self.system_graph.get_abbs():
+            # The start node dominates itself
+            if len(abb.get_incoming_nodes(self.edge_levels)) == 0 and\
+                len(abb.get_outgoing_nodes(self.edge_levels)) > 0:
+                dom[abb] = set([abb])
+                start_nodes.add(abb)
+            else:
+                dom[abb] = set(self.system_graph.get_abbs())
 
-    def __eval(self, v):
-        a = self.ancestor[v]
-        while a != 0:
-            if self.semi_dominators[v] > self.semi_dominators[a]:
-                v = a
-            a = self.ancestor[a]
-        return v
+        changes = True
+        while changes:
+            changes = False
+            for abb in self.system_graph.get_abbs():
+                if abb in start_nodes:
+                    continue
+                dominators = [dom[x] for x in abb.get_incoming_nodes(self.edge_levels)]
+                if dominators:
+                    intersection = reduce(lambda x, y: x & y, dominators)
+                else:
+                    intersection = set()
+                new = set([abb]) | intersection
+                if new != dom[abb]:
+                    changes = True
+                    dom[abb] = new
+        return dom
 
-    def __link(self, v, w):
-        self.ancestor[w] = v
+    def find_imdom(self, abb, dominators, visited, cur):
+        imdom = None
+        visited.add(cur)
+        for pred in cur.get_incoming_nodes(self.edge_levels):
+            if pred in dominators:
+                return pred
+        for pred in cur.get_incoming_nodes(self.edge_levels):
+            if pred in visited:
+                continue
+            ret = self.find_imdom(abb, dominators, visited, pred)
+            # There are loops in the system
+            if ret != abb or ret == None:
+                return ret
 
     def do(self):
-        # Initialize structures
-        count = len(self.system_graph.get_abbs()) + 1
-        self.blocks = [None] * count
-        self.semi_dominators = [None] * count
-        self.imm_dominators =  [0] * count
-        self.ancestor = [0] * count
-        self.parents = [None] * count
-        self.buckets = [[] for _ in range (0, count)]
-        self.dfs_count = 1  # Start from 1
-        self.dfs_block_to_number = {}
-        self.immdom_tree = {}
+        start_node = self.system_graph.find_function("StartOS").entry_abb
+        dom = self.find_dominators()
+        self.immdom_tree = {start_node: None}
+        add_function = self.system_graph.get_pass("AddFunctionCalls")
+        for abb in self.system_graph.get_abbs():
+            if abb == start_node:
+                continue
+            visited = set()
+            imdom = self.find_imdom(abb, dom[abb] - set([abb]), visited, abb)
+            assert abb != imdom
+            if imdom:
+                self.immdom_tree[abb] = imdom
+            else:
+                if add_function.is_relevant_function(abb.function):
+                    self.immdom_tree[abb] = start_node
 
-        StartOS = self.system_graph.find_function("StartOS").entry_abb
-        # Get a DFS number for every ABB
-        dfs(self.dfs_visitor, lambda edge: edge.isA(self.edge_levels),
-            [StartOS])
-
-        for w in reversed(range(2, self.dfs_count)):
-            abb_w = self.blocks[w]
-            for pred in abb_w.get_incoming_nodes(self.edge_levels):
-                v = self.dfs_block_to_number[pred]
-                u = self.__eval(v)
-                if self.semi_dominators[w] > self.semi_dominators[u]:
-                    self.semi_dominators[w] = self.semi_dominators[u]
-            # Link block to the semi_dominator candidate
-            self.buckets[self.semi_dominators[w]].append(w)
-            self.__link(self.parents[w], w)
-
-            for B in self.buckets[self.parents[w]]:
-                u = self.__eval(B)
-                if self.semi_dominators[u] < self.semi_dominators[B]:
-                    self.imm_dominators[B] = u
-                else:
-                    self.imm_dominators[B] = self.parents[w]
-            self.buckets[self.parents[w]] = []
-
-        for w in range(1, self.dfs_count):
-            if self.imm_dominators[w] != self.semi_dominators[w]:
-                self.imm_dominators[w] = self.imm_dominators[self.imm_dominators[w]]
-
-            self.immdom_tree[self.blocks[w]] = self.blocks[self.imm_dominators[w]]
 
     # Accessors
     def graph_subobjects(self):

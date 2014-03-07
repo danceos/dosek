@@ -1,5 +1,5 @@
 import sys
-from generator.tools import wrap_in_list
+from generator.tools import wrap_in_list, stack
 
 class GraphObject:
     """Any Object that is used within the graph an can be dumped as dot"""
@@ -143,7 +143,7 @@ def dfs(block_functor, take_edge_functor, start_abbs):
     """
     visited = set()
     # First in start_abs is the first to be popped
-    working_stack = []
+    working_stack = stack()
     for abb in start_abbs:
         working_stack.append(tuple([None, abb]))
 
@@ -151,7 +151,10 @@ def dfs(block_functor, take_edge_functor, start_abbs):
         leading_edge, current_block = working_stack.pop()
         # Call the block_functor
         block_functor(leading_edge, current_block)
-        for edge in current_block.outgoing_edges:
+        out_edges = sorted(current_block.outgoing_edges,
+                           key = lambda e: e.target.abb_id)
+        for edge in reversed(out_edges):
+        #for edge in out_edges:
             child = edge.target
             # Already visited or in working_stack
             if child in visited:
@@ -160,7 +163,7 @@ def dfs(block_functor, take_edge_functor, start_abbs):
             if not take_edge_functor(edge):
                 continue
             # PUSH item onto stack
-            working_stack.append((edge, child))
+            working_stack.push((edge, child))
             visited.add(child)
 
 class FixpointIteraton:
