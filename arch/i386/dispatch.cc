@@ -5,6 +5,9 @@
 #include "os/util/inline.h"
 #include "lapic.h"
 
+/** \brief Enable task dispatching using sysexit instead of iret */
+#define SYSEXIT_DISPATCH 1
+
 namespace arch {
 
 /** \brief Startup stackpointer (save location) */
@@ -24,10 +27,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// get dispatch values
 	uint32_t id = dispatch_pagedir;
 	uint32_t fun = dispatch_ip;
-	uint32_t sp = dispatch_stackptr;
+	void* sp = (void*) dispatch_stackptr;
 
-	// TODO: remove/reuse pushed CPU context?
-
+#ifndef SYSEXIT_DISPATCH
 	// push stack segment, DPL3
 	Machine::push(GDT::USER_DATA_SEGMENT | 0x3);
 
@@ -63,14 +65,42 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 	// TODO: check prepared stack? (SSE crc32q?)
 
-    // clear all registers
-    Machine::clear_registers();
+	// clear all registers
+	Machine::clear_registers();
 
 	// send end-of-interrupt signal
 	LAPIC::send_eoi();
 
 	// return from interrupt
 	Machine::return_from_interrupt();
+
+#else // SYSEXIT_DISPATCH
+
+	// flags, IO privilege level 3
+	uint32_t flags; // flags are at %esp+8
+	asm volatile("mov 8(%%esp), %0" : "=r"(flags));
+
+	// set new page directory
+	MMU::switch_task(id);
+
+	// push instruction pointer
+	void* ip;
+	if(fun >= 0x200000) {
+		// resume from saved IP on stack
+		// requires new page directory set before!
+		ip = (void*) *(*((uint32_t**) fun) - 1);
+	} else {
+		// start function from beginning
+		ip = (void*) fun;
+	}
+
+	// send end-of-interrupt signal
+	LAPIC::send_eoi();
+
+	// exit system
+	Machine::sysexit(ip, sp, flags | 0x3000);
+
+#endif // SYSEXIT_DISPATCH
 }
 
 } // namespace arch

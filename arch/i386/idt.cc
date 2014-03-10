@@ -7,6 +7,7 @@
 #include "idt.h"
 #include "gdt.h"
 #include "exception.h"
+#include "machine.h"
 #include "lapic.h"
 #include "output.h"
 
@@ -58,6 +59,7 @@ constexpr InterruptDescriptorTable IDT::idt __attribute__ ((aligned (8))) = {
 	sizeof(theidt)-1,
 	&theidt[0]
 };
+
 
 void IDT::init() {
 	// load static IDT

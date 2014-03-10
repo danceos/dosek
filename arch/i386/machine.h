@@ -68,18 +68,18 @@ struct Machine
 		asm volatile("push %0" :: "ir"(val) : "esp");
 	}
 
-    /**
-     * \brief Reset all general-purpose registers to 0
-     */
-    static forceinline void clear_registers() {
-        asm volatile("xor %%eax, %%eax" ::: "eax");
-        asm volatile("xor %%ebx, %%ebx" ::: "ebx");
-        asm volatile("xor %%ecx, %%ecx" ::: "ecx");
-        asm volatile("xor %%edx, %%edx" ::: "edx");
-        asm volatile("xor %%ebp, %%ebp" ::: "ebp");
-        asm volatile("xor %%esi, %%esi" ::: "esi");
-        asm volatile("xor %%edi, %%edi" ::: "edi");
-    }
+	/**
+	 * \brief Reset all general-purpose registers to 0
+	 */
+	static forceinline void clear_registers() {
+		asm volatile("xor %%eax, %%eax" ::: "eax");
+		asm volatile("xor %%ebx, %%ebx" ::: "ebx");
+		asm volatile("xor %%ecx, %%ecx" ::: "ecx");
+		asm volatile("xor %%edx, %%edx" ::: "edx");
+		asm volatile("xor %%ebp, %%ebp" ::: "ebp");
+		asm volatile("xor %%esi, %%esi" ::: "esi");
+		asm volatile("xor %%edi, %%edi" ::: "edi");
+	}
 
 	/**
 	 * \brief Set data segment selectors (ds, es, fs, gs)
@@ -147,6 +147,14 @@ struct Machine
 	}
 	static void trigger_interrupt_from_user(uint8_t irq);
 
+	/**
+	 * \brief Unreachable code
+	 * Will trigger interrupt if this is actually executed.
+	 */
+	static forceinline void unreachable(void) {
+		asm volatile("int3");
+		__builtin_unreachable(); // allow compiler optimization
+	}
 
 	/**
 	 * \brief Return current CPU ring
@@ -166,12 +174,33 @@ struct Machine
 	}
 
 	/**
-	 * \brief Unreachable code
-	 * Will trigger interrupt if this is actually executed.
+	 * \brief Exit to ring 3 and continue with given IP and SP
 	 */
-	static forceinline void unreachable(void) {
-		asm volatile("int3");
-		__builtin_unreachable(); // allow compiler optimization
+	static forceinline void sysexit(void* ip, void* sp) {
+		// clear unused registers
+		asm volatile("xor %%eax, %%eax" ::: "eax");
+		asm volatile("xor %%ebx, %%ebx" ::: "ebx");
+		asm volatile("xor %%ebp, %%ebp" ::: "ebp");
+		asm volatile("xor %%esi, %%esi" ::: "esi");
+		asm volatile("xor %%edi, %%edi" ::: "edi");
+
+		asm volatile("sysexit" :: "d"(ip), "c"(sp));
+		unreachable();
+	}
+
+	/**
+	 * \brief Set flags and exit to ring 3 and continue with given IP and SP and IRQs enabled
+	 */
+	static forceinline void sysexit(void* ip, void* sp, uint32_t flags) {
+		// clear unused registers
+		asm volatile("xor %%ebx, %%ebx" ::: "ebx");
+		asm volatile("xor %%ebp, %%ebp" ::: "ebp");
+		asm volatile("xor %%esi, %%esi" ::: "esi");
+		asm volatile("xor %%edi, %%edi" ::: "edi");
+
+		// set flags without interrupt enable flag, then use sti to enable IRQs *after* sysexit
+		asm volatile("push %0; popf; xor %%eax, %%eax; sti; sysexit" :: "ia"(flags & ~0x0200), "d"(ip), "c"(sp));
+		unreachable();
 	}
 
 	/**
@@ -191,7 +220,39 @@ struct Machine
 		// stop in case ACPI shutdown failed
 		//halt(); // causes exception when called from ring 3
 		// while(true) nop();
+	}
 
+	/**
+	 * \brief Read model-specific register
+	 */
+	static forceinline void get_msr(uint32_t msr, uint32_t &lo, uint32_t &hi) {
+		asm volatile("rdmsr" : "=a"(lo), "=d"(hi) : "c"(msr));
+	}
+
+	/**
+	 * \brief Read model-specific register
+	 */
+	static forceinline uint64_t get_msr(uint32_t msr) {
+		uint32_t lo, hi;
+		get_msr(msr, lo, hi);
+		return ((uint64_t) hi << 32) | lo;
+	}
+
+	/**
+	 * \brief Write model-specific register
+	 */
+	static forceinline void set_msr(uint32_t msr, uint32_t lo, uint32_t hi) {
+		asm volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
+	}
+
+	/**
+	 * \brief Write model-specific register
+	 */
+	static forceinline void set_msr(uint32_t msr, uint64_t val) {
+		uint32_t lo = val & 0xFFFFFFFF;
+		uint32_t hi = val >> 32;
+
+		set_msr(msr, lo, hi);
 	}
 };
 

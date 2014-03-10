@@ -11,6 +11,7 @@
 #include "lapic.h"
 #include "ioapic.h"
 #include "pit.h"
+#include "syscall.h"
 
 /** Initialisation stub for generic startup code */
 extern void init_generic();
@@ -24,6 +25,9 @@ extern "C" void arch_startup()
 	// setup GDT, IDT
 	GDT::init();
 	IDT::init();
+
+    // setup sysenter/sysexit
+    syscalls_init();
 
 	// setup paging
 	#ifndef MPU_DISABLED

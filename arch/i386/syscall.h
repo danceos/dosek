@@ -11,7 +11,19 @@
 #include "idt.h"
 #include "lapic.h"
 
+/** \brief Perform syscalls using sysenter insteaf of int */
+#define SYSENTER_SYSCALL 1
+
+/** \brief Perform syscall dispatching using sysexit instead of iret */
+#define SYSEXIT_SYSCALL 1
+
+#define SYSENTER_CS_MSR 0x174  //!< MSR index for sysenter/sysexit kernel GDT offset
+#define SYSENTER_ESP_MSR 0x175 //!< MSR index for sysenter %esp value
+#define SYSENTER_EIP_MSR 0x176 //!< MSR index for sysenter %eip value
+
 namespace arch {
+
+void syscalls_init(void);
 
 /**@{*/
 /** \brief Run specified function as syscall
@@ -30,18 +42,37 @@ forceinline void syscall(F fun) {
 	// use clobber instead of pusha to save and restore only required registers:
 	// gcc documentation says to list modified input in outputs and they must not be included
 	// in clobber list, but LLVM works only the other way ...
+    #if SYSENTER_SYSCALL
+    if(!direct && Machine::current_ring()>0) {
+        asm volatile("mov %%esp, %%ebp; push $1f; sysenter; 1:" :: "d"(fun) :
+        "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+    } else
+    #endif
 	asm volatile("int %0" :: "i"(IRQ_SYSCALL), "b"(fun), "d"(direct) :
 		"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 }
 
 template<bool direct=false, typename F, typename A>
 forceinline void syscall(F fun, A arg1) {
+    #if SYSENTER_SYSCALL
+    if(!direct && Machine::current_ring()>0) {
+    asm volatile("mov %%esp, %%ebp; push $1f; sysenter; 1:" :: "c"(*((uint32_t*)&arg1)), "d"(fun) :
+        "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+    } else
+    #endif
 	asm volatile("int %0" :: "i"(IRQ_SYSCALL), "b"(fun), "c"(*((uint32_t*)&arg1)), "d"(direct) :
 		"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 }
 
 template<bool direct=false, typename F, typename A, typename B>
 forceinline void syscall(F fun, A arg1, B arg2) {
+    #if SYSENTER_SYSCALL
+    if(!direct && Machine::current_ring()>0) {
+    asm volatile("mov %%esp, %%ebp; push $1f; sysenter; 1:" :: "c"(*((uint32_t*)&arg1)), "d"(fun),
+        "a"(*((uint32_t*)&arg2)) :
+        "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+    } else
+    #endif
 	asm volatile("int %0" :: "i"(IRQ_SYSCALL), "b"(fun), "c"(*((uint32_t*)&arg1)), "d"(direct),
 		"a"(*((uint32_t*)&arg2)) :
 		"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
@@ -49,6 +80,13 @@ forceinline void syscall(F fun, A arg1, B arg2) {
 
 template<bool direct=false, typename F, typename A, typename B, typename C>
 forceinline void syscall(F fun, A arg1, B arg2, C arg3) {
+    #if SYSENTER_SYSCALL
+    if(!direct && Machine::current_ring()>0) {
+    asm volatile("mov %%esp, %%ebp; push $1f; sysenter; 1:" :: "c"(*((uint32_t*)&arg1)), "d"(fun),
+        "a"(*((uint32_t*)&arg2)), "D"(*((uint32_t*)&arg3)) :
+        "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+    } else
+    #endif
 	asm volatile("int %0" :: "i"(IRQ_SYSCALL), "b"(fun), "c"(*((uint32_t*)&arg1)), "d"(direct),
 		"a"(*((uint32_t*)&arg2)), "D"(*((uint32_t*)&arg3)) :
 		"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
