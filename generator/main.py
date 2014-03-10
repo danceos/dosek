@@ -18,8 +18,7 @@ import sys
 import logging
 import optparse
 
-
-def setup_logging(log_level):
+def setup_logging(log_level : int):
     """ setup the logging module with the given log_level """
 
     l = logging.INFO # default
@@ -36,7 +35,10 @@ if __name__ == "__main__":
     from generator import SystemDescription, RTSCAnalysis, Generator
     from generator.rules import *
     from generator.graph import *
-    from generator.tools import panic
+    from generator.tools import panic, wrap_typecheck_functions
+
+    # Install the typechecking
+    wrap_typecheck_functions()
 
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
