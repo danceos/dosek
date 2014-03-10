@@ -1,5 +1,5 @@
 # FAIL* options
-set(FAIL_TOOLS_DIR "/proj/i4danceos/coredos/cored-tester" CACHE PATH "Directory containing FAIL* tester binaries")
+set(FAIL_TOOLS_DIR "/proj/i4danceos/tools/fail" CACHE PATH "Directory containing FAIL* tester binaries")
 if(NOT FAIL_TOOLS_DIR)
 	message(WARNING "[${PROJECT_NAME}] FAIL_TOOLS_DIR not set! FAIL* testing will not work!")
 endif()
@@ -14,7 +14,7 @@ site_name(HOSTNAME)
 set(FAIL_SERVERNAME ${HOSTNAME} CACHE STRING "FAIL* server hostname")
 
 # find tools
-find_program(FAIL_TRACE "fail-x86-tracing" ${FAIL_TOOLS_DIR})
+find_program(FAIL_TRACE "cored-tracing" ${FAIL_TOOLS_DIR})
 find_program(FAIL_IMPORT "import-trace" ${FAIL_TOOLS_DIR})
 find_program(FAIL_PRUNE "prune-trace" ${FAIL_TOOLS_DIR})
 find_program(FAIL_SERVER "cored-tester-server" ${FAIL_TOOLS_DIR})
