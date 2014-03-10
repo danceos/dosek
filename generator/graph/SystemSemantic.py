@@ -366,12 +366,12 @@ class SystemState:
         ret = 0
         # XOR does comute!
         ret ^= hash(self.current_abb)
-        for state in self.states.values():
+        for state in list(self.states.values()):
             ret ^= hash(state)
-        for conts in self.continuations.values():
+        for conts in list(self.continuations.values()):
             for cont in conts:
                 ret ^= hash(cont)
-        for call_stack in self.call_stack.values():
+        for call_stack in list(self.call_stack.values()):
             if not call_stack:
                 continue
             for go_back in call_stack:
@@ -386,7 +386,7 @@ class SystemState:
         if not self.current_abb == other.current_abb:
             return False
 
-        for subtask in self.states.keys():
+        for subtask in list(self.states.keys()):
             # The subtask states have to equal
             if not self.states[subtask] == other.states[subtask]:
                 return False
@@ -400,7 +400,7 @@ class SystemState:
         return True
 
     def is_definite(self):
-        for subtask in self.states.keys():
+        for subtask in list(self.states.keys()):
             if self.is_unsure_ready_state(subtask):
                 return False
             if len(self.continuations[subtask]) > 1:

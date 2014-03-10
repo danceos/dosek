@@ -55,12 +55,12 @@ class CodeTemplate:
     def __expand_snippet(self, name, snippet, args):
         if hasattr(self, name):
             if snippet:
-                return getattr(self, name)(snippet, **dict(zip(snippet.args, args)))
+                return getattr(self, name)(snippet, **dict(list(zip(snippet.args, args))))
             else:
                 return getattr(self, name)(snippet, args)
 
         assert snippet, "snippet:%s not found" % name
-        return self.expand_snippet(snippet, **dict(zip(snippet.args, args)))
+        return self.expand_snippet(snippet, **dict(list(zip(snippet.args, args))))
 
     def __format(self, text, prefix_length):
         if text is None:

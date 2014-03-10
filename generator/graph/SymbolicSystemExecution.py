@@ -52,7 +52,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                 edge = Edge(subobjects[state], subobjects[next_state])
                 subobjects[state].edges.append(edge)
 
-        return abbs.values()
+        return list(abbs.values())
 
     def state_transition(self, source_block, source_state, target_block, target_state):
         # print source_block.path(),"->", target_block.path()
@@ -138,7 +138,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         self.transform_isr_transitions()
 
         # Group States by ABB
-        self.states_by_abb = group_by(self.states_next.keys(), "current_abb")
+        self.states_by_abb = group_by(list(self.states_next.keys()), "current_abb")
 
     def transform_isr_transitions(self):
         # Special casing of sporadic events What happens here: In
@@ -152,7 +152,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             return state.current_abb.function.subtask.is_isr
         del_edges = []
         add_edges = []
-        for app_level in filter(lambda x: not is_isr_state(x), self.states_next):
+        for app_level in [x for x in self.states_next if not is_isr_state(x)]:
             for isr_level in filter(is_isr_state, self.states_next[app_level]):
                 # Mark the edge that enteres the isr level as to be removed
                 del_edges.append((app_level, isr_level))

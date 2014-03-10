@@ -140,8 +140,7 @@ class GenerateAssertionsPass(Analysis):
             # All ABBs that continue to that point
             incoming_abbs = computation_block.get_incoming_nodes(E.system_level)
             # We may also be entered by interrupts, ignore them
-            incoming_abbs = filter(lambda x: x in self.assertions_before,
-                                   incoming_abbs)
+            incoming_abbs = [x for x in incoming_abbs if x in self.assertions_before]
             assert len(incoming_abbs) > 0, "Weird ABB: %s" % abb
             checked_assertions = set(self.assertions_before[incoming_abbs[0]])
             for incoming_abb in incoming_abbs[1:]:

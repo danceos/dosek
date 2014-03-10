@@ -64,7 +64,7 @@ class SystemDescription:
                             int(subtask.deadline.relative),
                             int(subtask.deadline.deadline))
                 subtasks[str(subtask.handler)] = deadline
-                if "root" in subtask.keys():
+                if "root" in list(subtask.keys()):
                     root_subtask = subtask.handler
             tasks.append(self.Task(event, root_subtask, subtasks, promises))
         return tasks

@@ -65,7 +65,7 @@ class GlobalABBInfoToolbox:
         return self.reachability_bare(syscall, possible_subtasks)
 
     def reachability_bare(self, syscall, possible_subtasks):
-        reachable_subtasks = self.abb_info_provider.for_abb(syscall).tasks_after.keys()
+        reachable_subtasks = list(self.abb_info_provider.for_abb(syscall).tasks_after.keys())
         assert(set(reachable_subtasks) == set(possible_subtasks)), "%s:%s(%s)::: %s != %s" %(
             syscall.function.function_name, syscall.syscall_type.name,
             syscall.arguments, list(possible_subtasks), list(reachable_subtasks))

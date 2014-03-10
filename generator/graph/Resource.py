@@ -13,9 +13,5 @@ class Resource:
         # Allocated by the PrioritySpreadingPass
         self.static_priority = None
 
-    @property
-    def static_priority(self):
-        return max([t.static_priority for t in self.subtasks]) + 1
-
     def __repr__(self):
         return "<Res %s pri:%s>" %(self.name, self.static_priority)

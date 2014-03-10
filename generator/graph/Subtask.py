@@ -18,7 +18,7 @@ class Subtask(Function):
 
     def set_deadline(self, deadline):
         """Takes tuple (type, relative, deadline)"""
-        self.deadline = dict(zip(["type", "relative", "deadline"], deadline))
+        self.deadline = dict(list(zip(["type", "relative", "deadline"], deadline)))
 
     def set_static_priority(self, prio):
         self.static_priority = prio

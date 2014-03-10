@@ -49,7 +49,7 @@ class PassManager:
     def enqueue_analysis(self, analysis):
         if analysis in self.passes:
             analysis = self.passes[analysis]
-        assert analysis in self.passes.values(), "unregistered pass: %s" % analysis
+        assert analysis in list(self.passes.values()), "unregistered pass: %s" % analysis
 
         if analysis in self.analysis_pipe:
             logging.warning("Pass was enqueued more than once, ignore: %s", analysis)

@@ -75,7 +75,7 @@ class CFGRegions(Analysis):
             self.check_mask[syscall] = []
             self.leave_mask[syscall] = []
 
-            for region_id, region in self.regions.items():
+            for region_id, region in list(self.regions.items()):
                 if syscall.function.subtask and syscall.function.subtask.is_isr:
                     # Syscalls in interrupts should not be instrumented!
                     continue

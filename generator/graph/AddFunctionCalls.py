@@ -50,7 +50,7 @@ class AddFunctionCalls(Analysis):
                 if called_function in relevant_functions \
                    and not calling_function in relevant_functions:
                     relevant_functions.add(called_function)
-                    print calling_function, "->", called_function
+                    logging.info(" + %s -> %s", calling_function, called_function)
                     changed = True
 
         self.relevant_functions = relevant_functions

@@ -137,7 +137,7 @@ class SpecializedSystemCalls(FullSystemCalls):
         next_subtasks = abb_info.tasks_after
 
         if len(next_subtasks) == 1:
-            next_subtask = unwrap_seq(next_subtasks.keys())
+            next_subtask = unwrap_seq(list(next_subtasks.keys()))
             self.Comment(kernelspace,
                          "OPTIMIZATION: There is only one possible subtask continuing"
                          + " to, we directly dispatch to that task: %s", next_subtask)
@@ -146,7 +146,7 @@ class SpecializedSystemCalls(FullSystemCalls):
             return
 
 
-        tasks = abb_info.tasks_after.keys()
+        tasks = list(abb_info.tasks_after.keys())
         self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s", 
                      tasks)
         schedule_hint = self.ScheduleTargetHint(tasks)

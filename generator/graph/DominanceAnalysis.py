@@ -3,6 +3,7 @@ from generator.graph.common             import dfs, GraphObject, Edge, GraphObje
 from generator.tools                    import stack
 from generator.graph.AtomicBasicBlock   import E,S
 import logging
+from functools import reduce
 
 class DominanceAnalysis(Analysis, GraphObject):
     """Implements a dominator analysis on the system level control flow

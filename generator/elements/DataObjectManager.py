@@ -172,7 +172,7 @@ class DataObjectManager:
                 ret.append(o.source_element_allocation())
             return ret
         ret =  self.__iterate_in_namespaces(iterate)
-        for namespace in self.__objects.keys():
+        for namespace in self.__objects:
             if namespace:
                 ret += [Statement("using namespace " + "::".join(list(namespace)))]
 

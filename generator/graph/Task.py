@@ -16,16 +16,16 @@ class Task(GraphObject):
 
     def set_event(self, event):
         if event[1] == "periodic":
-            self.event = dict(zip(["name", "type", "period", "phase", "jitter"], event))
+            self.event = dict(list(zip(["name", "type", "period", "phase", "jitter"], event)))
         elif event[1] == "nonperiodic":
-            self.event = dict(zip(["name", "type", "interarrivaltime"], event))
+            self.event = dict(list(zip(["name", "type", "interarrivaltime"], event)))
         elif event[1] == "once":
-            self.event = dict(zip(["name", "type"], event))
+            self.event = dict(list(zip(["name", "type"], event)))
         else:
             assert False
 
     def set_promises(self, promises):
-        assert promises.keys() == self.promises.keys()
+        assert list(promises.keys()) == list(self.promises.keys())
         self.promises = promises
 
     def does_promise(self, promise):
@@ -38,7 +38,7 @@ class Task(GraphObject):
     def add_function(self, function):
         function.task = self
         self.functions.append(function)
-        if not function in self.system_graph.functions.values():
+        if not function in list(self.system_graph.functions.values()):
             self.system_graph.functions[function.function_name] = function
 
 
