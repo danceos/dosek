@@ -1,4 +1,4 @@
-from generator.graph.common import GraphObject, Edge
+from generator.graph.common import Node, Edge, EdgeType, NodeType
 from generator.tools import IntEnum, unique
 import collections
 
@@ -36,18 +36,8 @@ class ControlFlowEdge(Edge):
        context)"""
 
     def __init__(self, source, target, level = E.task_level):
-        Edge.__init__(self, source, target, color = E.color(level))
-        self.level = level
+        Edge.__init__(self, source, target, level, color = E.color(level))
 
-    def isA(self, edge_level):
-        if isinstance(edge_level, collections.Iterable):
-            return self.level in edge_level
-        return self.level == edge_level
-
-
-    def __repr__(self):
-        return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
-                                     self.target, self.level.name)
 @unique
 class SyscallType(IntEnum):
     # User code
@@ -91,14 +81,14 @@ class SyscallType(IntEnum):
 
 S = SyscallType
 
-class AtomicBasicBlock(GraphObject):
+class AtomicBasicBlock(Node):
+    current_edge_filter = None
+
     def __init__(self, system_graph, abb_id):
-        GraphObject.__init__(self, "ABB%d" %(abb_id), color="red")
+        Node.__init__(self, ControlFlowEdge, "ABB%d" %(abb_id), color="red")
         self.abb_id = abb_id
         self.system_graph = system_graph
         self.function = None
-        self.outgoing_edges = []
-        self.incoming_edges = []
 
         self.syscall_type = S.computation
         self.arguments = []
@@ -120,79 +110,6 @@ class AtomicBasicBlock(GraphObject):
     def interrupt_block(self):
         return self.interrupt_block_all or self.interrupt_block_os
 
-    # Edge handling
-    ################################################################
-
-    current_edge_filter = None
-    @classmethod
-    def set_edge_filter(cls, edge_filter):
-        cls.current_edge_filter = edge_filter
-
-    def check_edge_filter(self, level):
-        assert isinstance(level, E) or isinstance(level, collections.Iterable)
-        assert not self.current_edge_filter \
-            or level in self.current_edge_filter\
-            or (isinstance(level, collections.Iterable) \
-                and set(level).issubset(self.current_edge_filter)),\
-            "Tried to access edge of type %s, but is prohibited by edge filter"\
-            % (self.current_edge_filter)
-
-    def graph_edges(self):
-        if self.current_edge_filter:
-            return [edge for edge in self.outgoing_edges
-                    if edge.level in self.current_edge_filter]
-        return self.outgoing_edges
-
-    def add_cfg_edge(self, target, level):
-        self.check_edge_filter(level)
-        assert not target in self.get_outgoing_edges(level), \
-            "Cannot add edge of the same type twice"
-        edge = ControlFlowEdge(self, target, level)
-        self.outgoing_edges.append(edge)
-        target.incoming_edges.append(edge)
-
-    def get_outgoing_edges(self, level):
-        self.check_edge_filter(level)
-        return [x for x in self.outgoing_edges if x.isA(level)]
-
-    def get_incoming_edges(self, level):
-        self.check_edge_filter(level)
-        return [x for x in self.incoming_edges if x.isA(level)]
-
-    def get_outgoing_nodes(self, level):
-        self.check_edge_filter(level)
-        return [x.target for x in self.outgoing_edges if x.isA(level)]
-
-    def get_incoming_nodes(self, level):
-        self.check_edge_filter(level)
-        return [x.source for x in self.incoming_edges if x.isA(level)]
-
-    def has_edge_to(self, abb, level):
-        """Returns the edge of level to an specific abb"""
-        self.check_edge_filter(level)
-
-        for edge in self.outgoing_edges:
-            if edge.isA(level) and edge.target == abb:
-                return edge
-
-    def definite_after(self, level):
-        nodes = self.get_outgoing_nodes(level)
-        assert len(nodes) == 1
-        return nodes[0]
-
-    def definite_before(self, level):
-        nodes = self.get_incoming_nodes(level)
-        assert len(nodes) == 1
-        return nodes[0]
-
-
-    def remove_cfg_edge(self, to_abb, level):
-        assert isinstance(level, E)
-        for edge in self.outgoing_edges:
-            if edge.target == to_abb and edge.isA(level):
-                self.outgoing_edges.remove(edge)
-                to_abb.incoming_edges.remove(edge)
-                return edge
 
     def make_it_a_syscall(self, syscall_type, arguments):
         assert isinstance(syscall_type, SyscallType)
@@ -214,19 +131,17 @@ class AtomicBasicBlock(GraphObject):
         self.arguments = args
 
     def fsck(self):
+        Node.fsck(self)
         assert self.system_graph.find_abb(self.abb_id) == self
         assert self.function != None
         assert self in self.function.abbs
         for edge in self.outgoing_edges:
-            assert edge.source == self
-            assert edge in edge.target.incoming_edges
             # Target Edge can be found
             assert self.system_graph.find_abb(edge.target.abb_id) == edge.target
         for edge in self.incoming_edges:
-            assert edge.target == self
-            assert edge in edge.source.outgoing_edges
             # Source abb can be found
             assert self.system_graph.find_abb(edge.source.abb_id) == edge.source
+
 
     def dump(self):
         task = None

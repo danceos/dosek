@@ -1,5 +1,6 @@
 import sys
-from generator.tools import wrap_in_list, stack
+from generator.tools import wrap_in_list, stack, IntEnum, unique
+import collections
 
 class GraphObject:
     """Any Object that is used within the graph an can be dumped as dot"""
@@ -65,58 +66,111 @@ class GraphObject:
         else:
             return ret, edges
 
+@unique
+class NodeType(IntEnum):
+    unspecified = -1
 
-class GraphObjectContainer(GraphObject):
-    def __init__(self, label, color, subobjects = None, edges = None, data = None, root = False):
+@unique
+class EdgeType(IntEnum):
+    unspecified = -1
+
+class Node(GraphObject):
+    def __init__(self, edge_factory, label, color, root = False):
         GraphObject.__init__(self, label, color, root)
-        if not edges:
-            edges = []
-        if not subobjects:
-            subobjects = []
-        self.data = data
-        self.subobjects = subobjects
-        self.edges = edges
+        self.outgoing_edges = []
+        self.incoming_edges = []
+        self.edge_factory   = edge_factory
 
-    def dump(self):
-        return self.data
+    current_edge_filter = None
+    @classmethod
+    def set_edge_filter(cls, edge_filter):
+        cls.current_edge_filter = edge_filter
 
-    def graph_subobjects(self):
-        return self.subobjects
+    def check_edge_filter(self, level):
+        assert isinstance(level, IntEnum) or isinstance(level, collections.Iterable)
+        assert not self.current_edge_filter \
+            or level in self.current_edge_filter\
+            or (isinstance(level, collections.Iterable) \
+                and set(level).issubset(self.current_edge_filter)),\
+            "Tried to access edge of type %s, but is prohibited by edge filter"\
+            % (self.current_edge_filter)
 
     def graph_edges(self):
-        return self.edges
+        if self.current_edge_filter:
+            return [edge for edge in self.outgoing_edges
+                    if edge.level in self.current_edge_filter]
+        return self.outgoing_edges
 
-    @staticmethod
-    def from_dict(label, color, edge_dict, reverse = False):
-        subobject = GraphObjectContainer(label = label, color="black")
-        objs = {}
-        # Construct the control flow edges
-        for _from, _ in edge_dict.items():
-            objs[_from] = GraphObjectContainer(label = str(_from),
-                                             color = color,
-                                             data = _from.dump())
-        for _from, targets in edge_dict.items():
-            if targets is None:
-                continue
-            targets = wrap_in_list(targets)
-            for _to in targets:
-                edge = Edge(objs[_from], objs[_to])
-                if reverse:
-                    edge.source, edge.target = edge.target, edge.source
-                subobject.edges.append(edge)
+    def add_cfg_edge(self, target, level):
+        self.check_edge_filter(level)
+        assert not target in self.get_outgoing_edges(level), \
+            "Cannot add edge of the same type twice"
+        edge = self.edge_factory(self, target, level)
+        self.outgoing_edges.append(edge)
+        target.incoming_edges.append(edge)
 
-        subobject.subobjects = objs.values()
-        return subobject
+    def get_outgoing_edges(self, level):
+        self.check_edge_filter(level)
+        return [x for x in self.outgoing_edges if x.isA(level)]
+
+    def get_incoming_edges(self, level):
+        self.check_edge_filter(level)
+        return [x for x in self.incoming_edges if x.isA(level)]
+
+    def get_outgoing_nodes(self, level):
+        self.check_edge_filter(level)
+        return [x.target for x in self.outgoing_edges if x.isA(level)]
+
+    def get_incoming_nodes(self, level):
+        self.check_edge_filter(level)
+        return [x.source for x in self.incoming_edges if x.isA(level)]
+
+    def has_edge_to(self, abb, level):
+        """Returns the edge of level to an specific abb"""
+        self.check_edge_filter(level)
+
+        for edge in self.outgoing_edges:
+            if edge.isA(level) and edge.target == abb:
+                return edge
+
+    def definite_after(self, level):
+        nodes = self.get_outgoing_nodes(level)
+        assert len(nodes) == 1
+        return nodes[0]
+
+    def definite_before(self, level):
+        nodes = self.get_incoming_nodes(level)
+        assert len(nodes) == 1
+        return nodes[0]
+
+
+    def remove_cfg_edge(self, to_abb, level):
+        self.check_edge_filter(level)
+        for edge in self.outgoing_edges:
+            if id(edge.target) == id(to_abb) and edge.isA(level):
+                self.outgoing_edges.remove(edge)
+                to_abb.incoming_edges.remove(edge)
+                return edge
+
+    def fsck(self):
+        for edge in self.outgoing_edges:
+            assert edge.source == self
+            assert edge in edge.target.incoming_edges
+        for edge in self.incoming_edges:
+            assert edge.target == self
+            assert edge in edge.source.outgoing_edges
 
 
 class Edge:
-    def __init__(self, source, target, label='', color = 'black'):
+    def __init__(self, source, target, level=EdgeType.unspecified, label='', 
+                 color = 'black'):
         assert hasattr(source, "graph_dot_id")
         assert hasattr(target, "graph_dot_id")
         self.source = source
         self.target = target
         self.label = label
         self.color = color
+        self.level = level
 
     def dump_as_dot(self):
         ret = "Node_%s -> Node_%s[minlen=3,ltail=%s,lhead=%s,label=\"%s\",color=%s];" %(
@@ -129,8 +183,14 @@ class Edge:
         )
         return ret
 
+    def isA(self, edge_level):
+        if isinstance(edge_level, collections.Iterable):
+            return self.level in edge_level
+        return self.level == edge_level
+
     def __repr__(self):
-        return "<%s %s -> %s>"%(self.__class__.__name__, self.source, self.target)
+        return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
+                                     self.target, self.level.name)
 
 def dfs(block_functor, take_edge_functor, start_abbs):
     """Performs a depth first search. It first executes block_functor on a
@@ -195,16 +255,48 @@ class FixpointIteraton:
             item = self.working_stack.pop()
             functor(self, item)
 
-# Hook for coloured tracebacks on the console :-)
-def myexcepthook(type, value, tb):
-    import traceback
-    from pygments import highlight
-    from pygments.lexers import get_lexer_by_name
-    from pygments.formatters import TerminalFormatter
 
-    tbtext = ''.join(traceback.format_exception(type, value, tb))
-    lexer = get_lexer_by_name("pytb", stripall=True)
-    formatter = TerminalFormatter()
-    sys.stderr.write(highlight(tbtext, lexer, formatter))
 
-sys.excepthook = myexcepthook
+class GraphObjectContainer(GraphObject):
+    def __init__(self, label, color, subobjects = None, edges = None, data = None, root = False):
+        GraphObject.__init__(self, label, color, root)
+        if not edges:
+            edges = []
+        if not subobjects:
+            subobjects = []
+        self.data = data
+        self.subobjects = subobjects
+        self.edges = edges
+
+    def dump(self):
+        return self.data
+
+    def graph_subobjects(self):
+        return self.subobjects
+
+    def graph_edges(self):
+        return self.edges
+
+    @staticmethod
+    def from_dict(label, color, edge_dict, reverse = False):
+        subobject = GraphObjectContainer(label = label, color="black")
+        objs = {}
+        # Construct the control flow edges
+        for _from, _ in edge_dict.items():
+            objs[_from] = GraphObjectContainer(label = str(_from),
+                                             color = color,
+                                             data = _from.dump())
+        for _from, targets in edge_dict.items():
+            if targets is None:
+                continue
+            targets = wrap_in_list(targets)
+            for _to in targets:
+                edge = Edge(objs[_from], objs[_to])
+                if reverse:
+                    edge.source, edge.target = edge.target, edge.source
+                subobject.edges.append(edge)
+
+        subobject.subobjects = objs.values()
+        return subobject
+
+

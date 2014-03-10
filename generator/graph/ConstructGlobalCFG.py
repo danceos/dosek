@@ -2,6 +2,7 @@ from generator.graph.Analysis import Analysis
 from generator.graph.AtomicBasicBlock import E, S
 from generator.tools import panic, stack
 from generator.graph.common import Edge
+from generator.graph.SymbolicSystemExecution import StateTransition
 import logging
 
 
@@ -62,7 +63,7 @@ class ConstructGlobalCFG(Analysis):
             if not source_abb in self.sse.states_by_abb:
                 return []
             for state in self.sse.states_by_abb[source_abb]:
-                for next_state in self.sse.states_next[state]:
+                for next_state in state.get_outgoing_nodes(StateTransition):
                     followup_abbs.add(next_state.current_abb)
             return followup_abbs
         return []

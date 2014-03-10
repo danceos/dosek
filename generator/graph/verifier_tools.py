@@ -87,6 +87,7 @@ class GlobalABBInfoToolbox:
         activating_abbs = self.abb_info_provider.for_abb(function.entry_abb).abbs_before
         for abb in activating_abbs:
             activating_subtasks.add(abb.function.subtask)
+
         assert(set(activating_subtasks) == set(possible_subtasks)), "SetReady(%s):: %s != %s" %(
             function.function_name, list(activating_subtasks), list(possible_subtasks))
 

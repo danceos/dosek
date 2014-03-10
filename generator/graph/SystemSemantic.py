@@ -1,6 +1,7 @@
-from generator.tools import stack
-from copy import copy
+from generator.tools import stack, unwrap_seq
 from generator.graph.AtomicBasicBlock import E, S
+from generator.graph.common import Node, Edge, EdgeType, NodeType
+
 
 class SystemCallSemantic:
     def __init__(self, system_graph, running_task):
@@ -125,7 +126,7 @@ class SystemCallSemantic:
         # possible at all. We will delete some in the future.
         # [(block, surely_running)]
         possible_blocks = []
-        for subtask in state.get_subtasks():
+        for subtask in state.get_unordered_subtasks():
             if state.is_surely_ready(subtask):
                 conts = state.get_continuations(subtask)
                 assert len (conts) > 0, \
@@ -201,17 +202,17 @@ class SystemCallSemantic:
         return
 
 
-class SystemState:
+class SystemState(Node):
     READY = 1
     SUSPENDED = 2
 
     def __init__(self, system_graph):
+        Node.__init__(self, Edge, "", color="green")
         self.system_graph = system_graph
         self.frozen = False
         self.states = {}
         self.continuations = {}
         self.call_stack = {}
-        # {Subtask -> set([STATES])
         for subtask in self.system_graph.get_subtasks():
             self.states[subtask] = 0
             self.continuations[subtask] = set()
@@ -224,12 +225,13 @@ class SystemState:
     def copy(self):
         state = SystemState(self.system_graph)
         state.current_abb = self.current_abb
-        for subtask in state.get_subtasks():
+        for subtask in self.get_unordered_subtasks():
             state.states[subtask] = self.states[subtask]
-            state.continuations[subtask] = self.continuations[subtask].copy()
+            state.continuations[subtask] = set(self.continuations[subtask])
 
             # Only used by SymbolicSystemExecution
-            state.call_stack[subtask] = copy(self.call_stack[subtask])
+            if not self.call_stack[subtask] is None:
+                state.call_stack[subtask] = stack(self.call_stack[subtask])
         assert self == state
         return state
 
@@ -237,6 +239,9 @@ class SystemState:
         """Sorted by priority"""
         return sorted(self.system_graph.get_subtasks(),
                       key=lambda x: x.static_priority, reverse = True)
+
+    def get_unordered_subtasks(self):
+        return self.system_graph.get_subtasks()
 
     def get_task_states(self, subtask):
         return self.states[subtask]
@@ -320,7 +325,7 @@ class SystemState:
             "%s != %s" %(self.current_abb.path(), other.current_abb.path())
         self.current_abb = other.current_abb
         changed = False
-        for subtask in self.get_subtasks():
+        for subtask in self.get_unordered_subtasks():
             old_state = self.states[subtask]
             continuations_count = len(self.continuations[subtask])
             self.states[subtask] |= other.states[subtask]
@@ -351,7 +356,7 @@ class SystemState:
         return "|".join(ret)
 
     def __repr__(self):
-        ret = "<SystemState: %s>\n" %(self.current_abb)
+        ret = "<SystemState: %s>\n" %(self.current_abb.path())
         for subtask in self.get_subtasks():
             ret += "  %02x%02x %s: %s in %s \n" %(
                 id(self.states[subtask]) % 256,
@@ -380,6 +385,8 @@ class SystemState:
         return ret
 
     def __eq__(self, other):
+        if id(self) == id(other):
+            return True
         if not isinstance(other, SystemState):
             return False
         # The Currently Running Task has to be equal
@@ -406,5 +413,15 @@ class SystemState:
             if len(self.continuations[subtask]) > 1:
                 return False
         return True
-            
+
+    def dump(self):
+        ret = {"ABB": str(self.current_abb)}
+        for subtask, state in self.states.items():
+            ret[subtask.name] = self.format_state(state)
+            conts = self.get_continuations(subtask)
+            assert len(conts) <= 1
+            if len(conts) == 1:
+                ret[subtask.name] += " " + str(unwrap_seq(conts))
+
+        return ret
 
