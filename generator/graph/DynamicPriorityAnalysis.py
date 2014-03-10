@@ -83,6 +83,7 @@ class DynamicPriorityAnalysis(Analysis):
         # ...
         # if (X)
         #    ReleaseResource(A)
+        RES_SCHEDULER = self.system_graph.resources["RES_SCHEDULER"]
         for abb in self.system_graph.get_abbs():
             if abb.function.subtask == None:
                 # Not reachable from a subtask
@@ -96,7 +97,11 @@ class DynamicPriorityAnalysis(Analysis):
                         (resource, abb.function)
                 if state.taken:
                     dynamic_priority = max(dynamic_priority, resource.static_priority)
-
+            # Blocks within a non-preemtable subtask cannot be
+            # rescheduled (except for ISR2)
+            if not abb.function.subtask.preemptable and \
+               not abb.isA(S.kickoff):
+                dynamic_priority = RES_SCHEDULER.static_priority
             # Each abb has a dynamic priority
             abb.dynamic_priority = dynamic_priority
 

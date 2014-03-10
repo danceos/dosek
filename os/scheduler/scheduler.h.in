@@ -120,6 +120,11 @@ struct Scheduler  {
 	// Low level interface to the task list
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
 	forceinline void SetCurrentTask(const Task task) {
+		if (task.preemptable == false) {
+			// promote non-preemptable task to RES_SCHEDULER
+			tlist.set(task.enc_id<1>(), scheduler_prio);
+			current_prio = scheduler_prio;
+		}
 		current_task = task.enc_id<TASK_SIG>();
 	}
 

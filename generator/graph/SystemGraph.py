@@ -165,6 +165,11 @@ class SystemGraph(GraphObject, PassManager):
 
         for res in system.getResources():
             self.resources[res.name] = Resource(self, res.name, res.tasks)
+        if not "RES_SCHEDULER" in self.resources:
+            sched = "RES_SCHEDULER"
+            subtasks = [x.name for x in self.get_subtasks()
+                       if not x.is_isr]
+            self.resources[sched] = Resource(self, sched, subtasks)
 
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc

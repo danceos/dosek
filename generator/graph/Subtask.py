@@ -60,5 +60,8 @@ class Subtask(Function):
         return from_function
 
     def __repr__(self):
-        return "<Subtask %s>" %self.name
+        isr = ""
+        if self.is_isr:
+            isr = " ISR"
+        return "<Subtask %s%s>" %(self.name, isr)
 

@@ -78,6 +78,10 @@ class SpecializedSystemCalls(FullSystemCalls):
         # Step 2: Determine the current system priority.
         abb_info = self.global_abb_info.for_abb(abb)
         priorities = set([x.dynamic_priority for x in abb_info.abbs_after])
+        # When task is non-preemptable, we have to set the system
+        # priority to RES_SCHEDULER
+        if not task.preemptable:
+            priorities = [task.entry_abb.definite_after(E.function_level).dynamic_priority]
         if len(priorities) == 1:
             next_prio = unwrap_seq(priorities)
             if next_prio == abb.dynamic_priority:

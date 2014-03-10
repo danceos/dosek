@@ -117,10 +117,20 @@ class SystemCallSemantic:
         current_running = self.running_task.for_abb(source)
 
         # If the current task is not preemptable, we can just continue
-        # on the local task graph
+        # on the local task graph or on ISR blocks
         if current_running and not current_running.preemptable \
            and state.is_surely_ready(current_running):
-            return list(state.get_continuations(current_running))
+            task_conts = list(state.get_continuations(current_running))
+            isr_conts  = []
+            if not current_running.is_isr:
+                for subtask in state.get_subtasks():
+                    if subtask.is_isr and state.is_maybe_ready(subtask):
+                        assert state.is_surely_ready(subtask)
+                        isr_conts.append(subtask.entry_abb)
+            if isr_conts:
+                return isr_conts
+            else:
+                return task_conts
 
         # First of all all blocks blocks of maybe ready blocks are
         # possible at all. We will delete some in the future.
@@ -160,7 +170,7 @@ class SystemCallSemantic:
 
     def schedule(self, source, state, set_state_on_edge):
         possible_blocks = self.find_possible_next_blocks(source, state)
-        # print source, [(x.dynamic_priority, x) for x in possible_blocks]
+        #print(source, [(x.dynamic_priority, x.path()) for x in possible_blocks], state)
 
         # The possible blocks are ordered with their dynamic priority.
         # [....., Block, ....]
