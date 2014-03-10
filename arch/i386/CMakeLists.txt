@@ -1,5 +1,5 @@
 # (Emulated) RAM size
-set(RAM_SIZE "4" CACHE STRING "(Emulated) RAM size in MB")
+set(RAM_SIZE "8" CACHE STRING "(Emulated) RAM size in MB")
 
 # Debugger to use
 find_program(DEBUGGER "gdb" DOC "Debugger (gdb/ddd)")

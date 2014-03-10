@@ -1,0 +1,178 @@
+<?xml version="1.0"?>
+
+<oseksystem xmlns              = "http://www4.informatik.uni-erlangen.de/RTSC"
+            xmlns:xsi          = "http://www.w3.org/2001/XMLSchema-instance">
+
+    <OS>
+        <name>CopterMock</name>
+        <STATUS>STANDARD</STATUS>
+        <ERRORHOOK>FALSE</ERRORHOOK>
+        <STARTUPHOOK>FALSE</STARTUPHOOK>
+        <SHUTDOWNHOOK>FALSE</SHUTDOWNHOOK>
+        <PRETASKHOOK>FALSE</PRETASKHOOK>
+        <POSTTASKHOOK>FALSE</POSTTASKHOOK>
+    </OS>
+
+    <!-- Signal Gather Tasks -->
+
+    <TASK>
+        <name>SignalGatherInitiateTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>24</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+        <RESOURCE>SPIBus</RESOURCE>
+    </TASK>
+
+    <TASK>
+        <name>SignalGatherFinishedTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>25</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+        <RESOURCE>SPIBus</RESOURCE>
+    </TASK>
+
+    <TASK>
+        <name>SignalGatherTimeoutTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>23</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+        <RESOURCE>SPIBus</RESOURCE>
+    </TASK>
+
+    <TASK>
+        <name>SignalProcessingActuateTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>22</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <TASK>
+        <name>SignalProcessingAttitudeTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>21</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <!-- Actuate Tasks -->
+    <TASK>
+        <name>FlightControlTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>NON</SCHEDULE> <!-- Non preemptable -->
+        <PRIORITY>11</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <TASK>
+        <name>FlightControlAttitudeTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>12</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <TASK>
+        <name>FlightControlActuateTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>13</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <TASK>
+        <name>MavlinkSendTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>10</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <!-- Watchdog Task -->
+    <TASK>
+        <name>CopterControlWatchdogTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>NON</SCHEDULE>
+        <PRIORITY>1</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <!-- Remote Control Tasks -->
+    <TASK>
+        <name>CopterControlTask</name>
+        <TYPE>BASIC</TYPE>
+        <SCHEDULE>FULL</SCHEDULE>
+        <PRIORITY>5</PRIORITY>
+        <ACTIVATION>1</ACTIVATION>
+        <AUTOSTART>FALSE</AUTOSTART>
+    </TASK>
+
+    <ISR>
+        <name>MavlinkRecvHandler</name>
+        <CATEGORY>2</CATEGORY>
+        <PRIORITY>100</PRIORITY>
+        <DEVICE>37</DEVICE>
+    </ISR>
+
+    <RESOURCE>
+        <name>SPIBus</name>
+        <TYPE>STANDARD</TYPE>
+    </RESOURCE>
+
+    <ALARM>
+        <name>SignalGatherAlarm</name>
+        <COUNTER>C1</COUNTER>
+        <ARMED>TRUE</ARMED>
+        <CYCLETIME>30</CYCLETIME>
+        <RELTIME>10</RELTIME>
+
+        <ACTIVATETASK>
+            <TASK>SignalGatherInitiateTask</TASK>
+        </ACTIVATETASK>
+    </ALARM>
+
+    <ALARM>
+        <name>FlightControlAlarm</name>
+        <COUNTER>C1</COUNTER>
+        <ARMED>TRUE</ARMED>
+        <CYCLETIME>90</CYCLETIME>
+        <RELTIME>13</RELTIME>
+
+        <ACTIVATETASK>
+            <TASK>FlightControlTask</TASK>
+        </ACTIVATETASK>
+    </ALARM>
+
+    <ALARM>
+        <name>CopterControlWatchdogAlarm</name>
+        <COUNTER>C1</COUNTER>
+        <ARMED>FALSE</ARMED>
+        <CYCLETIME>0</CYCLETIME>
+        <RELTIME>0</RELTIME>
+
+        <ACTIVATETASK>
+            <TASK>CopterControlWatchdogTask</TASK>
+        </ACTIVATETASK>
+    </ALARM>
+
+
+    <HARDWARECOUNTER>
+        <name>C1</name>
+        <MAXALLOWEDVALUE>50000</MAXALLOWEDVALUE>
+        <TICKSPERBASE>1</TICKSPERBASE>
+        <MINCYCLE>1</MINCYCLE>
+    </HARDWARECOUNTER>
+</oseksystem>

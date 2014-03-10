@@ -14,6 +14,8 @@ class SystemStateFlow(Analysis):
        and join nodes.
 
     """
+    pass_alias = "state-flow"
+
     def __init__(self):
         Analysis.__init__(self)
         self.sporadic_events = []

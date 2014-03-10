@@ -109,6 +109,15 @@ extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageD
 extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task6[1024];
 extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task7[1024];
 extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task8[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task9[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task10[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task11[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task12[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task13[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task14[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task15[1024];
+extern "C" const __attribute__((weak)) __attribute__((section(".paging"))) PageDirectoryEntry pagedir_task16[1024];
+
 /**@}*/
 
 /** \brief Array of task page directories */
@@ -122,7 +131,15 @@ constexpr const PageDirectoryEntry (* const pagedirs[])[1024] = {
 	&pagedir_task5,
 	&pagedir_task6,
 	&pagedir_task7,
-	&pagedir_task8
+	&pagedir_task8,
+	&pagedir_task9,
+	&pagedir_task10,
+	&pagedir_task11,
+	&pagedir_task12,
+	&pagedir_task13,
+	&pagedir_task14,
+	&pagedir_task15,
+	&pagedir_task16,
 };
 
 

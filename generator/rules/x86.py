@@ -123,7 +123,7 @@ class LinkerScriptTemplate(CodeTemplate):
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.x86.foreach_subtask
 
-        assert len(self.system_graph.get_subtasks()) <= 8, "paging.h does not support more tasks atm"
+        assert len(self.system_graph.get_subtasks()) <= 16, "paging.h does not support more tasks atm"
 
     def __select_statement(self, symbol, sections, library="*"):
         """Returns a newline seperated string of linker selectiors, for the

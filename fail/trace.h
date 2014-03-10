@@ -62,8 +62,8 @@ inlinehint void test_trace(uint32_t val)\
     #ifndef FAIL
     static uint32_t i = 1;
 
-    kout << "Checkpoint " << i++;
-    kout << ": " << val << endl;
+    kout << "T " << i++;
+    kout << ": " <<  hex << val << dec << endl;
     #endif
 }
 

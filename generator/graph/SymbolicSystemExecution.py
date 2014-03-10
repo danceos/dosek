@@ -187,12 +187,12 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             source.add_cfg_edge(target, StateTransition)
 
     def fsck(self):
-        for state in self.states:
-            Node.fsck(state)
-            for next_state in state.get_outgoing_nodes(StateTransition):
-                assert id(self.states[state]) == id(state)
-            for next_state in state.get_incoming_nodes(StateTransition):
-                assert id(self.states[state]) == id(state)
+        pass
+        #for state in self.states:
+        #    for next_state in state.get_outgoing_nodes(StateTransition):
+        #        assert id(self.states[state]) == id(state)
+        #    for next_state in state.get_incoming_nodes(StateTransition):
+        #        assert id(self.states[state]) == id(state)
 
     def for_abb(self, abb):
         """Return a GlobalAbbInformation object for this object"""
