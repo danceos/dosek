@@ -100,6 +100,8 @@ class X86Arch(SimpleArch):
                            "void", [arg.datatype for arg in arguments], extern_c = True)
 
         self.generator.source_file.function_manager.add(syscall)
+        # Mention the generated function in the stats
+        self.stats.add_data(abb, "generated-function", syscall.name)
         # The syscall function is called from the function that will
         # be inlined into the application
         self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])

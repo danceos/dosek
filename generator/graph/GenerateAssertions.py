@@ -155,7 +155,8 @@ class GenerateAssertionsPass(Analysis):
             count_before += len(self.assertions_before[abb])
             count_after  += len(self.assertions_after[abb])
 
-        logging.info("  + %d/%d assertions generated", count_before, count_after)
+        logging.info(" + %d/%d assertions generated for %d syscalls", 
+                     count_before, count_after, len(working_abbs))
 
 
     def system_enter_hook(self, generator, abb, hook):

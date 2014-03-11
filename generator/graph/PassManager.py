@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock
 from generator.graph.common import *
 from generator.tools import stack
@@ -128,7 +129,10 @@ class PassManager:
             AtomicBasicBlock.set_edge_filter(front.get_edge_filter())
             # Call analyzer pass
             logging.info("PASS: %s", front.name())
+            time_before = time.time()
             front.analyze()
+            time_delta = time.time() - time_before
+            logging.info(" + %.2f seconds", time_delta)
 
             # Check graph integrity
             self.system_graph.fsck()

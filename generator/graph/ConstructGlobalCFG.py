@@ -87,7 +87,7 @@ class ConstructGlobalCFG(Analysis):
 
                 if self.sse:
                     edge = Edge(source_abb, target_abb)
-                    logging.debug(" + saved edge from %s -> %s", source_abb, target_abb)
+                    logging.debug(" + remove edge from %s -> %s", source_abb, target_abb)
                     self.removed_edges.append(edge)
                 else:
                     # If no symbolic analysis is done we use the
@@ -110,4 +110,4 @@ class ConstructGlobalCFG(Analysis):
                     # If no state_flow analysis is done we use the
                     # edges build by symbolic execution
                     source_abb.add_cfg_edge(target_abb, E.system_level)
-
+        logging.info(" + removed %d edges", len(self.removed_edges))

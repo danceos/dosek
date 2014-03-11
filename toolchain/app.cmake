@@ -101,8 +101,6 @@ if(SPECIALIZE_SYSTEMCALLS)
        --template-base ${PROJECT_SOURCE_DIR}
        --arch ${COREDOS_ARCHITECTURE}
        ${COREDOS_GENERATOR_ARGS}
-     -vv
-   
      COMMAND
         if [ x"$$EDIT" != x"" ]; then vim ${COREDOS_GENERATED_SOURCE}\; fi
   COMMENT "[${PROJECT_NAME}/${NAME}] Generating COREDOS source code"

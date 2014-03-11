@@ -53,7 +53,8 @@ if __name__ == "__main__":
     parser.add_option("-a", "--arch",
                       metavar="STRING", help="for which coredos architecture?")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="increase verbosity (specify multiple times for more)")
+                      help="increase verbosity (specify multiple times for more)",
+                      default = 0)
     parser.add_option('', '--template-base',
                       help="Where to search for code templates")
     parser.add_option('', '--verify', dest='verify', default = None,
