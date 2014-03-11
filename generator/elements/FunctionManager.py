@@ -30,13 +30,11 @@ class Function:
 
 
     def source_element_declarations(self):
-        attributes = ""
-        if len(self.attributes) > 0:
-            attributes = " __attribute__((" + ",".join(self.attributes) + "))"
-        decl = "%s%s %s(%s)" %( self.rettype,
-                                attributes,
-                                self.name,
-                                ",".join(self.argstype))
+        attributes = " ".join(self.attributes)
+        decl = "%s %s %s(%s)" %(self.rettype,
+                                  attributes,
+                                  self.name,
+                                  ",".join(self.argstype))
         if self.extern_c:
             decl = 'extern "C" %s' % decl
         return Statement(decl)

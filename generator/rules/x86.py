@@ -85,6 +85,7 @@ class X86Arch(SimpleArch):
 
         if abb.function.subtask.is_isr:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
+            userspace.attributes.append("inlinehint")
 
             system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
 
@@ -106,7 +107,7 @@ class X86Arch(SimpleArch):
         # be inlined into the application
         self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
         syscall.add(pre_hook)
-        self.call_function(userspace, "Machine::enable_interrupts", "void", [])
+        # self.call_function(userspace, "Machine::enable_interrupts", "void", [])
 
         return self.KernelSpace(pre_hook, syscall, None)
 

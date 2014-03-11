@@ -14,8 +14,39 @@ def safe_int(i):
     except ValueError:
         return None
 
-def read_symbols(elffile):
-    out =  subprocess.check_output(["nm", "-t", "dec", "-S", elffile, "-f", "sysv"])
+def read_regions(objdump, elf_file):
+    """Read in memory regions from ELF file"""
+
+    # run objdump and get output
+    command = [objdump, "-t", elf_file]
+    p = Popen(command, stdout=PIPE)
+
+    (stdout, stderr) = p.communicate(None)
+    if(p.returncode != 0):
+        sys.exit(p.returncode)
+
+    lines = stdout.split('\n')
+
+    # extract all regions:
+    # for each region defined by symbols _sregionname, _eregionname
+    # create key "regionname" in regions with subkeys start/end pointing to address
+    regions = {}
+    for l in lines:
+        cols = l.split(' ')
+        name = cols[-1]
+        addr = cols[0]
+
+        if(name.startswith("_s")):
+            regions.setdefault(name[2:], {})["start"] = int(addr, 16)
+
+        if(name.startswith("_e")):
+            regions.setdefault(name[2:], {})["end"] = int(addr, 16)
+
+    return regions
+
+
+def read_symbols(elffile, nm = "nm"):
+    out =  subprocess.check_output([nm, "-t", "dec", "-S", elffile, "-f", "sysv"])
     ret = []
     for line in out.split("\n"):
         if not "|" in line:
@@ -29,7 +60,7 @@ def read_symbols(elffile):
                       ))
     return ret
 
-def find_symbol(name):
+def find_symbol(symbols, name):
     for symbol in symbols:
         if name == symbol.name:
             return symbol
@@ -63,7 +94,7 @@ if __name__ == "__main__":
             continue
         abb["generated-codesize"] = 0
         for func in abb['generated-function']:
-            func = find_symbol(func)
+            func = find_symbol(symbols, func)
             abb["generated-codesize"] += func.size
 
     stats.save(options.stats_dict)

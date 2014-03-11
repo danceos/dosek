@@ -19,7 +19,7 @@ class Statistics:
         elif type(obj) in (int, float, str, bool):
             ret = obj
         else:
-            ret = repr(obj)
+            ret = '"' + repr(obj) + '"'
         return ret
 
 
@@ -45,7 +45,7 @@ class Statistics:
             parent[category].append(self.__stringify(data))
 
     def dump(self):
-        ret = pprint.pformat(self.tree)
+        ret = pprint.pformat(self.tree, width=150)
         return ret
 
     def rebuild_index(self, root):

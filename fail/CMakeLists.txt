@@ -22,6 +22,7 @@ find_program(FAIL_CLIENT "cored-tester-client" ${FAIL_TOOLS_DIR})
 find_program(OBJDUMP "objdump")
 find_program(NICE "nice")
 find_program(GIT "git")
+find_program(PROTOC "protoc")
 
 # DB options
 set(FAIL_DBOPTS "")
@@ -45,6 +46,18 @@ if(PARALLEL)
 else()
 	message(WARNING "[${PROJECT_NAME}] GNU parallel not found, can only run FAIL* locally")
 endif()
+
+# TracePlugin python version
+SET(FAIL_TRACE_PLUGIN_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/TracePlugin.proto")
+SET(FAIL_TRACE_PLUGIN_PYTHON "${CMAKE_CURRENT_BINARY_DIR}/TracePlugin_pb2.py" CACHE INTERNAL "TracePlugin_pb2.py")
+add_custom_target(fail-trace-plugin-python
+  DEPENDS ${FAIL_TRACE_PLUGIN_SOURCE}
+  COMMAND ${PROTOC} 
+          -I${CMAKE_CURRENT_SOURCE_DIR} ${FAIL_TRACE_PLUGIN_SOURCE} 
+          --python_out=${CMAKE_CURRENT_BINARY_DIR}
+  COMMENT "Compiling fail TracePlugin.proto"
+  OUTPUT  ${FAIL_TRACE_PLUGIN_PYTHON}
+)
 
 # targets to run all FAIL* tests
 foreach(BENCHMARK "mem" "regs" "ip" "jump")
@@ -99,7 +112,7 @@ macro(fail_targets TNAME ELF TEST)
 		set(CHECKPOINTFILE "${FAIL_DIR}/checkpoint.trace")
 		set(STATEDIR "${FAIL_DIR}/state")
 		add_custom_command(
-			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE}
+			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE} fail-trace-plugin-python
 			COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${GIT_REV_FILE} -g ${GIT}
 			COMMAND ${CMAKE_COMMAND} -E remove_directory ${STATEDIR}
 			COMMAND ${FAIL_TRACE} -f ${BOCHSRC} -q
@@ -113,6 +126,24 @@ macro(fail_targets TNAME ELF TEST)
 			OUTPUT ${TRACEFILE} ${CHECKPOINTFILE} ${STATEDIR}
 		)
 		add_custom_target(fail-trace-${TNAME} DEPENDS ${TRACEFILE})
+
+        # Statistics for fail-binary/trace
+        add_custom_command(TARGET fail-trace-${TNAME} POST_BUILD
+          COMMENT "Gathering binary statistics for ${TNAME}"
+          COMMAND ${COREDOS_GENERATOR_DIR}/stats_binary.py
+                  --stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
+                  --elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
+        )
+
+        add_custom_command(TARGET fail-trace-${TNAME} POST_BUILD
+          COMMENT "Gathering trace statistics for ${TNAME}"
+          COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR}
+          ${PROJECT_SOURCE_DIR}/fail/trace-analyze.py
+             --stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
+             --elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
+             --trace ${FAIL_DIR}/trace.pb
+             --trace-plugin ${FAIL_TRACE_PLUGIN_PYTHON}
+             )
 
 		# extract {data, text, stack}_map
 		set(FAIL_MAPPER "${PROJECT_SOURCE_DIR}/fail/mapper.py")
