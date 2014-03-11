@@ -1,6 +1,6 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
-    Block, Statement, Comment, Function
+    Block, Statement, Comment, Function, Hook
 from generator.graph.AtomicBasicBlock import S
 
 class UnencodedSystem(SimpleSystem):
@@ -38,10 +38,14 @@ class UnencodedSystem(SimpleSystem):
         syscall_type = systemcall.abb.syscall_type
 
         kernelspace = None
+        pre_hook    = None
+        post_hook   = None
         if abb.isA([S.TerminateTask, S.ActivateTask, S.ChainTask,
                     S.CancelAlarm, S.GetResource, S.ReleaseResource]):
             # Need a kernelspace
             kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, [])
+            pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
+
 
         if systemcall.function == "TerminateTask":
             self.syscall_rules.TerminateTask(kernelspace.system, abb)
@@ -66,17 +70,19 @@ class UnencodedSystem(SimpleSystem):
             userspace.unused_parameter(0)
             self.syscall_rules.ReleaseResource(kernelspace.system, abb)
         # Interrupt Handling
-        elif systemcall.function == "DisableAllInterrupts":
+        elif systemcall.function in ("DisableAllInterrupts", 
+                                     "SuspendAllInterrupts", 
+                                     "SuspendOSInterrupts"):
             self.syscall_rules.DisableAllInterrupts(userspace, abb)
-        elif systemcall.function == "EnableAllInterrupts":
-            self.syscall_rules.EnableAllInterrupts(userspace, abb)
-        elif systemcall.function == "SuspendAllInterrupts":
-            self.syscall_rules.DisableAllInterrupts(userspace, abb)
-        elif systemcall.function == "ResumeAllInterrupts":
-            self.syscall_rules.EnableAllInterrupts(userspace, abb)
-        elif systemcall.function == "SuspendOSInterrupts":
-            self.syscall_rules.DisableAllInterrupts(userspace, abb)
-        elif systemcall.function == "ResumeOSInterrupts":
+            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
+            userspace.add(pre_hook)
+            userspace.add(post_hook)
+        elif systemcall.function in ("EnableAllInterrupts",
+                                     "ResumeAllInterrupts",
+                                     "ResumeOSInterrupts"):
+            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
+            userspace.add(pre_hook)
+            userspace.add(post_hook)
             self.syscall_rules.EnableAllInterrupts(userspace, abb)
         # Alarms
         elif systemcall.function == "SetRelAlarm":
@@ -86,15 +92,15 @@ class UnencodedSystem(SimpleSystem):
             kernelspace = self.arch_rules.\
                           generate_kernelspace(userspace, abb, [arg1, arg2])
             self.syscall_rules.SetRelAlarm(kernelspace.system, abb, [arg1, arg2])
+            pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
         else:
             assert False, "Not yet supported %s"% systemcall.function
 
         # Fill up the hooks
-        if kernelspace and kernelspace.pre_hook:
-            self.system_enter_hook(abb, kernelspace.pre_hook)
-        if kernelspace and kernelspace.post_hook:
-            self.system_leave_hook(abb, kernelspace.post_hook)
-
+        if pre_hook:
+            self.system_enter_hook(abb, pre_hook)
+        if post_hook:
+            self.system_leave_hook(abb, post_hook)
 
         if systemcall.rettype != 'void':
             self.return_statement(userspace, "E_OK")
