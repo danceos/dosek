@@ -74,16 +74,21 @@ class UnencodedSystem(SimpleSystem):
                                      "SuspendAllInterrupts", 
                                      "SuspendOSInterrupts"):
             self.syscall_rules.DisableAllInterrupts(userspace, abb)
+            self.arch_rules.asm_marker(userspace, "syscall__start_%s" % userspace.name)
             pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
             userspace.add(pre_hook)
             userspace.add(post_hook)
+            self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
+
         elif systemcall.function in ("EnableAllInterrupts",
                                      "ResumeAllInterrupts",
                                      "ResumeOSInterrupts"):
             pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
+            self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
             userspace.add(pre_hook)
             userspace.add(post_hook)
             self.syscall_rules.EnableAllInterrupts(userspace, abb)
+            self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
         # Alarms
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)

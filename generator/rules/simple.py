@@ -139,6 +139,10 @@ class SimpleArch(BaseRules):
         """returns a KernelSpace object"""
         raise NotImplementedError()
 
+    def asm_marker(self, block, label):
+        self.call_function(block, "asm_label", "void",
+                           ['"%s"' % label])
+
 class AlarmTemplate(CodeTemplate):
     def __init__(self, rules):
         CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")

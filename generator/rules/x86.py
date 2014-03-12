@@ -105,12 +105,15 @@ class X86Arch(SimpleArch):
         self.stats.add_data(abb, "generated-function", syscall.name)
         # The syscall function is called from the function that will
         # be inlined into the application
-        self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
+        self.asm_marker(userspace, "syscall_start_%s" % userspace.name)
+
         syscall.add(pre_hook)
+        self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
         # self.call_function(userspace, "Machine::enable_interrupts", "void", [])
 
-        return self.KernelSpace(pre_hook, syscall, None)
+        self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
+        return self.KernelSpace(pre_hook, syscall, None)
 
 
 class LinkerScriptTemplate(CodeTemplate):

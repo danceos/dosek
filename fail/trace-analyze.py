@@ -2,6 +2,7 @@
 
 import struct
 import imp
+import re
 from gzip import GzipFile
 from optparse import OptionParser
 from generator.stats_binary import read_symbols, read_regions, find_symbol
@@ -68,6 +69,7 @@ class CoredosDetector:
     def __init__(self, symbol_map):
         self.symbol_map = symbol_map
         self.syscall_endurance = set()
+        self.syscall_end = set()
 
         for symbol in self.symbol_map.symbols:
             start = symbol.addr
@@ -83,10 +85,36 @@ class CoredosDetector:
             if symbol.name.startswith("__OS_"):
                 self.syscall_endurance.update(range(start, end))
 
+            if symbol.name == "irq_resume":
+                self.syscall_end.add(symbol.addr+2)
+
+            # Systemcall markers
+            if symbol.name.startswith(".asm_label.syscall_start"):
+                # Find end marker
+                end_name = symbol.name.replace("syscall_start",
+                                               "syscall_end")
+                # Remove number at the end (that is a unique number)
+                (end_name, count) = re.subn("_[0-9]*$", "", end_name)
+                end_symbol = None
+                for end in self.symbol_map.symbols:
+                    if not end.addr >= symbol.addr:
+                        continue
+                    if end.name.startswith(end_name):
+                        if not end_symbol or end.addr < end_symbol.addr:
+                            end_symbol = end
+                assert end_symbol
+                zone = range(symbol.addr, end_symbol.addr)
+                #print symbol
+                #print end_symbol
+                #print zone
+                self.syscall_endurance.update(zone)
+
     def for_addr(self, addr):
         ret = 0
         if addr in self.syscall_endurance:
             ret |= self.WITHIN
+        if addr in self.syscall_end:
+            ret |= self.END
         if ret == 0:
             if self.symbol_map.get(addr) is None:
                 ret |= self.WITHIN
@@ -98,6 +126,8 @@ class CoredosDetector:
             before = self.for_addr(last_addr)
             after  = self.for_addr(next_addr)
             if before == 0:
+                this |= self.START
+            if before & self.END:
                 this |= self.START
             if after == 0:
                 this |= self.END
@@ -137,7 +167,7 @@ def syscall_regions(trace_events, symbol_map):
         # When "pipeline" is full
         if last_addr:
             classified = detector.classify(last_addr, current_addr, next_addr)
-            #print hex(current_addr), classified, symbol
+            #print hex(current_addr), classified, symbol_map.get(current_addr)
             # If event has no class, simply continue
             if classified == 0:
                 continue
@@ -173,14 +203,15 @@ def main(options, args):
         names = [x[1].name for x in syscall_region.trace if x[1]]
         region_length = sum([x[0] for x in syscall_region.trace])
         event_type = None
+        # print region_length, event_type, names
+
         for name in names:
             if "__OS_syscall" in name:
-                assert event_type  is None
+                assert event_type  is None, event_type
                 event_type = name
             if name in ("__OS_ASTSchedule", "__OS_StartOS_dispatch"):
-                assert event_type  is None
+                assert event_type  is None, event_type
                 event_type = name
-        #print region_length, event_type
 
         for abb in stats.find_all("AtomicBasicBlock").values():
             if not 'generated-function' in abb:
