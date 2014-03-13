@@ -31,7 +31,7 @@ make fail-$BENCH-mem
 make fail-$BENCH-ip
 
 VARIANT=CoRedOS-`cat fail-$BENCH/.gitrev`
-objdump -wC -t -j .data fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-mpu.syms
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-mpu.syms
 done
 
 
@@ -48,7 +48,7 @@ make fail-$BENCH-regs-nompu
 make fail-$BENCH-mem-nompu
 make fail-$BENCH-ip-nompu
 
-objdump -wC -t -j .data fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-nompu.syms
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-nompu.syms
 done
 fi
 
@@ -65,7 +65,7 @@ make fail-$BENCH-regs-unencoded
 make fail-$BENCH-mem-unencoded
 make fail-$BENCH-ip-unencoded
 
-objdump -wC -t -j .data fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-mpu.syms
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-mpu.syms
 done
 
 
@@ -82,7 +82,7 @@ make fail-$BENCH-regs-unencoded-nompu
 make fail-$BENCH-mem-unencoded-nompu
 make fail-$BENCH-ip-unencoded-nompu
 
-objdump -wC -t -j .data fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-nompu.syms
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-nompu.syms
 done
 fi
 

@@ -27,11 +27,9 @@ for(benchmark in benchmarks) {
 print(paste(variant, benchmark))
 
 # fetch all occurrences for variant
-sql <- sprintf("select * from occurences where variant='%s' and benchmark like '%s%%'", variant, benchmark)
+sql <- sprintf("select * from occurences where variant='%s' and benchmark like '%s%%' and known_outcome=0", variant, benchmark)
 fail <- dbGetQuery(con, sql)
-
-# remove known_outcomes
-fail <- subset(fail, known_outcome == FALSE)
+print(paste(length(fail$resulttype), "results found"))
 
 # remove ROM accesses
 fail <- fail[!(fail$data_address %in% 0x100000:0x1fffff),]
@@ -68,6 +66,7 @@ hex <- function(x) {
 	)
 }
 
+
 # group addresses modulo 4
 fail$data_address4 <- floor(fail$data_address/4)*4
 
@@ -99,6 +98,9 @@ fail$data_group[fail$data_group=="140"]="%cr4"
 fail$data_group[fail$data_address4 == 0xfee00080]="LAPIC.TPR"
 fail$data_group[fail$data_address %in% 0x201000:0x201fff]="os_stack"
 
+# prepare injection instruction groups
+fail$injection_group <- hex(fail$injection_instr)
+
 # read objdump files
 for(enc in levels(fail$fencoded)) {
 	for(mpu in levels(fail$fmpu)) {
@@ -114,7 +116,11 @@ for(enc in levels(fail$fencoded)) {
 			realsyms <- subset(t, size>0)
 			for(i in 1:nrow(realsyms)) {
 				sym <- realsyms[i,]
-				fail$data_group[fail$data_address %in% seq(sym$addr, sym$addr+sym$size) & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
+				if(sym$section == ".data") {
+					fail$data_group[fail$data_address %in% seq(sym$addr, sym$addr+sym$size) & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
+				} else if(sym$section == ".text") {
+					fail$injection_group[fail$injection_instr %in% seq(sym$addr, sym$addr+sym$size) & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
+				}
 			}
 		} else {
 			print(paste(objfile, "not found, not importing symbol names"))
@@ -124,6 +130,9 @@ for(enc in levels(fail$fencoded)) {
 
 # order data_group by type and address
 fail$data_group <- factor(fail$data_group, levels=unique(fail$data_group[order(fail$type, fail$data_address4, decreasing=TRUE)]), ordered=TRUE)
+
+# order injection_group by type and address
+fail$injection_group <- factor(fail$injection_group, levels=unique(fail$injection_group[order(fail$type, fail$injection_instr, decreasing=TRUE)]), ordered=TRUE)
 
 # SDC results
 sdc <- subset(fail, fail$resulttype == "ERR_WRONG_RESULT")
