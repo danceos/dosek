@@ -30,6 +30,8 @@
 irq_\num:
 	jmp irq_handler_\num
 
+.size irq_\num, . - irq_\num
+
 # actual IRQ handler
 #
 # this is a weak symbol to allow overriding the default handler
@@ -95,6 +97,8 @@ isr_\num:
 	# jump to default handler
 	jmp isr_unhandled
 
+.size isr_\num, . - isr_\num
+
 
 
 # add IDT entry to idt section
@@ -157,6 +161,12 @@ IRQ \irqno, 0, TYPE_DPL3_IRQ_GATE
 IRQ \irqno
 .endr
 
+.section .text.irqhandlers
+.size irq_handlers, . - irq_handlers
+
+.section .text.idt
+.size theidt, . - theidt
+
 
 .section .text.irqhandlers
 
@@ -182,6 +192,8 @@ handler_exit:
 	# return from interrupt
 	iret
 
+.size handler_exit, . - handler_exit
+
 
 
 # common task resumption code
@@ -196,3 +208,5 @@ irq_resume:
 
 	# remove and jump back to saved instruction pointer
 	ret
+
+.size irq_resume, . - irq_resume
