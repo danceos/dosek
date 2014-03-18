@@ -27,21 +27,21 @@ for(benchmark in benchmarks) {
 print(paste(variant, benchmark))
 
 # fetch all occurrences for variant
-sql <- sprintf("select * from occurences where variant='%s' and benchmark like '%s%%' and known_outcome=0", variant, benchmark)
+sql <- sprintf("select benchmark, data_address, bitoffset, resulttype, details, experiment_number, relative_instruction, injection_instr, occurrences from occurences where variant='%s' and benchmark like '%s%%' and known_outcome=0 and not (data_address >= 0x100000 and data_address < 0x200000)", variant, benchmark)
 fail <- dbGetQuery(con, sql)
 print(paste(length(fail$resulttype), "results found"))
 
 # remove ROM accesses
-fail <- fail[!(fail$data_address %in% 0x100000:0x1fffff),]
+#fail <- fail[!(fail$data_address %in% 0x100000:0x1fffff),]
 
 # extract benchmark type
+fail$type <- factor(NA, levels=c("ip", "regs", "mem"))
 fail$type[grepl("-ip-?", fail$benchmark)] <- "ip"
 fail$type[grepl("-regs-?", fail$benchmark)] <- "regs"
 fail$type[grepl("-mem-?", fail$benchmark)] <- "mem"
-fail$type <- factor(fail$type)
 
 # turn some fields to factors
-fail$variant <- factor(fail$variant)
+#fail$variant <- factor(fail$variant)
 fail$benchmark <- factor(fail$benchmark)
 fail$resulttype <- factor(fail$resulttype)
 
@@ -73,27 +73,27 @@ fail$data_address4 <- floor(fail$data_address/4)*4
 # grouped, named data addresses
 fail$data_group <- hex(fail$data_address4)
 
-fail$data_group[fail$data_group=="0"]="%eax"
-fail$data_group[fail$data_group=="10"]="%ecx"
-fail$data_group[fail$data_group=="20"]="%edx"
-fail$data_group[fail$data_group=="30"]="%ebx"
-fail$data_group[fail$data_group=="40"]="SP"
-fail$data_group[fail$data_group=="50"]="%ebp"
-fail$data_group[fail$data_group=="60"]="%esi"
-fail$data_group[fail$data_group=="70"]="%edi"
-fail$data_group[fail$data_group=="80"]="IP"
-fail$data_group[fail$data_group=="90"]="EFLAGS"
-fail$data_group[fail$data_group=="a0"]="%cs"
-fail$data_group[fail$data_group=="b0"]="%ds"
-fail$data_group[fail$data_group=="c0"]="%es"
-fail$data_group[fail$data_group=="d0"]="%fs"
-fail$data_group[fail$data_group=="e0"]="%gs"
-fail$data_group[fail$data_group=="f0"]="%ss"
-fail$data_group[fail$data_group=="100"]="%cr0"
-fail$data_group[fail$data_group=="110"]="%cr1"
-fail$data_group[fail$data_group=="120"]="%cr2"
-fail$data_group[fail$data_group=="130"]="%cr3"
-fail$data_group[fail$data_group=="140"]="%cr4"
+fail$data_group[fail$data_address4 == 0x0]="%eax"
+fail$data_group[fail$data_address4 == 0x10]="%ecx"
+fail$data_group[fail$data_address4 == 0x20]="%edx"
+fail$data_group[fail$data_address4 == 0x30]="%ebx"
+fail$data_group[fail$data_address4 == 0x40]="SP"
+fail$data_group[fail$data_address4 == 0x50]="%ebp"
+fail$data_group[fail$data_address4 == 0x60]="%esi"
+fail$data_group[fail$data_address4 == 0x70]="%edi"
+fail$data_group[fail$data_address4 == 0x80]="IP"
+fail$data_group[fail$data_address4 == 0x90]="EFLAGS"
+fail$data_group[fail$data_address4 == 0xa0]="%cs"
+fail$data_group[fail$data_address4 == 0xb0]="%ds"
+fail$data_group[fail$data_address4 == 0xc0]="%es"
+fail$data_group[fail$data_address4 == 0xd0]="%fs"
+fail$data_group[fail$data_address4 == 0xe0]="%gs"
+fail$data_group[fail$data_address4 == 0xf0]="%ss"
+fail$data_group[fail$data_address4 == 0x100]="%cr0"
+fail$data_group[fail$data_address4 == 0x110]="%cr1"
+fail$data_group[fail$data_address4 == 0x120]="%cr2"
+fail$data_group[fail$data_address4 == 0x130]="%cr3"
+fail$data_group[fail$data_address4 == 0x140]="%cr4"
 
 fail$data_group[fail$data_address4 == 0xfee00080]="LAPIC.TPR"
 fail$data_group[fail$data_address %in% 0x201000:0x201fff]="os_stack"
@@ -101,11 +101,12 @@ fail$data_group[fail$data_address %in% 0x201000:0x201fff]="os_stack"
 # prepare injection instruction groups
 fail$injection_group <- hex(fail$injection_instr)
 
+#if(FALSE) {
 # read objdump files
 for(enc in levels(fail$fencoded)) {
 	for(mpu in levels(fail$fmpu)) {
 		objfile <- paste(variant, "-", benchmark, "-", enc, "-", mpu, ".syms", sep="")
-		cols <- c(8,-1,7,-1,5,-1,8,-1,500)
+		cols <- c(8,-1,7,-1,5,-1,8,-1,1000)
 		colnames <- c("addr", "flags", "section", "size", "symbol")
 		if(file.exists(objfile)) {
 			t <- read.fwf(objfile, cols, header=FALSE, skip=4, col.names=colnames, colClasses="character")
@@ -114,12 +115,17 @@ for(enc in levels(fail$fencoded)) {
 			t$size <- as.integer(paste("0x", t$size, sep=""))
 			t$name <- sapply(strsplit(t$symbol, "::"), function(x) tail(x,1))
 			realsyms <- subset(t, size>0)
+			data_addrs <- unique(fail$data_address[fail$fencoded == enc & fail$fmpu == mpu & fail$type == "mem"])
+			text_addrs <- unique(fail$injection_instr[fail$fencoded == enc & fail$fmpu == mpu])
+
 			for(i in 1:nrow(realsyms)) {
 				sym <- realsyms[i,]
-				if(sym$section == ".data") {
-					fail$data_group[fail$data_address %in% seq(sym$addr, sym$addr+sym$size) & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
-				} else if(sym$section == ".text") {
-					fail$injection_group[fail$injection_instr %in% seq(sym$addr, sym$addr+sym$size) & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
+				print(sym$name)
+				range <- seq(sym$addr, sym$addr+sym$size-1)
+				if(sym$section == ".data" && any(data_addrs %in% range)) {
+					fail$data_group[fail$data_address %in% range & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
+				} else if(sym$section == ".text" && any(text_addrs %in% range)) {
+					fail$injection_group[fail$injection_instr %in% range & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
 				}
 			}
 		} else {
@@ -127,6 +133,7 @@ for(enc in levels(fail$fencoded)) {
 		}
 	}
 }
+#}
 
 # order data_group by type and address
 fail$data_group <- factor(fail$data_group, levels=unique(fail$data_group[order(fail$type, fail$data_address4, decreasing=TRUE)]), ordered=TRUE)
