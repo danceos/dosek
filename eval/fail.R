@@ -60,7 +60,7 @@ fail$opts <- factor( paste( fail$fencoded, fail$fmpu ))
 hex <- function(x) {
 	lo <- as.integer(as.numeric(x) %% 2**16)
 	hi <- as.integer(as.numeric(x) / 2**16)
-	ifelse(hi>0, 
+	ifelse(hi>0,
 		sprintf("%x%.4x", hi, lo),
 		sprintf("%x", lo)
 	)
@@ -101,7 +101,6 @@ fail$data_group[fail$data_address %in% 0x201000:0x201fff]="os_stack"
 # prepare injection instruction groups
 fail$injection_group <- hex(fail$injection_instr)
 
-#if(FALSE) {
 # read objdump files
 for(enc in levels(fail$fencoded)) {
 	for(mpu in levels(fail$fmpu)) {
@@ -120,7 +119,6 @@ for(enc in levels(fail$fencoded)) {
 
 			for(i in 1:nrow(realsyms)) {
 				sym <- realsyms[i,]
-				print(sym$name)
 				range <- seq(sym$addr, sym$addr+sym$size-1)
 				if(sym$section == ".data" && any(data_addrs %in% range)) {
 					fail$data_group[fail$data_address %in% range & fail$fencoded == enc & fail$fmpu == mpu] = sym$name
@@ -133,7 +131,6 @@ for(enc in levels(fail$fencoded)) {
 		}
 	}
 }
-#}
 
 # order data_group by type and address
 fail$data_group <- factor(fail$data_group, levels=unique(fail$data_group[order(fail$type, fail$data_address4, decreasing=TRUE)]), ordered=TRUE)
@@ -151,22 +148,23 @@ sdc$trace <- as.integer(sapply(m, function(x) x[4]))
 sdc$trace_ip <- as.numeric(sapply(m, function(x) x[3]))
 sdc$trace_err <- sapply(m, function(x) x[2])
 
+print("plotting")
 
 # plot base
 base_plot <- ggplot(sdc) +
 	labs(title = paste(variant, benchmark)) +
 	guides(fill = guide_legend("trace")) +
-	ylab("SDC occurrences") + 
+	ylab("SDC occurrences") +
 	xlab("injection address")
 
 # full MPU~encoded grid
-data_grid <- base_plot + 
+data_grid <- base_plot +
 	geom_bar(aes(x=data_group, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(fencoded ~ fmpu) +
 	coord_flip()
 
 # MPU~encoded variants in a row
-data_row <- base_plot + 
+data_row <- base_plot +
 	geom_bar(aes(x=data_group, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(opts ~ .) +
 	coord_flip()
@@ -198,9 +196,15 @@ os_stack <- ggplot(subset(sdc,data_group=="os_stack")) +
 	scale_x_continuous(label=hex, breaks=seq(0x201000, 0x202000, 16), minor_breaks=seq(0x201000, 0x202000, 4)) +
 	labs(title = paste(variant, benchmark)) +
 	guides(fill = guide_legend("trace")) +
-	ylab("SDC occurrences") + 
+	ylab("SDC occurrences") +
 	xlab("injection stack address")
 
+instr_dodge <- base_plot +
+	geom_bar(aes(x=injection_group, y=occurrences, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
+	guides(fill = guide_legend("variant")) +
+	xlab("injection code")
 
 if(FALSE){ # TESTING
 # sdc in os_stack by instr
@@ -237,7 +241,20 @@ plot(data_total, newpage=TRUE)
 plot(data_grid, newpage=TRUE)
 plot(data_row, newpage=TRUE)
 plot(data_dodge, newpage=TRUE)
+plot(instr_dodge, newpage=TRUE)
 plot(os_stack, newpage=TRUE)
+
+for(o in levels(fail$opts)) {
+	g <- ggplot(subset(sdc, opts==o)) +
+		stat_summary2d(aes(injection_group, data_group, z=occurrences), fun=sum, color="white") +
+		theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+		labs(title = paste(variant, benchmark, o)) +
+		ylab("injection code") +
+		xlab("injection address") +
+		guides(fill = guide_colourbar("SDC occurrences"))
+
+	plot(g, newpage=TRUE)
+}
 
 dev.off()
 
