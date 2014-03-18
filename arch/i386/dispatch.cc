@@ -63,6 +63,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 	// TODO: check prepared stack? (SSE crc32q?)
 
+    // clear all registers
+    Machine::clear_registers();
+
 	// send end-of-interrupt signal
 	LAPIC::send_eoi();
 

@@ -68,6 +68,19 @@ struct Machine
 		asm volatile("push %0" :: "ir"(val) : "esp");
 	}
 
+    /**
+     * \brief Reset all general-purpose registers to 0
+     */
+    static forceinline void clear_registers() {
+        asm volatile("xor %%eax, %%eax" ::: "eax");
+        asm volatile("xor %%ebx, %%ebx" ::: "ebx");
+        asm volatile("xor %%ecx, %%ecx" ::: "ecx");
+        asm volatile("xor %%edx, %%edx" ::: "edx");
+        asm volatile("xor %%ebp, %%ebp" ::: "ebp");
+        asm volatile("xor %%esi, %%esi" ::: "esi");
+        asm volatile("xor %%edi, %%edi" ::: "edi");
+    }
+
 	/**
 	 * \brief Set data segment selectors (ds, es, fs, gs)
 	 */
