@@ -1,6 +1,6 @@
 from generator.rules.base import BaseRules
 from generator.graph.AtomicBasicBlock import E
-from generator.elements import Statement, Comment, Function
+from generator.elements import Statement, Comment, Function, VariableDefinition
 from generator.graph.GenerateAssertions import AssertionType
 from generator.tools import panic
 
@@ -38,20 +38,19 @@ class FullSystemCalls(BaseRules):
             if subtask.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
-        self.call_function(block, "Machine::enable_interrupts", "void", [])
         # Bootstrap Do the initial syscall
         dispatch_func = Function("__OS_StartOS_dispatch", "void", ["int"], extern_c = True)
         self.objects["__OS_StartOS_dispatch"] = dispatch_func
         self.generator.source_file.function_manager.add(dispatch_func)
         self.InitialSyscall(dispatch_func)
 
-        self.call_function(block, "syscall", "void", 
-                           [dispatch_func.function_name, "0"])
+        self.call_function(block, "syscall", "void",
+                           [dispatch_func.function_name])
         self.call_function(block, "Machine::unreachable", "void", [])
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.call_function(kernelspace, "scheduler_.Reschedule", 
+        self.call_function(kernelspace, "scheduler_.Reschedule",
                            "void", [])
 
     def ASTSchedule(self, kernelspace):
@@ -77,15 +76,16 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(abb),
                             self.task_desc(abb.arguments[0])])
 
+
     def SetRelAlarm(self, kernelspace, abb, arguments):
-        arg1 = kernelspace.arguments()[0]
-        arg2 = kernelspace.arguments()[1]
+        arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
+        arg2 = self.arch_rules.get_syscall_argument(kernelspace, 1)
         alarm_id = abb.arguments[0]
         alarm_object = self.objects["alarm"][alarm_id]
         self.call_function(kernelspace, "%s.setRelativeTime" % alarm_object.name,
-                           "void", [arg1[0]])
+                           "void", [arg1.name])
         self.call_function(kernelspace, "%s.setCycleTime" % alarm_object.name,
-                           "void", [arg2[0]])
+                           "void", [arg2.name])
         self.call_function(kernelspace, "%s.setArmed" % alarm_object.name,
                            "void", ["true"])
         kernelspace.add(Comment("Dispatch directly back to Userland"))

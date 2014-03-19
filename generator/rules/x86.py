@@ -1,7 +1,7 @@
 from generator.rules.simple import SimpleArch
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
     Include, FunctionDeclaration, Comment, Function, DataObject, \
-    DataObjectArray, Hook, Block
+    DataObjectArray, Hook, Block, VariableDefinition, Statement
 
 class X86Arch(SimpleArch):
     def __init__(self):
@@ -114,6 +114,16 @@ class X86Arch(SimpleArch):
         self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         return self.KernelSpace(pre_hook, syscall, None)
+
+    def get_syscall_argument(self, block, i):
+        argument = block.arguments()[i]
+        block.unused_parameter(argument[0])
+        var = VariableDefinition.new(self.generator, argument[1])
+        regs = ["a", "b", "S"]
+        block.prepend(Statement("asm volatile(\"\" : \"=%s\"(%s))" % (regs[i], var.name)))
+        block.prepend(var)
+        return var
+
 
 
 class LinkerScriptTemplate(CodeTemplate):

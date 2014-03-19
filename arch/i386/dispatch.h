@@ -91,7 +91,7 @@ public:
 	 *
      * Must be run in ring 0 to allow halting the machine
 	 */
-	static noinline void idle_loop(__attribute__((unused)) uint32_t dummy) {
+	static noinline void idle_loop() {
 		// allow all interrupts
 		LAPIC::set_task_prio(0);
 

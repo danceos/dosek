@@ -78,6 +78,10 @@ class Block(SourceElement):
         self.inner.append(obj)
         return obj
 
+    def prepend(self, statement):
+        self.inner = [statement] + self.inner
+        return statement
+
     def expand(self, generator):
         ret = [Block.indent_spaces() + self.block_guard() + "{\n"]
         Block.indentation_level += 1

@@ -16,9 +16,11 @@ class Function:
 
     def unused_parameter(self, parameter):
         if type(parameter) == int:
-            self.statements.append (Statement("(void) arg%d" % parameter))
+            name = "arg%d" % (parameter)
         else:
-            self.statements.append (Statement("(void) %s" % parameter))
+            name = parameter
+
+        self.statements.append (Statement("(void) %s" % name))
 
     def add(self, statement):
         self.statements.append(statement)

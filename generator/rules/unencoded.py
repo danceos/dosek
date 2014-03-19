@@ -70,8 +70,8 @@ class UnencodedSystem(SimpleSystem):
             userspace.unused_parameter(0)
             self.syscall_rules.ReleaseResource(kernelspace.system, abb)
         # Interrupt Handling
-        elif systemcall.function in ("DisableAllInterrupts", 
-                                     "SuspendAllInterrupts", 
+        elif systemcall.function in ("DisableAllInterrupts",
+                                     "SuspendAllInterrupts",
                                      "SuspendOSInterrupts"):
             self.syscall_rules.DisableAllInterrupts(userspace, abb)
             self.arch_rules.asm_marker(userspace, "syscall__start_%s" % userspace.name)
@@ -191,7 +191,7 @@ class SchedulerTemplate(CodeTemplate):
         return "os/scheduler/scheduler-unencoded.h.in"
 
     def scheduler_prio(self, snippet, args):
-        
+
         max_prio = 0
         for subtask in self.system_graph.get_subtasks():
             if not subtask.is_real_thread():

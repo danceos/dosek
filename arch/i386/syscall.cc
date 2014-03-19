@@ -11,12 +11,12 @@ extern "C" uint8_t _estack_os;
 
 namespace arch {
 
-#ifdef SYSENTER_SYSCALL
-extern "C" void sysenter_syscall() {
+#if SYSENTER_SYSCALL
+extern "C" __attribute__((naked)) void sysenter_syscall() {
 	// get arguments from registers
 	void* fun;
 	uint32_t arg1, arg2, arg3;
-	asm volatile("" : "=c"(arg1), "=a"(arg2), "=D"(arg3), "=d"(fun));
+	asm volatile("" : "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun));
 
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
@@ -30,16 +30,14 @@ extern "C" void sysenter_syscall() {
 	asm volatile("mov %%ebp, %0" :: "m"(*save_sp));
 	save_sp = 0; // for detecting bugs, not stricly neccessary
 
-	// put syscall arguments on top kernel stack
-	uint32_t* sp = (uint32_t*) (&_estack_os - 2048);
-	*sp = arg3;
-	*(sp-1) = arg2;
-	*(sp-2) = arg1;
-
 	// exit system
-	Machine::sysexit(fun, sp-3);
+	asm volatile("sysexit" :: "a"(arg1), "b"(arg2), "S"(arg3), "c"(&_estack_os - 2048), "d"(fun));
+	Machine::unreachable();
 }
 #endif
+
+
+#if SYSENTER_SYSCALL
 
 /** \brief Syscall interrupt handler */
 IRQ_HANDLER(IRQ_SYSCALL) {
@@ -47,9 +45,48 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	// also, store pointer to context in %esi before we change %esp
 	void* fun;
 	uint32_t arg1, arg2, arg3;
+
+	asm volatile("" : "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun));
+
+	// block ISR2s by raising APIC task priority
+	LAPIC::set_task_prio(128);
+
+	// reenable ISR1s
+	Machine::enable_interrupts();
+
+	// save page directory
+	uint32_t pd;
+	asm volatile("mov %%cr3, %0" : "=D"(pd));
+
+	// change to OS page directory
+	PageDirectory::enable(pagedir_os);
+
+	// call syscall function with arguments
+	asm volatile("call *%0" :: "r"(fun), "a"(arg1), "b"(arg2), "S"(arg3));
+
+	// restore page directory
+	asm volatile("mov %0, %%cr3" :: "D"(pd));
+
+	// reenable ISR2s by resetting APIC task priority
+	Machine::disable_interrupts();
+	LAPIC::set_task_prio(0);
+
+	// return from interrupt and proceed with caller in ring 3
+	Machine::return_from_interrupt();
+}
+
+#else // SYSENTER_SYSCALL
+
+/** \brief Syscall interrupt handler */
+IRQ_HANDLER(IRQ_SYSCALL) {
+	// get arguments from registers
+	// also, store pointer to context in %esi before we change %esp
+	void* fun;
+	uint32_t arg1, arg2, arg3;
+
 	bool direct;
 	cpu_context* ctx;
-	asm volatile("mov %%esp, %0" : "=r"(ctx), "=c"(arg1), "=a"(arg2), "=D"(arg3), "=b"(fun), "=d"(direct));
+	asm volatile("mov %%esp, %0" : "=r"(ctx), "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun), "=D"(direct));
 
 	// TODO: remove/reuse pushed CPU context?
 
@@ -84,8 +121,8 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		Machine::push(GDT::USER_DATA_SEGMENT | 0x3); // push stack segment, DPL3
 		Machine::push((uint32_t)(sp-3)); // push stack pointer above arguments
 
-		// push flags, IO privilege level 3
-		Machine::push(ctx->eflags | 0x3000);
+		// push flags, IO privilege level 3, interrupts on
+		Machine::push(0x3200);
 
 		// push syscall function pointer/segment
 		Machine::push(GDT::USER_CODE_SEGMENT | 0x3); // push code segment, DPL3
@@ -125,18 +162,16 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	} else {
 		// save page directory
 		uint32_t pd;
-		asm volatile("mov %%cr3, %0" : "=S"(pd));
+		asm volatile("mov %%cr3, %0" : "=D"(pd));
 
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
 
-		// call syscall function with argument
-		// C code does not work as compiler overwrites our return address with arg
-		//void (* f)(uint32_t) = (void (*)(uint32_t))fun; f(arg);
-		asm volatile("push %3; push %2; push %1; call *%0; pop %1; pop %2; pop %3" :: "r"(fun), "r"(arg1), "r"(arg2), "r"(arg3));
+		// call syscall function with arguments
+		asm volatile("call *%0" :: "r"(fun), "a"(arg1), "b"(arg2), "S"(arg3));
 
 		// restore page directory
-		asm volatile("mov %0, %%cr3" :: "S"(pd));
+		asm volatile("mov %0, %%cr3" :: "D"(pd));
 
 		// reenable ISR2s by resetting APIC task priority
 		Machine::disable_interrupts();
@@ -146,6 +181,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		Machine::return_from_interrupt();
 	}
 }
+#endif // SYSENTER_SYSCALL
 
 /** \brief Initialize model-specific registers for sysenter/sysexit */
 void syscalls_init() {

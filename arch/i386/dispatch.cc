@@ -76,10 +76,6 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 #else // SYSEXIT_DISPATCH
 
-	// flags, IO privilege level 3
-	uint32_t flags; // flags are at %esp+8
-	asm volatile("mov 8(%%esp), %0" : "=r"(flags));
-
 	// set new page directory
 	MMU::switch_task(id);
 
@@ -97,8 +93,8 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// send end-of-interrupt signal
 	LAPIC::send_eoi();
 
-	// exit system
-	Machine::sysexit(ip, sp, flags | 0x3000);
+	// exit system at IO privilege level 3 with IRQs enabled
+	Machine::sysexit(ip, sp, 0x3000);
 
 #endif // SYSEXIT_DISPATCH
 }

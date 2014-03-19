@@ -1,5 +1,5 @@
 from generator.elements import Include, FunctionDeclaration, Comment, \
-                               DataObject, Block, Hook
+                               DataObject, Block, Hook, VariableDefinition
 
 from generator.rules.simple import SimpleArch
 
@@ -80,3 +80,6 @@ class PosixArch(SimpleArch):
 
         return self.KernelSpace(pre_hook, system, post_hook)
 
+    def get_syscall_argument(self, block, i):
+        name, typename = block.arguments()[i]
+        return VariableDefinition(typename, name)
