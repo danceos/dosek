@@ -43,9 +43,9 @@ irq_handler_\num:
 	# x86 ABI mandates direction flag
 	cld
 
-	# push dummy error code if necessary
-	.if !\error_code
-	pushl $0
+	# discard error code if necessary
+	.if \error_code
+	add $0x4, %esp
 	.endif
 
 	# jump to label 1 if coming from user task (check page directory)
@@ -65,9 +65,9 @@ irq_handler_\num:
 1:
 	# coming from task: save context on userspace/task stack
 	mov %esp, %eax # save interrupt stackpointer in eax
-	mov 20(%esp), %esp # switch (back) to userspace stack
-	push 8(%eax) # save return address on stack
-	push 16(%eax) # save flags on stack
+	mov 16(%esp), %esp # switch (back) to userspace stack
+	push 4(%eax) # save return address on stack
+	push 12(%eax) # save flags on stack
 	pusha # save all registers
 	mov %esp, %ebx # put context pointer in %ebx
 	push $irq_resume # push irq_resume fragment as "new" return address
@@ -182,9 +182,6 @@ handler_exit:
 	mov 24(%ebx), %ecx
 	mov 28(%ebx), %eax
 	mov 16(%ebx), %ebx
-
-	# restore original stack pointer
-	add $0x4, %esp
 
 	# return from interrupt
 	iret

@@ -18,7 +18,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	uint32_t fun, arg1, arg2, arg3;
 	bool direct;
 	cpu_context* ctx;
-	asm volatile("leal -4(%%esp), %0" : "=r"(ctx), "=c"(arg1), "=a"(arg2), "=D"(arg3), "=b"(fun), "=d"(direct));
+	asm volatile("mov %%esp, %0" : "=r"(ctx), "=c"(arg1), "=a"(arg2), "=D"(arg3), "=b"(fun), "=d"(direct));
 
 	// TODO: remove/reuse pushed CPU context?
 

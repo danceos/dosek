@@ -100,8 +100,6 @@ namespace arch {
 
 /** \brief Context saved by CPU on interrupt/trap/syscall */
 struct cpu_context {
-	uint32_t error_code; //!< error code (dummy value if unused)
-
 	uint32_t eip; //!< source address
 	uint32_t cs; //!< source code segment selector
 
