@@ -7,6 +7,16 @@ args <- commandArgs(TRUE)
 variants <- args[1]
 benchmarks <- args[-1]
 
+# hex format helper
+hex <- function(x) {
+	lo <- as.integer(as.numeric(x) %% 2**16)
+	hi <- as.integer(as.numeric(x) / 2**16)
+	ifelse(hi>0,
+		sprintf("%x%.4x", hi, lo),
+		sprintf("%x", lo)
+	)
+}
+
 # connect to DB using $HOME/my.cnf
 m <- dbDriver("MySQL")
 con <- dbConnect(m)
@@ -31,9 +41,6 @@ sql <- sprintf("select benchmark, data_address, bitoffset, resulttype, details, 
 fail <- dbGetQuery(con, sql)
 print(paste(length(fail$resulttype), "results found"))
 
-# remove ROM accesses
-#fail <- fail[!(fail$data_address %in% 0x100000:0x1fffff),]
-
 # extract benchmark type
 fail$type <- factor(NA, levels=c("ip", "regs", "mem"))
 fail$type[grepl("-ip-?", fail$benchmark)] <- "ip"
@@ -55,17 +62,6 @@ fail$fmpu <- factor(c("nompu", "mpu")[fail$mpu + 1])
 
 # name options
 fail$opts <- factor( paste( fail$fencoded, fail$fmpu ))
-
-# hex format helper
-hex <- function(x) {
-	lo <- as.integer(as.numeric(x) %% 2**16)
-	hi <- as.integer(as.numeric(x) / 2**16)
-	ifelse(hi>0,
-		sprintf("%x%.4x", hi, lo),
-		sprintf("%x", lo)
-	)
-}
-
 
 # group addresses modulo 4
 fail$data_address4 <- floor(fail$data_address/4)*4
@@ -148,7 +144,15 @@ sdc$trace <- as.integer(sapply(m, function(x) x[4]))
 sdc$trace_ip <- as.numeric(sapply(m, function(x) x[3]))
 sdc$trace_err <- sapply(m, function(x) x[2])
 
+print("saving")
+
+# save data to file
+save(fail, file=paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
+
 print("plotting")
+
+# save all plots to PDF
+pdf(paste("fail-", variant, "-", benchmark ,".pdf", sep=""), paper="a4r", title=paste(variant, benchmark), width=11 , height=8)
 
 # plot base
 base_plot <- ggplot(sdc) +
@@ -157,17 +161,40 @@ base_plot <- ggplot(sdc) +
 	ylab("SDC occurrences") +
 	xlab("injection address")
 
+# occs by resulttype (unless data too big)
+if(length(fail$resulttype) < 1E6) {
+	result_types <- ggplot(fail) +
+		geom_bar(aes(x=resulttype, y=occurrences, fill=opts), stat="summary", fun.y="sum",position="dodge") +
+		guides(fill = guide_legend("variant")) +
+		labs(title = paste(variant, benchmark)) +
+		xlab("result type")
+	plot(result_types, newpage=TRUE)
+	rm(result_types)
+}
+
+# totals by variant/type
+data_total <- base_plot +
+	geom_bar(aes(x=opts, y=occurrences, fill=type), stat="summary", fun.y="sum") +
+	guides(fill = guide_legend("type")) +
+	xlab("variant")
+plot(data_total, newpage=TRUE)
+rm(data_total)
+
 # full MPU~encoded grid
 data_grid <- base_plot +
 	geom_bar(aes(x=data_group, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(fencoded ~ fmpu) +
 	coord_flip()
+plot(data_grid, newpage=TRUE)
+rm(data_grid)
 
 # MPU~encoded variants in a row
 data_row <- base_plot +
 	geom_bar(aes(x=data_group, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(opts ~ .) +
 	coord_flip()
+plot(data_row, newpage=TRUE)
+rm(data_row)
 
 # MPU~encoded variants as dodged bars
 data_dodge <- base_plot +
@@ -175,19 +202,17 @@ data_dodge <- base_plot +
 	theme(legend.position = "bottom") +
 	coord_flip() +
 	guides(fill = guide_legend("variant"))
+plot(data_dodge, newpage=TRUE)
+rm(data_dodge)
 
-# totals by variant/type
-data_total <- base_plot +
-	geom_bar(aes(x=opts, y=occurrences, fill=type), stat="summary", fun.y="sum") +
-	guides(fill = guide_legend("type")) +
-	xlab("variant")
-
-# occs by resulttype
-result_types <- ggplot(fail) +
-	geom_bar(aes(x=resulttype, y=occurrences, fill=opts), stat="summary", fun.y="sum",position="dodge") +
+instr_dodge <- base_plot +
+	geom_bar(aes(x=injection_group, y=occurrences, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
 	guides(fill = guide_legend("variant")) +
-	labs(title = paste(variant, benchmark)) +
-	xlab("result type")
+	xlab("injection code")
+plot(instr_dodge, newpage=TRUE)
+rm(instr_dodge)
 
 # occs by stack_os address
 os_stack <- ggplot(subset(sdc,data_group=="os_stack")) +
@@ -198,13 +223,45 @@ os_stack <- ggplot(subset(sdc,data_group=="os_stack")) +
 	guides(fill = guide_legend("trace")) +
 	ylab("SDC occurrences") +
 	xlab("injection stack address")
+plot(os_stack, newpage=TRUE)
+rm(os_stack)
 
-instr_dodge <- base_plot +
-	geom_bar(aes(x=injection_group, y=occurrences, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
-	theme(legend.position = "bottom") +
-	coord_flip() +
-	guides(fill = guide_legend("variant")) +
-	xlab("injection code")
+for(o in levels(fail$opts)) {
+	g <- ggplot(subset(sdc, opts==o)) +
+		theme_minimal() +
+		stat_summary2d(aes(injection_group, data_group, z=occurrences, color=type), fun=sum) +
+		theme(axis.text.x = element_text(angle = 45, hjust = 1, size=7)) +
+		theme(axis.text.y = element_text(size=7)) +
+		labs(title = paste(variant, benchmark, o)) +
+		ylab("injection code") +
+		xlab("injection address") +
+		guides(fill = guide_colourbar("SDC occurrences")) +
+		scale_fill_gradient(low="white", high="black")
+	plot(g, newpage=TRUE)
+	rm(g)
+
+	g <- ggplot(subset(sdc, opts==o)) +
+		theme_minimal() +
+		stat_summary2d(aes(injection_group, data_group, z=occurrences, color=type), fun=sum) +
+		theme(axis.text.x = element_text(angle = 45, hjust = 1, size=7)) +
+		theme(axis.text.y = element_text(size=7)) +
+		labs(title = paste(variant, benchmark, o)) +
+		ylab("injection code") +
+		xlab("injection address") +
+		guides(fill = guide_colourbar("SDC occurrences")) +
+		scale_fill_gradient(trans="log10", low="white", high="black")
+	plot(g, newpage=TRUE)
+	rm(g)
+}
+
+dev.off()
+
+} # for benchmark
+} # for variant
+
+dbDisconnect(con)
+
+
 
 if(FALSE){ # TESTING
 # sdc in os_stack by instr
@@ -229,36 +286,3 @@ ggplot(sdc, aes(x=factor(trace-experiment_number),fill=factor(type),y=occurrence
 ggplot(sdc, aes(x=1,fill=factor(type),y=occurrences))+geom_bar(stat="summary",fun.y=sum)+facet_grid(trace~experiment_number,margins=TRUE,labeller=label_both)
 
 } #END TESTING
-
-# save data to file
-save(fail, file=paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
-
-# save all plots to PDF
-pdf(paste("fail-", variant, "-", benchmark ,".pdf", sep=""), paper="a4r", title=paste(variant, benchmark), width=11 , height=8)
-
-plot(result_types, newpage=TRUE)
-plot(data_total, newpage=TRUE)
-plot(data_grid, newpage=TRUE)
-plot(data_row, newpage=TRUE)
-plot(data_dodge, newpage=TRUE)
-plot(instr_dodge, newpage=TRUE)
-plot(os_stack, newpage=TRUE)
-
-for(o in levels(fail$opts)) {
-	g <- ggplot(subset(sdc, opts==o)) +
-		stat_summary2d(aes(injection_group, data_group, z=occurrences), fun=sum, color="white") +
-		theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-		labs(title = paste(variant, benchmark, o)) +
-		ylab("injection code") +
-		xlab("injection address") +
-		guides(fill = guide_colourbar("SDC occurrences"))
-
-	plot(g, newpage=TRUE)
-}
-
-dev.off()
-
-} # for benchmark
-} # for variant
-
-dbDisconnect(con)
