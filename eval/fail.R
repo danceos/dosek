@@ -1,9 +1,14 @@
 #!/usr/bin/env Rscript
-library(RMySQL)
 library(ggplot2)
 
 # variant and benchmarks from args
 args <- commandArgs(TRUE)
+if(args[1] == "--load") {
+	args <- args[-1]
+	load <- TRUE
+} else {
+	load <- FALSE
+}
 variants <- args[1]
 benchmarks <- args[-1]
 
@@ -17,7 +22,9 @@ hex <- function(x) {
 	)
 }
 
+if(!load) {
 # connect to DB using $HOME/my.cnf
+library(RMySQL)
 m <- dbDriver("MySQL")
 con <- dbConnect(m)
 
@@ -30,12 +37,14 @@ queries <- head(unlist(strsplit(sql,";")),-1)
 for(sql in queries) {
 	dbSendQuery(con, sql)
 }
+}
 
 # for each benchmark
 for(variant in variants) {
 for(benchmark in benchmarks) {
 print(paste(variant, benchmark))
 
+if(!load) {
 # fetch all occurrences for variant
 sql <- sprintf("select benchmark, data_address, bitoffset, resulttype, details, experiment_number, relative_instruction, injection_instr, occurrences from occurences where variant='%s' and benchmark like '%s%%' and known_outcome=0 and not (data_address >= 0x100000 and data_address < 0x200000)", variant, benchmark)
 fail <- dbGetQuery(con, sql)
@@ -134,6 +143,20 @@ fail$data_group <- factor(fail$data_group, levels=unique(fail$data_group[order(f
 # order injection_group by type and address
 fail$injection_group <- factor(fail$injection_group, levels=unique(fail$injection_group[order(fail$type, fail$injection_instr, decreasing=TRUE)]), ordered=TRUE)
 
+
+# FIX timer interrupt IP occurrences
+fail$occurrences[fail$type=="ip" & grepl("irq_\\d+", fail$injection_group)] <- 1
+
+# save data to file
+print("saving")
+save(fail, file=paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
+
+} else { #load
+
+load(paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
+
+}
+
 # SDC results
 sdc <- subset(fail, fail$resulttype == "ERR_WRONG_RESULT")
 
@@ -142,12 +165,7 @@ r <- regexec("(.+)@ IP (0x.+) \\(checkpoint (.+)\\)", sdc$details)
 m <- regmatches(sdc$details, r)
 sdc$trace <- as.integer(sapply(m, function(x) x[4]))
 sdc$trace_ip <- as.numeric(sapply(m, function(x) x[3]))
-sdc$trace_err <- sapply(m, function(x) x[2])
-
-print("saving")
-
-# save data to file
-save(fail, file=paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
+sdc$trace_err <- factor(sapply(m, function(x) x[2]))
 
 print("plotting")
 
@@ -157,7 +175,7 @@ pdf(paste("fail-", variant, "-", benchmark ,".pdf", sep=""), paper="a4r", title=
 # plot base
 base_plot <- ggplot(sdc) +
 	labs(title = paste(variant, benchmark)) +
-	guides(fill = guide_legend("trace")) +
+	guides(fill = guide_legend("trace", ncol=2, keyheight=0.5, label.theme=element_text(size=6, angle=0))) +
 	ylab("SDC occurrences") +
 	xlab("injection address")
 
@@ -182,15 +200,18 @@ rm(data_total)
 
 # full MPU~encoded grid
 data_grid <- base_plot +
-	geom_bar(aes(x=data_group, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
+	geom_bar(aes(x=data_group, y=occurrences, order=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(fencoded ~ fmpu) +
 	coord_flip()
 plot(data_grid, newpage=TRUE)
 rm(data_grid)
 
+# comparison graphs only if necessary
+if(length(levels(fail$opts)) > 1) {
+
 # MPU~encoded variants in a row
 data_row <- base_plot +
-	geom_bar(aes(x=data_group, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
+	geom_bar(aes(x=data_group, y=occurrences, order=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(opts ~ .) +
 	coord_flip()
 plot(data_row, newpage=TRUE)
@@ -204,6 +225,8 @@ data_dodge <- base_plot +
 	guides(fill = guide_legend("variant"))
 plot(data_dodge, newpage=TRUE)
 rm(data_dodge)
+
+} # comparison graphs
 
 instr_dodge <- base_plot +
 	geom_bar(aes(x=injection_group, y=occurrences, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
@@ -259,8 +282,9 @@ dev.off()
 } # for benchmark
 } # for variant
 
-dbDisconnect(con)
-
+if(!load) {
+	dbDisconnect(con)
+}
 
 
 if(FALSE){ # TESTING
