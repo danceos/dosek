@@ -76,8 +76,7 @@ def runClient(options, args):
 
 def startClients(options, args, i):
     # wait for server to start
-    if(options.fail_server):
-        time.sleep(3)
+    time.sleep(3)
 
     hostname = platform.node()
     print "{}: {}: starting client {}".format(datetime.datetime.now().time().isoformat(), hostname, i)
