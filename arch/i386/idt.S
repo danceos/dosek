@@ -161,9 +161,6 @@ IRQ \irqno, 0, TYPE_DPL3_IRQ_GATE
 IRQ \irqno
 .endr
 
-.section .text.irqhandlers
-.size irq_handlers, . - irq_handlers
-
 .section .text.idt
 .size theidt, . - theidt
 
