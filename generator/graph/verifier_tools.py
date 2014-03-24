@@ -30,7 +30,8 @@ class GlobalABBInfoToolbox:
 
         self.checked_syscalls = set()
         for syscall in self.system_graph.get_syscalls():
-            if syscall.syscall_type.isRealSyscall():
+            if syscall.syscall_type.isRealSyscall() \
+               and not syscall.isA(S.kickoff):
                 continue
             if syscall.isA(S.computation):
                 continue

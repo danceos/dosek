@@ -141,7 +141,10 @@ class GenerateAssertionsPass(Analysis):
             incoming_abbs = computation_block.get_incoming_nodes(E.system_level)
             # We may also be entered by interrupts, ignore them
             incoming_abbs = [x for x in incoming_abbs if x in self.assertions_before]
-            assert len(incoming_abbs) > 0, "Weird ABB: %s" % abb
+
+            # We cannot remove asserts from syscalls without incoming abbs
+            if len(incoming_abbs) == 0:
+                continue
             checked_assertions = set(self.assertions_before[incoming_abbs[0]])
             for incoming_abb in incoming_abbs[1:]:
                 checked_before = set(self.assertions_before[incoming_abb])

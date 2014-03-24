@@ -3,6 +3,10 @@
 
 extern "C" {
 
+void OSEKOS_kickoff(void) {
+	rtsc_systemcall();
+}
+
 StatusType OSEKOS_ActivateTask(TaskType t) {
   rtsc_systemcall();
   rtsc_annotate_os_param(t);

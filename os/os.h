@@ -228,6 +228,13 @@ extern "C" {
 #endif
 
 /**
+ * \brief Artificial function at beginning of a subtask handler
+ **/
+
+void OSEKOS_kickoff();
+
+
+/**
  * \brief Activate a TASK
  * \param t The TASK to be activated
  **/

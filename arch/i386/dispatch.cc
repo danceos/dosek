@@ -40,7 +40,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// TODO: always enable interrupts? (0x3200)
 	uint32_t flags; // flags are at %esp+16 because of pushed values
 	asm volatile("mov 16(%%esp), %0" : "=r"(flags));
-	Machine::push(flags | 0x3000);
+	flags |= 0x3000;
+	flags &= ~(0x200); // Disable interrupts when dispatching
+	Machine::push(flags);
 
 	// push code segment, DPL3
 	Machine::push(GDT::USER_CODE_SEGMENT | 0x3);
@@ -93,7 +95,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// send end-of-interrupt signal
 	LAPIC::send_eoi();
 
-	// exit system at IO privilege level 3 with IRQs enabled
+	// exit system at IO privilege level 3 with IRQs disabled
 	Machine::sysexit(ip, sp, 0x3000);
 
 #endif // SYSEXIT_DISPATCH

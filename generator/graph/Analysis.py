@@ -130,9 +130,9 @@ class EnsureComputationBlocks(Analysis):
                 abb.function.entry_abb = abb
             elif not syscall.syscall_type.isRealSyscall():
                 continue
+            elif syscall.syscall_type.doesKickoffTask():
+                self.add_after(syscall)
             elif syscall.syscall_type.doesTerminateTask():
-                # This two syscalls immediatly return the control flow
-                # to the system
                 self.add_before(syscall)
             else:
                 # For all other syscall ABBs add a computation block
@@ -141,6 +141,11 @@ class EnsureComputationBlocks(Analysis):
                 self.add_after(syscall)
 
         for subtask in self.system_graph.get_subtasks():
+            if subtask.entry_abb.isA(S.kickoff):
+                subtask.entry_abb.arguments = [subtask]
+                continue
+
+            assert not subtask.is_real_thread(), "Should not happen with new EAG version (InsertKickoffSyscalls)"
             kickoff = self.system_graph.new_abb()
             kickoff.make_it_a_syscall(S.kickoff, [subtask])
             subtask.add_atomic_basic_block(kickoff)

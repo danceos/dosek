@@ -45,11 +45,11 @@ class SyscallType(IntEnum):
 
     # This are artificial ABBs
     StartOS = 2
-    kickoff = 3
-    Idle = 4
-    iret = 5
+    Idle = 3
+    iret = 4
 
     # real system calls
+    kickoff = 19
     ActivateTask = 20
     TerminateTask = 21
     ChainTask = 22
@@ -66,7 +66,12 @@ class SyscallType(IntEnum):
     ResumeOSInterrupts   = 32
 
     def isRealSyscall(self):
-        return self.value >= SyscallType.ActivateTask
+        return self.value >= SyscallType.kickoff
+
+    def doesKickoffTask(self):
+        if self == SyscallType.kickoff:
+            return True
+        return False
 
     def doesTerminateTask(self):
         if self in (SyscallType.TerminateTask, SyscallType.ChainTask):

@@ -191,7 +191,7 @@ struct Machine
 	/**
 	 * \brief Set flags and exit to ring 3 and continue with given IP and SP and IRQs enabled
 	 */
-	static forceinline void sysexit(void* ip, void* sp, uint32_t flags) {
+	static forceinline void sysexit_with_sti(void* ip, void* sp, uint32_t flags) {
 		// clear unused registers
 		asm volatile("xor %%ebx, %%ebx" ::: "ebx");
 		asm volatile("xor %%ebp, %%ebp" ::: "ebp");
@@ -202,6 +202,23 @@ struct Machine
 		asm volatile("push %0; popf; xor %%eax, %%eax; sti; sysexit" :: "ia"(flags & ~0x0200), "d"(ip), "c"(sp));
 		unreachable();
 	}
+
+	/**
+	 * \brief Set flags and exit to ring 3 and continue with given IP and SP
+	 */
+	static forceinline void sysexit(void* ip, void* sp, uint32_t flags) {
+		// clear unused registers
+		asm volatile("xor %%ebx, %%ebx" ::: "ebx");
+		asm volatile("xor %%ebp, %%ebp" ::: "ebp");
+		asm volatile("xor %%esi, %%esi" ::: "esi");
+		asm volatile("xor %%edi, %%edi" ::: "edi");
+
+		// set flags without interrupt enable flag, then use sti to enable IRQs *after* sysexit
+		asm volatile("push %0; popf; xor %%eax, %%eax; sysexit" ::
+					 "ia"(flags), "d"(ip), "c"(sp));
+		unreachable();
+	}
+
 
 	/**
 	 * \brief Shutdown machine using ACPI

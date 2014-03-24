@@ -42,18 +42,19 @@ forceinline void syscall(F fun) {
 	// use clobber instead of pusha to save and restore only required registers:
 	// gcc documentation says to list modified input in outputs and they must not be included
 	// in clobber list, but LLVM works only the other way ...
+
 #if SYSENTER_SYSCALL
 	// use int for direct syscalls and sysenter for normal syscalls
 	if(!direct) {
-		asm volatile("mov %%esp, %%ebp; push $1f; sysenter; 1:" :: "d"(fun) :
+		asm volatile("push %%ebp; mov %%esp, %%ebp; push $1f; sysenter; 1: pop %%ebp" :: "d"(fun) :
 			"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 	} else {
-		asm volatile("int %0" :: "i"(IRQ_SYSCALL), "d"(fun) :
+		asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun) :
 			"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 	}
 #else // SYSENTER_SYSCALL
-	asm volatile("int %0" :: "i"(IRQ_SYSCALL), "d"(fun), "D"(direct) :
-		"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+    asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun), "D"(direct) :
+                 "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 #endif // SYSENTER_SYSCALL
 }
 

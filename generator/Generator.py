@@ -63,6 +63,7 @@ class Generator:
         syscall_rules.set_generator(self)
 
     OSEK_CALLS = {
+        "kickoff" : ["void"],
         "ActivateTask": ["StatusType", "TaskType"],
         "ChainTask": ["StatusType", "TaskType"],
         "TerminateTask": ["StatusType"],

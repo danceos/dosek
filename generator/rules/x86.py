@@ -109,7 +109,9 @@ class X86Arch(SimpleArch):
 
         syscall.add(pre_hook)
         self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
-        # self.call_function(userspace, "Machine::enable_interrupts", "void", [])
+        userspace.add(post_hook)
+
+        self.call_function(userspace, "Machine::enable_interrupts", "void", [])
 
         self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 

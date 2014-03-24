@@ -8,7 +8,6 @@ const arch::TCB* arch::Dispatcher::m_current = 0;
  
 extern "C" void kickoff() {
 	arch::Dispatcher::getCurrent()->set_running();
-	Machine::enable_interrupts();
 	arch::Dispatcher::getCurrent()->fun();
 }
 

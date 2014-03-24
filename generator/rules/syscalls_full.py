@@ -58,6 +58,11 @@ class FullSystemCalls(BaseRules):
         self.call_function(kernelspace, "scheduler_.Reschedule",
                            "void", [])
 
+    def kickoff(self, block, abb):
+        if not abb.function.subtask.is_isr:
+            self.call_function(block, "Machine::enable_interrupts",
+                               "void", [])
+
     def TerminateTask(self, block, abb):
         self.call_function(block, "scheduler_.TerminateTask_impl",
                            "void",

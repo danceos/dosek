@@ -92,11 +92,12 @@ public:
      * Must be run in ring 0 to allow halting the machine
 	 */
 	static noinline void idle_loop() {
+		/* Call the idle loop callback (does end with
+           Machine::enable_interrupts())*/
+		CALL_HOOK(PreIdleHook);
+
 		// allow all interrupts
 		LAPIC::set_task_prio(0);
-
-		/* Call the idle loop callback */
-		CALL_HOOK(PreIdleHook);
 
 		/* enable interrupts and go to sleep */
 		while (true) Machine::goto_sleep();
@@ -108,12 +109,12 @@ public:
 
 	/** \brief Run idle loop */
 	static forceinline void idle(void) {
+		/* Call the idle loop callback (does end with
+           Machine::enable_interrupts())*/
+		CALL_HOOK(PreIdleHook);
+
 		// allow all interrupts
 		LAPIC::set_task_prio(0);
-		Machine::enable_interrupts();
-
-		/* Call the idle loop callback */
-		CALL_HOOK(PreIdleHook);
 
 		// do nothing forever
 		while(true) Machine::nop();

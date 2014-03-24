@@ -69,6 +69,14 @@ class UnencodedSystem(SimpleSystem):
         elif systemcall.function == "ReleaseResource":
             userspace.unused_parameter(0)
             self.syscall_rules.ReleaseResource(kernelspace.system, abb)
+
+        # kickoff a task
+        elif systemcall.function == "kickoff":
+            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
+            userspace.add(pre_hook)
+            userspace.add(post_hook)
+            self.syscall_rules.kickoff(userspace, abb)
+
         # Interrupt Handling
         elif systemcall.function in ("DisableAllInterrupts",
                                      "SuspendAllInterrupts",

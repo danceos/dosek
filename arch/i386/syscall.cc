@@ -12,6 +12,8 @@ extern "C" uint8_t _estack_os;
 namespace arch {
 
 #if SYSENTER_SYSCALL
+	/* Syscalls that run in userspace, this are indirect syscall, they
+	   are intended for longer syscalls */
 extern "C" __attribute__((naked)) void sysenter_syscall() {
 	// get arguments from registers
 	void* fun;
@@ -39,7 +41,8 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 
 #if SYSENTER_SYSCALL
 
-/** \brief Syscall interrupt handler */
+/** \brief Syscall interrupt handler. This handler is used for direct
+	syscalls that do not run in userspace, but in kernelmode */
 IRQ_HANDLER(IRQ_SYSCALL) {
 	// get arguments from registers
 	// also, store pointer to context in %esi before we change %esp
@@ -126,7 +129,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 
 		// push syscall function pointer/segment
 		Machine::push(GDT::USER_CODE_SEGMENT | 0x3); // push code segment, DPL3
-		Machine::push(fun); // push eip
+		Machine::push((uint32_t)fun); // push eip
 
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
@@ -156,7 +159,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		PageDirectory::enable(pagedir_os);
 
 		// exit to syscall with stackptr at last syscall argument
-		Machine::sysexit(fun, sp-3, flags);
+		Machine::sysexit_with_sti(fun, sp-3, flags);
 
 		#endif // SYSEXIT_SYSCALL
 	} else {
