@@ -5,6 +5,7 @@
  */
 
 #include "gdt.h"
+#include "machine.h"
 
 /** \brief Linker symbol for end of OS stack */
 extern "C" uint8_t _estack_os;
@@ -55,9 +56,8 @@ void GDT::init() {
 	// load TSS
 	asm volatile("ltr %0" :: "r"((uint16_t)TSS_SEGMENT) : "memory");
 
-	// setup data segments
-	asm volatile("mov %0, %%ds; mov %0, %%gs; mov %0, %%es; mov %0, %%fs; mov %0, %%ss"
-		:: "r"(KERNEL_DATA_SEGMENT) : "memory");
+	// setup data segments (already for userspace as it does not hurt in kernel mode)
+	Machine::set_data_segment(USER_DATA_SEGMENT);
 
 	// setup code segment
 	asm volatile("jmp %0, $1f; 1:" :: "i"(KERNEL_CODE_SEGMENT) : "memory");
