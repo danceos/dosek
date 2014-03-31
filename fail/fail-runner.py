@@ -43,7 +43,7 @@ def startServer(options, args):
         hostname = platform.node()
         if(hostname != options.fail_server_host):
             print "Hostname {} != {}, not starting server".format(hostname, options.fail_server_host)
-            return 0
+            sys.exit(100)
 
     # run server
     print hostname + ": starting server"
@@ -127,7 +127,7 @@ def main(options, pargs):
     # wait for completion (or SIGINT)
     for p in processes:
         p.join()
-        if(p.name=="Server"):
+        if(p.name=="Server" and p.exitcode != 100):
             sys.exit(0)
 
 def signal_handler(signal, frame):
