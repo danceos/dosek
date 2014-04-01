@@ -76,9 +76,11 @@ namespace arch {
 	extern "C" void isr_ ## irqno (void) { \
 		struct task_context* task; \
 		struct cpu_context* cpu; \
-		asm volatile("" : "=S"(cpu), "=b"(task)); \
+		uint32_t checksum; \
+		uint32_t pagedir; \
+		asm volatile("" : "=S"(cpu), "=b"(task), "=c"(checksum), "=D"(pagedir)); \
 		handler(cpu, task); \
-		asm volatile("jmp handler_exit" :: "S"(cpu), "b"(task)); \
+		asm volatile("jmp handler_exit" :: "S"(cpu), "b"(task), "c"(checksum), "D"(pagedir)); \
 		Machine::unreachable(); \
 	}
 

@@ -1,8 +1,15 @@
+#define CHECK_IRQ_CONTEXT 1
+#define CHECK_TASK_CONTEXT 0
+
 # start address of interrupt handlers
 #define IRQS_BASE 0x101000
 
 # offset between irq handler addresses
+#if CHECK_TASK_CONTEXT
+#define IRQS_OFFSET 256
+#else
 #define IRQS_OFFSET 128
+#endif
 
 # kernel code GDT segment
 #define KERNEL_CODE_SEGMENT 0x8
@@ -60,6 +67,18 @@ irq_handler_\num:
 	pusha # save all registers
 	leal 32(%esp), %esi # put interrupt stack pointer in %esi
 	mov %esp, %ebx # put context pointer in %ebx
+	mov $pagedir_os,%edi # # save OS page directory
+
+#if CHECK_TASK_CONTEXT
+	mov (%ebx), %ecx
+	xor 4(%ebx), %ecx
+	xor 8(%ebx), %ecx
+	xor 20(%ebx), %ecx
+	xor 24(%ebx), %ecx
+	xor 28(%ebx), %ecx
+	xor 16(%ebx), %ecx
+#endif
+
 	jmp 2f # jump over user mode handling
 
 1:
@@ -70,15 +89,45 @@ irq_handler_\num:
 	push 12(%eax) # save flags on stack
 	pusha # save all registers
 	mov %esp, %ebx # put context pointer in %ebx
+	mov (%eax), %edi # get real userspace eax (pushed above)
+	mov %edi, 28(%ebx) # put userspace eax in saved context
 	push $irq_resume # push irq_resume fragment as "new" return address
-	mov (_ZN4arch7save_spE), %ecx # get value of arch::save_sp
-	mov %ebx, (%ecx) # save stack pointer to *arch::save_sp
+
+#if CHECK_TASK_CONTEXT
+	mov (%ebx), %ecx
+	xor 4(%ebx), %ecx
+	xor 8(%ebx), %ecx
+	xor 20(%ebx), %ecx
+	xor 24(%ebx), %ecx
+	xor 28(%ebx), %ecx
+	xor 16(%ebx), %ecx
+#endif
+
+	mov %cr3, %edi # save original page directory in %edi
+	mov $pagedir_os,%edx # get OS page directory address
+	mov %edx, %cr3 # switch to OS page directory
+
+	mov (_ZN4arch7save_spE), %edx # get value of arch::save_sp
+	mov %ebx, (%edx) # save stack pointer to *arch::save_sp
 	mov %eax, %esp # switch back to interrupt stack
-	pop %eax # restore eax
-	mov %eax, 28(%ebx) # put real userspace eax in saved context
+	pop %eax # pop userspace eax off stack
 	mov %esp, %esi # put interrupt stack pointer in %esi
 
 2:
+
+	# push XOR checksum %esi...%esi+20, %ebx...%ebx+32
+#if CHECK_IRQ_CONTEXT
+#if CHECK_TASK_CONTEXT
+	xor (%esi), %ecx
+#else
+	mov (%esi), %ecx
+#endif
+	xor 4(%esi), %ecx
+	xor 8(%esi), %ecx
+	xor 12(%esi), %ecx #valid?
+	xor 16(%esi), %ecx #valid?
+#endif
+
 	# save IRQ number in register (for isr_unhandled)
 	mov $\num, %eax
 
@@ -171,9 +220,34 @@ IRQ \irqno
 .global handler_exit
 .type handler_exit, @function
 handler_exit:
+	# restore page directory
+	mov %edi, %cr3
+
 	# restore interrupt stack pointer from %esi
 	mov %esi, %esp
 
+	# check checksum
+#if CHECK_IRQ_CONTEXT
+	xor (%esi), %ecx
+	xor 4(%esi), %ecx
+	xor 8(%esi), %ecx
+	xor 12(%esi), %ecx #valid?
+	xor 16(%esi), %ecx #valid?
+#if CHECK_TASK_CONTEXT
+	xor (%ebx), %ecx
+	xor 4(%ebx), %ecx
+	xor 8(%ebx), %ecx
+	xor 20(%ebx), %ecx
+	xor 24(%ebx), %ecx
+	xor 28(%ebx), %ecx
+	xor 16(%ebx), %ecx
+#endif
+	# alternative: add %esi, %ecx ?
+	jz 1f
+	ud2
+#endif
+
+1:
 	# pop general purpose registers from %ebx
 	mov (%ebx), %edi
 	mov 4(%ebx), %esi
@@ -191,6 +265,7 @@ handler_exit:
 
 
 # common task resumption code
+.section .text # must be placed in section accessible from userspace!
 .global irq_resume
 .type irq_resume, @function
 irq_resume:

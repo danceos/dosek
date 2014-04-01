@@ -24,22 +24,29 @@ SECTIONS {
 		/* fixed address for IRQ handlers */
 		. = 0x1000;
 
-		/* common text (always accessible) */
-		_stext_common = .;
-
-		/* start of FAIL* allowed code region */
-		_stext_fail = .;
+		/* start of interrupt handlers */
+		_stext_irqs = .;
 
 		/* IRQ Handlers */
 		KEEP (*(".text.irqhandlers*")) /* ASM */
 		*(".text.irq_handler*") /* C */
 		*(".text.isrs*") /* C */
 		*(".text.isr_*") /* C */
+		*(".text.OSEKOS_ISR*")
 		KEEP (*(".text.idt")) /* ASM */
+
+		/* sysenter handler */
+		*(".text.sysenter_syscall")
+
+		_etext_irqs = .;
 		. += 16; /* padding after data, workaround for import-trace */
 
+		/* startup code */
+		. = ALIGN(4096);
+		_stext_startup = .;
+
 		/* constructors */
-		. = ALIGN(8);
+		. = ALIGN(4096);
 		PROVIDE(__CTORS_START = .);
 		KEEP (*(.ctors*))
 		KEEP (*(.init_array*))
@@ -50,9 +57,18 @@ SECTIONS {
 		KEEP (*(".text.startup"))
 		_etext_constructors = .;
 
+		*(".text._Z*4arch*")
+		*(".text.arch_startup")
+		*(".text.run_constructors")
+		*(".text.init_generic")
+		_etext_startup = .;
+
+		/* common text (always accessible) */
+		. = ALIGN(4096);
+		_stext_common = .;
+
 		/* common symbols */
 		_stext_common_syms = .;
-		*(COMMON);
 		*("_GLOBAL__I_a")
 		_etext_common_syms = .;
 
@@ -67,22 +83,12 @@ SECTIONS {
 		*(".rodata..L*")
 		_erodata_an = .;
 
-		. += 16; /* padding after data, workaround for import-trace */
-
-		/* architectural code and rodata */
-		/* TODO: move arch text out of common text? */
-		_stext_arch = .;
-		*(".text._Z*4arch*")
+		/* architectural rodata */
+		_srodata_arch = .;
 		*(".rodata._Z*4arch*")
-		"*libarch*.a:" ( ".text*" )
-		"*libarch*.a:" ( ".rodata*" )
-		_etext_arch = .;
+		_erodata_arch = .;
 
-		/* FAIL* tests */
-		_stext_fail_test = .;
-		*(".text._Z*4fail*")
-		*(".rodata._Z*4fail*")
-		_etext_fail_test = .;
+		. += 16; /* padding after data, workaround for import-trace */
 
 		_etext_common = .;
 
@@ -91,6 +97,9 @@ SECTIONS {
 		_stext_os = .;
 		*(".text._Z*2os*")
 		*(".rodata._Z*2os*")
+		*(".text.__OS_*")
+		*(".rodata.__OS_*")
+
 		_etext_os = .;
 
 		/* task code regions */
@@ -118,12 +127,6 @@ SECTIONS {
 		*(".rodata.OSEKOS_TASK_Task4*")
 		_etext_task4 = .;
 
-		/* */
-		. = ALIGN(4096);
-		_etext_fail = .;
-		_stext_fail_allowed = .;
-		*(".text.test")
-
 		/* remaining code */
 		. = ALIGN(0x1000);
 		_stext = .;
@@ -135,14 +138,12 @@ SECTIONS {
 		_srodata = .;
 		*(".rodata*")
 		_erodata = .;
-
-		_etext_fail_allowed = .;
 	}
 
 	/* Page tables and directories */
 	.rodata.paging ALIGN(0x1000) : {
 		_spaging = .;
-        KEEP (*(".paging*"));
+		KEEP (*(".paging*"));
 		_epaging = .;
 	}
 
@@ -150,8 +151,6 @@ SECTIONS {
 	/* Data and Stacks */
 	. = 0x200000;
 	.data : {
-		_sstack = .; /* to include TSS in FAIL tests, TODO: better placing*/
-
 		/* TSS at known address */
 		_stss = .;
 		tss = .;
@@ -160,7 +159,7 @@ SECTIONS {
 
 		/* Stacks */
 		. = ALIGN(4096);
-		/*_sstack = .;*/
+		_sstack = .;
 
 		_sstack_os = .;
 		*(".startup_stack")
@@ -196,13 +195,15 @@ SECTIONS {
 		_estack = .;
 
 		/* Data */
-		_sdata_fail = .;
-
+		. = ALIGN(4096);
 		_sdata_os = .;
 		*(".data._Z*2os*")
 		_edata_os = .;
 
-		*(".data._Z*4fail*")
+		. = ALIGN(4096);
+		_sdata_arch = .;
+		*(".data._Z*4arch*")
+		_edata_arch = .;
 
 		. = ALIGN(4096);
 		_sdata_task1 = .;
@@ -227,8 +228,8 @@ SECTIONS {
 		. = ALIGN(4096);
 		_sdata = .;
 		*(".data*")
+		*(COMMON);
 		_edata = .;
-		_edata_fail = .;
 	}
 
 	/* Memory-mapped I/O APIC */
@@ -242,7 +243,7 @@ SECTIONS {
 	_elapic = 0xFEE00FFF;
 
 	/* Get rid of unnecessary GCC bits */
-	/DISCARD/ :	{
+	/DISCARD/ : {
 		*(.comment)
 		*(.eh_frame)
 		*(.note.gnu.build-id)

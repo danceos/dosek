@@ -8,7 +8,7 @@
 #include "dispatch.h"
 
 /** Initialisation stub for generic startup code */
-extern void init_generic();
+extern "C" void init_generic();
 
 using namespace arch;
 

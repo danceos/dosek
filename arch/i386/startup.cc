@@ -14,7 +14,7 @@
 #include "syscall.h"
 
 /** Initialisation stub for generic startup code */
-extern void init_generic();
+extern "C" void init_generic();
 extern "C" void run_constructors(void);
 
 using namespace arch;

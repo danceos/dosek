@@ -86,6 +86,8 @@ def generate_pagetables(regions, allowed):
         # get length and page count
         start = rrange["start"]
         end = rrange["end"]
+        assert(start % 4096 == 0)
+
         length = end - start
         if(length <= 0): continue
         pages = ((length-1) / 4096)+1
@@ -162,17 +164,19 @@ def main(options, args):
     # regions we are interested in
     allowed_common = [ Region("cga"                   , writeable = True , usermode = True),
                        Region("text"                  , writeable = False, usermode = True),
+                       Region("text_irqs"             , writeable = False, usermode = False),
                        Region("text_common"           , writeable = False, usermode = True),
-                       Region("text_fail_allowed"     , writeable = False, usermode = True),
-                       Region("data_fail"             , writeable = True , usermode = True),
-                       Region("data"                  , writeable = True,  usermode = True),
-                       Region("text_os"               , writeable = False, usermode = True)]
+                       Region("data"                  , writeable = True,  usermode = True)]
 
     allowed_os  = copy.deepcopy(allowed_common)
     allowed_os += [  Region("stack_os", writeable = True , usermode  = True),
-                     Region("tss"     , writeable = True , usermode = True),
+                     Region("tss"     , writeable = True , usermode  = True),
                      Region("ioapic",   writeable = True , usermode  = True),
-                     Region("lapic",    writeable = True , usermode  = True)]
+                     Region("lapic",    writeable = True , usermode  = True),
+                     Region("text_startup", writeable = False, usermode = False),
+                     Region("text_os", writeable = False, usermode = True),
+                     Region("data_os", writeable = True , usermode = True),
+                     Region("data_arch", writeable = True , usermode = True)]
 
 
     allowed_task = {}
@@ -181,12 +185,14 @@ def main(options, args):
         allowed_task[task] = copy.deepcopy(allowed_common)
         # A Task can additionally read its text segment and write its stack
         allowed_task[task] += [ Region("text_" + task, writeable = False,  usermode = True),
+                                Region("data_" + task, writeable = True, usermode = True),
                                 Region("stack_" + task, writeable = True, usermode = True),
                                 Region("stack_os", writeable = True , usermode  = False),
                                 Region("tss"     , writeable = False , usermode = False),
                                 Region("lapic",    writeable = True , usermode  = False),
-                                Region("ioapic",    writeable = True , usermode  = False),
-
+                                Region("ioapic",   writeable = True , usermode  = False),
+                                Region("data_os", writeable = False , usermode = True),
+                                Region("data_arch", writeable = False , usermode = True)
         ]
 
     ptables = {}

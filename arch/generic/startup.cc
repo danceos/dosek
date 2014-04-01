@@ -7,7 +7,7 @@
 extern "C" void os_main(void);
 
 //! @brief Prepare system environment
-void init_generic (void)
+extern "C" void init_generic (void)
 {
     //! @todo Here we might need some hardware init hook.
 
