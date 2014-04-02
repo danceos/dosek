@@ -22,7 +22,7 @@ public:
 	// subtracts signature B0 from a,x and adds signature B1 to catch lost updates
 	template<B_t B0, B_t B1, typename T, typename S, typename U, typename V>
 	forceinline value_coded_t updateMax(T& a, const S& b, U& x, const V& y) const {
-		TAssert(S::B > T::B);
+		static_assert(S::B > T::B, "signature of b must be greater than signature of a");
 
 		// control flow signature
 		value_coded_t result;

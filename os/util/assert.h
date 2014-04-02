@@ -25,17 +25,4 @@
 // #define assert(x)
 #endif
 
-//! Static assert for compile-time checks
-template <bool B>
-struct tAssert
-{
-};
-
-template<> struct tAssert<true>
-{
-    static void Assert() {};
-};
-
-#define TAssert(a) {const bool b = (const bool) (a); tAssert<b>::Assert();}
-
 #endif /* __ASSERT_H__ */

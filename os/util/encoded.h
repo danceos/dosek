@@ -71,11 +71,10 @@ public:
 	static const A_t A = _A;
 	static const B_t B = _B;
 
-	Encoded_Static()
-	{
-		TAssert(_B > 0); // 0 Ist der RŸckgabewert des Voters falls kein Quorum mšglich war!
-		TAssert(_A > _B); // Sonst funktioniert der Trick mit dem % bei extractB() nicht!
-	};
+	static_assert(_B > 0, "static signature B must be > 0"); // not strictly necessary
+	static_assert(_A > _B, "static signature B too large (bigger than A)");
+
+	constexpr Encoded_Static() {};
 
 	// implicit conversion constructor
 	template<B_t TB>
@@ -156,14 +155,14 @@ public:
 	template<class T, B_t Bx = T::B>
 	bool operator==(const T& rhs) const
 	{
-		                                                 /* \/ Compile Time constant!\/ */
+														   /* \/ Compile Time constant!\/ */
 		return (static_cast<int16_t>(vc - rhs.getCodedValue()) ==  _B - rhs.getB());
 	};
 
 	template<class T, B_t Bx = T::B>
 	bool operator==(const volatile T& rhs) const
 	{
-                                               /* \/ Compile Time constant!\/ */
+											   /* \/ Compile Time constant!\/ */
 		return (static_cast<int16_t>(vc - rhs.vc) ==  _B - rhs.getB());
 	};
 
@@ -245,7 +244,7 @@ public:
 	template<typename T, class RET = Encoded_Static<_A,  B * T::B>>
 	inline RET operator*(const T& t) const
 	{
-		TAssert(_B * T::B < _A);
+		static_assert(_B * T::B < _A, "product of static signatures (Bs) must be smaller than A");
 
 		RET r;
 		value_t x = decode();
@@ -298,7 +297,7 @@ public:
 	template<typename T, class RET = Encoded_Static<_A, T::B - B> >
 	RET operator<=(const T& t) const
 	{
-		TAssert(T::B > B);
+		static_assert(T::B > B, "static signature (B) of right operand must be bigger than left");
 		RET r;
 
 		// unencoded comparison
@@ -328,7 +327,7 @@ public:
 	template<B_t BIF, typename T, class RET = Encoded_Static<_A, T::B - B + BIF> >
 	RET leq(const T& t) const
 	{
-		TAssert(T::B > B);
+		static_assert(T::B > B, "static signature (B) of argument must be bigger than own");
 		RET r;
 
 		// unencoded comparison
