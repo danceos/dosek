@@ -1,12 +1,13 @@
 from generator.rules.unencoded import UnencodedSystem, TaskListTemplate, \
     SchedulerTemplate
-from generator.elements import VariableDefinition, Statement
+from generator.elements import *
 
 class EncodedSystem(UnencodedSystem):
     def __init__(self):
         UnencodedSystem.__init__(self)
         self.task_list = EncodedTaskListTemplate
         self.scheduler = EncodedSchedulerTemplate
+        self.counter_signatures = {}
 
     def sigs(self, count):
         Bs = [str(self.generator.signature_generator.new()) for _ in range(0, count)]
@@ -29,6 +30,25 @@ class EncodedSystem(UnencodedSystem):
         block.add(Statement("%s.encode(%s)" % (var.name, argument[0])))
         return var
 
+    def generate_counter(self, counter_info):
+        signature = self.generator.signature_generator.new()
+        counter = DataObject("EncodedCounter<%d>" % signature,
+                             "OS_%s_counter" % (counter_info.name),
+                             "(%d, %d, %d)" % (counter_info.maxallowedvalue,
+                                               counter_info.ticksperbase,
+                                               counter_info.mincycle))
+        self.counter_signatures[counter.name] = signature
+        return counter
+
+    def generate_alarm(self, alarm_info, counter, task):
+        signature = self.generator.signature_generator.new()
+        alarm = DataObject("EncodedAlarm<%d, %d>" % (signature, self.counter_signatures[counter]),
+                           "OS_%s_alarm" %( alarm_info.name),
+                           "(%s, %s, %s, %d, %d)" % (counter, task,
+                                                     str(alarm_info.initial_armed).lower(),
+                                                     alarm_info.initial_reltime,
+                                                     alarm_info.initial_cycletime))
+        return alarm
 
 class EncodedTaskListTemplate(TaskListTemplate):
     def __init__(self, rules):

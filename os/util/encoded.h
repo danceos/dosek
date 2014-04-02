@@ -73,13 +73,25 @@ public:
 
 	Encoded_Static()
 	{
-		TAssert(_B > 0); // 0 Ist der RŸckgabewert des Voters falls kein Quorum mšglich war!
+		TAssert(_B > 0); // 0 Ist der RÅ¸ckgabewert des Voters falls kein Quorum mÅ¡glich war!
 		TAssert(_A > _B); // Sonst funktioniert der Trick mit dem % bei extractB() nicht!
 	};
+
+	// implicit conversion constructor
+	template<B_t TB>
+	constexpr Encoded_Static(const Encoded_Static<_A, TB> &rhs) : vc(rhs.vc + (B - TB)) {};
 
 	constexpr Encoded_Static(value_t value) : vc(static_cast<value_coded_t>(value * _A) + _B) {};
 
 	bool check() const
+	{
+		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * _A) + _B + getD());
+		bool noremainder = (((vc - _B - getD()) % _A) == 0);
+
+		return  (nooverflow && noremainder);
+	};
+
+	bool check() const volatile
 	{
 		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * _A) + _B + getD());
 		bool noremainder = (((vc - _B - getD()) % _A) == 0);
@@ -119,14 +131,25 @@ public:
 		return _B;
 	};
 
+	constexpr B_t getB() const volatile
+	{
+		return _B;
+	};
+
 	D_t getD() const
 	{
 		return 0;
 	};
 
-	void setD(__attribute__((unused)) D_t val) const {
+	D_t getD() const volatile
+	{
+		return 0;
+	};
+
+	void setD(__attribute__((unused)) D_t val) const volatile {
 		// nop
 	};
+
 
 	// Equality operators
 
@@ -135,6 +158,13 @@ public:
 	{
 		                                                 /* \/ Compile Time constant!\/ */
 		return (static_cast<int16_t>(vc - rhs.getCodedValue()) ==  _B - rhs.getB());
+	};
+
+	template<class T, B_t Bx = T::B>
+	bool operator==(const volatile T& rhs) const
+	{
+                                               /* \/ Compile Time constant!\/ */
+		return (static_cast<int16_t>(vc - rhs.vc) ==  _B - rhs.getB());
 	};
 
 	template<typename T, class RET = Encoded_Static<_A, B - T::B> >
@@ -172,6 +202,13 @@ public:
 		setD(rhs.getD());
 	};
 
+	// Assignment operator
+	template<typename T>
+	void operator=(const T &rhs) volatile {
+		vc = rhs.vc + (B - T::B);
+		setD(rhs.getD());
+	};
+
 	// Arithmetic operator
 	template<typename T, class RET = Encoded_Static<_A, B + T::B> >
 	RET operator+(const T& t) const
@@ -180,6 +217,20 @@ public:
 		r.vc = vc + t.vc;
 		//r.D = D + t.D; // TODO
 		return r;
+	};
+
+	template<typename T>
+	Encoded_Static<_A, B> operator+=(const T& t)
+	{
+		vc += t.vc - T::B;
+		return *this;
+	};
+
+	template<typename T>
+	volatile Encoded_Static<_A, B>& operator+=(const T& t) volatile
+	{
+		vc += t.vc - T::B;
+		return *this;
 	};
 
 	template<typename T, class RET = Encoded_Static<_A, B - T::B>>
@@ -243,7 +294,6 @@ public:
 		return (*this - rhs).geqz();
 	};
 	*/
-
 
 	template<typename T, class RET = Encoded_Static<_A, T::B - B> >
 	RET operator<=(const T& t) const

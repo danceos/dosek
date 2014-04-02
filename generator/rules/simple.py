@@ -59,16 +59,28 @@ class SimpleSystem(BaseRules):
 
             self.objects[subtask].update({"task_descriptor": desc, "task_id": task_id - 1})
 
+    def generate_counter(self, counter_info):
+        return DataObject("UnencodedCounter",
+                             "OS_%s_counter" % (counter_info.name),
+                             "(%d, %d, %d)" % (counter_info.maxallowedvalue,
+                                               counter_info.ticksperbase,
+                                               counter_info.mincycle))
+
+    def generate_alarm(self, alarm_info, counter, task):
+        return DataObject("UnencodedAlarm",
+                           "OS_%s_alarm" %( alarm_info.name),
+                           "(%s, %s, %s, %d, %d)" % (counter, task,
+                                                     str(alarm_info.initial_armed).lower(),
+                                                     alarm_info.initial_reltime,
+                                                     alarm_info.initial_cycletime))
+
     def generate_dataobjects_counters_and_alarms(self):
         self.objects["counter"] = {}
         self.objects["alarm"] = {}
         for counter_info in self.generator.system_graph.counters:
             assert counter_info.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 
-            counter = DataObject("Counter", "OS_%s_counter" %( counter_info.name),
-                                 "(%d, %d, %d)" % (counter_info.maxallowedvalue,
-                                                   counter_info.ticksperbase,
-                                                   counter_info.mincycle))
+            counter = self.generate_counter(counter_info)
             self.generator.source_file.data_manager.add(counter, namespace = ("os",))
             self.objects["counter"][counter_info.name] = counter
 
@@ -76,11 +88,7 @@ class SimpleSystem(BaseRules):
             counter = self.objects["counter"][alarm_info.counter].name
             subtask = alarm_info.subtask
             task = "os::tasks::" + self.objects[subtask]["task_descriptor"].name
-            alarm = DataObject("Alarm", "OS_%s_alarm" %( alarm_info.name),
-                               "(%s, %s, %s, %d, %d)" % (counter, task,
-                                                         str(alarm_info.initial_armed).lower(),
-                                                         alarm_info.initial_reltime,
-                                                         alarm_info.initial_cycletime))
+            alarm = self.generate_alarm(alarm_info, counter, task)
             self.generator.source_file.data_manager.add(alarm, namespace = ("os",))
             self.objects["alarm"][alarm_info.name] = alarm
 

@@ -4,13 +4,9 @@
 namespace os {
 
 void inlinehint Counter::tick() {
-    {{{snippet:increase_counter:name|if(%(name)s.value == %(name)s.maxallowedvalue) {
-    %(name)s.value = 0;
-} else {
-    %(name)s.value++;
-}
-Alarm::checkCounter(%(name)s);
-}}}
+    {{{snippet:increase_counter:name|%(name)s.do_tick();
+    Alarm::checkCounter(%(name)s);
+    }}}
     {{{generate:increase_and_check_counters}}}
 }
 
@@ -18,7 +14,7 @@ void inlinehint Alarm::checkCounter(const Counter &counter) {
 	(void) counter; // unused argument warning might happen
 
     {{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
-    {{{snippet:if_alarm:counter,alarm|if ((&counter == &%(counter)s) && %(alarm)s.checkTrigger(&%(counter)s)) {
+    {{{snippet:if_alarm:counter,alarm|if ((&counter == &%(counter)s) && %(alarm)s.checkTrigger()) {
     debug << "Alarm triggered" << endl;}}}
     {{{snippet:endif_alarm:counter,alarm|} }}}
     {{{generate:trigger_alarms}}}

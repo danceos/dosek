@@ -14,7 +14,8 @@
 
 
 namespace os {
-	extern Alarm alarm0;
+	//extern Alarm alarm0;
+	extern EncodedAlarm<77, 99> alarm0;
 }; // namespace os
 
 

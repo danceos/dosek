@@ -24,22 +24,18 @@ noinline extern "C" void __OS_ASTSchedule(__attribute__ ((unused)) int dummy)
 
 namespace os {
 
-Counter counter0;
-__attribute__((weak)) Alarm alarm0(counter0);
+EncodedCounter<99> counter0;
+__attribute__((weak)) EncodedAlarm<77, 99> alarm0(counter0);
 
 
 void inlinehint Counter::tick() {
-	if(counter0.value == counter0.maxallowedvalue) {
-		counter0.value = 0;
-	} else {
-		counter0.value++;
-	}
+	counter0.do_tick();
 
 	Alarm::checkCounter(counter0);
 }
 
 void inlinehint Alarm::checkCounter(const Counter &counter) {
-	if ((&counter == &counter0) && alarm0.checkTrigger(&counter)) {
+	if ((&counter == &counter0) && alarm0.checkTrigger()) {
 	}
 }
 
