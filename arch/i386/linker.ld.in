@@ -103,7 +103,10 @@ SECTIONS {
         _etext_os = .;
 
         /* task code regions */
+        . = ALIGN(4096);
+        _stext_application = .;
         {{{generate:task_code_regions}}}
+        _etext_application = .;
 
         /* remaining code */
         . = ALIGN(0x1000);
