@@ -60,7 +60,7 @@ void IRQ::enable_interrupts() {
 bool IRQ::interrupts_enabled() {
 	sigset_t mask;
 	syscall(SYS_rt_sigprocmask, NULL, NULL, &mask, 8);
-	return !sigisemptyset(&mask);
+	return sigisemptyset(&mask);
 }
 
 void IRQ::guardian(int signum) {

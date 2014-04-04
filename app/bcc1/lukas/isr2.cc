@@ -124,6 +124,7 @@ TASK(Task1) {
 	// test ISR2 task activatin
 	debug << "Trigger ISR 69" << endl;
 	Machine::trigger_interrupt_from_user(40);
+	test_assert(false);
 
 	TerminateTask();
 }
