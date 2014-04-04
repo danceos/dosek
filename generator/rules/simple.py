@@ -67,9 +67,9 @@ class SimpleSystem(BaseRules):
                                                counter_info.mincycle))
 
     def generate_alarm(self, alarm_info, counter, task):
-        return DataObject("UnencodedAlarm",
+        return DataObject("UnencodedAlarm<&%s>" % counter,
                            "OS_%s_alarm" %( alarm_info.name),
-                           "(%s, %s, %s, %d, %d)" % (counter, task,
+                           "(%s, %s, %d, %d)" % (task,
                                                      str(alarm_info.initial_armed).lower(),
                                                      alarm_info.initial_reltime,
                                                      alarm_info.initial_cycletime))

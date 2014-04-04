@@ -14,7 +14,7 @@ namespace scheduler {
 noinline void TerminateTaskC_impl(__attribute__ ((unused)) uint32_t dummy) {
 }
 
-noinline extern "C" void __OS_ASTSchedule(__attribute__ ((unused)) int dummy) 
+noinline extern "C" void __OS_ASTSchedule(__attribute__ ((unused)) int dummy)
 {
 }
 
@@ -25,7 +25,7 @@ noinline extern "C" void __OS_ASTSchedule(__attribute__ ((unused)) int dummy)
 namespace os {
 
 EncodedCounter<99> counter0;
-__attribute__((weak)) EncodedAlarm<77, 99> alarm0(counter0);
+__attribute__((weak)) EncodedAlarm<77, 99, &counter0> alarm0;
 
 
 void inlinehint Counter::tick() {

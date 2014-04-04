@@ -15,9 +15,9 @@ public:
 	inlinehint static void checkCounter(const Counter& counter);
 };
 
+template<const UnencodedCounter* const configuration_>
 class UnencodedAlarm : public Alarm {
 	typedef UnencodedCounter CounterType;
-	const CounterType* const configuration_;
 
 	bool armed_;
 	TickType absoluteTime_;
@@ -27,13 +27,10 @@ public:
 	/** \brief task to activate */
 	const Task* const task_;
 
-	constexpr UnencodedAlarm(CounterType& counter) : configuration_(&counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
-	constexpr UnencodedAlarm(CounterType& counter, const Task& task) : configuration_(&counter), armed_(false),
-														  absoluteTime_(0), cycleTime_(0), task_(&task) {}
-	constexpr UnencodedAlarm(CounterType& counter, const Task& task, bool armed,
-					TickType absoluteTime, TickType cycleTime) :
-		configuration_(&counter), armed_(armed),
-		absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
+	constexpr UnencodedAlarm() : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
+	constexpr UnencodedAlarm(const Task& task) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
+	constexpr UnencodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime) :
+		armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
 
 	void setArmed (bool armed) {
 		armed_ = armed;
@@ -108,11 +105,9 @@ public:
 
 };
 
-
-template<B_t B, B_t CB>
+template<B_t B, B_t CB, const EncodedCounter<CB>* const configuration_>
 class EncodedAlarm : public Alarm {
 	typedef EncodedCounter<CB> CounterType;
-	const CounterType* const configuration_;
 
 	Encoded_Static<A0, B> armed_;
 	Encoded_Static<A0, B+5> absoluteTime_;
@@ -122,14 +117,10 @@ public:
 	/** \brief task to activate */
 	const Task* const task_;
 
-	constexpr EncodedAlarm(CounterType& counter) : configuration_(&counter), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
-	constexpr EncodedAlarm(CounterType& counter, const Task& task) : configuration_(&counter), armed_(false),
-														  absoluteTime_(0), cycleTime_(0), task_(&task) {}
-	constexpr EncodedAlarm(CounterType& counter, const Task& task, bool armed,
-					TickType absoluteTime, TickType cycleTime) :
-		configuration_(&counter), armed_(armed),
-		absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
-
+	constexpr EncodedAlarm() : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
+	constexpr EncodedAlarm(const Task& task) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
+	constexpr EncodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime) :
+		armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
 
 	template<typename Encoded>
 	void setArmed(Encoded encoded) {

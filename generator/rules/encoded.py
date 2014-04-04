@@ -42,9 +42,9 @@ class EncodedSystem(UnencodedSystem):
 
     def generate_alarm(self, alarm_info, counter, task):
         signature = self.generator.signature_generator.new()
-        alarm = DataObject("EncodedAlarm<%d, %d>" % (signature, self.counter_signatures[counter]),
+        alarm = DataObject("EncodedAlarm<%d, %d, &%s>" % (signature, self.counter_signatures[counter], counter),
                            "OS_%s_alarm" %( alarm_info.name),
-                           "(%s, %s, %s, %d, %d)" % (counter, task,
+                           "(%s, %s, %d, %d)" % (task,
                                                      str(alarm_info.initial_armed).lower(),
                                                      alarm_info.initial_reltime,
                                                      alarm_info.initial_cycletime))
