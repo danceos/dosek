@@ -20,8 +20,9 @@ TASK(H2) {
 }
 
 volatile unsigned long long counter = 0;
+
 #ifndef FAIL
-const unsigned long long max_count = 100000000;
+const unsigned long long max_count = 200000000;
 #else
 const unsigned long long max_count = 1;
 #endif

@@ -50,8 +50,8 @@ CPU TestSystem {
             TASK = H3;
         };
         AUTOSTART = TRUE {
-            ALARMTIME = 100;
-            CYCLETIME = 200;
+            ALARMTIME = 50;
+            CYCLETIME = 50;
         };
     };
 

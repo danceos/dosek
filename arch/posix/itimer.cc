@@ -52,7 +52,7 @@ void ITimer::set_periodic(uint16_t rateHz) {
     timer.it_interval.tv_usec = usecs;
 
     /* start timer: counting whenever process is executing! */
-    if(setitimer(ITIMER_REAL, &timer, NULL) == -1 ) {
+    if(setitimer(ITIMER_VIRTUAL, &timer, NULL) == -1 ) {
         kout << "setitimer failed in set_periodic." << endl;
         exit(EXIT_FAILURE);
     }
