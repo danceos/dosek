@@ -60,10 +60,25 @@ def read_symbols(elffile, nm = "nm"):
                       ))
     return ret
 
-def find_symbol(symbols, name):
+def get_size(symbols, name):
+    # symbol size directly from binary?
     for symbol in symbols:
         if name == symbol.name:
-            return symbol
+            return symbol.size
+
+    # find size through start/end asm markers
+    start = 0
+    end = 0
+    for symbol in symbols:
+        if symbol.name.startswith(".asm_label.syscall_start_"+name):
+            start = symbol
+        if symbol.name.startswith(".asm_label.syscall_end_"+name):
+            end = symbol
+    if start > 0 and end > 0:
+        return end.addr - start.addr
+    else:
+        print("no size found for " + name)
+        return 0
 
 
 if __name__ == "__main__":
@@ -94,8 +109,7 @@ if __name__ == "__main__":
             continue
         abb["generated-codesize"] = 0
         for func in abb['generated-function']:
-            func = find_symbol(symbols, func)
-            abb["generated-codesize"] += func.size
+            abb["generated-codesize"] += get_size(symbols, func)
 
     stats.save(options.stats_dict)
 

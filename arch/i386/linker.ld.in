@@ -4,10 +4,18 @@ ENTRY(_start)
 OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS {
-	/* Memory-mapped CGA buffer */
-	_scga = 0xB8000;
-	cga_buffer = 0xB8000;
-	_ecga = 0xB8FFF;
+
+    /DISCARD/ : {
+        *(".text.inlined*")
+        *(.comment)
+        *(.eh_frame)
+        *(.note.gnu.build-id)
+    }
+
+    /* Memory-mapped CGA buffer */
+    _scga = 0xB8000;
+    cga_buffer = 0xB8000;
+    _ecga = 0xB8FFF;
 
     /* Set kernel start address */
     . = 0x100000;
@@ -29,14 +37,14 @@ SECTIONS {
 
         /* IRQ Handlers */
         KEEP (*(".text.irqhandlers*")) /* ASM */
-        *(".text.irq_handler*") /* C */
+        KEEP (*(".text.irq_handler*")) /* C */
         *(".text.isrs*") /* C */
         *(".text.isr_*") /* C */
-        *(".text.OSEKOS_ISR*")
+        KEEP (*(".text.OSEKOS_ISR*"))
         KEEP (*(".text.idt")) /* ASM */
 
         /* sysenter handler */
-        *(".text.sysenter_syscall")
+        KEEP (*(".text.sysenter_syscall"))
 
         _etext_irqs = .;
         . += 16; /* padding after data, workaround for import-trace */
@@ -96,9 +104,12 @@ SECTIONS {
         . = ALIGN(4096);
         _stext_os = .;
         *(".text._Z*2os*")
+        KEEP (*(".text.__OS_*"))
+
+        _srodata_os = .;
         *(".rodata._Z*2os*")
-        *(".text.__OS_*")
         *(".rodata.__OS_*")
+        _erodata_os = .;
 
         _etext_os = .;
 
@@ -143,14 +154,8 @@ SECTIONS {
         _sstack = .;
 
         _sstack_os = .;
-        *(".startup_stack")
-        _estack_os = .;
-
-        . = ALIGN(4096);
-        _sstack = .;
-
-        _sstack_os = .;
-        *(".kernel_stack")
+        KEEP (*(".startup_stack"))
+        KEEP (*(".kernel_stack"))
         _estack_os = .;
 
         {{{generate:task_stacks}}}
@@ -186,11 +191,4 @@ SECTIONS {
     _slapic = 0xFEE00000;
     lapic = 0xFEE00000;
     _elapic = 0xFEE00FFF;
-
-    /* Get rid of unnecessary GCC bits */
-    /DISCARD/ : {
-        *(.comment)
-        *(.eh_frame)
-        *(.note.gnu.build-id)
-    }
 }

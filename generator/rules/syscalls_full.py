@@ -59,6 +59,7 @@ class FullSystemCalls(BaseRules):
                            "void", [])
 
     def kickoff(self, block, abb):
+        block.attributes.append("inlinehint")
         if not abb.function.subtask.is_isr:
             self.call_function(block, "Machine::enable_interrupts",
                                "void", [])

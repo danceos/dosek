@@ -83,9 +83,10 @@ class X86Arch(SimpleArch):
         pre_hook  = Hook("SystemEnterHook")
         post_hook = Hook("SystemLeaveHook")
 
+        userspace.attributes.append("inlinehint")
+
         if abb.function.subtask.is_isr:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
-            userspace.attributes.append("inlinehint")
 
             system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
 

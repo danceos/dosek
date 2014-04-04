@@ -40,6 +40,9 @@ class UnencodedSystem(SimpleSystem):
         kernelspace = None
         pre_hook    = None
         post_hook   = None
+
+        self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
+
         if abb.isA([S.TerminateTask, S.ActivateTask, S.ChainTask,
                     S.CancelAlarm, S.GetResource, S.ReleaseResource]):
             # Need a kernelspace
@@ -82,21 +85,17 @@ class UnencodedSystem(SimpleSystem):
                                      "SuspendAllInterrupts",
                                      "SuspendOSInterrupts"):
             self.syscall_rules.DisableAllInterrupts(userspace, abb)
-            self.arch_rules.asm_marker(userspace, "syscall__start_%s" % userspace.name)
             pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
             userspace.add(pre_hook)
             userspace.add(post_hook)
-            self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         elif systemcall.function in ("EnableAllInterrupts",
                                      "ResumeAllInterrupts",
                                      "ResumeOSInterrupts"):
             pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
-            self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
             userspace.add(pre_hook)
             userspace.add(post_hook)
             self.syscall_rules.EnableAllInterrupts(userspace, abb)
-            self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
         # Alarms
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
@@ -108,6 +107,8 @@ class UnencodedSystem(SimpleSystem):
             pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
         else:
             assert False, "Not yet supported %s"% systemcall.function
+
+        self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         # Fill up the hooks
         if pre_hook:
