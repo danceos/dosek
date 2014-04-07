@@ -31,7 +31,7 @@ namespace fail {
 Encoded_Static<A0, 42> k;
 
 // test step: increment encoded value
-forceinline void step(void) {
+inline void step(void) {
 	k = k + EC(44,1);
 }
 

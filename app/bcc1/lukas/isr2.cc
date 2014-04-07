@@ -29,46 +29,46 @@ Encoded_Static<A0, 42> k;
 
 // these steps are executed in order by a correct OSEK system
 
-forceinline void step1(void) {
+inline void step1(void) {
 	kout << "1";
 	k = k * EC(43,2);
 	k = k + EC(44,1);
 }
 
-forceinline void step2(void) {
+inline void step2(void) {
 	kout << "2";
 
 	k = k * EC(49,7);
 	k = k + EC(50,5);
 }
 
-forceinline void step3(void) {
+inline void step3(void) {
 	kout << "3";
 
 	k = k * EC(39,2);
 	k = k + EC(38,9);
 }
 
-forceinline void step4(void) {
+inline void step4(void) {
 	kout << "4";
 
 	k = k * EC(45,3);
 	k = k + EC(46,2);
 }
 
-forceinline void step5(void) {
+inline void step5(void) {
 	kout << "5";
 
 	k = k * EC(47,4);
 	k = k + EC(48,3);
 }
 
-forceinline void step6(void) {
+inline void step6(void) {
 	k = k * EC(40,2);
 	k = k + EC(41,3);
 }
 
-forceinline void step7(void) {
+inline void step7(void) {
 	k = k * EC(3,2);
 	k = k + EC(5,5);
 }
