@@ -141,7 +141,6 @@ endmacro()
 macro(coredos_add_test FN)
     add_test(${FN} qemu-system-i386 -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -nographic -cdrom "${PROJECT_BINARY_DIR}/${FN}.iso")
     set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 20)
-    add_dependencies( build_and_test iso-${FN} )
-    add_dependencies( ctest2jenkins iso-${FN} )
+    add_dependencies( tests iso-${FN} )
 endmacro()
 
