@@ -111,18 +111,12 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		if(ctx->cs & 0x3) { // only if coming from userspace
 			*save_sp = (void*) ctx->user_esp; // save SP
 			*(*((uint32_t **) save_sp) - 1) = ctx->eip; // save IP
-			save_sp = 0; // for detecting bugs, not stricly neccessary
+			save_sp = 0;
 		}
-
-		// put syscall arguments on top kernel stack
-		uint32_t* sp = (uint32_t*) (&_estack_os - 2048);
-		*sp = arg3;
-		*(sp-1) = arg2;
-		*(sp-2) = arg1;
 
 		// push the syscall stack address/segment
 		Machine::push(GDT::USER_DATA_SEGMENT | 0x3); // push stack segment, DPL3
-		Machine::push((uint32_t)(sp-3)); // push stack pointer above arguments
+		Machine::push((uint32_t) (&_estack_os - 2048)); // push OS stack pointer
 
 		// push flags, IO privilege level 3, interrupts on
 		Machine::push(0x3200);
@@ -136,7 +130,8 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 
 		// return from interrupt and proceed with syscall in ring 3
 		// TODO: optimization: put all values for iret in text segment?
-		Machine::return_from_interrupt();
+		asm volatile("iret" :: "a"(arg1), "b"(arg2), "S"(arg3));
+		Machine::unreachable();
 
 		#else // SYSEXIT_SYSCALL
 
@@ -144,22 +139,15 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		if(ctx->cs & 0x3) { // only if coming from userspace
 			*save_sp = (void*) ctx->user_esp; // save SP
 			*(*((uint32_t **) save_sp) - 1) = ctx->eip; // save IP
-			save_sp = 0; // for detecting bugs, not stricly neccessary
+			save_sp = 0;
 		}
-
-		// put syscall arguments on top kernel stack
-		uint32_t* sp = (uint32_t*) (&_estack_os - 2048);
-		*sp = arg3;
-		*(sp-1) = arg2;
-		*(sp-2) = arg1;
-
-		uint32_t flags = ctx->eflags | 0x3000;
 
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
 
-		// exit to syscall with stackptr at last syscall argument
-		Machine::sysexit_with_sti(fun, sp-3, flags);
+		// exit to syscall
+		asm volatile("sysexit" :: "a"(arg1), "b"(arg2), "S"(arg3), "c"(&_estack_os - 2048), "d"(fun));
+		Machine::unreachable();
 
 		#endif // SYSEXIT_SYSCALL
 	} else {
