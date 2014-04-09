@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include "assert.h"
+#include "machine.h"
 
 #ifdef UINT16_MAX
 #undef UINT16_MAX
@@ -50,6 +51,17 @@ public:
 		return static_cast<value_t>((vc - B - D) / A);
 	};
 
+	/* x86 specific _size_ optimization
+	static value_t decode_opt(value_coded_t vc, A_t A, B_t B, D_t D) {
+		assert(vc < static_cast<value_coded_t>((__V_MAX * A) + B + D));
+
+		uint32_t v, rem;
+		asm("xor %%edx, %%edx; divl %2" : "=a"(v), "=d"(rem) : "mr"(static_cast<uint32_t>(A)), "a"(vc - B - D));
+		assert(rem == 0);
+		return static_cast<value_t>(v);
+	};
+	*/
+
 	static bool check(value_coded_t vc, A_t A, B_t B, D_t D)
 	{
 		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * A) + B + D);
@@ -84,18 +96,12 @@ public:
 
 	bool check() const
 	{
-		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * _A) + _B + getD());
-		bool noremainder = (((vc - _B - getD()) % _A) == 0);
-
-		return  (nooverflow && noremainder);
+		return Encoded::check(vc, _A, _B, getD());
 	};
 
 	bool check() const volatile
 	{
-		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * _A) + _B + getD());
-		bool noremainder = (((vc - _B - getD()) % _A) == 0);
-
-		return  (nooverflow && noremainder);
+		return Encoded::check(vc, _A, _B, getD());
 	};
 
 	void encode(value_t value, uint8_t timestamp=0)
@@ -104,13 +110,22 @@ public:
 		vc = static_cast<value_coded_t>(value * _A) + _B + timestamp;
 	}
 
-	value_t decode() const
+	value_t decode()
 	{
-		assert(check());
-		return (vc - _B - getD()) / _A;
+		return Encoded::decode(vc, _A, _B, getD());
 	};
 
-	value_coded_t getCodedValue() const
+	constexpr value_t decode() const
+	{
+		return static_cast<value_t>((vc - B - getD()) / A);
+	};
+
+	value_t decode() const volatile
+	{
+		return Encoded::decode(vc, _A, _B, getD());
+	};
+
+	constexpr value_coded_t getCodedValue() const
 	{
 		return vc;
 	};
@@ -135,12 +150,12 @@ public:
 		return _B;
 	};
 
-	D_t getD() const
+	constexpr D_t getD() const
 	{
 		return 0;
 	};
 
-	D_t getD() const volatile
+	constexpr D_t getD() const volatile
 	{
 		return 0;
 	};
