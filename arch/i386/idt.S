@@ -5,11 +5,7 @@
 #define IRQS_BASE 0x101000
 
 # offset between irq handler addresses
-#if CHECK_TASK_CONTEXT
 #define IRQS_OFFSET 256
-#else
-#define IRQS_OFFSET 128
-#endif
 
 # kernel code GDT segment
 #define KERNEL_CODE_SEGMENT 0x8
@@ -19,6 +15,7 @@
 #define TYPE_DPL0_TRAP_GATE 0x8F
 #define TYPE_DPL3_IRQ_GATE  0xEE
 
+.weak pagedir_os
 
 # IRQ handler macro
 #
@@ -55,15 +52,11 @@ irq_handler_\num:
 	add $0x4, %esp
 	.endif
 
-	# jump to label 1 if coming from user task (check page directory)
-	push %eax # save eax on stack to reuse it
-	mov %cr3, %eax # get page directory
-	.weak pagedir_os
-	cmp $pagedir_os,%eax # if kernel page directory we are not from task
+	# jump to label 1 if coming from user task (arch::save_sp != 0)
+	cmpl $0, _ZN4arch7save_spE
 	jne 1f
 
 	# coming from kernel: save context on interrupt stack
-	pop %eax # restore eax
 	pusha # save all registers
 	leal 32(%esp), %esi # put interrupt stack pointer in %esi
 	mov %esp, %ebx # put context pointer in %ebx
@@ -83,6 +76,7 @@ irq_handler_\num:
 
 1:
 	# coming from task: save context on userspace/task stack
+	push %eax
 	mov %esp, %eax # save interrupt stackpointer in eax
 	mov 16(%esp), %esp # switch (back) to userspace stack
 	push 4(%eax) # save return address on stack
@@ -107,7 +101,12 @@ irq_handler_\num:
 	mov $pagedir_os,%edx # get OS page directory address
 	mov %edx, %cr3 # switch to OS page directory
 
-	mov (_ZN4arch7save_spE), %edx # get value of arch::save_sp
+	mov _ZN4arch7save_spE, %edx # get value of arch::save_sp
+	mov %edx, %ebp
+	shr $16, %ebp
+	cmp %dx, %bp
+	jne 3f
+	mov OS_stackptrs(,%ebp,4), %edx # get value of OS_stackptrs[save_sp]
 	mov %ebx, (%edx) # save stack pointer to *arch::save_sp
 	mov %eax, %esp # switch back to interrupt stack
 	pop %eax # pop userspace eax off stack
@@ -133,6 +132,8 @@ irq_handler_\num:
 
 	# jump to ISR
 	jmp isr_\num
+
+3:	ud2
 
 .size irq_handler_\num, . - irq_handler_\num
 

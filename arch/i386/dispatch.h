@@ -23,12 +23,9 @@
 
 namespace arch {
 
-// TODO: remove pointer usage by determining static location from task ID
-/** \brief Stack pointer save location */
-extern volatile void** save_sp;
-
 extern volatile void* startup_sp;
 
+extern volatile uint32_t save_sp;
 
 // next task to dispatch (used by dispatch interrupt)
 // TODO: remove redundancy
@@ -55,9 +52,6 @@ public:
 	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
-		// TODO: remove pointer usage
-		save_sp = (volatile void **) &task.tcb.sp;
-
 		// TODO: do this in dispatcher IRQ?/control flow check
 		if(!task.tcb.is_running()) {
 			// not resuming, pass task function
@@ -69,13 +63,11 @@ public:
 	}
 
 	static forceinline void ResumeToTask(const os::scheduler::Task& task) {
-		save_sp = (volatile void **) &task.tcb.sp;
 		// resuming, pass stackpointer with saved IP
 		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)&task.tcb.sp);
 	}
 
 	static forceinline void StartToTask(const os::scheduler::Task& task) {
-		save_sp = (volatile void **) &task.tcb.sp;
 		// not resuming, pass task function
 		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)task.tcb.fun);
 	}
@@ -89,11 +81,11 @@ public:
 
 	/** \brief The idle loop
 	 *
-     * Must be run in ring 0 to allow halting the machine
+	 * Must be run in ring 0 to allow halting the machine
 	 */
 	static noinline void idle_loop() {
 		/* Call the idle loop callback (does end with
-           Machine::enable_interrupts())*/
+		   Machine::enable_interrupts())*/
 		CALL_HOOK(PreIdleHook);
 
 		// allow all interrupts
@@ -110,7 +102,7 @@ public:
 	/** \brief Run idle loop */
 	static forceinline void idle(void) {
 		/* Call the idle loop callback (does end with
-           Machine::enable_interrupts())*/
+		   Machine::enable_interrupts())*/
 		CALL_HOOK(PreIdleHook);
 
 		// allow all interrupts

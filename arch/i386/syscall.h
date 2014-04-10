@@ -46,15 +46,22 @@ forceinline void syscall(F fun) {
 #if SYSENTER_SYSCALL
 	// use int for direct syscalls and sysenter for normal syscalls
 	if(!direct) {
-		asm volatile("push %%ebp; mov %%esp, %%ebp; push $1f; sysenter; 1: pop %%ebp" :: "d"(fun) :
-			"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+		asm volatile(
+			"push %%ebp;"
+			"mov %%esp, %%edi;"
+			"push $1f;"
+			"sysenter;"
+			"1: pop %%ebp"
+			:: "d"(fun)
+			: "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory"
+		);
 	} else {
 		asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun) :
 			"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 	}
 #else // SYSENTER_SYSCALL
-    asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun), "D"(direct) :
-                 "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
+	asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun), "D"(direct) :
+				 "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 #endif // SYSENTER_SYSCALL
 }
 

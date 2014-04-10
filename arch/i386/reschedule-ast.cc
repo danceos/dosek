@@ -34,6 +34,9 @@ ISR(IRQ_RESCHEDULE) {
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
 
+	// reset save_sp to detect IRQ from non-userspace in idt.S
+	save_sp = 0;
+
 	// send end-of-interrupt signal
 	LAPIC::send_eoi();
 

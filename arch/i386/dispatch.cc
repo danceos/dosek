@@ -12,7 +12,7 @@ namespace arch {
 
 /** \brief Startup stackpointer (save location) */
 volatile void* startup_sp = 0;
-volatile void** save_sp = (volatile void **)&startup_sp;
+volatile uint32_t save_sp = 0;
 
 volatile uint32_t dispatch_pagedir;
 volatile uint32_t dispatch_stackptr;
@@ -28,6 +28,8 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	uint32_t id = dispatch_pagedir;
 	uint32_t fun = dispatch_ip;
 	void* sp = (void*) dispatch_stackptr;
+
+	save_sp = id | ((id) << 16);
 
 #ifndef SYSEXIT_DISPATCH
 	// push stack segment, DPL3

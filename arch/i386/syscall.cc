@@ -9,6 +9,8 @@
 
 extern "C" uint8_t _estack_os;
 
+extern "C" void** OS_stackptrs[];
+
 namespace arch {
 
 #if SYSENTER_SYSCALL
@@ -16,9 +18,9 @@ namespace arch {
 	   are intended for longer syscalls */
 extern "C" __attribute__((naked)) void sysenter_syscall() {
 	// get arguments from registers
-	void* fun;
+	void *fun, *sp;
 	uint32_t arg1, arg2, arg3;
-	asm volatile("" : "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun));
+	asm volatile("" : "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun), "=D"(sp));
 
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
@@ -29,8 +31,11 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 	// reenable ISR1s
 	Machine::enable_interrupts();
 
-	asm volatile("mov %%ebp, %0" :: "m"(*save_sp));
-	save_sp = 0; // for detecting bugs, not stricly neccessary
+	// save stack pointer
+	uint32_t ssp = save_sp;
+	assert( (ssp & 0xFFFF) == (ssp >> 16) );
+	*OS_stackptrs[ssp & 0xFFFF] = sp;
+	save_sp = 0; // to detect IRQ from userspace in idt.S
 
 	// exit system
 	asm volatile("sysexit" :: "a"(arg1), "b"(arg2), "S"(arg3), "c"(&_estack_os - 2048), "d"(fun));
