@@ -110,6 +110,12 @@ public:
 		vc = static_cast<value_coded_t>(value * _A) + _B + timestamp;
 	}
 
+	void encode(value_t value, uint8_t timestamp=0) volatile
+	{
+		setD(timestamp);
+		vc = static_cast<value_coded_t>(value * _A) + _B + timestamp;
+	}
+
 	value_t decode()
 	{
 		return Encoded::decode(vc, _A, _B, getD());

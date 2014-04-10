@@ -8,6 +8,7 @@
 #define __DISPATCH_H__
 
 #include "os/util/inline.h"
+#include "os/util/encoded.h"
 #include "os/scheduler/task.h"
 #include "os/hooks.h"
 #include "idt.h"
@@ -28,48 +29,39 @@ extern volatile void* startup_sp;
 extern volatile uint32_t save_sp;
 
 // next task to dispatch (used by dispatch interrupt)
-// TODO: remove redundancy
-extern volatile uint32_t dispatch_pagedir;
-extern volatile uint32_t dispatch_stackptr;
-extern volatile uint32_t dispatch_ip;
-
-
+#ifdef ENCODED
+extern volatile Encoded_Static<A0, 42> dispatch_task;
+#else
+extern volatile uint16_t dispatch_task;
+#endif
 
 class Dispatcher {
 public:
-	static forceinline void dispatch_syscall(const uint32_t& pagedir, const uint32_t& stackptr, const uint32_t& ip) {
-		// set dispatch values
-		dispatch_pagedir = pagedir;
-		dispatch_stackptr = stackptr;
-		dispatch_ip = ip;
+	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
+		// set task to dispatch
+        #ifdef ENCODED
+		dispatch_task.encode(task.id);
+        #else
+		dispatch_task = task.id;
+        #endif
 
 		// request dispatcher AST
 		LAPIC::trigger(IRQ_DISPATCH);
 
 		// unblock ISR2s by lowering APIC task priority
-		// TODO: do this at end of syscall, not here?
 		LAPIC::set_task_prio(0);
 	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
-		// TODO: do this in dispatcher IRQ?/control flow check
-		if(!task.tcb.is_running()) {
-			// not resuming, pass task function
-			dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)task.tcb.fun);
-		} else {
-			// resuming, pass stackpointer with saved IP
-			dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)&task.tcb.sp);
-		}
+		dispatch_syscall(task);
 	}
 
 	static forceinline void ResumeToTask(const os::scheduler::Task& task) {
-		// resuming, pass stackpointer with saved IP
-		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)&task.tcb.sp);
+		dispatch_syscall(task);
 	}
 
 	static forceinline void StartToTask(const os::scheduler::Task& task) {
-		// not resuming, pass task function
-		dispatch_syscall((uint32_t) task.id, (uint32_t)task.tcb.sp, (uint32_t)task.tcb.fun);
+		dispatch_syscall(task);
 	}
 
 	#if IDLE_HALT

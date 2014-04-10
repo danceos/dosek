@@ -1,5 +1,4 @@
-#define CHECK_IRQ_CONTEXT 1
-#define CHECK_TASK_CONTEXT 0
+#include "i386.h"
 
 # start address of interrupt handlers
 #define IRQS_BASE 0x101000
@@ -85,7 +84,6 @@ irq_handler_\num:
 	mov %esp, %ebx # put context pointer in %ebx
 	mov (%eax), %edi # get real userspace eax (pushed above)
 	mov %edi, 28(%ebx) # put userspace eax in saved context
-	push $irq_resume # push irq_resume fragment as "new" return address
 
 #if CHECK_TASK_CONTEXT
 	mov (%ebx), %ecx
@@ -95,6 +93,25 @@ irq_handler_\num:
 	xor 24(%ebx), %ecx
 	xor 28(%ebx), %ecx
 	xor 16(%ebx), %ecx
+#endif
+
+#if PARITY_CHECKS
+	# push irq_resume fragment as "new" return address with parity bit
+	mov $irq_resume, %edi
+	popcnt %edi, %edi
+	xor $0xffffffff, %edi
+	shl $0x1f, %edi
+	or $irq_resume, %edi
+	push %edi
+
+	# add partity bit for stack pointer in %ebp
+	mov %ebx, %edi
+	popcnt %ebx, %ebx
+	xor $0xffffffff, %ebx
+	shl $0x1f, %ebx
+	or %edi, %ebx
+#else
+	push $irq_resume
 #endif
 
 	mov %cr3, %edi # save original page directory in %edi
@@ -108,12 +125,14 @@ irq_handler_\num:
 	jne 3f
 	mov OS_stackptrs(,%ebp,4), %edx # get value of OS_stackptrs[save_sp]
 	mov %ebx, (%edx) # save stack pointer to *arch::save_sp
+#if PARITY_CHECKS
+	and $0x7FFFFFFF, %ebx
+#endif
 	mov %eax, %esp # switch back to interrupt stack
 	pop %eax # pop userspace eax off stack
 	mov %esp, %esi # put interrupt stack pointer in %esi
 
 2:
-
 	# push XOR checksum %esi...%esi+20, %ebx...%ebx+32
 #if CHECK_IRQ_CONTEXT
 #if CHECK_TASK_CONTEXT

@@ -47,6 +47,10 @@ class X86Arch(SimpleArch):
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.includes.add(Include("tcb.h"))
+
+        tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "", extern_c = True)
+        tcb_arr.add_static_initializer("0")
+
         for subtask in self.system_graph.get_subtasks():
             # Ignore the Idle thread
             if not subtask.is_real_thread():
@@ -63,7 +67,9 @@ class X86Arch(SimpleArch):
             desc.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
             self.objects[subtask].update({"tcb_descriptor": desc})
+            tcb_arr.add_static_initializer("&" + desc.name)
 
+        self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
 
     def generate_isr(self, isr):
         self.generator.source_file.includes.add(Include("machine.h"))

@@ -55,7 +55,7 @@ public:
 		} __attribute__((packed));
 
 		uint32_t value;
-	} __attribute__((packed)); 
+	} __attribute__((packed));
 
 	/** \brief Constructor for one page table entry */
 	constexpr PageDirectoryEntry(uint32_t page_table_addr, bool rw = true, bool usermode = true) :
@@ -81,7 +81,7 @@ public:
 		// currently this is still required to check if running in userspace in idt.S
 		//#ifndef MPU_DISABLED
 		// load directory address in CR3
-		asm volatile("mov %0, %%cr3":: "r"(pagedir.entries));
+		asm volatile("mov %0, %%cr3":: "r"(pagedir.entries) : "memory");
 		//#endif
 	}
 

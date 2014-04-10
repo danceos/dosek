@@ -10,6 +10,7 @@
 #include "os/util/inline.h"
 #include "idt.h"
 #include "lapic.h"
+#include "i386.h"
 
 /** \brief Perform syscalls using sysenter insteaf of int */
 #define SYSENTER_SYSCALL 1
@@ -47,11 +48,25 @@ forceinline void syscall(F fun) {
 	// use int for direct syscalls and sysenter for normal syscalls
 	if(!direct) {
 		asm volatile(
-			"push %%ebp;"
+			"push %%ebp;" // save %ebp
+			#if PARITY_CHECKS
+			"mov %%esp, %%ecx;" // save stackptr ...
+			"popcnt %%ecx, %%edi;" // ... with odd parity ...
+			"xor $0xffffffff, %%edi;"
+			"shl $0x1f, %%edi;"
+			"or %%ecx, %%edi;" // ... in %edi
+			"mov $1f, %%ecx;" // save return address ...
+			"popcnt %%ecx, %%ecx;" // ... with odd parity ...
+			"xor $0xffffffff, %%ecx;"
+			"shl $0x1f, %%ecx;"
+			"or $1f, %%ecx;"
+			"push %%ecx;" // .. on stack
+			#else
 			"mov %%esp, %%edi;"
 			"push $1f;"
-			"sysenter;"
-			"1: pop %%ebp"
+			#endif
+			"sysenter;" // start syscall
+			"1: pop %%ebp" // return address: restore %ebp
 			:: "d"(fun)
 			: "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory"
 		);
@@ -60,7 +75,7 @@ forceinline void syscall(F fun) {
 			"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 	}
 #else // SYSENTER_SYSCALL
-	asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun), "D"(direct) :
+	asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun), "c"(direct) :
 				 "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 #endif // SYSENTER_SYSCALL
 }

@@ -1,0 +1,3 @@
+#define PARITY_CHECKS 1
+#define CHECK_IRQ_CONTEXT 1
+#define CHECK_TASK_CONTEXT 1

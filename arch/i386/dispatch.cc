@@ -2,11 +2,17 @@
 #include "gdt.h"
 #include "machine.h"
 #include "paging.h"
+#include "tcb.h"
 #include "os/util/inline.h"
+#include "os/util/assert.h"
+#include "os/util/encoded.h"
 #include "lapic.h"
+#include "i386.h"
 
 /** \brief Enable task dispatching using sysexit instead of iret */
 #define SYSEXIT_DISPATCH 1
+
+extern "C" arch::TCB * const OS_tcbs[];
 
 namespace arch {
 
@@ -14,9 +20,11 @@ namespace arch {
 volatile void* startup_sp = 0;
 volatile uint32_t save_sp = 0;
 
-volatile uint32_t dispatch_pagedir;
-volatile uint32_t dispatch_stackptr;
-volatile uint32_t dispatch_ip;
+#ifdef ENCODED
+volatile Encoded_Static<A0, 42> dispatch_task;
+#else
+volatile uint16_t dispatch_task;
+#endif
 
 /** \brief Dispatch interrupt handler
  *
@@ -24,11 +32,17 @@ volatile uint32_t dispatch_ip;
  * and performs the actual dispatching in ring 0.
  */
 IRQ_HANDLER(IRQ_DISPATCH) {
-	// get dispatch values
-	uint32_t id = dispatch_pagedir;
-	uint32_t fun = dispatch_ip;
-	void* sp = (void*) dispatch_stackptr;
+	#ifdef ENCODED
+	// decode task ID
+	uint16_t id = dispatch_task.decode();
+	#else
+	uint16_t id = dispatch_task;
+	#endif
 
+	// get TCB
+	const TCB * const tcb = OS_tcbs[id];
+
+	// set save_sp
 	save_sp = id | ((id) << 16);
 
 #ifndef SYSEXIT_DISPATCH
@@ -36,6 +50,13 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	Machine::push(GDT::USER_DATA_SEGMENT | 0x3);
 
 	// push stack pointer
+	#if PARITY_CHECKS
+	uint32_t *sp = (uint32_t *) tcb->get_sp();
+	assert(tcb->check_sp());
+	#else
+	uint32_t *sp = (uint32_t *) tcb->sp;
+	#endif
+
 	Machine::push(sp);
 
 	// push flags, IO privilege level 3
@@ -57,14 +78,22 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	Machine::set_data_segment(GDT::USER_DATA_SEGMENT | 0x3);
 
 	// push instruction pointer
-	if(fun >= 0x200000) {
+	if(tcb->is_running()) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
-		uint32_t ip = *(*((uint32_t**) fun) - 1);
+		uint32_t ip = (uint32_t) *(sp - 1);
+
+		#if PARITY_CHECKS
+		assert(__builtin_parity(ip) == 1);
+		Machine::push(ip & 0x7FFFFFFF);
+		#else
 		Machine::push(ip);
+		#endif
+
+		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
 	} else {
 		// start function from beginning
-		Machine::push(fun);
+		Machine::push(tcb->fun);
 	}
 
 	// TODO: check prepared stack? (SSE crc32q?)
@@ -85,13 +114,28 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 	// push instruction pointer
 	void* ip;
-	if(fun >= 0x200000) {
+	#if PARITY_CHECKS
+	uint32_t *sp = (uint32_t *) tcb->get_sp();
+	assert(tcb->check_sp());
+	#else
+	uint32_t *sp = (uint32_t *) tcb->sp;
+	#endif
+	if(tcb->is_running()) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
-		ip = (void*) *(*((uint32_t**) fun) - 1);
+		uint32_t ipv = (uint32_t) *(sp - 1);
+
+		#if PARITY_CHECKS
+		assert(__builtin_parity(ipv) == 1);
+		ip = (void*) (ipv & 0x7FFFFFFF);
+		#else
+		ip = (void*) ipv;
+		#endif
+
+		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
 	} else {
 		// start function from beginning
-		ip = (void*) fun;
+		ip = (void*) tcb->fun;
 	}
 
 	// send end-of-interrupt signal

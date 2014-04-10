@@ -5,6 +5,7 @@
 #include "machine.h"
 #include "paging.h"
 #include "lapic.h"
+#include "i386.h"
 #include "util/assert.h"
 
 extern "C" uint8_t _estack_os;
@@ -94,9 +95,11 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 
 	bool direct;
 	cpu_context* ctx;
-	asm volatile("mov %%esp, %0" : "=r"(ctx), "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun), "=D"(direct));
-
-	// TODO: remove/reuse pushed CPU context?
+	asm volatile(
+		"mov %%esp, %0;" // save IRQ context
+		"sub $64, %%esp" // prevent compiler stack usage from corrupting IRQ context
+		: "=r"(ctx), "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun), "=c"(direct)
+	);
 
 	// block ISR2s by raising APIC task priority
 	LAPIC::set_task_prio(128);
@@ -107,17 +110,32 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	// syscall to be executed directly in IRQ handler?
 	// TODO: derive this from syscall (function)
 	if(!direct) {
+		// save stack+instruction pointer
+		uint32_t ssp = save_sp;
+		uint32_t* sp = (uint32_t *) ctx->user_esp;
+		uint32_t spv = (uint32_t) sp;
+		uint32_t* ip = (uint32_t *) ctx->user_eip;
+		uint32_t ipv = (uint32_t) ip;
+
+		#if PARITY_CHECKS
+		if(__builtin_parity(spv) != 1) {
+			spv |= 0x80000000;
+		}
+		if(__builtin_parity(ipv) != 1) {
+			ipv |= 0x80000000;
+		}
+		#endif
+
+		if(ssp > 0) { // only if coming from userspace
+			assert( (ssp & 0xFFFF) == (ssp >> 16) );
+
+			*(sp - 1) = ipv; // save IP
+		}
+
 		#ifndef SYSEXIT_SYSCALL
 		// set userspace segment selectors
 		// TODO: maybe not neccessary?
 		Machine::set_data_segment(GDT::USER_DATA_SEGMENT | 0x3);
-
-		// save stack+instruction pointer
-		if(ctx->cs & 0x3) { // only if coming from userspace
-			*save_sp = (void*) ctx->user_esp; // save SP
-			*(*((uint32_t **) save_sp) - 1) = ctx->eip; // save IP
-			save_sp = 0;
-		}
 
 		// push the syscall stack address/segment
 		Machine::push(GDT::USER_DATA_SEGMENT | 0x3); // push stack segment, DPL3
@@ -133,6 +151,12 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
 
+		if(ssp > 0) { // only if coming from userspace
+			*OS_stackptrs[ssp & 0xFFFF] = (void*) spv;
+		}
+
+		save_sp = 0; // to detect IRQ from userspace in idt.S
+
 		// return from interrupt and proceed with syscall in ring 3
 		// TODO: optimization: put all values for iret in text segment?
 		asm volatile("iret" :: "a"(arg1), "b"(arg2), "S"(arg3));
@@ -140,15 +164,14 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 
 		#else // SYSEXIT_SYSCALL
 
-		// save stack+instruction pointer
-		if(ctx->cs & 0x3) { // only if coming from userspace
-			*save_sp = (void*) ctx->user_esp; // save SP
-			*(*((uint32_t **) save_sp) - 1) = ctx->eip; // save IP
-			save_sp = 0;
-		}
-
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
+
+		if(ssp > 0) { // only if coming from userspace
+			*OS_stackptrs[ssp & 0xFFFF] = (void*) spv;
+		}
+
+		save_sp = 0; // to detect IRQ from userspace in idt.S
 
 		// exit to syscall
 		asm volatile("sysexit" :: "a"(arg1), "b"(arg2), "S"(arg3), "c"(&_estack_os - 2048), "d"(fun));
@@ -158,7 +181,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	} else {
 		// save page directory
 		uint32_t pd;
-		asm volatile("mov %%cr3, %0" : "=D"(pd));
+		asm volatile("mov %%cr3, %0" : "=r"(pd));
 
 		// change to OS page directory
 		PageDirectory::enable(pagedir_os);
@@ -167,13 +190,14 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		asm volatile("call *%0" :: "r"(fun), "a"(arg1), "b"(arg2), "S"(arg3));
 
 		// restore page directory
-		asm volatile("mov %0, %%cr3" :: "D"(pd));
+		asm volatile("mov %0, %%cr3" :: "r"(pd));
 
 		// reenable ISR2s by resetting APIC task priority
 		Machine::disable_interrupts();
 		LAPIC::set_task_prio(0);
 
 		// return from interrupt and proceed with caller in ring 3
+		asm volatile("mov %0, %%esp;" :: "r"(ctx)); // restore IRQ context
 		Machine::return_from_interrupt();
 	}
 }
@@ -183,7 +207,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 void syscalls_init() {
 	Machine::set_msr(SYSENTER_CS_MSR, GDT::KERNEL_CODE_SEGMENT);
 
-	#ifdef SYSENTER_SYSCALL
+	#if SYSENTER_SYSCALL
 	Machine::set_msr(SYSENTER_EIP_MSR, (uint64_t) & sysenter_syscall);
 	Machine::set_msr(SYSENTER_ESP_MSR, (uint64_t)(&_estack_os - 16));
 	#endif
