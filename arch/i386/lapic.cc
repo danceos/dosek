@@ -10,6 +10,14 @@
 #include "machine.h"
 #include "output.h"
 
+/** \brief Counter for spurious interrupts
+ *
+ * Maybe useful for detecting hardware errors on real hardware
+ * and software errors in emulation.
+ * Not put in arch namespace to be writable from all page directories.
+ */
+volatile uint32_t spurious_interrupts = 0;
+
 namespace arch {
 
 void LAPIC::init() {
@@ -20,13 +28,6 @@ void LAPIC::init() {
 	PIC::disable();
 }
 
-
-/** \brief Counter for spurious interrupts
- *
- * Maybe useful for detecting hardware errors on real hardware
- * and software errors in emulation.
- */
-volatile uint32_t spurious_interrupts = 0;
 
 /** \brief Spurious interrupt handler */
 IRQ_HANDLER(255) {
