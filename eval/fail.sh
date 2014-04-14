@@ -32,6 +32,8 @@ make fail-$BENCH-ip
 
 VARIANT=CoRedOS-`cat fail-$BENCH/.gitrev`
 objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-mpu.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-encoded-mpu.elf
+find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-encoded-mpu-stats.dict.py \;
 done
 
 
@@ -49,6 +51,8 @@ make fail-$BENCH-mem-nompu
 make fail-$BENCH-ip-nompu
 
 objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-nompu.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-encoded-nompu.elf
+find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-encoded-nompu-stats.dict.py \;
 done
 fi
 
@@ -66,6 +70,8 @@ make fail-$BENCH-mem-unencoded
 make fail-$BENCH-ip-unencoded
 
 objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-mpu.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-unencoded-mpu.elf
+find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-unencoded-mpu-stats.dict.py \;
 done
 
 
@@ -83,6 +89,8 @@ make fail-$BENCH-mem-unencoded-nompu
 make fail-$BENCH-ip-unencoded-nompu
 
 objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-nompu.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-unencoded-nompu.elf
+find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-unencoded-nompu-stats.dict.py \;
 done
 fi
 

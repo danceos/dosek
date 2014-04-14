@@ -240,6 +240,8 @@ plot(instr_dodge, newpage=TRUE)
 rm(instr_dodge)
 
 # occs by stack_os address
+stack_sdc <- subset(sdc,data_group=="os_stack")
+if(length(stack_sdc$occurrences) > 0) {
 os_stack <- ggplot(subset(sdc,data_group=="os_stack")) +
 	geom_bar(aes(width=.9, x=data_address+.5, y=occurrences, group=factor(trace), fill=factor(trace)), stat="summary", fun.y="sum") +
 	facet_grid(opts ~ .) +
@@ -250,6 +252,8 @@ os_stack <- ggplot(subset(sdc,data_group=="os_stack")) +
 	xlab("injection stack address")
 plot(os_stack, newpage=TRUE)
 rm(os_stack)
+rm(stack_sdc)
+}
 
 for(o in levels(fail$opts)) {
 	g <- ggplot(subset(sdc, opts==o)) +

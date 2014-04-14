@@ -53,8 +53,8 @@ SET(FAIL_TRACE_PLUGIN_PYTHON "${CMAKE_CURRENT_BINARY_DIR}/TracePlugin_pb2.py" CA
 add_custom_target(fail-trace-plugin-python
   DEPENDS ${FAIL_TRACE_PLUGIN_SOURCE}
   COMMAND ${PROTOC} 
-          -I${CMAKE_CURRENT_SOURCE_DIR} ${FAIL_TRACE_PLUGIN_SOURCE} 
-          --python_out=${CMAKE_CURRENT_BINARY_DIR}
+		  -I${CMAKE_CURRENT_SOURCE_DIR} ${FAIL_TRACE_PLUGIN_SOURCE} 
+		  --python_out=${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Compiling fail TracePlugin.proto"
   OUTPUT  ${FAIL_TRACE_PLUGIN_PYTHON}
 )
@@ -121,29 +121,20 @@ macro(fail_targets TNAME ELF TEST)
 				-Wf,--end-symbol=test_finish
 				-Wf,--trace-file=trace.pb
 				-Wf,--elf-file=${ELF}
+			COMMAND ${COREDOS_GENERATOR_DIR}/stats_binary.py
+				--stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
+				--elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
+			COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR}
+				${PROJECT_SOURCE_DIR}/fail/trace-analyze.py
+				--stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
+				--elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
+				--trace ${FAIL_DIR}/trace.pb
+				--trace-plugin ${FAIL_TRACE_PLUGIN_PYTHON}
 			COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"
 			WORKING_DIRECTORY ${FAIL_DIR}
 			OUTPUT ${TRACEFILE} ${CHECKPOINTFILE} ${STATEDIR}
 		)
 		add_custom_target(fail-trace-${TNAME} DEPENDS ${TRACEFILE})
-
-        # Statistics for fail-binary/trace
-        add_custom_command(TARGET fail-trace-${TNAME} POST_BUILD
-          COMMENT "Gathering binary statistics for ${TNAME}"
-          COMMAND ${COREDOS_GENERATOR_DIR}/stats_binary.py
-                  --stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
-                  --elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
-        )
-
-        add_custom_command(TARGET fail-trace-${TNAME} POST_BUILD
-          COMMENT "Gathering trace statistics for ${TNAME}"
-          COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR}
-          ${PROJECT_SOURCE_DIR}/fail/trace-analyze.py
-             --stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
-             --elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
-             --trace ${FAIL_DIR}/trace.pb
-             --trace-plugin ${FAIL_TRACE_PLUGIN_PYTHON}
-             )
 
 		# extract {data, text, stack}_map
 		set(FAIL_MAPPER "${PROJECT_SOURCE_DIR}/fail/mapper.py")

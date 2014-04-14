@@ -5,7 +5,7 @@ import imp
 import re
 from gzip import GzipFile
 from optparse import OptionParser
-from generator.stats_binary import read_symbols, read_regions, find_symbol
+from generator.stats_binary import read_symbols, read_regions
 from generator.statistics import Statistics
 from collections import namedtuple
 

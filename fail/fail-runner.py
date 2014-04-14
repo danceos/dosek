@@ -91,6 +91,8 @@ def startClients(options, args, i):
 
     if(ret == 0):
         status = "done"
+    elif(ret == 128):
+        status = "FINISHED"
     else:
         status = "ABORTED"
     print "{}: {}: client {} {}".format(datetime.datetime.now().time().isoformat(), hostname, i, status)
@@ -129,6 +131,9 @@ def main(options, pargs):
         p.join()
         if(p.name=="Server" and p.exitcode != 100):
             sys.exit(0)
+
+    print "{}: {}: DONE".format(datetime.datetime.now().time().isoformat(), platform.node())
+    sys.exit(0)
 
 def signal_handler(signal, frame):
     print "Terminating!"
