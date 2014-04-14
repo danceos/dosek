@@ -3,6 +3,15 @@ COREDOS_BINARY(
   SYSTEM_XML system.xml
   VERIFY verify_a.py
   LIBS libtest
+  TEST_ISO
+  a.cc
+)
+
+COREDOS_BINARY(
+  NAME bcc1_task1a_sse
+  SYSTEM_XML system.xml
+  VERIFY verify_a.py
+  LIBS libtest
   GENERATOR_ARGS -fgen-asserts -fsse
   TEST_ISO
   a.cc
