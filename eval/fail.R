@@ -108,9 +108,12 @@ fail$data_group[fail$data_address %in% 0x201000:0x201fff]="os_stack"
 # prepare injection instruction groups
 fail$injection_group <- hex(fail$injection_instr)
 
-# read objdump files
+activations <- data.frame(encoded<-factor(levels=c("encoded", "unencoded")), mpu<-factor(levels=c("mpu","nompu")), opts=factor())
+codesize <- data.frame(encoded<-factor(levels=c("encoded", "unencoded")), mpu<-factor(levels=c("mpu","nompu")), opts=factor())
+
 for(enc in levels(fail$fencoded)) {
 	for(mpu in levels(fail$fmpu)) {
+		# read objdump files
 		objfile <- paste(variant, "-", benchmark, "-", enc, "-", mpu, ".syms", sep="")
 		cols <- c(8,-1,7,-1,5,-1,8,-1,1000)
 		colnames <- c("addr", "flags", "section", "size", "symbol")
@@ -136,8 +139,23 @@ for(enc in levels(fail$fencoded)) {
 		} else {
 			print(paste(objfile, "not found, not importing symbol names"))
 		}
+
+		# read statistic tables
+		acts <- read.table(paste(variant, "-", benchmark, "-", enc, "-", mpu, "-activations.stats", sep=""), header=TRUE, sep="\t")
+		acts$encoded <- enc
+		acts$mpu <- mpu
+		acts$opts <- paste(enc, mpu)
+		activations <- rbind(activations, acts)
+		csize <- read.table(paste(variant, "-", benchmark, "-", enc, "-", mpu, "-codesize.stats", sep=""), header=TRUE, sep="\t")
+		csize$encoded <- enc
+		csize$mpu <- mpu
+		csize$opts <- paste(enc, mpu)
+		codesize <- rbind(codesize, csize)
 	}
 }
+
+activations$opts <- factor(activations$opts)
+codesize$opts <- factor(codesize$opts)
 
 # order data_group by type and address
 fail$data_group <- factor(fail$data_group, levels=unique(fail$data_group[order(fail$type, fail$data_address4, decreasing=TRUE)]), ordered=TRUE)
@@ -151,7 +169,7 @@ fail$occurrences[fail$type=="ip" & grepl("irq_\\d+", fail$injection_group)] <- 1
 
 # save data to file
 print("saving")
-save(fail, file=paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
+save(fail, activations, codesize, variant, benchmark, file=paste("fail-", variant, "-", benchmark ,".Rdata", sep=""))
 
 } else { #load
 
@@ -168,6 +186,25 @@ m <- regmatches(sdc$details, r)
 sdc$trace <- as.integer(sapply(m, function(x) x[4]))
 sdc$trace_ip <- as.numeric(sapply(m, function(x) x[3]))
 sdc$trace_err <- factor(sapply(m, function(x) x[2]))
+
+print("saving dataref")
+sink(paste("fail-", variant, "-", benchmark, ".dref", sep=""))
+
+sdc_agg <- aggregate(occurrences ~ type + fmpu + fencoded, data=sdc, FUN=sum)
+
+agg0 <- unique(expand.grid(sdc_agg[,c("type","fmpu","fencoded")]))
+agg<-merge(sdc_agg, agg0, by=c("type","fmpu","fencoded"), all.y=TRUE)
+agg$occurrences[is.na(agg$occurrences)] <- 0
+
+agg_sum <- aggregate(occurrences ~ fmpu + fencoded, data=agg, FUN=sum)
+agg_sum$type <- "total"
+agg <- rbind(agg, agg_sum)
+
+agg$key <- paste("fail", benchmark, variant, agg$fencoded, agg$fmpu, agg$type, "sdc", sep="/")
+cat("\\drefsethelp{fail/.+/sdc}{Total silent data corruption (SDC) occurrences}\n")
+cat(with(agg, paste("\\drefset{", key, "}{", occurrences, "}", sep="")), sep="\n")
+
+sink()
 
 print("plotting")
 
@@ -282,6 +319,68 @@ for(o in levels(fail$opts)) {
 	plot(g, newpage=TRUE)
 	rm(g)
 }
+
+# codesize by ABB
+plot_csize <- ggplot(codesize) +
+	labs(title = paste(variant, benchmark)) +
+	ylab("code size (bytes)") +
+	xlab("ABB") +
+	geom_bar(aes(x=factor(paste(subtask,ABB)), y=codesize, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
+	guides(fill = guide_legend("variant"))
+plot(plot_csize, newpage=TRUE)
+rm(plot_csize)
+
+# activations by ABB
+plot_acts <- ggplot(activations) +
+	labs(title = paste(variant, benchmark)) +
+	ylab("cumulative run-time (cycles)") +
+	xlab("ABB") +
+	geom_bar(aes(x=factor(paste(subtask,ABB)), y=cycles, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
+	guides(fill = guide_legend("variant"))
+plot(plot_acts, newpage=TRUE)
+rm(plot_acts)
+
+# activations by ABB
+plot_acts <- ggplot(activations) +
+	labs(title = paste(variant, benchmark)) +
+	ylab("cumulative run-time (cycles)") +
+	xlab("ABB") +
+	geom_bar(aes(x=factor(paste(subtask,ABB)), y=cycles, fill=func, order=func), stat="summary", fun.y="sum") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
+	guides(fill = guide_legend("function")) +
+	facet_grid(opts ~ .)
+plot(plot_acts, newpage=TRUE)
+rm(plot_acts)
+
+# activations by ABB
+plot_acts <- ggplot(activations) +
+	labs(title = paste(variant, benchmark)) +
+	ylab("run-time (cycles)") +
+	xlab("ABB") +
+	geom_bar(aes(x=factor(paste(subtask,ABB)), y=cycles, group=opts, fill=factor(activation), order=factor(activation)), stat="summary", fun.y="sum") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
+	guides(fill = guide_legend("activation")) +
+	facet_grid(opts ~ .)
+plot(plot_acts, newpage=TRUE)
+rm(plot_acts)
+
+# activations by ABB/function
+plot_acts_fun <- ggplot(activations) +
+	labs(title = paste(variant, benchmark)) +
+	ylab("run-time (cycles)") +
+	xlab("function") +
+	geom_bar(aes(x=factor(paste(subtask,ABB,activation,func)), y=cycles, group=opts, fill=opts), stat="summary", fun.y="sum", position="dodge") +
+	theme(legend.position = "bottom") +
+	coord_flip() +
+	guides(fill = guide_legend("variant"))
+plot(plot_acts_fun, newpage=TRUE)
+rm(plot_acts_fun)
 
 dev.off()
 

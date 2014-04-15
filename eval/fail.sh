@@ -31,9 +31,11 @@ make fail-$BENCH-mem
 make fail-$BENCH-ip
 
 VARIANT=CoRedOS-`cat fail-$BENCH/.gitrev`
-objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-mpu.syms
-cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-encoded-mpu.elf
-find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-encoded-mpu-stats.dict.py \;
+NAME=$VARIANT-$BENCH-encoded-mpu
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$NAME.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$NAME.elf
+find . -wholename "*/fail-*/stats.dict.py" -exec cp '{}' $START_DIR/$NAME-stats.dict.py \;
+$SOURCE_DIR/generator/stats_table.py --stats-dict $START_DIR/$NAME-stats.dict.py --activations $START_DIR/$NAME-activations.stats --codesize $START_DIR/$NAME-codesize.stats
 done
 
 
@@ -50,9 +52,11 @@ make fail-$BENCH-regs-nompu
 make fail-$BENCH-mem-nompu
 make fail-$BENCH-ip-nompu
 
-objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-encoded-nompu.syms
-cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-encoded-nompu.elf
-find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-encoded-nompu-stats.dict.py \;
+NAME=$VARIANT-$BENCH-encoded-nompu
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$NAME.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$NAME.elf
+find . -wholename "*/fail-*/stats.dict.py" -exec cp '{}' $START_DIR/$NAME-stats.dict.py \;
+$SOURCE_DIR/generator/stats_table.py --stats-dict $START_DIR/$NAME-stats.dict.py --activations $START_DIR/$NAME-activations.stats --codesize $START_DIR/$NAME-codesize.stats
 done
 fi
 
@@ -69,9 +73,11 @@ make fail-$BENCH-regs-unencoded
 make fail-$BENCH-mem-unencoded
 make fail-$BENCH-ip-unencoded
 
-objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-mpu.syms
-cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-unencoded-mpu.elf
-find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-unencoded-mpu-stats.dict.py \;
+NAME=$VARIANT-$BENCH-unencoded-mpu
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$NAME.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$NAME.elf
+find . -wholename "*/fail-*/stats.dict.py" -exec cp '{}' $START_DIR/$NAME-stats.dict.py \;
+$SOURCE_DIR/generator/stats_table.py --stats-dict $START_DIR/$NAME-stats.dict.py --activations $START_DIR/$NAME-activations.stats --codesize $START_DIR/$NAME-codesize.stats
 done
 
 
@@ -88,9 +94,11 @@ make fail-$BENCH-regs-unencoded-nompu
 make fail-$BENCH-mem-unencoded-nompu
 make fail-$BENCH-ip-unencoded-nompu
 
-objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$VARIANT-$BENCH-unencoded-nompu.syms
-cp fail-$BENCH/fail-$BENCH $START_DIR/$VARIANT-$BENCH-unencoded-nompu.elf
-find . -iname stats.dict.py -exec cp '{}' $START_DIR/$VARIANT-$BENCH-unencoded-nompu-stats.dict.py \;
+NAME=$VARIANT-$BENCH-unencoded-nompu
+objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$NAME.syms
+cp fail-$BENCH/fail-$BENCH $START_DIR/$NAME.elf
+find . -wholename "*/fail-*/stats.dict.py" -exec cp '{}' $START_DIR/$NAME-stats.dict.py \;
+$SOURCE_DIR/generator/stats_table.py --stats-dict $START_DIR/$NAME-stats.dict.py --activations $START_DIR/$NAME-activations.stats --codesize $START_DIR/$NAME-codesize.stats
 done
 fi
 
