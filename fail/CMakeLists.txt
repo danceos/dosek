@@ -111,8 +111,11 @@ macro(fail_targets TNAME ELF TEST)
 		set(TRACEFILE "${FAIL_DIR}/trace.pb")
 		set(CHECKPOINTFILE "${FAIL_DIR}/checkpoint.trace")
 		set(STATEDIR "${FAIL_DIR}/state")
+		set(STATS_BINARY ${COREDOS_GENERATOR_DIR}/stats_binary.py)
+		set(STATS_TRACE ${PROJECT_SOURCE_DIR}/fail/trace-analyze.py)
+		set(STATS_DICT ${COREDOS_OUTPUT_DIR}/stats.dict.py)
 		add_custom_command(
-			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE} fail-trace-plugin-python
+			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE} fail-trace-plugin-python ${STATS_BINARY} ${STATS_TRACE}
 			COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${GIT_REV_FILE} -g ${GIT}
 			COMMAND ${CMAKE_COMMAND} -E remove_directory ${STATEDIR}
 			COMMAND ${FAIL_TRACE} -f ${BOCHSRC} -q
@@ -121,18 +124,17 @@ macro(fail_targets TNAME ELF TEST)
 				-Wf,--end-symbol=test_finish
 				-Wf,--trace-file=trace.pb
 				-Wf,--elf-file=${ELF}
-			COMMAND ${COREDOS_GENERATOR_DIR}/stats_binary.py
-				--stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
-				--elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
-			COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR}
-				${PROJECT_SOURCE_DIR}/fail/trace-analyze.py
-				--stats-dict ${COREDOS_OUTPUT_DIR}/stats.dict.py
-				--elf ${PROJECT_BINARY_DIR}/fail-${TNAME}/fail-${TNAME}
-				--trace ${FAIL_DIR}/trace.pb
+			COMMAND ${PYTHON} ${STATS_BINARY}
+				--stats-dict ${STATS_DICT}
+				--elf ${ELF}
+			COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR} ${STATS_TRACE}
+				--stats-dict ${STATS_DICT}
+				--elf ${ELF}
+				--trace ${TRACEFILE}
 				--trace-plugin ${FAIL_TRACE_PLUGIN_PYTHON}
 			COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"
 			WORKING_DIRECTORY ${FAIL_DIR}
-			OUTPUT ${TRACEFILE} ${CHECKPOINTFILE} ${STATEDIR}
+			OUTPUT ${TRACEFILE} ${CHECKPOINTFILE} ${STATEDIR} ${STATS_DICT}
 		)
 		add_custom_target(fail-trace-${TNAME} DEPENDS ${TRACEFILE})
 

@@ -93,7 +93,7 @@ class CoredosDetector:
                 self.syscall_endurance.update(range(start, end))
 
             if symbol.name == "irq_resume":
-                self.syscall_end.add(symbol.addr+2)
+                self.syscall_end.add(end)
 
             # Systemcall markers
             if symbol.name.startswith(".asm_label.syscall_start"):
