@@ -12,12 +12,6 @@
 #include "lapic.h"
 #include "i386.h"
 
-/** \brief Perform syscalls using sysenter insteaf of int */
-#define SYSENTER_SYSCALL 1
-
-/** \brief Perform syscall dispatching using sysexit instead of iret */
-#define SYSEXIT_SYSCALL 1
-
 #define SYSENTER_CS_MSR 0x174  //!< MSR index for sysenter/sysexit kernel GDT offset
 #define SYSENTER_ESP_MSR 0x175 //!< MSR index for sysenter %esp value
 #define SYSENTER_EIP_MSR 0x176 //!< MSR index for sysenter %eip value

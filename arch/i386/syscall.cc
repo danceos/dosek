@@ -114,7 +114,7 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		uint32_t ssp = save_sp;
 		uint32_t* sp = (uint32_t *) ctx->user_esp;
 		uint32_t spv = (uint32_t) sp;
-		uint32_t* ip = (uint32_t *) ctx->user_eip;
+		uint32_t* ip = (uint32_t *) ctx->eip;
 		uint32_t ipv = (uint32_t) ip;
 
 		#if PARITY_CHECKS
@@ -132,10 +132,16 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 			*(sp - 1) = ipv; // save IP
 		}
 
+		// change to OS page directory
+		PageDirectory::enable(pagedir_os);
+
 		#ifndef SYSEXIT_SYSCALL
-		// set userspace segment selectors
-		// TODO: maybe not neccessary?
-		Machine::set_data_segment(GDT::USER_DATA_SEGMENT | 0x3);
+
+		if(ssp > 0) { // only if coming from userspace
+			*OS_stackptrs[ssp & 0xFFFF] = (void*) spv;
+		}
+
+		save_sp = 0; // to detect IRQ from userspace in idt.S
 
 		// push the syscall stack address/segment
 		Machine::push(GDT::USER_DATA_SEGMENT | 0x3); // push stack segment, DPL3
@@ -148,24 +154,12 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 		Machine::push(GDT::USER_CODE_SEGMENT | 0x3); // push code segment, DPL3
 		Machine::push((uint32_t)fun); // push eip
 
-		// change to OS page directory
-		PageDirectory::enable(pagedir_os);
-
-		if(ssp > 0) { // only if coming from userspace
-			*OS_stackptrs[ssp & 0xFFFF] = (void*) spv;
-		}
-
-		save_sp = 0; // to detect IRQ from userspace in idt.S
-
 		// return from interrupt and proceed with syscall in ring 3
 		// TODO: optimization: put all values for iret in text segment?
 		asm volatile("iret" :: "a"(arg1), "b"(arg2), "S"(arg3));
 		Machine::unreachable();
 
 		#else // SYSEXIT_SYSCALL
-
-		// change to OS page directory
-		PageDirectory::enable(pagedir_os);
 
 		if(ssp > 0) { // only if coming from userspace
 			*OS_stackptrs[ssp & 0xFFFF] = (void*) spv;

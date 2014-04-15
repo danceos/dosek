@@ -9,9 +9,6 @@
 #include "lapic.h"
 #include "i386.h"
 
-/** \brief Enable task dispatching using sysexit instead of iret */
-#define SYSEXIT_DISPATCH 1
-
 extern "C" arch::TCB * const OS_tcbs[];
 
 namespace arch {
@@ -50,14 +47,10 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	Machine::push(GDT::USER_DATA_SEGMENT | 0x3);
 
 	// push stack pointer
-	#if PARITY_CHECKS
 	uint32_t *sp = (uint32_t *) tcb->get_sp();
 	assert(tcb->check_sp());
-	#else
-	uint32_t *sp = (uint32_t *) tcb->sp;
-	#endif
 
-	Machine::push(sp);
+	Machine::push((uint32_t) sp);
 
 	// push flags, IO privilege level 3
 	// TODO: always enable interrupts? (0x3200)
@@ -93,7 +86,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
 	} else {
 		// start function from beginning
-		Machine::push(tcb->fun);
+		Machine::push((uint32_t) tcb->fun);
 	}
 
 	// TODO: check prepared stack? (SSE crc32q?)
@@ -114,12 +107,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 	// push instruction pointer
 	void* ip;
-	#if PARITY_CHECKS
 	uint32_t *sp = (uint32_t *) tcb->get_sp();
 	assert(tcb->check_sp());
-	#else
-	uint32_t *sp = (uint32_t *) tcb->sp;
-	#endif
+
 	if(tcb->is_running()) {
 		// resume from saved IP on stack
 		// requires new page directory set before!

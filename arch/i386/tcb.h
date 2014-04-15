@@ -2,6 +2,7 @@
 #define __ARCH_X86_TCB
 
 #include "os/util/assert.h"
+#include "arch/i386/i386.h"
 
 namespace arch {
 
@@ -21,20 +22,32 @@ struct TCB {
 	const int stacksize;
 
 	inline bool check_sp(void) const {
+		#if PARITY_CHECKS
 		return (__builtin_parity((uint32_t) sp) == 1);
+		#else
+		return true;
+		#endif
 	}
 
 	inline void* get_sp(void) const {
+		#if PARITY_CHECKS
 		return (void *) ((uint32_t)sp & 0x7FFFFFFF);
+		#else
+		return sp;
+		#endif
 	}
 
 	inline void set_sp(void* s) const {
+		#if PARITY_CHECKS
 		uint32_t _sp = (uint32_t) s;
 		if(__builtin_parity(_sp) == 1) {
 			sp = s;
 		} else {
 			sp = (void*) (_sp | 0x80000000);
 		}
+		#else
+		sp = s;
+		#endif
 	}
 
 	inline void reset(void) const {
