@@ -5,9 +5,10 @@ import imp
 import re
 from gzip import GzipFile
 from optparse import OptionParser
-from generator.stats_binary import read_symbols, read_regions
+from generator.stats_binary import read_symbols, read_regions, Symbol
 from generator.statistics import Statistics
 from collections import namedtuple
+from random import randint
 
 
 def open_trace(filename):
@@ -51,15 +52,20 @@ class SymbolMap(dict):
     """The Symbol map maps memory addresses to symbols for fast
     translation"""
     def __init__(self, symbols):
+        symbols.append(Symbol(addr = 0, size = 1, name = "__OS_syscall_OSEKOS_IncrementCounter",
+                              segment = ".text", type = "OBJECT"))
         self.symbols = symbols
         for symbol in symbols:
             if not symbol.size:
                 self[symbol.addr] = symbol
+                self[symbol.name] = symbol
+
 
         for symbol in symbols:
             if symbol.size:
                 for i in range(symbol.addr, symbol.addr+symbol.size):
                     self[i] = symbol
+                    self[symbol.name] = symbol
 
 class CoredosDetector:
     START  = 1
@@ -79,7 +85,8 @@ class CoredosDetector:
             # All interrupt handlers are part of the system
             if symbol.name.startswith("irq_") \
                or symbol.name.startswith("isr_") \
-               or symbol.name == "handler_exit":
+               or symbol.name == "handler_exit" \
+               or symbol.name == "sysenter_syscall":
                 self.syscall_endurance.update(range(start, end))
 
             if symbol.name.startswith("__OS_"):
@@ -108,6 +115,8 @@ class CoredosDetector:
                 #print end_symbol
                 #print zone
                 self.syscall_endurance.update(zone)
+                for addr in zone:
+                    self.symbol_map[addr] = symbol
 
     def for_addr(self, addr):
         ret = 0
@@ -140,14 +149,21 @@ class SyscallRegion:
         self.start_time = start_time
         self.trace      = []
         self.end_time   = start_time
+
+    def contains(self, symbol):
+        for x in self.trace:
+            if x[1].name == symbol:
+                return True
+        return False
     def push_symbol(self, time, symbol):
         if not self.trace or self.trace[-1][1] != symbol:
             self.trace.append([1, symbol])
         else:
             self.trace[-1][0] += 1
         # Increase time
-        assert time >= self.end_time
-        self.end_time = time
+        if time:
+            assert time >= self.end_time
+            self.end_time = time
 
 def syscall_regions(trace_events, symbol_map):
     """Generator that returns detected syscall regions"""
@@ -182,6 +198,8 @@ def syscall_regions(trace_events, symbol_map):
             # We are a generator, therefore we yield the current
             # syscall region
             if classified & detector.END:
+                if region.contains("irq_48"):
+                    region.push_symbol(None, symbol_map["__OS_syscall_OSEKOS_IncrementCounter"])
                 yield region
                 region = None
 
@@ -198,20 +216,41 @@ def main(options, args):
         if not 'generated-function' in abb:
             continue
         abb["activations"] = []
+    sysgraph = stats.find_all("SystemGraph").values()[0]
+    IncrementCounter = {"_id": id(main),
+                         "_type": "AtomicBasicBlock", 
+                         "_name": "ABB-10/IncrementCounter",
+                         "generated-function": ["__OS_syscall_OSEKOS_IncrementCounter"],
+                         "activations": [],
+                        "symbols": []}
+    sysgraph["alarms"] = [IncrementCounter]
+    stats.rebuild_index(sysgraph)
 
     for syscall_region in syscall_regions(trace_events, symbol_map):
         names = [x[1].name for x in syscall_region.trace if x[1]]
         region_length = sum([x[0] for x in syscall_region.trace])
         event_type = None
-        # print region_length, event_type, names
+        # fixup names with asm labels
+        for i in range(0, len(names)):
+            if ".asm_label.syscall_start" in names[i]:
+                m = re.subn("^.asm_label.syscall_start_(.*)_[0-9]+$", "\\1", names[i])
+                names[i] = m[0]
 
         for name in names:
             if "__OS_syscall" in name:
-                assert event_type  is None, event_type
+                assert event_type  is None, names
                 event_type = name
-            if name in ("__OS_ASTSchedule", "__OS_StartOS_dispatch"):
-                assert event_type  is None, event_type
+            if name in ("__OS_StartOS_dispatch"):
+                assert event_type  is None, names
                 event_type = name
+
+        # If it does not contain a syscall, use the userland function
+        # names (e.g. the start end markers)
+        if event_type == None:
+            for name in names:
+                if "OSEKOS" in name and "__ABB" in name:
+                    assert event_type  is None, names
+                    event_type = name
 
         for abb in stats.find_all("AtomicBasicBlock").values():
             if not 'generated-function' in abb:
@@ -225,6 +264,15 @@ def main(options, args):
                 }
                 abb["activations"].append(trace_info)
 
+        if event_type == "__OS_syscall_OSEKOS_IncrementCounter":
+            IncrementCounter["symbols"] = list(set(IncrementCounter["symbols"]) |  set(names))
+
+    IncrementCounter["generated-codesize"] = 0
+    for symbol in IncrementCounter["symbols"]:
+        if symbol in symbol_map:
+            symbol = symbol_map[symbol]
+            if symbol.size:
+                IncrementCounter["generated-codesize"] += symbol.size
     print options.stats
     stats.save(options.stats)
 
