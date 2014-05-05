@@ -104,7 +104,8 @@ typedef uint16_t TickType;
 
 
 #define ISR2(taskname) \
-	noinline EXTERN_C_DECL void OSEKOS_ISR_##taskname(void)
+	__attribute__((always_inline)) __attribute__((used)) \
+    EXTERN_C_DECL void OSEKOS_ISR_##taskname(void)
 
 #define DeclareTask(x)				\
   struct TASKStruct OSEKOS_TASK_Struct_##x
