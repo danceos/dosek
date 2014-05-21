@@ -6,20 +6,20 @@ namespace os { namespace scheduler {
 
 /* Simpler array based task queue */
 struct TaskList : public TaskListStatic {
-    // encoded task priorities
-    {{{snippet:ready_flag:name,A,B|Encoded_Static<%(A)s, %(B)s> %(name)s;}}}
-    {{{generate:ready_flag_variables}}}
+	// encoded task priorities
+	{{{snippet:ready_flag:name,A,B|Encoded_Static<%(A)s, %(B)s> %(name)s;}}}
+	{{{generate:ready_flag_variables}}}
 
-    // idle task id/priority
-    static constexpr auto idle_id   = EC({{{generate:idle_id_sig}}}, 0);
-    static constexpr auto idle_prio = EC({{{generate:idle_prio_sig}}}, 0);
+	// idle task id/priority
+	static constexpr auto idle_id   = EC({{{generate:idle_id_sig}}}, 0);
+	static constexpr auto idle_prio = EC({{{generate:idle_prio_sig}}}, 0);
 
-    {{{snippet:ready_flag_init:name|, %(name)s(0)}}}
-    TaskList() : TaskListStatic(){{{generate:ready_flag_constructor}}} {}
+	{{{snippet:ready_flag_init:name|, %(name)s(0)}}}
+	TaskList() : TaskListStatic(){{{generate:ready_flag_constructor}}} {}
 
-    /** Set priority of task id to prio **/
-    // returns an encoded 0 with the signature (B) of the modified task - prio.B
-    template<typename T>
+	/** Set priority of task id to prio **/
+	// returns an encoded 0 with the signature (B) of the modified task - prio.B
+	template<typename T>
 	forceinline value_coded_t isSuspended(const T id) {
 		{{{snippet:task_get_entry:name|if(id == %(id)s) {
 	return %(name)s.getCodedValue() == EC(decltype(%(name)s)::B, 0).getCodedValue();
@@ -29,31 +29,31 @@ struct TaskList : public TaskListStatic {
 			assert(false);
 			return 0;
 		}
-    }
-
-    /** Set priority of task id to prio **/
-    // returns an encoded 0 with the signature (B) of the modified task - prio.B
-    template<typename T, typename S>
-    forceinline value_coded_t set(const T id, const S prio) {
-{{{snippet:task_set_entry:name|if(id == %(id)s) {
-    %(name)s = prio;
-    return (%(name)s - prio).getCodedValue();
-} else }}}
-
-         {{{generate:task_set_call:task_set_entry}}}{
-             assert(false);
-             return 0;
-         }
-    }
+	}
 
 	/** Set priority of task id to prio **/
-    // returns an encoded 0 with the signature (B) of the modified task - prio.B
-    template<typename T, typename S>
-		forceinline value_coded_t increasePrio(const T id, const S newprio) {
+	// returns an encoded 0 with the signature (B) of the modified task - prio.B
+	template<typename T, typename S>
+	forceinline value_coded_t set(const T id, const S prio) {
+{{{snippet:task_set_entry:name|if(id == %(id)s) {
+	%(name)s = prio;
+	return (%(name)s - prio).getCodedValue();
+} else }}}
+
+		 {{{generate:task_set_call:task_set_entry}}}{
+			 assert(false);
+			 return 0;
+		 }
+	}
+
+	/** Set priority of task id to prio **/
+	// returns an encoded 0 with the signature (B) of the modified task - prio.B
+	template<typename T, typename S>
+	forceinline value_coded_t increasePrio(const T id, const S newprio) {
 		{{{snippet:task_increasePrio_entry:name|if(id == %(id)s) {
-    %(name)s.vc += 10;
-    updateMax<10, 11>(%(name)s, newprio);
-    %(name)s.vc -= 11;
+	%(name)s.vc += 10;
+	updateMax<10, 11>(%(name)s, newprio);
+	%(name)s.vc -= 11;
 	value_coded_t ret = (%(name)s - newprio).getCodedValue();
 	assert (ret >= 0);
 	return ret;
@@ -63,111 +63,104 @@ struct TaskList : public TaskListStatic {
 			assert(false);
 			return 0;
 		}
-    }
+	}
 
-    template<typename TargetHint, typename T, typename S>
-    forceinline value_coded_t head(T& id, S& prio) const {
-        // initialize control flow signature
-        static volatile value_coded_t signature;
-		value_coded_t signature_static = {{{generate:head_signature_vc}}};
-		signature = signature_static;
+	template<typename TargetHint, typename T, typename S>
+	forceinline value_coded_t head(T& id, S& prio) const {
+		B_t sigId = id.getB();
+		B_t sigPrio = prio.getB();
 
-        // start with idle id/priority
-        id = idle_id;
-        prio = idle_prio;
-
-        // add initial signature
-        id.vc   += {{{generate:head_signature_vc}}};
-        prio.vc += {{{generate:head_signature_vc}}};
+		bool first = true;
 
 {{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
 // This branch is taken statically
 if (TargetHint::%(task)s_is_possible) {
-	// %(task)s >= prio?
-	signature        += updateMax<%(last_sig)s, %(next_sig)s>(prio, %(task)s, id, EC(%(task_id_sig)s, %(task_id)s));
-	signature_static += updateMax_signature(%(next_sig)s, prio, %(task)s);
-	assert(((signature - signature_static) %% S::A) == 0);
-} else {
-	/* Fixup id and prio signature */
-	id.vc = id.vc + (%(next_sig)s - %(last_sig)s);
-	prio.vc = prio.vc + (%(next_sig)s - %(last_sig)s);
+	if(first) {
+		first=false;
+		sigId += %(next_sig)s;
+		sigPrio += %(next_sig)s;
+		id.vc = Encoded::encode(%(task_id)s, A0, sigId, 0);
+		prio.vc = %(task)s.vc + (sigPrio - %(task)s.getB());
+	} else {
+		// %(task)s >= prio?
+		updateMax(sigPrio, sigId, %(next_sig)s, &prio, %(task)s, &id, EC(%(task_id_sig)s, %(task_id)s));
+
+		assert((prio.vc + id.vc) %% A0 == (sigPrio + sigId));
+	}
 }
 }}}
 {{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
 if (TargetHint::Idle_is_possible) {
-	//  restore idle_id if idle_id >= prio
-	signature        += updateMax<%(last_sig)s, %(next_sig)s>(prio, idle_prio, id, idle_id);
-	signature_static +=  updateMax_signature(%(next_sig)s, prio, idle_prio);
-	assert(((signature - signature_static) %% S::A) == 0);
-} else {
-	/* Fixup id and prio signature */
-	id.vc = id.vc + (%(next_sig)s - %(last_sig)s);
-	prio.vc = prio.vc + (%(next_sig)s - %(last_sig)s);
+	if(first) {
+		first=false;
+		id=idle_id;
+		prio=idle_prio;
+	} else {
+		// restore idle_id if idle_id >= prio
+		updateMax(sigPrio, sigId, %(next_sig)s, &prio, idle_prio, &id, idle_id);
+
+		// last comparison, needs no assert
+	}
 }
 }}}
-        {{{generate:head_update_max_cascade}}}
+		{{{generate:head_update_max_cascade}}}
 
-        // subtract last signature
-        id.vc   -= {{{generate:head_signature_vc}}};
-        prio.vc -= {{{generate:head_signature_vc}}};
+		pseudo_static_assert(!first, "no task possible");
 
-        // check signatures
-        assert(id.check());
-        assert(prio.check());
+		pseudo_static_assert(sigId > 0, "constant sigId not optimized away completely");
+		pseudo_static_assert(sigPrio > 0, "constant sigPrio not optimized away completely");
 
-        debug << "head: " << id.decode() << " (prio " << prio.decode() << ")" << endl;
+		id.vc -= (sigId - id.getB());
+		prio.vc -= (sigPrio - prio.getB());
 
-        return signature;
-    }
+		return 0;
+	}
 
-    template<typename TID, typename NewPrio>
+	template<typename TID, typename NewPrio>
 		forceinline value_coded_t insert(const TID& id, const NewPrio &newprio) {
-        debug << "+++ Task " << id.decode() << " with priority " << newprio.decode() << " is ready" << endl;
-		
+
 		return increasePrio(id, newprio);
-    }
+	}
 
-    template<typename T>
-    forceinline value_coded_t remove(const T& id) {
-        debug << "--- Task " << id.decode() << " removed from task queue" << endl;
-        // The signature here is arbitrary, and won't be exposed.
-        return set(id, EC(3, 0));
-    }
+	template<typename T>
+	forceinline value_coded_t remove(const T& id) {
+		// The signature here is arbitrary, and won't be exposed.
+		return set(id, EC(3, 0));
+	}
 
-    template<typename T, typename S>
-    forceinline value_coded_t promote(const T& id, const S& newprio) {
-        debug << "^^^ Promoting task " << id.decode() << " to priority " << newprio.decode() << endl;
+	template<typename T, typename S>
+	forceinline value_coded_t promote(const T& id, const S& newprio) {
 
-        return set(id, newprio);
-    }
+		return set(id, newprio);
+	}
 
 	void dump() {
 		{{{snippet:dump_entry:name|debug << "%(name)s: " << %(name)s.decode() << endl;
 }}}
 		{{{generate:task_set_call:dump_entry}}}
 	}
-    /* unused by scheduler
-    template<typename T, typename S>
-    forceinline value_coded_t dequeue(T& id, S& prio) {
-        static value_coded_t sig1;
+	/* unused by scheduler
+	template<typename T, typename S>
+	forceinline value_coded_t dequeue(T& id, S& prio) {
+		static value_coded_t sig1;
 
-        sig1 = head(id, prio);
+		sig1 = head(id, prio);
 
-        value_coded_t sig2;
-        if(prio != idle_prio) {
-            sig2 = remove(id);
-            // IDEA: set id.vc += sig2 + X; ?
-        } else {
-            // IDEA: set id.vc = sig2 + X; ?
+		value_coded_t sig2;
+		if(prio != idle_prio) {
+			sig2 = remove(id);
+			// IDEA: set id.vc += sig2 + X; ?
+		} else {
+			// IDEA: set id.vc = sig2 + X; ?
 			// The 42 here is choosen by fair dice roll
-            sig2 = 42;
-        }
+			sig2 = 42;
+		}
 
-        // TODO: more control flow checks?
+		// TODO: more control flow checks?
 
-        return sig1+sig2;
-    }
-    */
+		return sig1+sig2;
+	}
+	*/
 };
 
 constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;

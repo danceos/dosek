@@ -42,7 +42,7 @@ static const A_t A0 = 58659;
 class Encoded
 {
 public:
-	static value_coded_t encode(value_t v, A_t A, B_t B, D_t D) {
+	static constexpr value_coded_t encode(value_t v, A_t A, B_t B, D_t D) {
 		return static_cast<value_coded_t>((A*v) + B + D);
 	};
 

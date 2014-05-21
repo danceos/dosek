@@ -177,9 +177,14 @@ class SpecializedSystemCalls(FullSystemCalls):
         self.stats.add_data(self.system_graph.system_task,
                             "opt:ASTSchedule:possible-tasks", len(maybe_ready))
 
-        self.call_function(kernelspace,
-                           "scheduler_.Reschedule< %s >" % (schedule_hint),
-                           "void", [])
+        if(len(maybe_ready) > 0):
+            self.call_function(kernelspace,
+                               "scheduler_.Reschedule< %s >" % (schedule_hint),
+                               "void", [])
+        else:
+            self.call_function(kernelspace,
+                               "Machine::unreachable",
+                               "void", [])
 
     def ActivateTask(self, kernelspace, abb):
         subtask = abb.arguments[0]

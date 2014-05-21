@@ -22,7 +22,9 @@
     Machine::halt();}}
 #else
 #define assert(x) do { if((x)==0) Machine::debug_trap(); } while(0)
-// #define assert(x)
 #endif
+
+//! Compile-time assert for constants as optimized by the compiler
+#define pseudo_static_assert(A, T) { if(!(A)) { asm volatile( "assertion failed: " T ); } }
 
 #endif /* __ASSERT_H__ */

@@ -104,7 +104,7 @@ class EncodedTaskListTemplate(TaskListTemplate):
         def do(subtask):
             # Generate a new signature for this cascade step
             last_sig = self.__head_signature_vc
-            next_sig = self.generator.signature_generator.new()
+            next_sig = self.generator.signature_generator.new() % 71
             self.__head_signature_vc = next_sig
             do.i += 1
             return self.expand_snippet("head_update_max",

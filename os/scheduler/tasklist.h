@@ -12,6 +12,9 @@
 #include "util/assert.h"
 #include "util/encoded.h"
 
+#define SKIP_DATA_ASSERTS 1
+#define SKIP_CONTROL_ASSERTS 1
+
 namespace os {
 namespace scheduler {
 
@@ -19,48 +22,43 @@ namespace scheduler {
 class TaskListStatic {
 public:
 	// Effect: (a,x) = max{((a,x), (b,y)} with (a,x) <= (b,y) <=> a <= b
-	// subtracts signature B0 from a,x and adds signature B1 to catch lost updates
-	template<B_t B0, B_t B1, typename T, typename S, typename U, typename V>
-	forceinline value_coded_t updateMax(T& a, const S& b, U& x, const V& y) const {
-		static_assert(S::B > T::B, "signature of b must be greater than signature of a");
-
-		// control flow signature
-		value_coded_t result;
-
-		// check correct a,x after subtracting signature B0
-		assert((a.vc - B0 - T::B - a.getD()) % T::A == 0);
-		assert((x.vc - B0 - U::B - x.getD()) % U::A == 0);
+	// subtracts signature B0 from a,x and adds signature sig to catch lost updates
+	template<typename CP, typename OP, typename CI, typename OI>
+	forceinline void updateMax(B_t& sigPrio, B_t& sigId, const B_t sig,
+			CP * const current_prio, const OP & other_prio,
+			CI * const current_id, const OI & other_id) const {
+		pseudo_static_assert(other_prio.getB() > sigPrio,  "signature of b must be greater than signature of a");
+		asm_label("updateMax");
 
 		// unencoded comparison
-		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
+		bool result;
+		result = (current_prio->vc - sigPrio) <= (other_prio.vc - other_prio.getB());
 
 		// encoded check of comparison
-		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
-		                                         // this<=t => diff = t.vc - vc
-		static const volatile A_t ta = T::A; // prevent % -> *,>>,+ optimization
+		// a>b  => diff = 2^32 - (a.vc - b.vc)
+		// a<=b => diff = b.vc - a.vc
+		value_coded_t diff = other_prio.vc - current_prio->vc;
+		static const volatile A_t ta = CP::A; // prevent % -> *,>>,+ optimization
 		value_coded_t sigCond = diff % ta;
-		const value_coded_t sigPos = S::B - T::B;
-		const value_coded_t sigNeg = (T::MAXMODA + sigPos) % T::A;
+		const value_coded_t sigPos = other_prio.getB() - sigPrio;
+		const value_coded_t sigNeg = (CP::MAXMODA + sigPos) % CP::A;
+		pseudo_static_assert(sigPos != sigNeg, "sigPos and sigNeg must differ");
 
 		if(result) {
-			// a=b, x=y with added signature B1
-			a.vc = b.vc + (T::B - S::B) + B1;
-			x.vc = y.vc + (U::B - V::B) + B1;
-
-			// set control flow signature (expected: sigCond == sigPos)
-			result += (T::A - 1) + B1;
+			current_prio->vc = sigPrio + (other_prio.vc - other_prio.getB()) + sig - sigPos;
+			current_id->vc = sigId + other_id.vc + sig;
 		} else {
-			// remove old B-1, add new B signature to "unmodified" a,x
-			a.vc = a.vc - B0 + B1;
-			x.vc = x.vc - B0 + B1;
-
-			// set control flow signature (expected: sigCond == sigNeg)
-			result += (sigPos - sigNeg) + B1;
+			current_prio->vc += (sigPos - sigNeg) + (sig - sigPos);
+			current_id->vc += (sigPos - sigNeg) + other_id.getB() + sig;
 		}
 
 		// return finished control flow signature
-		result += sigCond;
-		return result;
+		current_prio->vc += sigCond;
+		current_id->vc += sigCond;
+
+		//return sig + sigCond;
+		sigPrio += sig;
+		sigId += sig + sigPos + other_id.getB();
 	}
 
 	// Effect: a = max{a, b} with a <= b
@@ -72,14 +70,16 @@ public:
 		value_coded_t result;
 
 		// check correct a,x after subtracting signature B0
+		#ifndef SKIP_DATA_ASSERTS
 		assert((a.vc - B0 - T::B - a.getD()) % T::A == 0);
+		#endif
 
 		// unencoded comparison
 		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
 
 		// encoded check of comparison
 		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
-		                                         // this<=t => diff = t.vc - vc
+												 // this<=t => diff = t.vc - vc
 		static const volatile A_t ta = T::A; // prevent % -> *,>>,+ optimization
 		value_coded_t sigCond = diff % ta;
 		const value_coded_t sigPos = S::B - T::B;

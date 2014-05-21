@@ -16,8 +16,10 @@ struct SchedulerTargetHint {
 struct Scheduler  {
     os::scheduler::TaskList tlist;
 
-    Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
-    Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
+    //Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
+    //Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
+    Encoded_Static<A0, 121> current_prio;
+    Encoded_Static<A0, 127> current_task;
 
     static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{generate:scheduler_prio}}});
 
@@ -31,6 +33,8 @@ struct Scheduler  {
             // set current (=next) task from task list
             tlist.head<TargetHint>(current_task, current_prio);
         }
+	assert(current_task.check());
+	assert(current_prio.check());
 
         // dispatch or enter idle
         // TODO: generated signature
