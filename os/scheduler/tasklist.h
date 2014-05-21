@@ -12,9 +12,6 @@
 #include "util/assert.h"
 #include "util/encoded.h"
 
-#define SKIP_DATA_ASSERTS 1
-#define SKIP_CONTROL_ASSERTS 1
-
 namespace os {
 namespace scheduler {
 
@@ -68,11 +65,6 @@ public:
 
 		// control flow signature
 		value_coded_t result;
-
-		// check correct a,x after subtracting signature B0
-		#ifndef SKIP_DATA_ASSERTS
-		assert((a.vc - B0 - T::B - a.getD()) % T::A == 0);
-		#endif
 
 		// unencoded comparison
 		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);

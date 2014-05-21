@@ -10,7 +10,6 @@
 #include "os/util/inline.h"
 #include "idt.h"
 #include "lapic.h"
-#include "i386.h"
 
 #define SYSENTER_CS_MSR 0x174  //!< MSR index for sysenter/sysexit kernel GDT offset
 #define SYSENTER_ESP_MSR 0x175 //!< MSR index for sysenter %esp value
@@ -38,12 +37,10 @@ forceinline void syscall(F fun) {
 	// gcc documentation says to list modified input in outputs and they must not be included
 	// in clobber list, but LLVM works only the other way ...
 
-#if SYSENTER_SYSCALL
 	// use int for direct syscalls and sysenter for normal syscalls
 	if(!direct) {
 		asm volatile(
 			"push %%ebp;" // save %ebp
-			#if PARITY_CHECKS
 			"mov %%esp, %%ecx;" // save stackptr ...
 			"popcnt %%ecx, %%edi;" // ... with odd parity ...
 			"xor $0xffffffff, %%edi;"
@@ -55,10 +52,6 @@ forceinline void syscall(F fun) {
 			"shl $0x1f, %%ecx;"
 			"or $1f, %%ecx;"
 			"push %%ecx;" // .. on stack
-			#else
-			"mov %%esp, %%edi;"
-			"push $1f;"
-			#endif
 			"sysenter;" // start syscall
 			"1: pop %%ebp" // return address: restore %ebp
 			:: "d"(fun)
@@ -68,10 +61,6 @@ forceinline void syscall(F fun) {
 		asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun) :
 			"ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
 	}
-#else // SYSENTER_SYSCALL
-	asm volatile("push %%ebp; int %0; pop %%ebp" :: "i"(IRQ_SYSCALL), "d"(fun), "c"(direct) :
-				 "ebx", "ecx", "eax", "edx", "ebp", "esi", "edi", "cc", "memory");
-#endif // SYSENTER_SYSCALL
 }
 
 template<bool direct=false, typename F, typename A>
