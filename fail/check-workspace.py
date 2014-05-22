@@ -26,7 +26,7 @@ def parseArgs():
 
 def main(options, args):
     # run git describe to get dirty status and hash
-    command = [options.git, "describe", "--always", "--dirty"]
+    command = [options.git, "describe", "--always", "--dirty", "--match=nEvEr-MaTcH"]
     p = Popen(command, stdout=PIPE, cwd=options.workspace)
 
     (stdout, stderr) = p.communicate(None)
