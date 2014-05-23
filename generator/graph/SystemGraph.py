@@ -20,10 +20,12 @@ class SystemGraph(GraphObject, PassManager):
         self.counters = []
         self.tasks = []
         self.functions = {}
+        self.all_abbs = {}
         self.label = "SystemGraph"
         self.max_abb_id = 0
         self.system = None
         self.rtsc = None
+        self.llvmpy = None
         self.alarms = []
         self.isrs = []
         self.resources = {}
@@ -44,23 +46,20 @@ class SystemGraph(GraphObject, PassManager):
         return objects
 
     def find_function(self, name):
-        return self.functions[name]
+        """
+
+        :rtype : generator.graph.Function
+        """
+        return self.functions.get(name, None)
 
     def find_abb(self, abb_id):
-        abbs = []
-        for function in self.functions.values():
-            for abb in function.abbs:
-                if abb.abb_id == abb_id:
-                    abbs.append(abb)
-        assert len(abbs) == 1
-        return abbs[0]
+        return self.all_abbs[abb_id]
+
+    def remove_abb(self, abb_id):
+        del self.all_abbs[abb_id]
 
     def get_abbs(self):
-        abbs = []
-        for function in self.functions.values():
-            for abb in function.abbs:
-                abbs.append(abb)
-        return abbs
+        return self.all_abbs.values()
 
     def get_subtasks(self):
         subtasks = []
@@ -175,6 +174,99 @@ class SystemGraph(GraphObject, PassManager):
                        if not x.is_isr]
             self.resources[sched] = Resource(self, sched, subtasks)
 
+    def read_llvmpy_analysis(self, llvmpy):
+        self.llvmpy = llvmpy
+        self.max_abb_id = 0
+
+        # Gather functions
+        for llvmfunc,llvmbbs in self.llvmpy.functions.items():
+            function = self.functions.get(llvmfunc.name)
+            if function == None:
+                # Not existing yet, just add it...
+                function = Function(llvmfunc.name)
+                self.functions[llvmfunc.name] = function
+
+            # Add llvm function object
+            function.set_llvm_function(llvmfunc)
+            # Add ABBs
+            for bb in llvmbbs:
+              abb = self.new_abb([bb])
+
+              function.add_atomic_basic_block(abb)
+              # and set entry abb
+              if bb.llvmbb is llvmfunc.entry_basic_block:
+                  function.set_entry_abb(abb)
+
+              # make it a syscall and add arguments
+              if bb.is_syscall():
+                  abb.make_it_a_syscall(bb.get_syscall(), bb.get_syscall_arguments())
+                  # Rename syscall in llvm IR, appending ABB id
+                  bb.rename_syscall(abb, llvmpy.get_source())
+
+
+        # Generate an ActivateTask for every alarm
+        for alarm in self.alarms:
+            activate_task = self.new_abb()
+            alarm.handler.add_atomic_basic_block(activate_task)
+            alarm.handler.set_entry_abb(activate_task)
+            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
+            alarm.carried_syscall = activate_task
+
+            # Statistic generation
+            self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)
+
+        # Add all implicit intra function control flow graphs
+        for functionname, func in self.functions.items():
+            for abb in func.abbs:
+                exit_bb = abb.get_exit_bb()
+                if not exit_bb:
+                    #logging.info("llvmpy_analysis, intra function CFG -> skipping: %s", abb.dump())
+                    continue
+
+                nextbbs = exit_bb.get_outgoing_nodes(E.basicblock_level)
+                for bb in nextbbs:
+                    nextabb = bb.get_parent_ABB()
+                    abb.add_cfg_edge(nextabb, E.function_level)
+
+        # Find all return blocks for functions
+        for function in self.functions.values():
+            ret_abbs = []
+            for abb in function.abbs:
+                if len(abb.get_outgoing_edges(E.function_level)) == 0:
+                    ret_abbs.append(abb)
+
+            if len(ret_abbs) == 0:
+                logging.info("Endless loop in %s", function)
+            elif len(ret_abbs) > 1:
+                # Add an artificial exit block
+                abb = self.new_abb()
+                function.add_atomic_basic_block(abb)
+                for ret in ret_abbs:
+                    ret.add_cfg_edge(abb, E.function_level)
+                function.set_exit_abb(abb)
+            else:
+                function.set_exit_abb(ret_abbs[0])
+            if isinstance(function, Subtask) and function.is_isr:
+                # All ISR function get an additional iret block
+                iret = self.new_abb()
+                function.add_atomic_basic_block(iret)
+                iret.make_it_a_syscall(S.iret, [function])
+                function.exit_abb.add_cfg_edge(iret, E.function_level)
+                function.set_exit_abb(iret)
+
+        # Gather all called Functions in the ABBs, this has to be done, after all ABBs are present
+        for abb in self.get_abbs():
+            called_funcs = set()
+            # Visit all BBs and gather all called Functions
+            for bb in abb.get_basic_blocks():
+                if bb.calls_function():
+                    callee = self.find_function(bb.calledFunc.name)
+                    if callee:
+                        called_funcs.add(callee)
+                        abb.called_functions.add(callee)
+            # Populate function level set of called functions, needed in ABBMergePass
+            abb.function.called_functions.update(called_funcs)
+
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc
         self.max_abb_id = 0
@@ -183,6 +275,8 @@ class SystemGraph(GraphObject, PassManager):
         for abb_xml in rtsc.get_abbs():
             abb = AtomicBasicBlock(self, abb_xml.id)
             self.max_abb_id = max(self.max_abb_id, abb_xml.id)
+            ## add to global abb dict for faster search
+            self.all_abbs[abb.get_id()] = abb
 
             # Get function for abb
             function = self.functions.get(abb_xml.in_function)
@@ -197,9 +291,9 @@ class SystemGraph(GraphObject, PassManager):
         # Generate an ActivateTask for every alarm
         for alarm in self.alarms:
             activate_task = self.new_abb()
-            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
             alarm.handler.add_atomic_basic_block(activate_task)
             alarm.handler.set_entry_abb(activate_task)
+            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
             alarm.carried_syscall = activate_task
 
             # Statistic generation
@@ -227,15 +321,15 @@ class SystemGraph(GraphObject, PassManager):
                 abb = self.new_abb()
                 function.add_atomic_basic_block(abb)
                 for ret in ret_abbs:
-                    ret.add_cfg_edge(abb)
+                    ret.add_cfg_edge(abb, E.function_level)
                 function.set_exit_abb(abb)
             else:
                 function.set_exit_abb(ret_abbs[0])
             if isinstance(function, Subtask) and function.is_isr:
                 # All ISR function get an additional iret block
                 iret = self.new_abb()
-                iret.make_it_a_syscall(S.iret, [function])
                 function.add_atomic_basic_block(iret)
+                iret.make_it_a_syscall(S.iret, [function])
                 function.exit_abb.add_cfg_edge(iret, E.function_level)
                 function.set_exit_abb(iret)
 
@@ -248,10 +342,11 @@ class SystemGraph(GraphObject, PassManager):
             assert abb in self.get_abbs()
         assert len(self.get_syscalls()) >= len(self.rtsc.syscalls())
 
-    def new_abb(self):
+    def new_abb(self, bbs=[]):
         self.max_abb_id += 1
-        return AtomicBasicBlock(self, self.max_abb_id)
-
+        abb =  AtomicBasicBlock(self, self.max_abb_id, bbs)
+        self.all_abbs[abb.get_id()] = abb
+        return abb
 
 
     def add_system_objects(self):

@@ -143,6 +143,13 @@ class Node(GraphObject):
         assert len(nodes) == 1
         return nodes[0]
 
+    def has_single_successor(self, level):
+        es = self.get_outgoing_edges(level)
+        return len(es) == 1
+
+    def has_single_predecessor(self, level):
+        es = self.get_incoming_edges(level)
+        return len(es) == 1
 
     def remove_cfg_edge(self, to_abb, level):
         self.check_edge_filter(level)
@@ -173,7 +180,8 @@ class Edge:
         self.level = level
 
     def dump_as_dot(self):
-        ret = "Node_%s -> Node_%s[minlen=3,ltail=%s,lhead=%s,label=\"%s\",color=%s];" %(
+        ret = "#%s nach %s\n" %( self.source, self.target )
+        ret += "Node_%s -> Node_%s[minlen=3,ltail=%s,lhead=%s,label=\"%s\",color=%s];" %(
             self.source.graph_dot_id(),
             self.target.graph_dot_id(),
             self.source.graph_dot_id(),
@@ -195,7 +203,7 @@ class Edge:
 def dfs(block_functor, take_edge_functor, start_abbs):
     """Performs a depth first search. It first executes block_functor on a
        block, then collects all outgoing edges, that satisfy the
-       take_edge_functor. All child blocks are visitied in the
+       take_edge_functor. All child blocks are visited in the
        same manner. No block is visited more than once. The DFS
        starts with the list of start_abs blocks.
 
@@ -226,7 +234,7 @@ def dfs(block_functor, take_edge_functor, start_abbs):
             working_stack.push((edge, child))
             visited.add(child)
 
-class FixpointIteraton:
+class FixpointIteration:
     def __init__(self, starting_objects):
         # Start fixpoint iteration with those objects
         self.working_stack = list(reversed(starting_objects))

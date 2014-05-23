@@ -1,4 +1,4 @@
-from generator.graph.Analysis import Analysis, FixpointIteraton
+from generator.graph.Analysis import Analysis, FixpointIteration
 from generator.graph.AtomicBasicBlock import E, S
 from collections import namedtuple
 
@@ -73,7 +73,7 @@ class DynamicPriorityAnalysis(Analysis):
 
         for resource in self.system_graph.resources.values():
             self.__res = resource
-            fixpoint = FixpointIteraton(start_basic_blocks)
+            fixpoint = FixpointIteration(start_basic_blocks)
             fixpoint.do(self.block_functor)
 
         # Here we assert that for every resource we know exactly

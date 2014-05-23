@@ -2,6 +2,7 @@ import logging
 import sys
 from generator.graph.common import *
 from generator.graph.AtomicBasicBlock import E, S
+from collections import defaultdict
 import copy
 
 class Analysis:
@@ -63,7 +64,7 @@ class Analysis:
 
 class EnsureComputationBlocks(Analysis):
     """This pass ensures that every system call is surrounded by a
-    computation block. This is nessecary to model alarms/interupts and
+    computation block. This is necessary to model alarms/interrupts and
     other sporadic events, since they can only be take place in those blocks"""
 
     def __init__(self):
@@ -73,17 +74,17 @@ class EnsureComputationBlocks(Analysis):
         return set([E.function_level])
 
     def add_before(self, abb):
-        nessecary = False
+        necessary = False
         if len (abb.get_incoming_nodes(E.function_level)) > 1:
-            nessecary = True
+            necessary = True
         elif len (abb.get_incoming_nodes(E.function_level)) == 1:
             if not abb.definite_before(E.function_level).isA(S.computation):
-                nessecary = True
+                necessary = True
         else:
             assert abb.function.entry_abb == abb
-            nessecary = True
+            necessary = True
 
-        if not nessecary:
+        if not necessary:
             return
 
         new = self.system_graph.new_abb()
@@ -98,16 +99,16 @@ class EnsureComputationBlocks(Analysis):
         new.add_cfg_edge(abb, E.function_level)
 
     def add_after(self, abb):
-        nessecary = False
+        necessary = False
         if len (abb.get_outgoing_nodes(E.function_level)) > 1:
-            nessecary = True
+            necessary = True
         elif len (abb.get_outgoing_nodes(E.function_level)) == 1 \
              and not abb.definite_after(E.function_level).isA(S.computation):
-            nessecary = True
+            necessary = True
         elif len (abb.get_outgoing_nodes(E.function_level)) == 0:
-            nessecary = True
+            necessary = True
 
-        if not nessecary:
+        if not necessary:
             return
         #print "add_after", abb
         new = self.system_graph.new_abb()
@@ -147,8 +148,8 @@ class EnsureComputationBlocks(Analysis):
 
             assert not subtask.is_real_thread(), "Should not happen with new EAG version (InsertKickoffSyscalls)"
             kickoff = self.system_graph.new_abb()
-            kickoff.make_it_a_syscall(S.kickoff, [subtask])
             subtask.add_atomic_basic_block(kickoff)
+            kickoff.make_it_a_syscall(S.kickoff, [subtask])
             kickoff.add_cfg_edge(subtask.entry_abb, E.function_level)
             subtask.set_entry_abb(kickoff)
 
@@ -183,32 +184,27 @@ class CurrentRunningSubtask(Analysis):
 
     def block_functor(self, fixpoint, abb):
         # Gather all task objects from incoming edges
-        possible_running_tasks = set(self.values.get(abb, []))
-        changed = False
-        for incoming in abb.get_incoming_nodes(E.task_level):
-            # Possible running task from incoming edges
-            for x in self.values.get(incoming, []):
-                if not x in possible_running_tasks:
-                    changed = True
-                    possible_running_tasks.add(x)
-        if changed:
-            self.values[abb] = possible_running_tasks
-            # New task have been added -> revisit child blocks
-            fixpoint.enqueue_soon(items = abb.get_outgoing_nodes(E.task_level))
+        possible_running_tasks = set(self.values[abb])
+        for outgoing in abb.get_outgoing_nodes(E.task_level):
+            successors =  set(self.values[outgoing])
+            if not possible_running_tasks.issubset(successors):
+                self.values[outgoing] += possible_running_tasks
+                fixpoint.enqueue_soon(outgoing)
 
     def do(self):
         start_basic_blocks = []
         # AtomicBasicBlock -> set([Subtask])
-        self.values = {}
+        self.values = defaultdict(list)
         # All Atomic basic blocks have a start value
         for task in self.system_graph.tasks:
             for subtask in task.subtasks:
                 # Start DFS at all entry nodes
                 self.values[subtask.entry_abb] = set([subtask])
-                start_basic_blocks.extend(subtask.entry_abb.get_outgoing_nodes(E.task_level))
+                #start_basic_blocks.extend(subtask.entry_abb.get_outgoing_nodes(E.task_level))
+                start_basic_blocks.append(subtask.entry_abb)
 
 
-        fixpoint = FixpointIteraton(start_basic_blocks)
+        fixpoint = FixpointIteration(start_basic_blocks)
         fixpoint.do(self.block_functor)
 
 class MoveFunctionsToTask(Analysis):
@@ -237,6 +233,8 @@ class MoveFunctionsToTask(Analysis):
 
             if subtask:
                 self.stats.add_child(subtask, "abb", abb)
+            else:
+                assert abb.isA(S.computation) or abb.isA(S.StartOS)
 
 
 

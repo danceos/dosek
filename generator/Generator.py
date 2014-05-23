@@ -112,7 +112,7 @@ class Generator:
         self.arch_rules.generate_dataobjects()
         self.os_rules.generate_dataobjects()
 
-        # Generate all nessecary code elements for the system (except
+        # Generate all necessary code elements for the system (except
         # the concrete calls from the application
         self.os_rules.generate_system_code()
 
@@ -123,7 +123,7 @@ class Generator:
             os_main.add( FunctionCall("StartOS", ["0"]) )
             self.source_file.function_manager.add(os_main)
 
-        # Generate a StartOS function and delegate it to the OS ruleset
+        # Generate a StartOS function and delegate it to the OS rule set
         StartOS = Function("StartOS", "void", ["int"], extern_c = True)
         self.objects["StartOS"] = StartOS
         self.syscall_rules.StartOS(StartOS)

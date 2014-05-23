@@ -101,7 +101,7 @@ find_program(PYLINT /proj/i4danceos/tools/pylint/pylint pylint)
 if(PYLINT)
   add_custom_command(
 	  COMMAND find ./ -iname \"*.py\" | PYTHONPATH=${PROJECT_SOURCE_DIR} xargs ${PYLINT} 
-        --msg-template=\"{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}\"
+        --msg-template=\"{path}:{line}: [{msg_id}({symbol}) , {obj}] {msg}\"
 		--rcfile=${PROJECT_SOURCE_DIR}/static_analysis/pylint.rc
 		   > ${PROJECT_BINARY_DIR}/pylint.txt
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/generator

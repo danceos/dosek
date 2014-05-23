@@ -6,8 +6,8 @@ def after_ConstructGlobalCFG(analysis):
     (H1, H2, H3, H4, H5, Idle, StartOS) = \
        get_functions(analysis.system_graph, ["H1", "H2", "H3", "H4", "H5", "Idle", "StartOS"])
 
-    assert count_protected_abbs(analysis, H5, [H3]) == 1, \
-        "The should be 3 protected block"
+    assert count_protected_abbs(analysis, H5, [H3]) == 3, \
+        "The should be three protected block"
 
     assert count_protected_abbs(analysis, H3, []) == 0, \
         "The should be one protected block"

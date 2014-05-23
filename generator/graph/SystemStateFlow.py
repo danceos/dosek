@@ -161,7 +161,7 @@ class SystemStateFlow(Analysis):
         self.install_sporadic_events()
 
         entry_abb = self.system_graph.functions["StartOS"].entry_abb
-        self.fixpoint = FixpointIteraton([entry_abb])
+        self.fixpoint = FixpointIteration([entry_abb])
         self.fixpoint.do(self.block_functor)
 
         # Fixup StartOS Node, otherwise usage of this pointer gets more complicated
@@ -326,7 +326,7 @@ class SSF_SporadicEvent(SporadicEvent):
         self.edge_states = dict()
         self.before_abb_states = dict()
 
-        self.fixpoint = FixpointIteraton([entry_abb])
+        self.fixpoint = FixpointIteration([entry_abb])
         self.fixpoint.do(self.block_functor)
 
         # fixup current running abb for entry_abb

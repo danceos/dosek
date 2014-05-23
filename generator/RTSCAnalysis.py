@@ -53,7 +53,7 @@ system call: Who called it? In which ABB?"""
                 deps.append(dep)
         return deps
 
-    def get_calls(self):
+    def get_calls(self, graph = None):
         # Gather all ABB xml nodes under <abbgraph>
         calls = []
         for call_xml in self.rtsc_dom.xpath('*[local-name()=\'functioncall\']'):

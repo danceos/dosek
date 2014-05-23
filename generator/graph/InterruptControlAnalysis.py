@@ -1,4 +1,4 @@
-from generator.graph.Analysis import Analysis, FixpointIteraton
+from generator.graph.Analysis import Analysis, FixpointIteration
 from generator.graph.AtomicBasicBlock import E, S
 from generator.tools import panic
 
@@ -71,7 +71,7 @@ class InterruptControlAnalysis(Analysis):
             if "Interrupts" in abb.syscall_type.name:
                 start_basic_blocks.append(abb)
 
-        fixpoint = FixpointIteraton(start_basic_blocks)
+        fixpoint = FixpointIteration(start_basic_blocks)
         fixpoint.do(self.block_functor)
 
         for abb in self.system_graph.get_abbs():

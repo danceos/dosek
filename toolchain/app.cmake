@@ -33,11 +33,16 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
     set(DEFINITON_FLAGS ${DEFINITON_FLAGS} -D${DEF})
   endforeach()
 
+  # Fix whitespace escaping in CXX FLAGS
+  string(REPLACE " " ";" COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
+
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
     set(llvm_bytecode "${COREDOS_OUTPUT_DIR}/${src}.ll")
     add_custom_command(OUTPUT ${llvm_bytecode}
-      COMMAND ${CLANGPP_BINARY} -S -emit-llvm -O0 -m32 -std=c++11 ${ISA_CXX_FLAGS} ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
+        COMMAND ${CMAKE_C_COMPILER}
+        ARGS ${COMPILER_FLAGS}
+        ARGS  -S -emit-llvm -O0 -m32 -std=c++11 ${ISA_CXX_FLAGS} ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
       MAIN_DEPENDENCY ${src}
       DEPENDS ${src}
       IMPLICIT_DEPENDS CXX ${CMAKE_CURRENT_SOURCE_DIR}/${src}
@@ -46,23 +51,23 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
     list(APPEND COREDOS_BINARY_LLVM_BYTECODE ${llvm_bytecode})
   endforeach(src)
 
-  # Use RTSC to analyze and merge the source system bytecode
-  add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM}"
-  DEPENDS ${COREDOS_ANNOTATE_OBJECT}
-            ${COREDOS_BINARY_LLVM_BYTECODE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
-  COMMAND ${EAG_BINARY} -data-deps=explicit -verify
-     -sysann=${COREDOS_ANNOTATE_OBJECT}
-     -sourcesystem=${SYSTEM_XML}
-     -out=${COREDOS_OUTPUT_DIR}
-     -analyze-tasks -dump-source-system
-       -dump-graphs
-     ${COREDOS_BINARY_LLVM_BYTECODE}
-    COMMENT "[${PROJECT_NAME}/${NAME}] Analyzing application with RTSC")
-
-  # Add Target for the analysis step
-  add_custom_target(${NAME}-rtsc-analyze
-  DEPENDS ${COREDOS_SOURCE_SYSTEM})
+  #  # Use RTSC to analyze and merge the source system bytecode
+  #  add_custom_command(OUTPUT "${COREDOS_SOURCE_SYSTEM}"
+  #  DEPENDS ${COREDOS_ANNOTATE_OBJECT}
+  #            ${COREDOS_BINARY_LLVM_BYTECODE}
+  #            ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
+  #  COMMAND ${EAG_BINARY} -data-deps=explicit -verify
+  #     -sysann=${COREDOS_ANNOTATE_OBJECT}
+  #     -sourcesystem=${SYSTEM_XML}
+  #     -out=${COREDOS_OUTPUT_DIR}
+  #     -analyze-tasks -dump-source-system
+  #       -dump-graphs
+  #     ${COREDOS_BINARY_LLVM_BYTECODE}
+  #    COMMENT "[${PROJECT_NAME}/${NAME}] Analyzing application with RTSC")
+  #
+  #  # Add Target for the analysis step
+  #  add_custom_target(${NAME}-rtsc-analyze
+  #  DEPENDS ${COREDOS_SOURCE_SYSTEM})
 
 
   # All python source files are a dependency
@@ -84,18 +89,20 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
     set(COREDOS_GENERATOR_ARGS ${COREDOS_GENERATOR_ARGS} --unencoded)
   endif()
 
-if(SPECIALIZE_SYSTEMCALLS)
+  if(SPECIALIZE_SYSTEMCALLS)
     set(COREDOS_GENERATOR_ARGS ${COREDOS_GENERATOR_ARGS} --specialize-systemcalls)
   endif()
 
   # Generating COREDOS System
-  add_custom_command(OUTPUT "${COREDOS_GENERATED_SOURCE}" 
-  DEPENDS ${PYTHON_SOURCE} "${SYSTEM_XML}" "${COREDOS_SOURCE_SYSTEM}"
-            "${LLVM_NM_BINARY}" ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
+  add_custom_command(OUTPUT "${COREDOS_GENERATED_SOURCE}" "${COREDOS_SOURCE_SYSTEM}"
+  DEPENDS ${PYTHON_SOURCE} "${SYSTEM_XML}" ${COREDOS_BINARY_LLVM_BYTECODE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
+             ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
     COMMAND ${CMAKE_COMMAND} -E remove -f ${COREDOS_OUTPUT_DIR}/gen_*.dot
     COMMAND ${COREDOS_GENERATOR}
      --system-xml "${SYSTEM_XML}"
-       --rtsc-analyze-xml "${COREDOS_RTSC_ANALYZE_XML}"
+     --source-bytecode "${COREDOS_BINARY_LLVM_BYTECODE}"
+     --merged-bytecode "${COREDOS_SOURCE_SYSTEM}"
        --prefix ${COREDOS_OUTPUT_DIR}
        --name ${NAME}
        --template-base ${PROJECT_SOURCE_DIR}

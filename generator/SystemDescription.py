@@ -9,7 +9,7 @@ class SystemDescription:
     """The system description represents the system.xml, that describes
     the elements within the application (tasks, alarms, etc...). 
 
-    WARNING: This is only a hacky frontent for the system.xml. Use the Systemgraph for real information."""
+    WARNING: This is only a hacky frontend for the system.xml. Use the Systemgraph for real information."""
     def __init__(self, system_xml):
         self.system_xml = system_xml
         self.system_dom = objectify.parse(open(self.system_xml)).getroot()

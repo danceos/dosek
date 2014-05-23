@@ -45,7 +45,7 @@ TASK(H5) {
 
     for (counter = 0; counter < max_count; counter++) {}
     if (counter == max_count) {
-        test_trace('+');
+        test_trace('+'); 
         ResumeAllInterrupts();
         test_trace('}');
     } else {

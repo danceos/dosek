@@ -1,5 +1,5 @@
 from generator.graph.common import GraphObject, Edge
-from generator.graph.AtomicBasicBlock import S
+from generator.graph.AtomicBasicBlock import S, E
 
 class Function(GraphObject):
     def __init__(self, functionname):
@@ -11,6 +11,10 @@ class Function(GraphObject):
         self.abbs = []
         self.entry_abb = None
         self.exit_abb = None
+        self.has_syscall = False
+        self.llvm_function = None
+        self.called_functions = set()
+        self.relevant_callees = set()
 
     def graph_subobjects(self):
         return self.abbs
@@ -24,6 +28,9 @@ class Function(GraphObject):
     def get_syscalls(self):
         return [x for x in self.abbs
                 if not x.isA(S.computation)]
+
+    def set_llvm_function(self, llvm_func):
+        self.llvm_function = llvm_func
 
     def add_atomic_basic_block(self, abb):
         abb.function = self
@@ -44,13 +51,13 @@ class Function(GraphObject):
         for out in abb.outgoing_edges:
             assert out.source == abb
             target = out.target
-            abb.remove_cfg_edge(target)
+            abb.remove_cfg_edge(target, E.function_level)
 
         # Remove all incoming edges
         for incoming in abb.incoming_edges:
             assert incoming.target == abb
             source = incoming.source
-            source.remove_cfg_edge(abb)
+            source.remove_cfg_edge(abb, E.function_level)
 
 
     def __repr__(self):

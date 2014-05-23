@@ -7,6 +7,7 @@ assert __name__ == 'generator.graph'
 from generator.graph.AddFunctionCalls import AddFunctionCalls
 from generator.graph.Analysis import *
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock
+from generator.graph.ABBMergePass import ABBMergePass
 from generator.graph.ConstructGlobalCFG import ConstructGlobalCFG
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.Function import Function

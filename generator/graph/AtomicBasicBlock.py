@@ -5,6 +5,7 @@ import collections
 @unique
 class ControlFlowEdgeLevel(IntEnum):
     """All used edge types"""
+    basicblock_level = 0
     function_level = 1
     task_level = 2
     system_level = 3
@@ -18,8 +19,9 @@ class ControlFlowEdgeLevel(IntEnum):
 
     @classmethod
     def color(cls, level):
-        ret = {cls.function_level: 'green',
-               cls.task_level: 'black',
+        ret = {cls.basicblock_level: 'yellow',
+               cls.function_level: 'black',
+               cls.task_level: 'green',
                cls.system_level: 'blue',
                cls.irq_level: 'red',
                cls.state_transition: 'black',
@@ -82,14 +84,21 @@ class SyscallType(IntEnum):
     def fromString(cls, name):
         if name.startswith("OSEKOS_"):
             name = name[len("OSEKOS_"):]
-        return cls[name]
+
+        # Check if call is something else than a computiation block
+        for enumname,member in S.__members__.items():
+            if enumname == name:
+                return cls[name]
+
+        # if not a syscall, it is a computation block
+        return cls["computation"]
 
 S = SyscallType
 
 class AtomicBasicBlock(Node):
     current_edge_filter = None
 
-    def __init__(self, system_graph, abb_id):
+    def __init__(self, system_graph, abb_id, llvmbbs = []):
         Node.__init__(self, ControlFlowEdge, "ABB%d" %(abb_id), color="red")
         self.abb_id = abb_id
         self.system_graph = system_graph
@@ -97,12 +106,26 @@ class AtomicBasicBlock(Node):
 
         self.syscall_type = S.computation
         self.arguments = []
-        # This is set by the DynamicPriorityAnalysis
-        self.dynamic_priority = None
 
         # This is set by InterruptControlAnalysis
         self.interrupt_block_all = None
         self.interrupt_block_os  = None
+
+        # This is set by the DynamicPriorityAnalysis
+        self.dynamic_priority = None
+
+        # MH stuff, TODO: senseful comment
+        self.called_functions = set()
+        self.basic_blocks = llvmbbs
+
+        # entry_bb and exit_bb are not used anymore after read_llvmpy_analysis
+        self.entry_bb =  None
+        self.exit_bb  = None
+        if self.basic_blocks:
+            self.entry_bb = self.basic_blocks[0] #TODO MUSTFIX!
+            self.exit_bb  = self.basic_blocks[-1] #TODO MUSTFIX!
+            for bb in self.basic_blocks:
+                bb.set_parent_ABB(self)
 
     def isA(self, syscall_type):
         if isinstance(syscall_type, str):
@@ -111,14 +134,42 @@ class AtomicBasicBlock(Node):
             return self.syscall_type in syscall_type
         return self.syscall_type == syscall_type
 
+    def is_mergeable(self):
+        ''' An ABB is mergeable if it is a computation block AND any called function does not call some syscall'''
+        #return self.isA(S.computation) and len([x for x in self.relevant_callees if x.has_syscall]) == 0
+        return self.isA(S.computation) and len(self.relevant_callees) == 0
+
+    @property
+    def relevant_callees(self):
+        return [x for x in self.called_functions if x.has_syscall]
+
+
     @property
     def interrupt_block(self):
         return self.interrupt_block_all or self.interrupt_block_os
 
+    def get_id(self):
+        return self.abb_id
+
+    def get_basic_blocks(self):
+        return self.basic_blocks
+
+    def get_exit_bb(self):
+        return self.exit_bb
+
+    def set_entry_bb(self, bb):
+        assert(bb in self.basic_blocks)
+        self.entry_abb = bb
+
+    def set_exit_bb(self, bb):
+        assert(bb in self.basic_blocks)
+        self.exit_abb = bb
 
     def make_it_a_syscall(self, syscall_type, arguments):
         assert isinstance(syscall_type, SyscallType)
         self.syscall_type = syscall_type
+        # Mark the parent function accordingly
+        self.function.has_syscall = True
         args = []
         # Make the string arguments references to system objects
         for x in arguments:
@@ -140,13 +191,19 @@ class AtomicBasicBlock(Node):
         assert self.system_graph.find_abb(self.abb_id) == self
         assert self.function != None
         assert self in self.function.abbs
+
         for edge in self.outgoing_edges:
             # Target Edge can be found
             assert self.system_graph.find_abb(edge.target.abb_id) == edge.target
+            if edge.isA(E.task_level):
+                assert edge.target.function.has_syscall, str(edge)
         for edge in self.incoming_edges:
             # Source abb can be found
-            assert self.system_graph.find_abb(edge.source.abb_id) == edge.source
+            assert self.system_graph.find_abb(edge.source.abb_id) == edge.source, \
+                "%s -> %s" %(edge, self)
 
+    def id(self):
+        return self.abb_id
 
     def dump(self):
         task = None
