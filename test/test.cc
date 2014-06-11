@@ -26,4 +26,39 @@ extern "C" {
             kout << endl;
         }
     }
+
+    noinline void test_trace_dump(void) {
+        kout << "traced: ";
+        for (unsigned char i = 0; i < trace_table_idx; i++) {
+            kout << trace_table[i];
+        }
+    }
+
+    noinline void test_trace_assert(const char *expected) {
+        int good = 1;
+        unsigned char count = 0;
+
+        test_start_check();
+
+        for (; expected[count] != 0 && count < 255; count++) {}
+        if (count != trace_table_idx) {
+            kout << "trace length != expected " << (int) trace_table_idx << endl;
+            good = 0;
+        } else {
+            for (unsigned char i = 0; i < trace_table_idx; i++) {
+                if (trace_table[i] != expected[i]) {
+                    kout << "too unqeual: " <<  trace_table[i] << " at " << (int)i <<endl;
+                    good = 0;
+                    break;
+                }
+            }
+        }
+
+        kout << "expect: " << expected << endl;
+        test_trace_dump();
+        kout << endl;
+
+        test_assert(good);
+        test_positive_tests_gt(0);
+    }
 }
