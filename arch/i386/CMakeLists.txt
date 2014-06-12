@@ -35,7 +35,10 @@ endif()
 
 # setup x86-32 specific sources
 set(SRCS
-    constructors.cc
+	mp_startup.cc
+	mp_startup.s
+	mp.s
+	constructors.cc
 	startup.cc
 	startup.s
 	gdt.cc

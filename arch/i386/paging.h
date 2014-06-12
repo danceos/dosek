@@ -154,6 +154,28 @@ public:
 	static inline void switch_task(uint32_t id) {
 		PageDirectory::enable(*pagedirs[id]);
 	}
+
+	/** \brief Disables paging (without removing the current page directory
+	 *  from the register)
+	 *
+	 *  \return true if the MMU was previously enabled, false otherwise
+	 **/
+	static inline bool disable() {
+		unsigned int cr0;
+		asm volatile("mov %%cr0, %0": "=b"(cr0));
+		bool enabled = ((cr0 & 0x80000000) != 0) ? true : false;
+		cr0 &= ~0x80000000;
+		asm volatile("mov %0, %%cr0":: "b"(cr0));
+		return enabled;
+	}
+
+	/** \brief Enables paging (without altering the page directory) */
+	static inline void enable() {
+		unsigned int cr0;
+		asm volatile("mov %%cr0, %0": "=b"(cr0));
+		cr0 |= 0x80000000;
+		asm volatile("mov %0, %%cr0":: "b"(cr0));
+	}
 };
 
 }
