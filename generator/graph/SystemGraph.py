@@ -66,7 +66,7 @@ class SystemGraph(GraphObject, PassManager):
         subtasks = []
         for x in self.tasks:
             subtasks.extend(x.subtasks)
-        return subtasks
+        return sorted(subtasks, key=lambda t: t.name)
 
     def get_subtask(self, name):
         for x in self.tasks:
