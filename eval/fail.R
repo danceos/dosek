@@ -141,16 +141,27 @@ for(enc in levels(fail$fencoded)) {
 		}
 
 		# read statistic tables
-		acts <- read.table(paste(variant, "-", benchmark, "-", enc, "-", mpu, "-activations.stats", sep=""), header=TRUE, sep="\t")
-		acts$encoded <- enc
-		acts$mpu <- mpu
-		acts$opts <- paste(enc, mpu)
-		activations <- rbind(activations, acts)
-		csize <- read.table(paste(variant, "-", benchmark, "-", enc, "-", mpu, "-codesize.stats", sep=""), header=TRUE, sep="\t")
-		csize$encoded <- enc
-		csize$mpu <- mpu
-		csize$opts <- paste(enc, mpu)
-		codesize <- rbind(codesize, csize)
+		activations_stats_file <- paste(variant, "-", benchmark, "-", enc, "-", mpu, "-activations.stats", sep="")
+		if(file.exists(activations_stats_file)) {
+			acts <- read.table(activations_stats_file, header=TRUE, sep="\t")
+			if(length(acts$cycles) > 0) {
+				acts$encoded <- enc
+				acts$mpu <- mpu
+				acts$opts <- paste(enc, mpu)
+				activations <- rbind(activations, acts)
+			}
+		}
+
+		codesize_stats_file <- paste(variant, "-", benchmark, "-", enc, "-", mpu, "-codesize.stats", sep="")
+		if(file.exists(codesize_stats_file)) {
+			csize <- read.table(codesize_stats_file, header=TRUE, sep="\t")
+			if(length(csize$codesize) > 0) {
+				csize$encoded <- enc
+				csize$mpu <- mpu
+				csize$opts <- paste(enc, mpu)
+				codesize <- rbind(codesize, csize)
+			}
+		}
 	}
 }
 
