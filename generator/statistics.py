@@ -78,6 +78,10 @@ class Statistics:
                 ret[k] = v
         return ret
 
+    def find_one(self, _type):
+        ret = self.find_all(_type)
+        assert len(ret) == 1
+        return ret.values()[0]
 
     @staticmethod
     def load(filename):

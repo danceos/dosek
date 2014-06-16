@@ -150,7 +150,8 @@ class ConstructGlobalCFG(Analysis):
         self.system_graph.stats.add_data(self, "subtask-count", subtask_count, scalar = True)
 
         # ISR Count
-        self.stats.add_data(self, "isr-count", len(self.system_graph.isrs), scalar = True)
+        self.stats.add_data(self, "isr-count",
+                            len(self.system_graph.isrs+self.system_graph.alarms), scalar = True)
 
         # Describe the removed edges
         self.stats.add_data(self, "removed-edges", []) # empty List
