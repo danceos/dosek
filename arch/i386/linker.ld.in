@@ -119,17 +119,12 @@ SECTIONS {
         {{{generate:task_code_regions}}}
         _etext_application = .;
 
-        /* remaining code */
+        /* remaining code and rodata*/
         . = ALIGN(0x1000);
         _stext = .;
         *(".text*")
-        _etext = .;
-
-        /* remaining rodata */
-        /*. = ALIGN(0x1000);*/
-        _srodata = .;
         *(".rodata*")
-        _erodata = .;
+        _etext = .;
     }
 
     /* Page tables and directories */
