@@ -124,7 +124,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.Idle            : scc.do_Idle,
                             S.iret            : scc.do_TerminateTask}
 
-        # Instanciate the big dict (State->[State])
+        # Instanciate the big dict (State->State)
         self.states = {}
 
         entry_abb = self.system_graph.functions["StartOS"].entry_abb
@@ -138,8 +138,13 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         self.working_stack.push(before_StartOS)
 
         while not self.working_stack.isEmpty():
+            # Current is a system state
             current = self.working_stack.pop()
-            assert not current in self.states
+            # State was already marked as done!
+            if current in self.states:
+                continue
+            # The current state is marked as done. This dictionary is
+            # used to translate all equal system states to a single instance/object.
             self.states[current] = current
 
             self.state_functor(current)
