@@ -21,7 +21,7 @@ class X86Arch(SimpleArch):
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
-        stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "", extern_c = True)
+        stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "")
         stackptr_arr.add_static_initializer("&startup_sp")
 
         for subtask in self.system_graph.get_subtasks():
@@ -48,7 +48,7 @@ class X86Arch(SimpleArch):
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.includes.add(Include("tcb.h"))
 
-        tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "", extern_c = True)
+        tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "")
         tcb_arr.add_static_initializer("0")
 
         for subtask in self.system_graph.get_subtasks():

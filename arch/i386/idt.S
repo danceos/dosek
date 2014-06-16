@@ -114,7 +114,7 @@ irq_handler_\num:
 	shr $16, %ebp
 	cmp %dx, %bp
 	jne 3f
-	mov OS_stackptrs(,%ebp,4), %edx # get value of OS_stackptrs[save_sp]
+	mov _ZN4arch12OS_stackptrsE(,%ebp,4), %edx # get value of OS_stackptrs[save_sp]
 	mov %ebx, (%edx) # save stack pointer to *arch::save_sp
 	and $0x7FFFFFFF, %ebx
 	mov %eax, %esp # switch back to interrupt stack

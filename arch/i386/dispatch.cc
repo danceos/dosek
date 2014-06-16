@@ -8,9 +8,9 @@
 #include "os/util/encoded.h"
 #include "lapic.h"
 
-extern "C" arch::TCB * const OS_tcbs[];
-
 namespace arch {
+
+extern TCB * const OS_tcbs[];
 
 /** \brief Startup stackpointer (save location) */
 volatile void* startup_sp = 0;

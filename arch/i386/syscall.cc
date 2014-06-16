@@ -9,9 +9,9 @@
 
 extern "C" uint8_t _estack_os;
 
-extern "C" void** OS_stackptrs[];
-
 namespace arch {
+
+extern void** OS_stackptrs[];
 
 /* Syscalls that run in userspace, this are indirect syscall, they
    are intended for longer syscalls */
