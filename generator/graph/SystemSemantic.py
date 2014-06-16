@@ -326,6 +326,35 @@ class SystemState(Node):
         is_not_entry = [subtask.entry_abb != x for x in self.get_continuations(subtask)]
         return all(is_not_entry)
 
+    # Fuzzyness indicator
+    def precision(self):
+        """Returns an number in [0.0, 1.0], that indicates the fuzzyness of
+        the system state. Rules for the generation are:
+        - task states and continuations are equaly weighted
+          - All tasks know adds a score of 0.5
+          - The more continuations there for a state, the less precise it is. 
+            The most precise it is when there is one continuation per subtask"""
+
+        subtask_score = 0
+        continuation_score = 0
+        count = float(len(self.get_unordered_subtasks()))
+        for subtask in self.get_unordered_subtasks():
+            if not self.is_unsure_ready_state(subtask):
+                subtask_score += 1
+            # If there is no continuation, we know that we have the
+            # currently running task at our hands.
+            if len(self.continuations[subtask]) == 0:
+                continuation_score += 1.0
+            else:
+                # Calculate a score that gets lower when there are more continuations
+                continuation_score += 1.0/len(self.continuations[subtask])
+
+        subtask_score = subtask_score / count
+        continuation_score = continuation_score / count
+        ret = (subtask_score + continuation_score) / 2.0
+        assert (ret >= 0.0 and ret <= 1.0)
+        return ret
+
     @property
     def current_subtask(self):
         return self.current_abb.function.subtask
@@ -440,4 +469,3 @@ class SystemState(Node):
                 ret[subtask.name] += " " + str(unwrap_seq(conts))
 
         return ret
-

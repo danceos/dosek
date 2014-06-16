@@ -177,6 +177,25 @@ class SystemStateFlow(Analysis):
         self.system_graph.stats.add_data(self, "copied-system-states",
                                          SystemState.copy_count - old_copy_count,
                                          scalar = True)
+        # Record the precision indicators for each abb
+        # Count the number of ABBs in the system the analysis works on
+        is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
+        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        precisions = []
+        for abb in abbs:
+            # Only ABBs from Subtasks
+            if not abb.function.subtask or not abb.function.subtask.is_real_thread:
+                continue
+
+            if abb in self.before_abb_states:
+                precision = self.before_abb_states[abb].precision()
+                if not abb.isA(S.StartOS):
+                    self.stats.add_data(abb, "ssf-precision", precision, scalar=True)
+                precisions.append(precision)
+            else:
+                # State will not be visited, for sure
+                precisions.append(1.0)
+        self.stats.add_data(self, "precision", precisions, scalar = True)
 
     ##
     ## Result getters for this analysis

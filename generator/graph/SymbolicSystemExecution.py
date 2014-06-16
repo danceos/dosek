@@ -155,10 +155,36 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         self.states_by_abb = group_by(self.states, "current_abb")
         logging.info(" + %d system states", len(self.states))
 
+        # Set analysis to valid, since only statistics follow from here.
+        self.valid = True
+
+        ################################################################
+        # Statistics
+        ################################################################
+
         # Record the number of copied system states
         self.system_graph.stats.add_data(self, "copied-system-states",
                                          SystemState.copy_count - old_copy_count,
                                          scalar = True)
+
+        # Record the precision indicators for each abb
+        # Count the number of ABBs in the system the analysis works on
+        is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
+        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        precisions = []
+        for abb in abbs:
+            if not abb.function.subtask or not abb.function.subtask.is_real_thread:
+                continue
+            x = self.for_abb(abb)
+            if x:
+                precision = x.state_before.precision()
+                if not abb.isA(S.StartOS):
+                    self.stats.add_data(abb, "sse-precision", precision, scalar=True)
+                precisions.append(precision)
+            else:
+                # State will not be visited, this is for sure
+                precisions.append(1.0)
+        self.stats.add_data(self, "precision", precisions, scalar = True)
 
     def transform_isr_transitions(self):
         # Special casing of sporadic events What happens here: In
