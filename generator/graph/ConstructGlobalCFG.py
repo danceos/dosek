@@ -39,7 +39,7 @@ class ConstructGlobalCFG(Analysis):
         return ret
 
     def get_edge_filter(self):
-        return set([E.state_flow, E.state_flow_irq, E.system_level])
+        return set([E.state_flow, E.state_flow_irq, E.system_level, E.task_level])
 
     def global_abb_information_provider(self):
         self.requires()
@@ -71,9 +71,14 @@ class ConstructGlobalCFG(Analysis):
 
     def do(self):
         self.removed_edges = []
+        edge_count_in_ssf = 0
+        edge_count_in_sse = 0
+
         for source_abb in self.system_graph.get_abbs():
             in_state_flow = set(self.edges_in_state_flow(source_abb))
             in_sse = set(self.edges_in_sse(source_abb))
+            edge_count_in_sse += len(in_sse)
+            edge_count_in_ssf += len(in_state_flow)
 
             # Edges found by both analyses are always good
             for target_abb in in_state_flow & in_sse:
@@ -111,3 +116,44 @@ class ConstructGlobalCFG(Analysis):
                     # edges build by symbolic execution
                     source_abb.add_cfg_edge(target_abb, E.system_level)
         logging.info(" + removed %d edges", len(self.removed_edges))
+
+        ################################################################
+        # Statistics
+        ################################################################
+
+        # Count the number of ABBs in the system the analysis works on
+        is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
+        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        self.stats.add_data(self, "abb-count", len(abbs), scalar = True)
+
+        # Record Edge Count
+        self.stats.add_data(self, "sse-edges", edge_count_in_sse, scalar=True)
+        self.stats.add_data(self, "ssf-edges", edge_count_in_ssf, scalar=True)
+
+        # Record the number of (possible) from lower to higher priority subtask
+        edge_count = 0
+        for abb1 in abbs:
+            for abb2 in abbs:
+                if abb1 in abb2.get_outgoing_nodes(E.task_level) or \
+                   (abb1.dynamic_priority and abb2.dynamic_priority and abb1.dynamic_priority > abb2.dynamic_priority):
+                    # We would a preemption edge from abb2 to abb1, if there is no natural edge
+                    edge_count += 1
+        self.stats.add_data(self, "possible-priority-edges",
+                                         edge_count, scalar = True)
+
+        # Record the number of subtasks that can be reached
+        subtask_count = 0
+        for subtask in self.system_graph.get_subtasks():
+            if subtask.is_real_thread() and \
+               len(subtask.entry_abb.get_incoming_edges(E.system_level)) > 0:
+                subtask_count += 1
+        self.system_graph.stats.add_data(self, "subtask-count", subtask_count, scalar = True)
+
+        # ISR Count
+        self.stats.add_data(self, "isr-count", len(self.system_graph.isrs), scalar = True)
+
+        # Describe the removed edges
+        self.stats.add_data(self, "removed-edges", []) # empty List
+        for edge in self.removed_edges:
+            self.stats.add_data(self, "removed-edges",
+                                (edge.source.syscall_type.name, edge.target.syscall_type.name))

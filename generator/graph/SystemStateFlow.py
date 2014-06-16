@@ -146,6 +146,8 @@ class SystemStateFlow(Analysis):
 
 
     def do(self):
+        old_copy_count = SystemState.copy_count
+
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
         # (ABB, ABB) -> SystemState
         self.edge_states = {}
@@ -170,6 +172,11 @@ class SystemStateFlow(Analysis):
                 for next_abb in abb.get_outgoing_nodes(E.state_flow_irq):
                     self.edge_states[(abb, next_abb)] \
                         = isr.collected_edge_states[(abb, next_abb)]
+
+        # Record the number of copied system states
+        self.system_graph.stats.add_data(self, "copied-system-states",
+                                         SystemState.copy_count - old_copy_count,
+                                         scalar = True)
 
     ##
     ## Result getters for this analysis

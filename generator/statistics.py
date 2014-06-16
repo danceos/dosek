@@ -16,6 +16,8 @@ class Statistics:
                 ret[str(k)] = self.__stringify(v)
         elif type(obj) == list:
             ret = map(self.__stringify, obj)
+        elif type(obj) == tuple:
+            ret = tuple(map(self.__stringify, obj))
         elif type(obj) in (int, float, str, bool):
             ret = obj
         else:
@@ -36,13 +38,20 @@ class Statistics:
         else:
             parent[category].append(child)
 
-    def add_data(self, parent, category, data):
+    def add_data(self, parent, category, data, scalar=False):
         parent_id = id(parent)
         parent = self.idx[parent_id]
-        if not category in parent:
-            parent[category] = [self.__stringify(data)]
+        if scalar:
+            assert category not in parent
+            parent[category] = data
         else:
-            parent[category].append(self.__stringify(data))
+            if not category in parent:
+                if data in ([], None):
+                    parent[category] = []
+                else:
+                    parent[category] = [self.__stringify(data)]
+            elif data != None:
+                parent[category].append(self.__stringify(data))
 
     def dump(self):
         ret = pprint.pformat(self.tree, width=150)

@@ -216,6 +216,9 @@ class SystemState(Node):
     READY = 1
     SUSPENDED = 2
 
+    # Static field that counts the system states that were created
+    copy_count = 0
+
     def __init__(self, system_graph):
         Node.__init__(self, Edge, "", color="green")
         self.system_graph = system_graph
@@ -233,6 +236,9 @@ class SystemState(Node):
         return SystemState(self.system_graph)
 
     def copy(self):
+        # Increase the copy counter
+        SystemState.copy_count += 1
+
         state = SystemState(self.system_graph)
         state.current_abb = self.current_abb
         for subtask in self.get_unordered_subtasks():

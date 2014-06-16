@@ -95,6 +95,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         return after_states
 
     def do(self):
+        old_copy_count = SystemState.copy_count
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
 
         # Instanciate a new system call semantic
@@ -148,6 +149,11 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Group States by ABB
         self.states_by_abb = group_by(self.states, "current_abb")
         logging.info(" + %d system states", len(self.states))
+
+        # Record the number of copied system states
+        self.system_graph.stats.add_data(self, "copied-system-states",
+                                         SystemState.copy_count - old_copy_count,
+                                         scalar = True)
 
     def transform_isr_transitions(self):
         # Special casing of sporadic events What happens here: In

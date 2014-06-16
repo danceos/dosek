@@ -47,6 +47,9 @@ class PassManager:
         if hasattr(analysis, "pass_alias"):
             self.passes[analysis.pass_alias] = analysis
 
+        # Add to statistics tree
+        self.stats.add_child(self, "analysis", analysis)
+
     def enqueue_analysis(self, analysis):
         if analysis in self.passes:
             analysis = self.passes[analysis]
@@ -127,12 +130,16 @@ class PassManager:
 
             # We promise to only use the specified edge types
             AtomicBasicBlock.set_edge_filter(front.get_edge_filter())
+
             # Call analyzer pass
             logging.info("PASS: %s", front.name())
             time_before = time.time()
             front.analyze()
             time_delta = time.time() - time_before
             logging.info(" + %.2f seconds", time_delta)
+
+            # Save statistic in stats tree under the analysis
+            self.stats.add_data(front, "run-time", time_delta, scalar=True)
 
             # Check graph integrity
             self.system_graph.fsck()
