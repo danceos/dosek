@@ -1,8 +1,11 @@
 from generator.graph.Function import Function
 
 class Subtask(Function):
+    subtask_id_counter = 0
     def __init__(self, system_graph, name, function_name):
         Function.__init__(self, function_name)
+        self.subtask_id = Subtask.subtask_id_counter
+        Subtask.subtask_id_counter += 1
         self.system_graph = system_graph
         self.name = name
         self.task = None

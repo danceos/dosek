@@ -97,7 +97,7 @@ class SystemCallSemantic:
                     # AddFunction pass, otherwise we would have lost
                     # the information about the abb to return to.
                     return_to = before.current_abb.definite_after(E.function_level)
-                    after.call_stack[calling_task].push(return_to)
+                    after.call_stack[calling_task.subtask_id].push(return_to)
                     # print "Call from %s -> %s" % (block, next_abb)
 
                 after.set_continuation(calling_task, next_abb)
@@ -107,8 +107,6 @@ class SystemCallSemantic:
     def do_SystemCall(self, block, before, system_calls):
         if block.syscall_type in system_calls:
             after = system_calls[block.syscall_type](block, before)
-            for x in after:
-                x.freeze()
             return after
         else:
             panic("BlockType %s is not supported yet" % block.syscall_type)
@@ -175,9 +173,15 @@ class SystemCallSemantic:
         # The possible blocks are ordered with their dynamic priority.
         # [....., Block, ....]
         # All blocks left of a block are not taken blocks
+        needcopy = (len(possible_blocks) > 1)
         for i in range(0, len(possible_blocks)):
             target = possible_blocks[i]
-            copy_state = state.copy()
+            if needcopy:
+                copy_state = state.copy()
+            else:
+                copy_state = state
+                state = None
+
             # Our target is surely running
             copy_state.set_ready(target.function.subtask)
             # The currently running subtask has no saved continuations
@@ -223,14 +227,15 @@ class SystemState(Node):
         Node.__init__(self, Edge, "", color="green")
         self.system_graph = system_graph
         self.frozen = False
-        self.states = {}
-        self.continuations = {}
-        self.call_stack = {}
+        self.states = []
+        self.continuations = []
+        self.call_stack = []
         for subtask in self.system_graph.get_subtasks():
-            self.states[subtask] = 0
-            self.continuations[subtask] = set()
-            self.call_stack[subtask] = None
+            self.states.append(0)
+            self.continuations.append(set())
+            self.call_stack.append(None)
         self.current_abb = None
+        self.__hash = None
 
     def new(self):
         return SystemState(self.system_graph)
@@ -239,16 +244,16 @@ class SystemState(Node):
         # Increase the copy counter
         SystemState.copy_count += 1
 
-        state = SystemState(self.system_graph)
+        state = self.new()
         state.current_abb = self.current_abb
+        state.states = list(self.states)
         for subtask in self.get_unordered_subtasks():
-            state.states[subtask] = self.states[subtask]
-            state.continuations[subtask] = set(self.continuations[subtask])
+            state.continuations[subtask.subtask_id] = set(self.continuations[subtask.subtask_id])
 
             # Only used by SymbolicSystemExecution
-            if not self.call_stack[subtask] is None:
-                state.call_stack[subtask] = stack(self.call_stack[subtask])
-        assert self == state
+            if not self.call_stack[subtask.subtask_id] is None:
+                state.call_stack[subtask.subtask_id] = stack(self.call_stack[subtask.subtask_id])
+        #assert self == state, repr(self) + " "  + repr(state)
         return state
 
     def get_subtasks(self):
@@ -264,54 +269,54 @@ class SystemState(Node):
 
     def set_suspended(self, subtask):
         assert not self.frozen
-        self.states[subtask] = self.SUSPENDED
+        self.states[subtask.subtask_id] = self.SUSPENDED
 
     def set_ready(self, subtask):
         assert not self.frozen
-        self.states[subtask] = self.READY
+        self.states[subtask.subtask_id] = self.READY
 
     ## Ready state accessors
 
     def is_surely_suspended(self, subtask):
-        return self.states[subtask] == self.SUSPENDED
+        return self.states[subtask.subtask_id] == self.SUSPENDED
 
     def is_surely_ready(self, subtask):
-        return self.states[subtask] == self.READY
+        return self.states[subtask.subtask_id] == self.READY
 
     def is_maybe_ready(self, subtask):
-        return self.READY & self.states[subtask]
+        return self.READY & self.states[subtask.subtask_id]
 
     def is_maybe_suspended(self, subtask):
-        return self.SUSPENDED & self.states[subtask]
+        return self.SUSPENDED & self.states[subtask.subtask_id]
 
     def is_unsure_ready_state(self, subtask):
-        return bin(self.states[subtask]).count("1") > 1
+        return bin(self.states[subtask.subtask_id]).count("1") > 1
 
     ## Continuations
     def get_continuations(self, subtask):
-        return self.continuations[subtask]
+        return self.continuations[subtask.subtask_id]
 
     def set_continuation(self, subtask, abb):
         assert not self.frozen
-        self.continuations[subtask] = set([abb])
+        self.continuations[subtask.subtask_id] = set([abb])
 
     def set_continuations(self, subtask, abbs):
         assert not self.frozen
-        self.continuations[subtask] = set(abbs)
+        self.continuations[subtask.subtask_id] = set(abbs)
 
     def remove_continuation(self, subtask, abb):
         assert not self.frozen
-        assert abb in self.continuations[subtask]
-        self.continuations[subtask].discard(abb)
+        assert abb in self.continuations[subtask.subtask_id]
+        self.continuations[subtask.subtask_id].discard(abb)
 
     def add_continuation(self, subtask, abb):
         assert not self.frozen
-        self.continuations[subtask].add(abb)
+        self.continuations[subtask.subtask_id].add(abb)
 
     def get_call_stack(self, subtask):
         assert not self.frozen
-        assert not self.call_stack[subtask] is None
-        return self.call_stack[subtask]
+        assert not self.call_stack[subtask.subtask_id] is None
+        return self.call_stack[subtask.subtask_id]
 
     ## Continuation accesors
     def was_surely_not_kickoffed(self, subtask):
@@ -343,11 +348,11 @@ class SystemState(Node):
                 subtask_score += 1
             # If there is no continuation, we know that we have the
             # currently running task at our hands.
-            if len(self.continuations[subtask]) == 0:
+            if len(self.continuations[subtask.subtask_id]) == 0:
                 continuation_score += 1.0
             else:
                 # Calculate a score that gets lower when there are more continuations
-                continuation_score += 1.0/len(self.continuations[subtask])
+                continuation_score += 1.0/len(self.continuations[subtask.subtask_id])
 
         subtask_score = subtask_score / count
         continuation_score = continuation_score / count
@@ -371,17 +376,17 @@ class SystemState(Node):
         self.current_abb = other.current_abb
         changed = False
         for subtask in self.get_unordered_subtasks():
-            old_state = self.states[subtask]
-            continuations_count = len(self.continuations[subtask])
-            self.states[subtask] |= other.states[subtask]
-            self.continuations[subtask] |= other.continuations[subtask]
+            old_state = self.states[subtask.subtask_id]
+            continuations_count = len(self.continuations[subtask.subtask_id])
+            self.states[subtask.subtask_id] |= other.states[subtask.subtask_id]
+            self.continuations[subtask.subtask_id] |= other.get_continuations(subtask)
             # Check whether one set has changed
-            if self.states[subtask] != old_state \
-               or len(self.continuations[subtask]) != continuations_count:
+            if self.states[subtask.subtask_id] != old_state \
+               or len(self.continuations[subtask.subtask_id]) != continuations_count:
                 changed = True
 
             # We cannot merge call stacks!
-            self.call_stack[subtask] = None
+            self.call_stack[subtask.subtask_id] = None
         return changed
 
     @staticmethod
@@ -404,29 +409,31 @@ class SystemState(Node):
         ret = "<SystemState: %s>\n" %(self.current_abb.path())
         for subtask in self.get_subtasks():
             ret += "  %02x%02x %s: %s in %s \n" %(
-                id(self.states[subtask]) % 256,
-                id(self.continuations[subtask]) % 256,
-                subtask, self.format_state(self.states[subtask]),
-                self.continuations[subtask])
+                id(self.states[subtask.subtask_id]) % 256,
+                id(self.continuations[subtask.subtask_id]) % 256,
+                subtask, self.format_state(self.states[subtask.subtask_id]),
+                self.continuations[subtask.subtask_id])
         ret += "</SystemState>\n"
         return ret
 
     def __hash__(self):
         assert self.frozen, "Only frozen states can be hashed"
+        if self.__hash != None:
+            return self.__hash
         ret = 0
         # XOR does comute!
         ret ^= hash(self.current_abb)
-        for state in list(self.states.values()):
+        for state in self.states:
             ret ^= hash(state)
-        for conts in list(self.continuations.values()):
+        for conts in self.continuations:
             for cont in conts:
                 ret ^= hash(cont)
-        for call_stack in list(self.call_stack.values()):
+        for call_stack in self.call_stack:
             if not call_stack:
                 continue
             for go_back in call_stack:
                 ret ^= hash(go_back)
-
+        self.__hash = ret
         return ret
 
     def __eq__(self, other):
@@ -438,15 +445,15 @@ class SystemState(Node):
         if not self.current_abb == other.current_abb:
             return False
 
-        for subtask in list(self.states.keys()):
+        for subtask_id in range(0, len(self.states)):
             # The subtask states have to equal
-            if not self.states[subtask] == other.states[subtask]:
+            if not self.states[subtask_id] == other.states[subtask_id]:
                 return False
             # The possible continuations have to be equal
-            if not self.continuations[subtask] == other.continuations[subtask]:
+            if not self.continuations[subtask_id] == other.continuations[subtask_id]:
                 return False
             # The call stack has to be equal
-            if not self.continuations[subtask] == other.continuations[subtask]:
+            if not self.call_stack[subtask_id] == other.call_stack[subtask_id]:
                 return False
 
         return True
@@ -461,7 +468,8 @@ class SystemState(Node):
 
     def dump(self):
         ret = {"ABB": str(self.current_abb)}
-        for subtask, state in self.states.items():
+        for subtask in self.get_unordered_subtasks():
+            state = self.states[subtask.subtask_id]
             ret[subtask.name] = self.format_state(state)
             conts = self.get_continuations(subtask)
             assert len(conts) <= 1
@@ -469,3 +477,183 @@ class SystemState(Node):
                 ret[subtask.name] += " " + str(unwrap_seq(conts))
 
         return ret
+
+
+class PreciseSystemState(SystemState):
+    def __init__(self, system_graph):
+        Node.__init__(self, Edge, "", color="green")
+        self.system_graph = system_graph
+        self.frozen = False
+        self.states = []
+        self.continuations = []
+        self.call_stack = []
+        for subtask in self.system_graph.get_subtasks():
+            self.states.append(0)
+            self.continuations.append(None)
+            self.call_stack.append([])
+        self.current_abb = None
+        self.__hash = None
+
+    def new(self):
+        return PreciseSystemState(self.system_graph)
+
+    def copy(self):
+        # Increase the copy counter
+        SystemState.copy_count += 1
+
+        state = self.new()
+        state.current_abb = self.current_abb
+        state.states = list(self.states)
+        state.continuations = list(self.continuations)
+
+        for subtask_id in range(0, len(self.states)):
+            state.call_stack[subtask_id] = stack(self.call_stack[subtask_id])
+
+        return state
+
+    ## Continuations
+    def get_continuations(self, subtask):
+        return set([self.continuations[subtask.subtask_id]])
+
+    def set_continuation(self, subtask, abb):
+        assert not self.frozen
+        self.continuations[subtask.subtask_id] = abb
+
+    def set_continuations(self, subtask, abbs):
+        assert not self.frozen
+        assert(len(abbs) <= 1)
+        if len(abbs) == 1:
+            self.continuations[subtask.subtask_id] = abbs[0]
+        else:
+            self.continuations[subtask.subtask_id] = None
+
+    def remove_continuation(self, subtask, abb):
+        assert not self.frozen
+        assert abb == self.continuations[subtask.subtask_id]
+        self.continuations[subtask.subtask_id] = None
+
+    def add_continuation(self, subtask, abb):
+        assert not self.frozen
+        assert self.continuations[subtask.subtask_id] in (None, abb)
+        self.continuations[subtask.subtask_id] = abb
+
+    def get_call_stack(self, subtask):
+        assert not self.frozen
+        assert not self.call_stack[subtask.subtask_id] is None
+        return self.call_stack[subtask.subtask_id]
+
+    ## Continuation accesors
+    def was_surely_not_kickoffed(self, subtask):
+        """Returns whether a task can only continue in the kickoff block."""
+        assert subtask.entry_abb.isA(S.kickoff)
+        is_entry = [subtask.entry_abb == x for x in self.get_continuations(subtask)]
+        return all(is_entry)
+
+    def was_surely_kickoffed(self, subtask):
+        """Returns whether a task can only be continued."""
+        assert subtask.entry_abb.isA(S.kickoff)
+        is_not_entry = [subtask.entry_abb != x for x in self.get_continuations(subtask)]
+        return all(is_not_entry)
+
+    # Fuzzyness indicator
+    def precision(self):
+        """Returns an number in [0.0, 1.0], that indicates the fuzzyness of
+        the system state. Rules for the generation are:
+        - task states and continuations are equaly weighted
+          - All tasks know adds a score of 0.5
+          - The more continuations there for a state, the less precise it is. 
+            The most precise it is when there is one continuation per subtask"""
+
+        subtask_score = 0
+        continuation_score = 0
+        count = float(len(self.get_unordered_subtasks()))
+        for subtask in self.get_unordered_subtasks():
+            if not self.is_unsure_ready_state(subtask):
+                subtask_score += 1
+            # If there is no continuation, we know that we have the
+            # currently running task at our hands.
+            if len(self.get_continuations[subtask.subtask_id]) == 0:
+                continuation_score += 1.0
+            else:
+                # Calculate a score that gets lower when there are more continuations
+                continuation_score += 1.0/len(self.continuations[subtask.subtask_id])
+
+        subtask_score = subtask_score / count
+        continuation_score = continuation_score / count
+        ret = (subtask_score + continuation_score) / 2.0
+        assert (ret >= 0.0 and ret <= 1.0)
+        return ret
+
+    @property
+    def current_subtask(self):
+        return self.current_abb.function.subtask
+
+    def freeze(self):
+        self.frozen = True
+
+    def merge_with(self, other):
+        """Returns a newly created state that is the result of the merge of
+           self and the other state"""
+        assert False, "Cannot merge something into a precise state"
+
+
+    def __hash__(self):
+        assert self.frozen, "Only frozen states can be hashed"
+        if self.__hash != None:
+            return self.__hash
+
+        ret = 0
+        # XOR does comute!
+        ret ^= hash(self.current_abb)
+        for state in self.states:
+            ret ^= hash(state)
+        for conts in self.continuations:
+            ret ^= hash(conts)
+        for call_stack in self.call_stack:
+            for go_back in call_stack:
+                ret ^= hash(go_back)
+        self.__hash = ret
+        return ret
+
+    def __eq__(self, other):
+        if id(self) == id(other):
+            return True
+        if not isinstance(other, SystemState):
+            return False
+        # The Currently Running Task has to be equal
+        if not self.current_abb == other.current_abb:
+            return False
+
+        for subtask_id in range(0, len(self.states)):
+            # The subtask states have to equal
+            if not self.states[subtask_id] == other.states[subtask_id]:
+                return False
+            # The possible continuations have to be equal
+            if not self.continuations[subtask_id] == other.continuations[subtask_id]:
+                return False
+            # The call stack has to be equal
+            if not self.call_stack[subtask_id] == other.call_stack[subtask_id]:
+                return False
+
+        return True
+
+    def is_definite(self):
+        for subtask in list(self.states.keys()):
+            if self.is_unsure_ready_state(subtask):
+                return False
+            if len(self.continuations[subtask]) > 1:
+                return False
+        return True
+
+    def dump(self):
+        ret = {"ABB": str(self.current_abb)}
+        for subtask in self.get_unordered_subtasks():
+            state = self.states[subtask.subtask_id]
+            ret[subtask.name] = self.format_state(state)
+            conts = self.get_continuations(subtask)
+            assert len(conts) <= 1
+            if len(conts) == 1:
+                ret[subtask.name] += " " + str(unwrap_seq(conts))
+
+        return ret
+

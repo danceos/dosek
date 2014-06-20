@@ -128,26 +128,35 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         self.states = {}
 
         entry_abb = self.system_graph.functions["StartOS"].entry_abb
-        before_StartOS = SystemState(self.system_graph)
+        before_StartOS = PreciseSystemState(self.system_graph)
         before_StartOS.current_abb = entry_abb
-        for subtask in before_StartOS.states.keys():
-            before_StartOS.call_stack[subtask] = stack()
+        for subtask in before_StartOS.get_unordered_subtasks():
+            before_StartOS.call_stack[subtask.subtask_id] = stack()
         before_StartOS.frozen = True
 
         self.working_stack = stack()
         self.working_stack.push(before_StartOS)
 
+        state_count = 0
+        ignored_count = 0
         while not self.working_stack.isEmpty():
             # Current is a system state
             current = self.working_stack.pop()
             # State was already marked as done!
             if current in self.states:
+                ignored_count += 1
                 continue
             # The current state is marked as done. This dictionary is
             # used to translate all equal system states to a single instance/object.
             self.states[current] = current
+            state_count += 1
+            if (state_count % 10000) == 0 and state_count > 0:
+                logging.info(" + already %d states (%d on stack, %d ignored)", 
+                             state_count, len(self.working_stack), ignored_count)
 
             self.state_functor(current)
+
+        logging.info(" + symbolic execution done")
 
         self.transform_isr_transitions()
 
