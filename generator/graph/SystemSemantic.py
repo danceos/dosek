@@ -9,7 +9,7 @@ class SystemCallSemantic:
         self.system_graph = system_graph
 
     def do_StartOS(self, block, before):
-        state = before.copy()
+        state = before.copy_if_needed()
         # In the StartOS node all tasks are suspended before,
         # and afterwards the idle loop and the autostarted
         # tasks are ready
@@ -23,7 +23,7 @@ class SystemCallSemantic:
         return [state]
 
     def do_ActivateTask(self, block, before):
-        after = before.copy()
+        after = before.copy_if_needed()
         # EnsureComputationBlocks ensures that after an activate task
         # only one ABB can be located
         cont = block.definite_after(E.task_level)
@@ -36,14 +36,14 @@ class SystemCallSemantic:
         return [after]
 
     def do_TerminateTask(self, block, before):
-        after = before.copy()
+        after = before.copy_if_needed()
         calling_task = self.running_task.for_abb(block)
         after.set_continuation(calling_task, calling_task.entry_abb)
         after.set_suspended(calling_task)
         return [after]
 
     def do_ChainTask(self, block, before):
-        after = before.copy()
+        after = before.copy_if_needed()
         # Suspend the current Task, this also sets the
         # continuations correctly
         calling_task = self.running_task.for_abb(block)
@@ -57,7 +57,7 @@ class SystemCallSemantic:
         return [after]
 
     def do_Idle(self, block, before):
-        after = before.copy()
+        after = before.copy_if_needed()
         # EnsureComputationBlocks ensures that after the Idle() function
         # only one ABB can be located
         cont = block.definite_after(E.task_level)
@@ -66,12 +66,11 @@ class SystemCallSemantic:
         return [after]
 
     def do_computation(self, block, before):
-        ret = []
+        next_blocks = block.get_outgoing_nodes(E.task_level)
+        ret = before.copy_if_needed(len(next_blocks))
         calling_task = self.running_task.for_abb(block)
-        for next_abb in block.get_outgoing_nodes(E.task_level):
-            after = before.copy()
-            after.set_continuation(calling_task, next_abb)
-            ret.append(after)
+        for i in range(0, len(next_blocks)):
+            ret[i].set_continuation(calling_task, next_blocks[i])
         return ret
 
     def do_computation_with_callstack(self, block, before):
@@ -79,15 +78,17 @@ class SystemCallSemantic:
 
         if block.function.exit_abb == block:
             # Function return is done from calling stack
-            after = before.copy()
+            after = before.copy_if_needed()
             next_abb = after.get_call_stack(calling_task).pop()
             after.set_continuation(calling_task, next_abb)
             # print "Return from %s -> %s" % (block, next_abb)
             return [after]
         else:
-            ret = []
-            for next_abb in block.get_outgoing_nodes(E.task_level):
-                after = before.copy()
+            next_blocks = block.get_outgoing_nodes(E.task_level)
+            ret = before.copy_if_needed(len(next_blocks))
+            for i in range(0, len(next_blocks)):
+                next_abb = next_blocks[i]
+                after = ret[i]
                 # If next abb is entry node, push the current abb
                 if next_abb.function.entry_abb == next_abb:
                     # CALL
@@ -101,7 +102,7 @@ class SystemCallSemantic:
                     # print "Call from %s -> %s" % (block, next_abb)
 
                 after.set_continuation(calling_task, next_abb)
-                ret.append(after)
+
             return ret
 
     def do_SystemCall(self, block, before, system_calls):
@@ -173,14 +174,11 @@ class SystemCallSemantic:
         # The possible blocks are ordered with their dynamic priority.
         # [....., Block, ....]
         # All blocks left of a block are not taken blocks
-        needcopy = (len(possible_blocks) > 1)
+        new_states = state.copy_if_needed(len(possible_blocks))
         for i in range(0, len(possible_blocks)):
             target = possible_blocks[i]
-            if needcopy:
-                copy_state = state.copy()
-            else:
-                copy_state = state
-                state = None
+            copy_state = new_states[i]
+            state = None # Just a guard
 
             # Our target is surely running
             copy_state.set_ready(target.function.subtask)
@@ -255,6 +253,17 @@ class SystemState(Node):
                 state.call_stack[subtask.subtask_id] = stack(self.call_stack[subtask.subtask_id])
         #assert self == state, repr(self) + " "  + repr(state)
         return state
+
+    def copy_if_needed(self, multiple=None):
+        if self.frozen:
+            if multiple != None:
+                return [self.copy() for x in range(0, multiple)]
+            else:
+                return self.copy()
+        if multiple != None:
+            return [self] + [self.copy() for x in range(1, multiple)]
+        else:
+            return self
 
     def get_subtasks(self):
         """Sorted by priority"""
@@ -343,16 +352,24 @@ class SystemState(Node):
         subtask_score = 0
         continuation_score = 0
         count = float(len(self.get_unordered_subtasks()))
+
+        # Get the system relevant system abbs
+        is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
+        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+
         for subtask in self.get_unordered_subtasks():
             if not self.is_unsure_ready_state(subtask):
                 subtask_score += 1
             # If there is no continuation, we know that we have the
             # currently running task at our hands.
-            if len(self.continuations[subtask.subtask_id]) == 0:
+            subtask_abbs = len([x for x in abbs if x.function.subtask == subtask])
+
+            conts = len(self.continuations[subtask.subtask_id])
+            if conts == 0:
                 continuation_score += 1.0
             else:
                 # Calculate a score that gets lower when there are more continuations
-                continuation_score += 1.0/len(self.continuations[subtask.subtask_id])
+                continuation_score += (subtask_abbs - conts) / (subtask_abbs - 1)
 
         subtask_score = subtask_score / count
         continuation_score = continuation_score / count

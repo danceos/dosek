@@ -172,9 +172,12 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         ################################################################
 
         # Record the number of copied system states
+        self.system_graph.stats.add_data(self, "system-states", len(self.states),
+                                         scalar = True)
         self.system_graph.stats.add_data(self, "copied-system-states",
                                          SystemState.copy_count - old_copy_count,
                                          scalar = True)
+        logging.info(" + %d system states copied", SystemState.copy_count - old_copy_count)
 
         # Record the precision indicators for each abb
         # Count the number of ABBs in the system the analysis works on

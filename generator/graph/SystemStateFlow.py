@@ -38,21 +38,23 @@ class SystemStateFlow(Analysis):
         return set([E.task_level, E.state_flow, E.state_flow_irq])
 
     @staticmethod
-    def merge_inputs(edge_states, block, edge_type):
-        input_abbs = block.get_incoming_nodes(edge_type)
-        input_states = [edge_states[(source, block)]
-                        for source in input_abbs]
-        return SystemState.merge_many(block.system_graph, input_states)
-
-    @staticmethod
     def update_before_state(edge_states, before_state_dict, block, edge_type):
-        before = SystemStateFlow.merge_inputs(edge_states, block, edge_type)
+        input_abbs = block.get_incoming_nodes(edge_type)
+        input_states = [edge_states[(source, block)] for source in input_abbs]
+        before = SystemState.merge_many(block.system_graph, input_states)
+
         changed = False
         if not block in before_state_dict:
-            before_state_dict[block] = before
+            assert not before.frozen
+            before_state_dict[block] = before.copy()
+            before_state_dict[block].freeze()
             changed = True
         else:
+            before_state_dict[block].frozen = False
             changed = before_state_dict[block].merge_with(before)
+            before_state_dict[block].frozen = True
+            before = before_state_dict[block]
+
         return changed, before
 
     def set_state_on_edge(self, source, target, state):
@@ -177,6 +179,7 @@ class SystemStateFlow(Analysis):
         self.system_graph.stats.add_data(self, "copied-system-states",
                                          SystemState.copy_count - old_copy_count,
                                          scalar = True)
+        logging.info(" + %d system states copied", SystemState.copy_count - old_copy_count)
         # Record the precision indicators for each abb
         # Count the number of ABBs in the system the analysis works on
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
@@ -306,12 +309,14 @@ class SSF_SporadicEvent(SporadicEvent):
     def trigger(self, state):
         SporadicEvent.trigger(self, state)
         self.result = state.new()
-        self.start_state = state
+        self.start_state = state.copy_if_needed()
+        state = None
         entry_abb = self.wrapped_event.handler.entry_abb
 
         # Save current IP
-        current_subtask = state.current_abb.function.subtask
-        state.set_continuation(current_subtask, state.current_abb)
+        current_subtask = self.start_state.current_abb.function.subtask
+        current_abb     = self.start_state.current_abb
+        self.start_state.set_continuation(current_subtask, current_abb)
 
         # Clean old IRQ edges
         for abb in self.wrapped_event.handler.abbs:
@@ -339,7 +344,7 @@ class SSF_SporadicEvent(SporadicEvent):
 
         # IRET
         self.result.set_suspended(self.wrapped_event.handler)
-        self.result.current_abb = state.current_abb
+        self.result.current_abb = current_abb
 
         return self.result
 
