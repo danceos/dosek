@@ -187,7 +187,7 @@ class SystemStateFlow(Analysis):
         precisions = []
         for abb in abbs:
             # Only ABBs from Subtasks
-            if not abb.function.subtask or not abb.function.subtask.is_real_thread:
+            if not abb.function.subtask or not abb.function.subtask.is_real_thread():
                 continue
 
             if abb in self.before_abb_states:

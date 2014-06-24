@@ -131,15 +131,43 @@ class ConstructGlobalCFG(Analysis):
         self.stats.add_data(self, "ssf-edges", edge_count_in_ssf, scalar=True)
 
         # Record the number of (possible) from lower to higher priority subtask
-        edge_count = 0
+        static_edges = 0
+        dynamic_edges = 0
+
         for abb1 in abbs:
+            # Count only application blocks
+            if not abb1.subtask or not abb1.subtask.is_real_thread():
+                continue
             for abb2 in abbs:
-                if abb1 in abb2.get_outgoing_nodes(E.task_level) or \
-                   (abb1.dynamic_priority and abb2.dynamic_priority and abb1.dynamic_priority > abb2.dynamic_priority):
-                    # We would a preemption edge from abb2 to abb1, if there is no natural edge
-                    edge_count += 1
-        self.stats.add_data(self, "possible-priority-edges",
-                                         edge_count, scalar = True)
+                # Count only application blocks
+                if not abb2.subtask or not abb2.subtask.is_real_thread():
+                    continue
+
+                # We would a preemption edge from abb2 to abb1, if there is no natural edge.
+                # Edge from ABB2 -> ABB1
+                if abb1 in abb2.get_outgoing_nodes(E.task_level):
+                    static_edges += 1
+                    dynamic_edges += 1
+                    continue
+
+                # Preemption edges can only come from subtask to subtask
+                if abb1.subtask == abb2.subtask:
+                    continue
+
+                assert abb1.dynamic_priority >= abb1.subtask.static_priority
+                assert abb2.dynamic_priority >= abb2.subtask.static_priority
+
+                if abb1.dynamic_priority > abb2.dynamic_priority:
+                    dynamic_edges += 1
+
+                if abb1.subtask.static_priority > abb2.subtask.static_priority:
+                    static_edges += 1
+
+
+        assert dynamic_edges <= static_edges, "Number of dynamic edges should always be smaller than the number of static edges"
+        self.stats.add_data(self, "inference-edges-static", static_edges, scalar = True)
+        self.stats.add_data(self, "inference-edges-dynamic", dynamic_edges, scalar = True)
+
 
         # Record the number of subtasks that can be reached
         subtask_count = 0

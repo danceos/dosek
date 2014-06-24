@@ -185,7 +185,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
         precisions = []
         for abb in abbs:
-            if not abb.function.subtask or not abb.function.subtask.is_real_thread:
+            if not abb.function.subtask or not abb.function.subtask.is_real_thread():
                 continue
             x = self.for_abb(abb)
             if x:

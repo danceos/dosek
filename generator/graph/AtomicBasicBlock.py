@@ -184,3 +184,7 @@ class AtomicBasicBlock(Node):
     def generated_function_name(self):
         generated_function = "OSEKOS_%s__ABB%d" %(self.syscall_type.name, self.abb_id)
         return generated_function
+
+    @property
+    def subtask(self):
+        return self.function.subtask
