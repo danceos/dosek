@@ -1,7 +1,18 @@
 cmake_minimum_required(VERSION 2.6.2)
 
 PROJECT(dOSEK)
+
+# ASM language defaults to the clang assembler in the Bellolabs.
+# It is required since arch/i386/idt.S uses macros that do not
+# work with gnu assembler without any changes.
 enable_language(ASM)
+
+# ASM-ATT language defaults to gnu assembler. It only matches
+# assembler files with a lower case ".s" as file extension.
+# Upper case "*.S" is still matched by the ASM language and is
+# therefore compiled with clang.
+enable_language(ASM-ATT)
+
 enable_testing()
 set(PROJECT_VERSION "0.1" CACHE STRING "Project version number")
 set(PROJECT_RELEASE "alpha" CACHE STRING "Project release")
@@ -101,6 +112,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/toolchain")
 # fno-zero-initialized-in-bss puts all variables into data instead of bss section (for data-section grouping)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ISA_C_FLAGS} -ffunction-sections -fdata-sections -fno-zero-initialized-in-bss -nostdlib -fno-builtin")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS} ${CMAKE_C_FLAGS}  -fno-exceptions -std=c++11")
+set(CMAKE_ASM-ATT_FLAGS "${CMAKE_ASM-ATT_FLAGS} ${ISA_ASM-ATT_FLAGS}")
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${ISA_ASM_FLAGS}")
 
 # Find python

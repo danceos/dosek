@@ -42,7 +42,7 @@ set(SRCS
 	gic.cc
 	irq.S
 	platforms/${PLATFORM_DIR}/serial.cc
-	platforms/${PLATFORM_DIR}/translation_table.s
+	platforms/${PLATFORM_DIR}/translation_table.S
 	platforms/${PLATFORM_DIR}/machine_impl.cc
     timer.cc
 	output.cc
@@ -55,7 +55,7 @@ set(SRCS
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/platforms/${PLATFORM_DIR}/startup.S)
   set(SRCS ${SRCS} platforms/${PLATFORM_DIR}/startup.S)
 else()
-  set(SRCS ${SRCS} startup.s)
+	set(SRCS ${SRCS} startup.S)
 endif()
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/platforms/${PLATFORM_DIR}/CMakeLists.txt)
