@@ -7,6 +7,13 @@ DeclareTask(H3);
 DeclareResource(RES_SCHEDULER);
 DeclareResource(R345);
 
+#ifndef FAIL
+#define MARK_A 1000000
+#define MARK_B 2000000
+#else
+#define MARK_A 10
+#define MARK_B 10
+#endif
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 volatile int i = 0;
@@ -22,9 +29,9 @@ TASK(H2) {
 }
 
 TASK(H3) {
-	if (i == 1000000) {
+	if (i == MARK_A) {
 		test_trace('3');
-		while (i < 2000000) i++;
+		while (i < MARK_B) i++;
 	}
 	TerminateTask();
 }
@@ -38,10 +45,10 @@ TASK(H5) {
 	test_trace('5');
 	GetResource(R345);
 	test_trace('.');
-	while (i < 1000000) i++;
+	while (i < MARK_A) i++;
 	test_trace('.');
 	ReleaseResource(R345);
-	while (i < 2000000);
+	while (i < MARK_B);
 	test_trace('*');
 	TerminateTask();
 }

@@ -31,6 +31,12 @@ else()
 	message(STATUS "[${PROJECT_NAME}] Specialized Systemcalls: OFF")
 endif()
 
+option(FAIL_TRACE_ALL "Trace all binaries" OFF)
+if(FAIL_TRACE_ALL)
+	message(STATUS "[${PROJECT_NAME}] Fail Trace All: ON")
+else()
+	message(STATUS "[${PROJECT_NAME}] Fail Trace All: OFF")
+endif()
 
 # Verbose make
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)

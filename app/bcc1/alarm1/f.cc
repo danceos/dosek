@@ -17,9 +17,15 @@ TASK(H1) {
 }
 
 TASK(H2) {
+#ifndef FAIL
 	a++;
+#else
+	// Stop immedately
+	a = 100;
+#endif
 	test_trace('0' + a);
 	ActivateTask(H3);
+	Machine::nop();
 	TerminateTask();
 }
 

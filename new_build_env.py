@@ -35,6 +35,8 @@ def main():
                       help="Build an unencoded system (default: yes)")
     parser.add_option('', '--specialize', dest='SPECIALIZE', default = "no",
                       help="Use system analysis for specialized system calls (default: no)")
+    parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
+                      help="Trace all testcases")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)")
     parser.add_option('-c', '--clean', dest='CLEAN', action="store_true",
@@ -58,6 +60,8 @@ def main():
     options.ENCODED_SYSTEM = cmake_bool(options.ENCODED == "yes")
     options.MPU_PROTECTION = cmake_bool(options.MPU == "yes")
     options.SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE == "yes")
+    options.FAIL_TRACE_ALL = cmake_bool(options.FAIL_TRACE_ALL == "yes")
+
 
 
     logging.info("Build System: %s", options.GENERATOR)
@@ -65,8 +69,7 @@ def main():
     logging.info("Encoded System: %s", options.ENCODED_SYSTEM)
     logging.info("MPU Protection: %s", options.MPU_PROTECTION)
     logging.info("Specialized Systemcalls: %s", options.SPECIALIZE_SYSTEMCALLS)
-
-
+    logging.info("Fail Trace All: %s", options.FAIL_TRACE_ALL)
 
 
     # Don't think too much about it
@@ -85,7 +88,7 @@ def main():
                      "-DENCODED_SYSTEM=%s" % options["ENCODED_SYSTEM"],
                      "-DMPU_PROTECTION=%s" % options["MPU_PROTECTION"],
                      "-DSPECIALIZE_SYSTEMCALLS=%s" % options["SPECIALIZE_SYSTEMCALLS"],
-
+                     "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
                      options["REPODIR"]])
 
 if __name__ == '__main__':

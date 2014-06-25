@@ -44,6 +44,7 @@ TASK(Handler13) {
 	test_trace('3');
 	if (a < 5)
 		ActivateTask(Handler12);
+	Machine::nop();
 	TerminateTask();
 }
 

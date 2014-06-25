@@ -67,6 +67,7 @@ inlinehint void test_trace(uint32_t val)\
     #endif
 }
 
+
 #define TEST_MAKE_OS_MAIN(body) \
     void os_main(void) {        \
         test_main();            \

@@ -23,7 +23,9 @@ TASK(H1) {
 TASK(H2) {
 	test_trace('2');
 	ActivateTask(H5);
+	Machine::nop();
 	ActivateTask(H3);
+	Machine::nop();
 	TerminateTask();
 }
 

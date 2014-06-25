@@ -65,7 +65,9 @@ TASK(Task1) {
 	count++;
 
 	debug << "Activate task 2" << endl;
+	Machine::nop();
 	ActivateTask(Task2);
+	Machine::nop();
 
 	debug << "Chain task 2" << endl;
 	ChainTask(Task2);
@@ -87,8 +89,10 @@ TASK(Task3) {
 		count++;
 
 		debug << "Activate task 1" << endl;
+		Machine::nop();
 		ActivateTask(Task1);
 	}
+	Machine::nop();
 	TerminateTask();
 }
 
@@ -100,7 +104,13 @@ TASK(Task4) {
 	debug << "count: " << count << endl;
 	debug << "tick: " << ticks << endl;
 
-	if(++ticks < 100) {
+#ifdef FAIL
+#define TICKS 2
+#else
+#define TICKS 100
+#endif
+
+	if(++ticks < TICKS) {
 		// run one test step
 		step();
 
@@ -123,6 +133,7 @@ TASK(Task4) {
 		debug << "shutdown\n" << endl;
 		ShutdownMachine();
 	}
+	Machine::nop();
 
 	TerminateTask();
 }

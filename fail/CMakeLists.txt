@@ -59,6 +59,9 @@ add_custom_target(fail-trace-plugin-python
   OUTPUT  ${FAIL_TRACE_PLUGIN_PYTHON}
 )
 
+# target to trace everything traceable
+add_custom_target(fail-trace-all)
+
 # targets to run all FAIL* tests
 foreach(BENCHMARK "mem" "regs" "ip" "jump")
 	add_custom_target(fail-all-${BENCHMARK})
@@ -137,6 +140,7 @@ macro(fail_targets TNAME ELF TEST)
 			OUTPUT ${TRACEFILE} ${CHECKPOINTFILE} ${STATEDIR} ${STATS_DICT}
 		)
 		add_custom_target(fail-trace-${TNAME} DEPENDS ${TRACEFILE})
+	    add_dependencies(fail-trace-all fail-trace-${TNAME})
 
 		# extract {data, text, stack}_map
 		set(FAIL_MAPPER "${PROJECT_SOURCE_DIR}/fail/mapper.py")

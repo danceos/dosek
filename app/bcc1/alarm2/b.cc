@@ -19,8 +19,10 @@ TASK(H1) {
 		CancelAlarm(A1);
 		// Wait very long, so that we can check wheter A1 was really
 		// canceled correctly.
+		Machine::nop();
 		SetRelAlarm(A2, 100, 0);
 	}
+	Machine::nop();
 	TerminateTask();
 }
 
@@ -35,5 +37,6 @@ TASK(H2) {
 TASK(H3) {
 	test_trace('3');
 	SetRelAlarm(A1, 1, 3);
+	Machine::nop();
 	TerminateTask();
 }

@@ -20,7 +20,12 @@ TASK(H2) {
 }
 
 volatile unsigned long long counter = 0;
+#ifndef FAIL
 const unsigned long long max_count = 100000000;
+#else
+const unsigned long long max_count = 1;
+#endif
+
 TASK(H3) {
 	test_trace('3');
     counter = max_count + 1;

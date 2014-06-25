@@ -18,7 +18,9 @@ TASK(H1) {
 	CancelAlarm(A1);
 	// Wait very long, so that we can check wheter A1 was really
 	// canceled correctly.
+	Machine::nop();
 	SetRelAlarm(A2, 100, 0);
+	Machine::nop();
 	TerminateTask();
 }
 
@@ -32,8 +34,11 @@ TASK(H2) {
 }
 
 TASK(H3) {
+	// We insert the nops here to get a distinction between the system calls in the fail trace
 	test_trace('3');
 	SetRelAlarm(A1, 1, 0);
+	Machine::nop();
 	SetRelAlarm(A2, 100, 3);
+	Machine::nop();
 	TerminateTask();
 }

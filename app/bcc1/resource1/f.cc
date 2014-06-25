@@ -36,7 +36,9 @@ TASK(H4) {
 	GetResource(R234);
 	test_trace('{');
 	ActivateTask(H3);
+	Machine::nop();
 	ActivateTask(H2);
+	Machine::nop();
 	ActivateTask(H1);
 	test_trace('}');
 	ReleaseResource(R234);

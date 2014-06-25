@@ -45,6 +45,7 @@ TASK(H4) {
 TASK(H5) {
 	test_trace('5');
 	ActivateTask(H3);
+	Machine::nop();
 	TerminateTask();
 }
 

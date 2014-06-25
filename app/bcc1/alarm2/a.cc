@@ -27,8 +27,11 @@ TASK(H2) {
 }
 
 TASK(H3) {
+	// We insert the nops here to get a distinction between the system calls in the fail trace
     test_trace('3');
     SetRelAlarm(A1, 1, 0);
+	Machine::nop();
     SetRelAlarm(A2, 1, 0);
+	Machine::nop();
     TerminateTask();
 }

@@ -201,7 +201,7 @@ def syscall_regions(trace_events, symbol_map):
         # When "pipeline" is full
         if last_addr:
             classified = detector.classify(last_addr, current_addr, next_addr)
-            #print hex(current_addr), classified, symbol_map.get(current_addr)
+            # print hex(current_addr), classified, symbol_map.get(current_addr)
             # If event has no class, simply continue
             if classified == 0:
                 continue
@@ -228,7 +228,7 @@ def cut_out_timer_interrupt(region):
         end   = region.indexOf("handler_exit")
         if start == 0:
             # Is a pure interrupt region
-            assert end == len(region.trace) - 1 or region.names[end+1] == "irq_33" # Dispatch over AST
+            assert end == len(region.trace) - 1 or region.names[end+1].startswith("irq_"), region.names # Dispatch over AST
             return region, None
         isr_trace = region.trace[start:end+1]
         syscall_trace = list(region.trace)
@@ -293,10 +293,10 @@ def main(options, args):
 
         for name in names:
             if "__OS_syscall" in name:
-                assert event_type  is None, names
+                assert event_type  is None, (names, options.stats)
                 event_type = name
             if name in ("__OS_StartOS_dispatch"):
-                assert event_type  is None, names
+                assert event_type  is None, (names, options.stats)
                 event_type = name
 
         # If it does not contain a syscall, use the userland function
@@ -349,5 +349,8 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
 
-    main(options, args)
-
+    try:
+        main(options, args)
+    except RuntimeError as e:
+        print(e)
+        print(options.stats)

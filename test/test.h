@@ -288,6 +288,9 @@ inlinehint void test_trace(char chr) {
 		trace_table[trace_table_idx++] = chr;
 }
 
+#ifdef FAIL
+#define test_trace_assert(...) do{}while(0)
+#endif
 
 
 #define TEST_MAKE_OS_MAIN(body) \
