@@ -93,7 +93,7 @@ class CoredosDetector:
                 self.syscall_endurance.update(range(start, end))
 
             if symbol.name == "irq_resume":
-                self.syscall_end.add(end)
+                self.syscall_end.add(start)
 
             # Systemcall markers
             if symbol.name.startswith(".asm_label.syscall_start"):
@@ -155,6 +155,20 @@ class SyscallRegion:
             if x[1].name == symbol:
                 return True
         return False
+
+    def indexOf(self, name):
+        for i in range(0, len(self.trace)):
+            if self.trace[i][1].name == name:
+                return i
+        assert False, "Symbol could not find symbol " + str(self.trace)
+
+    def insert_after(self, name, symbol):
+        for i in range(0, len(self.trace)):
+            if self.trace[i][1].name == name:
+                self.trace.insert(i+1, (0, symbol))
+                return
+        assert False, "Symbol could not be inserted " + str(self.trace)
+
     def push_symbol(self, time, symbol):
         if not self.trace or self.trace[-1][1] != symbol:
             self.trace.append([1, symbol])
@@ -164,6 +178,10 @@ class SyscallRegion:
         if time:
             assert time >= self.end_time
             self.end_time = time
+
+    @property
+    def names(self):
+        return [x[1].name for x in self.trace]
 
 def syscall_regions(trace_events, symbol_map):
     """Generator that returns detected syscall regions"""
@@ -199,10 +217,31 @@ def syscall_regions(trace_events, symbol_map):
             # syscall region
             if classified & detector.END:
                 if region.contains("irq_48"):
-                    region.push_symbol(None, symbol_map["__OS_syscall_OSEKOS_IncrementCounter"])
+                    region.insert_after("irq_48", symbol_map["__OS_syscall_OSEKOS_IncrementCounter"])
                 yield region
                 region = None
 
+
+def cut_out_timer_interrupt(region):
+    if region.contains("irq_48") and region.contains("handler_exit"):
+        start = region.indexOf("irq_48")
+        end   = region.indexOf("handler_exit")
+        if start == 0:
+            # Is a pure interrupt region
+            assert end == len(region.trace) - 1 or region.names[end+1] == "irq_33" # Dispatch over AST
+            return region, None
+        isr_trace = region.trace[start:end+1]
+        syscall_trace = list(region.trace)
+        del syscall_trace[start:end+1]
+
+        syscall_region = SyscallRegion(region.start_time)
+        isr_region = SyscallRegion(region.start_time)
+        syscall_region.end_time = isr_region.end_time = region.end_time
+        syscall_region.trace = syscall_trace
+        isr_region.trace = isr_trace
+        return syscall_region, isr_region
+
+    return region, None
 
 
 def main(options, args):
@@ -226,7 +265,23 @@ def main(options, args):
     sysgraph["alarms"] = [IncrementCounter]
     stats.rebuild_index(sysgraph)
 
-    for syscall_region in syscall_regions(trace_events, symbol_map):
+    region_iterator = iter(syscall_regions(trace_events, symbol_map))
+    delayed_regions = []
+
+    while region_iterator or len(delayed_regions):
+        if region_iterator:
+            try:
+                syscall_region = next(region_iterator)
+            except StopIteration:
+                region_iterator = None
+                print "trace-analyze: Processing %d delayed interrupt regions" %(len(delayed_regions))
+                continue
+            syscall_region, interrupt_region = cut_out_timer_interrupt(syscall_region)
+            if interrupt_region:
+                delayed_regions.append(interrupt_region)
+        else:
+            syscall_region = delayed_regions.pop()
+
         names = [x[1].name for x in syscall_region.trace if x[1]]
         region_length = sum([x[0] for x in syscall_region.trace])
         event_type = None
