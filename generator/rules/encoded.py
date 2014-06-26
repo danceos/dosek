@@ -18,8 +18,8 @@ class EncodedSystem(UnencodedSystem):
         # is instanciated. Otherwise a TAssert in tasklist.h fails
         self.objects["Scheduler"] = {}
         self.objects["Scheduler"]["scheduler_prio_sig"] = self.generator.signature_generator.new()
-        self.objects["Scheduler"]["current_prio_sig"] = self.generator.signature_generator.new()
-        self.objects["Scheduler"]["current_task_sig"] = self.generator.signature_generator.new()
+        self.objects["Scheduler"]["current_prio_sig"] = self.generator.signature_generator.lessthan(100)
+        self.objects["Scheduler"]["current_task_sig"] = self.generator.signature_generator.lessthan(100)
 
         UnencodedSystem.generate_system_code(self)
 
