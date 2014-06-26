@@ -24,11 +24,12 @@ set(SRCS
     output.cc
     signalinfo.cc
     irq.cc
+    mp.cc
 )
 
 # Create arch library
 add_library(arch ${SRCS})
-target_link_libraries(arch generic)
+target_link_libraries(arch generic pthread)
 
 # Add to include directories
 dosek_include_dir(${CMAKE_CURRENT_SOURCE_DIR})

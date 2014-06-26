@@ -113,8 +113,13 @@ public:
         debug.setcolor(Color::BLACK, Color::WHITE);
         debug << ("Machine::shutdown!\n");
 		// No unreachable() here, otherwise the generator will be unhappy!
-		syscall(SYS_exit, 0);
 
+		// The call to exit is required, because there might be a ressources
+		// (like threads) that must be cleaned up and will not be stopped by
+		// just using the SYS_exit syscall. The inline assembler is used to
+		// hide it from the generator.
+		asm volatile ("pushl $0\n"
+		              "call exit\n" ::: "%esp", "memory");
 	}
 
 	/**
