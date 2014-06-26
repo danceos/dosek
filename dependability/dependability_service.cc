@@ -2,6 +2,10 @@
 #include "os/util/assert.h"
 #include "atomics.h"
 
+// From generator:
+extern Checked_Object OS_all_CheckedObjects[];
+extern unsigned int OS_all_CheckedObjects_size;
+
 Dependability_Queue<Checked_Object> dep_queue;
 
 static inline unsigned int crc32(char* bytes, unsigned int len)
@@ -33,14 +37,16 @@ enum {
 	checksum_checked = 4,
 };
 
-void acquire_CheckedObject(Checked_Object *obj)
+void acquire_CheckedObject(unsigned int obj_index)
 {
+	Checked_Object *obj = &OS_all_CheckedObjects[obj_index];
 	arch::atomic_fetch_and_add(&obj->counter, 1);
 	obj->valid = checksum_invalid;
 }
 
-void release_CheckedObject(Checked_Object *obj)
+void release_CheckedObject(unsigned int obj_index)
 {
+	Checked_Object *obj = &OS_all_CheckedObjects[obj_index];
 	arch::atomic_fetch_and_sub(&obj->counter, 1);
 	obj->valid = checksum_invalid;
 }
@@ -66,6 +72,9 @@ bool check_CheckedObject(Checked_Object *obj)
 
 void dependability_service()
 {
+	for (unsigned int i = 0; i < OS_all_CheckedObjects_size; ++i) {
+		dep_queue.insert(&OS_all_CheckedObjects[i]);
+	}
 	for (;;) {
 		// Dequeue next element
 		Checked_Object *element = dep_queue.get_next();

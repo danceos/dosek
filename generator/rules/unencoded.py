@@ -119,6 +119,15 @@ class UnencodedSystem(SimpleSystem):
                           generate_kernelspace(userspace, abb, [arg1, arg2])
             self.syscall_rules.SetRelAlarm(kernelspace.system, abb, [arg1, arg2])
             pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
+        # Dependability Service
+        elif systemcall.function == "AcquireCheckedObject":
+            userspace.unused_parameter(0)
+            self.syscall_rules.AcquireCheckedObject(userspace, abb)
+
+        elif systemcall.function == "ReleaseCheckedObject":
+            userspace.unused_parameter(0)
+            self.syscall_rules.ReleaseCheckedObject(userspace, abb)
+
         else:
             assert False, "Not yet supported %s"% systemcall.function
 

@@ -1,4 +1,5 @@
 from generator.elements import *
+from generator.elements.DataObjectManager import ExternalDataObject
 from generator.rules.base import BaseRules
 from collections import namedtuple
 
@@ -32,6 +33,7 @@ class SimpleSystem(BaseRules):
         """Generate all dataobjects for the system"""
         self.generate_dataobjects_task_descriptors()
         self.generate_dataobjects_counters_and_alarms()
+        self.generate_dataobjects_checkedObjects()
 
         # Give the passes the chance to generate dataobjects
         self.callback_in_valid_passes("generate_dataobjects")
@@ -128,6 +130,30 @@ class SimpleSystem(BaseRules):
                 self.call_function(hook_function, "Machine::unreachable",
                                    "void", [])
 
+
+    def generate_dataobjects_checkedObjects(self):
+        self.generator.source_file.includes.add(Include("dependability/dependability_service.h"))
+        co_index = 0;
+        initializator = "{\n"
+        for co in self.system_graph.get_checkedObjects():
+            if co.header is not None:
+                self.generator.source_file.includes.add(Include(co.header))
+            if co.typename is not None:
+#                self.generator.source_file.declarations.append(Statement("extern " + co.typename + " " + co.name))
+                self.generator.source_file.data_manager.add(ExternalDataObject(co.typename, co.name))
+            initializator += "    { &" + co.name + ", sizeof(" + co.name + ") },\n"
+            self.generator.source_file.data_manager.add(
+                DataObject("const unsigned int", "OS_" + co.name + "_CheckedObject_Index", str(co_index))
+##                namespace = ("os",)
+            )
+            co_index += 1
+        initializator += "}"
+        self.generator.source_file.data_manager.add(
+            DataObject("const unsigned int", "OS_all_CheckedObjects_size", str(co_index))
+        )
+        self.generator.source_file.data_manager.add(
+            DataObject("Checked_Object", "OS_all_CheckedObjects[]", initializator)
+        )
 
 
 class SimpleArch(BaseRules):

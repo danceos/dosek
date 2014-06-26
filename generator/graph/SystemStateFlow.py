@@ -130,6 +130,8 @@ class SystemStateFlow(Analysis):
              S.ResumeAllInterrupts  : scc.do_computation,
              S.SuspendOSInterrupts  : scc.do_computation,
              S.ResumeOSInterrupts   : scc.do_computation,
+             S.AcquireCheckedObject : scc.do_computation,
+             S.ReleaseCheckedObject : scc.do_computation,
 
              S.Idle            : scc.do_Idle})
 

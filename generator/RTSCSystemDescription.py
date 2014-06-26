@@ -185,6 +185,25 @@ class RTSCSystemDescription:
                                            tasks = list(tasks)))
         return resources
 
+    CheckedObject = namedtuple("CheckedObject", ["name", "header", "typename"])
+
+    def getCheckedObjects(self):
+        checkedObjects = []
+        if not hasattr(self.osek_dom, "CHECKEDOBJECT"):
+            return checkedObjects
+        for co in self.osek_dom.CHECKEDOBJECT:
+            header = None
+            typename = None
+            assert co.name, "A CHECKEDOBJECT requires a name"
+            if hasattr(co, "TYPEDEF"):
+                if hasattr(co.TYPEDEF, "HEADER"):
+                    header = co.TYPEDEF.HEADER
+                if hasattr(co.TYPEDEF, "TYPENAME"):
+                    typename = co.TYPEDEF.TYPENAME
+            assert typename is not None, "A CheckedObject must have a type"
+            checkedObjects.append(self.CheckedObject(co.name, header, typename))
+        return checkedObjects
+
 
 ################################################################
 ##

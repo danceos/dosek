@@ -198,6 +198,21 @@ class FullSystemCalls(BaseRules):
     def EnableAllInterrupts(self, userspace, abb):
         self.enable_irq(userspace, abb)
 
+    # Dependability Service
+    def AcquireCheckedObject(self, block, abb):
+        co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_Struct_"):] + "_CheckedObject_Index"
+        self.call_function(block,
+                           "acquire_CheckedObject",
+                           "void",
+                           [co_index])
+
+    def ReleaseCheckedObject(self, block, abb):
+        co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_Struct_"):] + "_CheckedObject_Index"
+        self.call_function(block,
+                           "release_CheckedObject",
+                           "void",
+                           [co_index])
+
     # Assertions
     def do_assertions(self, block, assertions):
         should_equal_zero = []

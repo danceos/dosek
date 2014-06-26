@@ -1,5 +1,6 @@
 #include "os.h"
 #include "rtsc_annotate.h"
+#include "depsvc.h"
 
 extern "C" {
 
@@ -144,5 +145,13 @@ void OSEKOS_ResumeOSInterrupts() {
     rtsc_systemcall();
 }
 
+
+void OSEKOS_AcquireCheckedObject(struct CHECKEDOBJECTStruct *) {
+	rtsc_systemcall();
+}
+
+void OSEKOS_ReleaseCheckedObject(struct CHECKEDOBJECTStruct *) {
+	rtsc_systemcall();
+}
 
 }

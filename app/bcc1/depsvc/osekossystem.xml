@@ -40,5 +40,13 @@
     <MINCYCLE>1</MINCYCLE>
   </HARDWARECOUNTER>
 
+  <CHECKEDOBJECT>
+    <name>area</name>
+    <TYPEDEF>
+      <HEADER>app/bcc1/depsvc/type.h</HEADER>
+      <TYPENAME>chararray</TYPENAME>
+    </TYPEDEF>
+  </CHECKEDOBJECT>
+
 </oseksystem>
 

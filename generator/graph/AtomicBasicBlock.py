@@ -69,6 +69,8 @@ class SyscallType(IntEnum):
 
     GetAlarm = 33
     AdvanceCounter = 34
+    AcquireCheckedObject = 35
+    ReleaseCheckedObject = 36
 
     def isRealSyscall(self):
         return self.value >= SyscallType.kickoff

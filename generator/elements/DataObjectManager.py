@@ -73,6 +73,18 @@ class DataObject:
             return Statement(self.data_object_manager.get_namespace() + "::" + self.name + ".init()")
         return []
 
+class ExternalDataObject(DataObject):
+    """Manages an external declaration"""
+
+    def __init__(self, typename, name):
+        DataObject.__init__(self, typename, name)
+
+    def source_element_allocation(self):
+        return ""
+
+    def source_element_allocation(self):
+        return ""
+
 class DataObjectArray(DataObject):
     def __init__(self, typename, name, elements, dynamic_initializer = False, extern_c = False):
         DataObject.__init__(self, typename, name, None, dynamic_initializer,

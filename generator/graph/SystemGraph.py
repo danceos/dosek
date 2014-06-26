@@ -31,6 +31,7 @@ class SystemGraph(GraphObject, PassManager):
         self.alarms = []
         self.isrs = []
         self.resources = {}
+        self.checkedObjects = []
         self.stats = Statistics(self)
 
     def graph_subobjects(self):
@@ -91,6 +92,9 @@ class SystemGraph(GraphObject, PassManager):
     def get_syscalls(self):
         return [x for x in self.get_abbs()
                 if not x.isA(S.computation)]
+
+    def get_checkedObjects(self):
+        return self.checkedObjects
 
     def scheduler_priority(self):
         """The scheduler priority is higher than the highest task"""
@@ -372,6 +376,7 @@ class SystemGraph(GraphObject, PassManager):
             # Populate function level set of called functions, needed in ABBMergePass
             abb.function.called_functions.update(called_funcs)
 
+
     def read_rtsc_analysis(self, rtsc):
         self.rtsc = rtsc
         self.max_abb_id = 0
@@ -447,12 +452,13 @@ class SystemGraph(GraphObject, PassManager):
             assert abb in self.get_abbs()
         assert len(self.get_syscalls()) >= len(self.rtsc.syscalls())
 
+        self.checkedObjects = system.getCheckedObjects()
+
     def new_abb(self, bbs=[]):
         self.max_abb_id += 1
-        abb =  AtomicBasicBlock(self, self.max_abb_id, bbs)
+        abb = AtomicBasicBlock(self, self.max_abb_id, bbs)
         self.all_abbs[abb.get_id()] = abb
         return abb
-
 
     def add_system_objects(self):
         def system_function(syscall_type):

@@ -70,7 +70,10 @@ class Generator:
         "SendDynamicMessage": None,
         "ReceiveDynamicMessage": None,
         "SendZeroMessage": None,
-        "ShutdownOS": ["void", "StatusType"]    }
+        "ShutdownOS": ["void", "StatusType"],
+
+        "AcquireCheckedObject": ["void", "Checked_Object*"],
+        "ReleaseCheckedObject": ["void", "Checked_Object*"] }
 
 
     def generate_into(self, output_file_prefix):
