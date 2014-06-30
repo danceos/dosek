@@ -304,7 +304,8 @@ def main(options, args):
         if event_type == None:
             for name in names:
                 if "OSEKOS" in name and "__ABB" in name:
-                    assert event_type  is None, names
+                    # Might also be an ISR
+                    assert event_type  is None or "irq_handler" in names[0], names
                     event_type = name
 
         for abb in stats.find_all("AtomicBasicBlock").values():
