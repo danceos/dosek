@@ -32,11 +32,29 @@ class Statistics:
         assert not child_id in self.idx
         parent = self.idx[parent_id]
         child = self.__new_node(child)
+        child["_parent"] = parent_id
         self.idx[child_id] = child
         if not category in parent:
             parent[category] = [child]
         else:
             parent[category].append(child)
+
+    def get_node(self, node):
+        if type(node) == dict:
+            node_id = node["_id"]
+        elif type(node) == int:
+            node_id = node
+        else:
+            node_id = id(node)
+        if not node_id in self.idx:
+            return None
+        return self.idx[node_id]
+
+    def get_parent(self, node):
+        node = self.get_node(node)
+        if not node:
+            return None
+        return self.get_node(node["_parent"])
 
     def add_data(self, parent, category, data, scalar=False):
         parent_id = id(parent)
@@ -57,15 +75,17 @@ class Statistics:
         ret = pprint.pformat(self.tree, width=150)
         return ret
 
-    def rebuild_index(self, root):
+    def rebuild_index(self, root, parent = None):
         if not type(root) == dict:
             return
+        if parent:
+            root["_parent"] = parent["_id"]
         for k, v in root.items():
             if k == "_id":
                 self.idx[v] = root
             if type(v) == list:
-                for x in v:
-                    self.rebuild_index(x)
+                for child in v:
+                    self.rebuild_index(child, root)
 
     def save(self, filename):
         with open(filename, "w+") as fd:

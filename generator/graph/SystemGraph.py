@@ -127,6 +127,7 @@ class SystemGraph(GraphObject, PassManager):
                     subtask.set_max_activations(1)
                     subtask.set_autostart(False)
                     subtask.set_is_isr(True, isr_osek.device)
+                    self.stats.add_data(subtask, "is_isr", True, scalar = True)
 
                     self.isrs.append(ISR(self, subtask))
                 else:
@@ -139,6 +140,8 @@ class SystemGraph(GraphObject, PassManager):
                     subtask.set_max_activations(subtask_osek.max_activations)
                     subtask.set_autostart(subtask_osek.autostart)
                     subtask.set_is_isr(False)
+                    self.stats.add_data(subtask, "is_isr", False, scalar = True)
+
 
 
         self.counters = system.getHardwareCounters()
@@ -156,6 +159,7 @@ class SystemGraph(GraphObject, PassManager):
             subtask.set_max_activations(1)
             subtask.set_autostart(False)
             subtask.set_is_isr(True)
+
 
             # And add it to the task where the activated task belongs to
             belongs_to_task.add_subtask(subtask)
@@ -200,6 +204,7 @@ class SystemGraph(GraphObject, PassManager):
 
             # Statistic generation
             self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)
+            self.stats.add_data(alarm.handler, "is_isr", True, scalar = True)
 
 
         # Add all implicit intra function control flow graphs

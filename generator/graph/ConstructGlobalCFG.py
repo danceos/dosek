@@ -13,6 +13,9 @@ class ConstructGlobalCFG(Analysis):
        construct this global cfg.
 
     """
+
+    pass_alias = "gcfg"
+
     def __init__(self):
         Analysis.__init__(self)
         self.removed_edges = None
