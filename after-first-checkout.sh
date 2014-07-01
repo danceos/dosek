@@ -2,11 +2,22 @@
 #
 # Prepare freshly cloned git repo for use with gerrit
 
+SED=sed
+if [ "$(uname)" == "Darwin" ]; then
+    SED=gsed
+    if which $SED >/dev/null; then
+        echo "Using `which $SED` as GNU sed"
+    else
+        echo "$SED does not exist, try brew install gnu-sed OR port install gsed"
+        exit -1
+    fi
+fi
+
 ## Configure me (if you like..)
 SHORT=formaster
 GITURL=$(git config --get remote.origin.url)
-SSHURL=$(echo "$GITURL"|sed -r 's%^ssh://([^:]+):[^:]+$%\1%')
-PORT=$(echo "$GITURL"|sed -r 's%^.+:([0-9]+)/.*$%\1%')
+SSHURL=$(echo "$GITURL"|$SED -r 's%^ssh://([^:]+):[^:]+$%\1%')
+PORT=$(echo "$GITURL"|$SED -r 's%^.+:([0-9]+)/.*$%\1%')
 ##
 
 CONFIG=.git/config
