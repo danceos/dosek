@@ -1,15 +1,15 @@
 #ifndef _COREDOS_OS_DEPENDABILITY_SERVICE_H_
 #define _COREDOS_OS_DEPENDABILITY_SERVICE_H_
 
-#include "dependability_queue.h"
+#include "dependability_scheduler.h"
 
 /**
  * \brief Metadata for each checked object
 **/
-struct Checked_Object : Dependability_Queue<Checked_Object>::Node
+struct Checked_Object
 {
 	Checked_Object(void *pos, unsigned int length)
-			: Node(), location(reinterpret_cast<char*>(pos)), size(length) {}
+			: location(reinterpret_cast<char*>(pos)), size(length) {}
 	char *location;
 	unsigned int size;
 	volatile unsigned int checksum;
@@ -21,7 +21,7 @@ struct Checked_Object : Dependability_Queue<Checked_Object>::Node
 	volatile unsigned int valid;
 };
 
-extern Dependability_Queue<Checked_Object> dep_queue;
+extern Dependability_Scheduler dep_sched;
 
 /**
  * \brief Runs the dependability service and does not return.

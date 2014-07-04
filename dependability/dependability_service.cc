@@ -2,11 +2,10 @@
 #include "os/util/assert.h"
 #include "atomics.h"
 
+Dependability_Scheduler dep_sched;
 // From generator:
 extern Checked_Object OS_all_CheckedObjects[];
 extern unsigned int OS_all_CheckedObjects_size;
-
-Dependability_Queue<Checked_Object> dep_queue;
 
 static inline unsigned int crc32(char* bytes, unsigned int len)
 {
@@ -39,56 +38,51 @@ enum {
 
 void acquire_CheckedObject(unsigned int obj_index)
 {
-	Checked_Object *obj = &OS_all_CheckedObjects[obj_index];
-	arch::atomic_fetch_and_add(&obj->counter, 1);
-	obj->valid = checksum_invalid;
+	arch::atomic_fetch_and_add(&OS_all_CheckedObjects[obj_index].counter, 1);
+	OS_all_CheckedObjects[obj_index].valid = checksum_invalid;
 }
 
 void release_CheckedObject(unsigned int obj_index)
 {
-	Checked_Object *obj = &OS_all_CheckedObjects[obj_index];
-	arch::atomic_fetch_and_sub(&obj->counter, 1);
-	obj->valid = checksum_invalid;
+	arch::atomic_fetch_and_sub(&OS_all_CheckedObjects[obj_index].counter, 1);
+	OS_all_CheckedObjects[obj_index].valid = checksum_invalid;
 }
 
-bool check_CheckedObject(Checked_Object *obj)
+bool check_CheckedObject(unsigned int obj)
 {
-	unsigned int oldvalid = obj->valid;
-	obj->valid = checksum_checked;
+	unsigned int oldvalid = OS_all_CheckedObjects[obj].valid;
+	OS_all_CheckedObjects[obj].valid = checksum_checked;
 	arch::atomic_memory_barrier();
-	if (obj->counter) {
+	if (OS_all_CheckedObjects[obj].counter) {
 		return false;
 	}
 
-	unsigned int newchecksum = crc32(obj->location, obj->size);
+	unsigned int newchecksum = crc32(OS_all_CheckedObjects[obj].location, OS_all_CheckedObjects[obj].size);
 	if (oldvalid == checksum_valid &&
-		obj->valid == checksum_checked &&
-		newchecksum != obj->checksum) {
+		OS_all_CheckedObjects[obj].valid == checksum_checked &&
+		newchecksum != OS_all_CheckedObjects[obj].checksum) {
 			assert(false);
 	}
-	obj->checksum = newchecksum;
-	return arch::compare_and_swap(&obj->valid, checksum_checked, checksum_valid);
+	OS_all_CheckedObjects[obj].checksum = newchecksum;
+	return arch::compare_and_swap(&OS_all_CheckedObjects[obj].valid, checksum_checked, checksum_valid);
 }
 
 void dependability_service()
 {
-	for (unsigned int i = 0; i < OS_all_CheckedObjects_size; ++i) {
-		dep_queue.insert(&OS_all_CheckedObjects[i]);
-	}
 	for (;;) {
 		// Dequeue next element
-		Checked_Object *element = dep_queue.get_next();
+		unsigned int element = dep_sched.get_next();
 		if (!element)
 			continue;
 
-		Dependability_Queue<Checked_Object>::Object_State state =
+		Dependability_Scheduler::Object_State state =
 			(check_CheckedObject(element))
-				? Dependability_Queue<Checked_Object>::SUCCESS
-				: Dependability_Queue<Checked_Object>::FAILED
+				? Dependability_Scheduler::SUCCESS
+				: Dependability_Scheduler::FAILURE
 		;
 
 		// Enqueue with new priority
-		dep_queue.insert(element, state);
+		dep_sched.update(element, state);
 	}
 }
 
