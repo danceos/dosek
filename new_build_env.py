@@ -53,7 +53,7 @@ def main():
 
     generator_dict = {"make": "Unix Makefiles",
                       "ninja": "Eclipse CDT4 - Ninja",
-                      "eclipse": "Eclipse CDT4 - Unix Makefile"}
+                      "eclipse": "Eclipse CDT4 - Unix Makefiles"}
 
     options.GENERATOR = generator_dict[options.GENERATOR]
     options.REPODIR   = base_dir
