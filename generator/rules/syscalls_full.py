@@ -167,21 +167,21 @@ class FullSystemCalls(BaseRules):
     def do_assertion(self, block, assertion):
         if assertion.isA(AssertionType.TaskIsSuspended):
             task = assertion.get_arguments()[0]
-            block.add(Statement("assert(scheduler_.isSuspended(%s))" \
-                                % self.task_desc(task)))
+            cond = "scheduler_.isSuspended(%s)" % self.task_desc(task)
         elif assertion.isA(AssertionType.TaskIsReady):
             task = assertion.get_arguments()[0]
-            block.add(Statement("assert(!scheduler_.isSuspended(%s))" \
-                                % self.task_desc(task)))
+            cond = "!scheduler_.isSuspended(%s)" % self.task_desc(task)
         elif assertion.isA(AssertionType.TaskWasKickoffed):
             task = assertion.get_arguments()[0]
-            block.add(Statement("assert(%s.tcb.is_running())" \
-                                % self.task_desc(task)))
+            cond = "%s.tcb.is_running()" % self.task_desc(task)
         elif assertion.isA(AssertionType.TaskWasNotKickoffed):
             task = assertion.get_arguments()[0]
-            block.add(Statement("assert(! %s.tcb.is_running())" \
-                                % self.task_desc(task)))
+            cond =  "!(%s.tcb.is_running())" % self.task_desc(task)
         else:
             panic("Unsupported assert type %s in %s", assertion, block)
+
+        block.add(Statement("color_assert(%s, COLOR_ASSERT_SYSTEM_STATE)" % \
+                            cond))
+
 
 

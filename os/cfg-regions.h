@@ -13,7 +13,8 @@ namespace os {
 			// enable bits for regions that we entered
 			tmp = tmp | enter_mask;
 			// Check that we are in all regions, we should be in
-			assert( (tmp & check_mask) == check_mask);
+			color_assert( (tmp & check_mask) == check_mask,
+						  COLOR_ASSERT_CFG_REGION);
             // kout << tmp << " " << check_mask << endl;
 			// Leave all Regions we are not part of
 			tmp = tmp & (~leave_mask);
