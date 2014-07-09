@@ -3,4 +3,8 @@
 
 typedef char chararray[100];
 
+struct complextype {
+	chararray* remote;
+};
+
 #endif

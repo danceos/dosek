@@ -48,5 +48,14 @@
     </TYPEDEF>
   </CHECKEDOBJECT>
 
+  <CHECKEDOBJECT>
+    <name>data</name>
+    <TYPEDEF>
+      <HEADER>app/bcc1/depsvc/type.h</HEADER>
+      <TYPENAME>complextype</TYPENAME>
+    </TYPEDEF>
+    <CUSTOMCHECKFUNCTION>datacheck</CUSTOMCHECKFUNCTION>
+  </CHECKEDOBJECT>
+
 </oseksystem>
 

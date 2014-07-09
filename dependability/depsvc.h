@@ -16,8 +16,9 @@ extern "C" void OSEKOS_ReleaseCheckedObject(struct CHECKEDOBJECTStruct *);
 #define AcquireCheckedObject(name)                                  \
   OSEKOS_AcquireCheckedObject(&OSEKOS_CHECKEDOBJECT_Struct_##name); \
 
-
 #define ReleaseCheckedObject(name)                                  \
   OSEKOS_ReleaseCheckedObject(&OSEKOS_CHECKEDOBJECT_Struct_##name); \
+
+unsigned int crc32(char *bytes, unsigned int length);
 
 #endif

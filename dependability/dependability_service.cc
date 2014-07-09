@@ -6,8 +6,9 @@ Dependability_Scheduler dep_sched;
 // From generator:
 extern Checked_Object OS_all_CheckedObjects[];
 extern unsigned int OS_all_CheckedObjects_size;
+extern unsigned int OS_checkfunction_multiplexer(unsigned int id);
 
-static inline unsigned int crc32(char* bytes, unsigned int len)
+unsigned int crc32(char* bytes, unsigned int len)
 {
 	unsigned int crc32 = 0;
 	for (unsigned int i = 0; i < len * 8; ++i) {
@@ -57,7 +58,7 @@ bool check_CheckedObject(unsigned int obj)
 		return false;
 	}
 
-	unsigned int newchecksum = crc32(OS_all_CheckedObjects[obj].location, OS_all_CheckedObjects[obj].size);
+	unsigned int newchecksum = OS_checkfunction_multiplexer(obj);
 	if (oldvalid == checksum_valid &&
 		OS_all_CheckedObjects[obj].valid == checksum_checked &&
 		newchecksum != OS_all_CheckedObjects[obj].checksum) {

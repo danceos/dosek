@@ -132,9 +132,12 @@ class SimpleSystem(BaseRules):
 
 
     def generate_dataobjects_checkedObjects(self):
+        if len(self.system_graph.get_checkedObjects()) < 1:
+            return
         self.generator.source_file.includes.add(Include("dependability/dependability_service.h"))
         co_index = 0;
         initializator = "{\n"
+        multiplexer_functions = []
         for co in self.system_graph.get_checkedObjects():
             if co.header is not None:
                 self.generator.source_file.includes.add(Include(co.header))
@@ -146,6 +149,7 @@ class SimpleSystem(BaseRules):
                 DataObject("const unsigned int", "OS_" + co.name + "_CheckedObject_Index", str(co_index))
 ##                namespace = ("os",)
             )
+            multiplexer_functions.append(co.checkfunc)
             co_index += 1
         initializator += "}"
         self.generator.source_file.data_manager.add(
@@ -154,6 +158,22 @@ class SimpleSystem(BaseRules):
         self.generator.source_file.data_manager.add(
             DataObject("Checked_Object", "OS_all_CheckedObjects[]", initializator)
         )
+        # Create Function
+        self.generator.source_file.function_manager.add(FunctionDeclaration("crc32", "unsigned int", ["char*", "unsigned int"]))
+        multiplexer = Function("OS_checkfunction_multiplexer", "unsigned int", ["unsigned int"])
+        multiplexer.add("\tswitch(arg0) {\n")
+        fun_index = -1
+        for func in multiplexer_functions:
+            fun_index += 1
+            if func is None:
+                continue
+            multiplexer.add("\tcase " + str(fun_index) + ":\n")
+            multiplexer.add("\t\treturn " + func + "();\n")
+            self.generator.source_file.function_manager.add(FunctionDeclaration(func, "unsigned int", []))
+        multiplexer.add("\tdefault:\n")
+        multiplexer.add("\t\treturn crc32(OS_all_CheckedObjects[arg0].location, OS_all_CheckedObjects[arg0].size);\n")
+        multiplexer.add("\t}\n")
+        self.generator.source_file.function_manager.add(multiplexer)
 
 
 class SimpleArch(BaseRules):
