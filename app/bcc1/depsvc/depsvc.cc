@@ -3,7 +3,6 @@
 #include "os.h"
 #include "depsvc.h"
 #include "arch/generic/hardware_threads.h"
-#include "dependability_service.h"
 #include "output.h"
 #include "type.h"
 
@@ -21,7 +20,7 @@ void os_main()
 {
 	data.remote = &area;
 
-	arch::start_hardware_thread(1, dependability_stack, stacksize, dependability_service);
+	arch::start_hardware_thread(1, dependability_stack, stacksize, dep::dependability_service);
 	StartOS(0);
 }
 

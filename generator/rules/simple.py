@@ -142,24 +142,24 @@ class SimpleSystem(BaseRules):
             if co.header is not None:
                 self.generator.source_file.includes.add(Include(co.header))
             if co.typename is not None:
-#                self.generator.source_file.declarations.append(Statement("extern " + co.typename + " " + co.name))
                 self.generator.source_file.data_manager.add(ExternalDataObject(co.typename, co.name))
             initializator += "    { &" + co.name + ", sizeof(" + co.name + ") },\n"
             self.generator.source_file.data_manager.add(
-                DataObject("const unsigned int", "OS_" + co.name + "_CheckedObject_Index", str(co_index))
-##                namespace = ("os",)
+                DataObject("const unsigned int", "OS_" + co.name + "_CheckedObject_Index", str(co_index)),
+                namespace = ("dep",)
             )
             multiplexer_functions.append(co.checkfunc)
             co_index += 1
         initializator += "}"
         self.generator.source_file.data_manager.add(
-            DataObject("const unsigned int", "OS_all_CheckedObjects_size", str(co_index))
+            DataObject("const unsigned int", "OS_all_CheckedObjects_size", str(co_index)),
+			namespace = ("dep",)
         )
         self.generator.source_file.data_manager.add(
-            DataObject("Checked_Object", "OS_all_CheckedObjects[]", initializator)
+            DataObject("Checked_Object", "OS_all_CheckedObjects[]", initializator),
+			namespace = ("dep",)
         )
         # Create Function
-        self.generator.source_file.function_manager.add(FunctionDeclaration("crc32", "unsigned int", ["char*", "unsigned int"]))
         multiplexer = Function("OS_checkfunction_multiplexer", "unsigned int", ["unsigned int"])
         multiplexer.add("\tswitch(arg0) {\n")
         fun_index = -1
@@ -173,7 +173,7 @@ class SimpleSystem(BaseRules):
         multiplexer.add("\tdefault:\n")
         multiplexer.add("\t\treturn crc32(OS_all_CheckedObjects[arg0].location, OS_all_CheckedObjects[arg0].size);\n")
         multiplexer.add("\t}\n")
-        self.generator.source_file.function_manager.add(multiplexer)
+        self.generator.source_file.function_manager.add(multiplexer, "dep")
 
 
 class SimpleArch(BaseRules):

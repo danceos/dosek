@@ -19,6 +19,22 @@ extern "C" void OSEKOS_ReleaseCheckedObject(struct CHECKEDOBJECTStruct *);
 #define ReleaseCheckedObject(name)                                  \
   OSEKOS_ReleaseCheckedObject(&OSEKOS_CHECKEDOBJECT_Struct_##name); \
 
-unsigned int crc32(char *bytes, unsigned int length);
+namespace dep {
+	/**
+	 * \brief Runs the dependability service and does not return.
+	**/
+	void dependability_service();
+
+	/**
+	 * \brief Releases all previously aquired and not yet released CheckedObjects.
+	 *
+	 * Should be called in the PreIdleHook to avoid problems with bitrot while
+	 * synchrizing with the dependability service.
+	**/
+	void release_all_CheckedObjects();
+
+	/** \brief Calculates the crc32 checksum of the given data **/
+	unsigned int crc32(char *bytes, unsigned int length);
+}
 
 #endif

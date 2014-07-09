@@ -72,8 +72,8 @@ class Generator:
         "SendZeroMessage": None,
         "ShutdownOS": ["void", "StatusType"],
 
-        "AcquireCheckedObject": ["void", "Checked_Object*"],
-        "ReleaseCheckedObject": ["void", "Checked_Object*"] }
+        "AcquireCheckedObject": ["void", "dep::Checked_Object*"],
+        "ReleaseCheckedObject": ["void", "dep::Checked_Object*"] }
 
 
     def generate_into(self, output_file_prefix):

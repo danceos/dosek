@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from generator.elements.SourceElement import Block, Statement
+from collections import namedtuple
 
 class Function:
     def __init__(self, name, rettype, argstype, extern_c = False, attributes = None):
@@ -102,13 +103,27 @@ class FunctionDefinitionBlock(Function):
         return [block, "\n"]
 
 class  FunctionManager:
+    Namespace = namedtuple("Namespace", ["name", "functions"])
+
     def __init__(self):
         self.functions = []
+        self.namespaces = []
 
-    def add(self, function):
-        for x in self.functions:
+    def add(self, function, namespace = None):
+        current_scope = None
+        if namespace is None:
+            current_scope = self.functions
+        else:
+            for ns in self.namespaces:
+                if ns.name is namespace:
+                    current_scope = ns.functions
+                    break
+            if current_scope is None:
+                self.namespaces.append(self.Namespace(namespace, []))
+                current_scope = self.namespaces[-1].functions
+        for x in current_scope:
             assert x.name != function.name, "Duplicate function name %s" % function.name
-        self.functions.append(function)
+        current_scope.append(function)
 
     def source_element_declarations(self):
         ret = []
@@ -116,6 +131,12 @@ class  FunctionManager:
         for func in self.functions:
             ret.append(func.source_element_declarations())
         ret.append("\n")
+        for ns in self.namespaces:
+            ret.append("namespace " + ns.name + " {\n");
+            for func in ns.functions:
+                ret.append(func.source_element_declarations())
+            ret.append("\n}\n")
+
         return ret
 
     def source_element_definitions(self):
@@ -123,5 +144,10 @@ class  FunctionManager:
         # Sort by local and global includes
         for func in self.functions:
             ret.append(func.source_element_definitions())
+        for ns in self.namespaces:
+            ret.append("namespace " + ns.name + " {\n");
+            for func in ns.functions:
+                ret.append(func.source_element_definitions())
+            ret.append("\n}\n")
         return ret
 
