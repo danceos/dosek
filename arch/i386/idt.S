@@ -59,6 +59,7 @@ irq_handler_\num:
 	mov %esp, %ebx # put context pointer in %ebx
 	mov $pagedir_os,%edi # # save OS page directory
 
+#ifdef ENCODED
 	# XOR task context checksum
 	mov (%ebx), %ecx
 	xor 4(%ebx), %ecx
@@ -67,6 +68,7 @@ irq_handler_\num:
 	xor 24(%ebx), %ecx
 	xor 28(%ebx), %ecx
 	xor 16(%ebx), %ecx
+#endif
 
 	jmp 2f # jump over user mode handling
 
@@ -82,6 +84,7 @@ irq_handler_\num:
 	mov (%eax), %edi # get real userspace eax (pushed above)
 	mov %edi, 28(%ebx) # put userspace eax in saved context
 
+#ifdef ENCODED
 	mov (%ebx), %ecx
 	xor 4(%ebx), %ecx
 	xor 8(%ebx), %ecx
@@ -104,30 +107,45 @@ irq_handler_\num:
 	xor $0xffffffff, %ebx
 	shl $0x1f, %ebx
 	or %edi, %ebx
+#else
+    # push irq_resume fragment as "new" return address with parity bit
+    push $irq_resume
+    # stack pointer in %edi
+    push %edi
+#endif
 
 	mov %cr3, %edi # save original page directory in %edi
 	mov $pagedir_os,%edx # get OS page directory address
 	mov %edx, %cr3 # switch to OS page directory
 
+#ifdef ENCODED
 	mov _ZN4arch7save_spE, %edx # get value of arch::save_sp
 	mov %edx, %ebp
 	shr $16, %ebp
 	cmp %dx, %bp
 	jne 3f
+#else
+	mov _ZN4arch7save_spE, %ebp # get value of arch::save_sp
+#endif
+
 	mov _ZN4arch12OS_stackptrsE(,%ebp,4), %edx # get value of OS_stackptrs[save_sp]
 	mov %ebx, (%edx) # save stack pointer to *arch::save_sp
-	and $0x7FFFFFFF, %ebx
+#ifdef ENCODED
+	and $0x7FFFFFFF, %ebx # remove parity but on stack pointer
+#endif
 	mov %eax, %esp # switch back to interrupt stack
 	pop %eax # pop userspace eax off stack
 	mov %esp, %esi # put interrupt stack pointer in %esi
 
 2:
+#ifdef ENCODED
 	# push XOR checksum %esi...%esi+20, %ebx...%ebx+32
 	xor (%esi), %ecx
 	xor 4(%esi), %ecx
 	xor 8(%esi), %ecx
 	xor 12(%esi), %ecx #valid?
 	xor 16(%esi), %ecx #valid?
+#endif
 
 	# save IRQ number in register (for isr_unhandled)
 	mov $\num, %eax
@@ -229,6 +247,7 @@ handler_exit:
 	# restore interrupt stack pointer from %esi
 	mov %esi, %esp
 
+#ifdef ENCODED
 	# check checksum
 	xor (%esi), %ecx
 	xor 4(%esi), %ecx
@@ -245,6 +264,7 @@ handler_exit:
 	# alternative: add %esi, %ecx ?
 	jz 1f
 	ud2
+#endif
 
 1:
 	# pop general purpose registers from %ebx

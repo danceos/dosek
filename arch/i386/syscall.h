@@ -41,6 +41,7 @@ forceinline void syscall(F fun) {
 	if(!direct) {
 		asm volatile(
 			"push %%ebp;" // save %ebp
+#ifdef ENCODED
 			"mov %%esp, %%ecx;" // save stackptr ...
 			"popcnt %%ecx, %%edi;" // ... with odd parity ...
 			"xor $0xffffffff, %%edi;"
@@ -52,6 +53,10 @@ forceinline void syscall(F fun) {
 			"shl $0x1f, %%ecx;"
 			"or $1f, %%ecx;"
 			"push %%ecx;" // .. on stack
+#else
+			"mov %%esp, %%edi;" // save stackptr in %edi
+			"push $1f;" // save return address on stack
+#endif
 			"sysenter;" // start syscall
 			"1: pop %%ebp" // return address: restore %ebp
 			:: "d"(fun)

@@ -39,7 +39,11 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	const TCB * const tcb = OS_tcbs[id];
 
 	// set save_sp
+#ifdef ENCODED
 	save_sp = id | ((id) << 16);
+#else
+	save_sp = id;
+#endif
 
 	// set new page directory
 	MMU::switch_task(id);
@@ -52,10 +56,15 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	if(tcb->is_running()) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
-		uint32_t ipv = (uint32_t) *(sp - 1);
+		void * _ipv = (void*) *(sp - 1);
+#ifdef ENCODED
+		const os::redundant::HighParity<void *> ipv(_ipv);
+#else
+		const os::redundant::Plain<void *> ipv(_ipv);
+#endif
 
-		assert(__builtin_parity(ipv) == 1);
-		ip = (void*) (ipv & 0x7FFFFFFF);
+		assert(ipv.check());
+		ip = ipv.get();
 
 		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
 	} else {

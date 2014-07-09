@@ -31,9 +31,14 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 	Machine::enable_interrupts();
 
 	// save stack pointer
+
+#ifdef ENCODED
 	uint32_t ssp = save_sp;
 	assert( (ssp & 0xFFFF) == (ssp >> 16) );
 	*OS_stackptrs[ssp & 0xFFFF] = sp;
+#else
+	*OS_stackptrs[save_sp] = sp;
+#endif
 	save_sp = 0; // to detect IRQ from userspace in idt.S
 
 	// exit system
