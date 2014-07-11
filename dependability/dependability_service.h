@@ -10,14 +10,16 @@ namespace dep {
 	struct Checked_Object
 	{
 		Checked_Object(void *pos, unsigned int length)
-				: location(reinterpret_cast<char*>(pos)), size(length) {}
+				: location(reinterpret_cast<char*>(pos)), size(length), weight(1) {}
 		char *location;
 		unsigned int size;
-		volatile unsigned int checksum;
+		unsigned int checksum;
 		/* For synchronisation */
 		volatile unsigned int counter;
 		/* Special case */
 		volatile unsigned int valid;
+		/* For the scheduler */
+		unsigned int weight;
 	};
 
 	extern Dependability_Scheduler dep_sched;
