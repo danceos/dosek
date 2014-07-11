@@ -52,7 +52,7 @@ struct Scheduler  {
     }
 
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-    forceinline void SetReady_impl(const Task task) {
+    forceinline void SetReady_impl(const Task &task) {
 		IncreasePriority<TASK_SIG>(task, task.prio);
     }
 
@@ -68,7 +68,7 @@ struct Scheduler  {
     }
 
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-    forceinline void SetSuspended_impl(const Task t) {
+    forceinline void SetSuspended_impl(const Task &t) {
         t.tcb.reset();
 
         tlist.remove(t.enc_id<TASK_SIG>());
@@ -80,13 +80,13 @@ struct Scheduler  {
     }
 
 	template<int TO_SIG = {{{generate:arbitrary_new_signature}}}>
-    forceinline void ActivateTask_impl(const Task to) {
+    forceinline void ActivateTask_impl(const Task &to) {
 		SetReady_impl<TO_SIG>(to);
 		Schedule_impl();
     }
 
 	template<int FROM_SIG, int TO_SIG>
-    forceinline void ChainTask_impl(const Task from, const Task to) {
+    forceinline void ChainTask_impl(const Task &from, const Task &to) {
         auto from_id = from.enc_id<FROM_SIG>();
         assert(from_id == current_task);
 
@@ -95,7 +95,7 @@ struct Scheduler  {
 		Schedule_impl();
     }
 
-    forceinline void TerminateTask_impl(const Task from) {
+    forceinline void TerminateTask_impl(const Task &from) {
         auto id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
         assert(id == current_task);
 
@@ -104,24 +104,24 @@ struct Scheduler  {
         Schedule_impl();
     }
 
-    forceinline void GetResource_impl(const Task current_task, const int new_prio) {
+    forceinline void GetResource_impl(const Task &current_task, const int new_prio) {
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
     }
 
-    forceinline void ReleaseResource_impl(const Task current_task, const int new_prio) {
+    forceinline void ReleaseResource_impl(const Task &current_task, const int new_prio) {
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
 		Schedule_impl();
     }
 
-    forceinline void SetReadyFromSuspended_impl(const Task task) {
+    forceinline void SetReadyFromSuspended_impl(const Task &task) {
 		SetPriority(task, task.prio);
     }
 
 	// Low level interface to the task list
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-	forceinline void SetCurrentTask(const Task task) {
+	forceinline void SetCurrentTask(const Task &task) {
 		if (task.preemptable == false) {
 			// promote non-preemptable task to RES_SCHEDULER
 			tlist.set(task.enc_id<1>(), scheduler_prio);
@@ -136,20 +136,20 @@ struct Scheduler  {
 	}
 
 
-	forceinline void SetPriority(const Task task, const int new_prio) {
+	forceinline void SetPriority(const Task &task, const int new_prio) {
 		auto id = task.enc_id<1>();
 		auto new_prio_encoded = EC(2, new_prio);
 		tlist.set(id, new_prio_encoded);
 	}
 
-	forceinline bool isSuspended(const Task task) {
+	forceinline bool isSuspended(const Task &task) {
 		auto id = task.enc_id<1>();
 		return tlist.isSuspended(id);
 	}
 
 
 	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-	forceinline void IncreasePriority(const Task task, const int new_prio) {
+	forceinline void IncreasePriority(const Task &task, const int new_prio) {
 	auto id = task.enc_id<TASK_SIG>();
         // TODO: generated signature
 		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
