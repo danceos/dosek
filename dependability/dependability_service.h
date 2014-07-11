@@ -4,13 +4,25 @@
 #include "dependability_scheduler.h"
 
 namespace dep {
+	/* Implementation remark:
+	 * If more than one thread/core/process checks common checked objects, a
+	 * checker id can be used that allows to synchronize them in a nonblocking
+	 * way. Note that the queue needs synchronization, too.
+	 */
+	enum {
+		checksum_valid = 1212606955,
+		checksum_invalid = 1192231209,
+		checksum_checked = 41084939,
+	};
+
 	/**
 	 * \brief Metadata for each checked object
 	**/
 	struct Checked_Object
 	{
 		Checked_Object(void *pos, unsigned int length)
-				: location(reinterpret_cast<char*>(pos)), size(length), weight(1) {}
+				: location(reinterpret_cast<char*>(pos)), size(length),
+				  counter(0), valid(checksum_invalid), weight(1) {}
 		char *location;
 		unsigned int size;
 		unsigned int checksum;
@@ -40,6 +52,11 @@ namespace dep {
 	 *        invalid
 	**/
 	void release_CheckedObject(unsigned int obj_index);
+
+	/**
+	 * \brief Releases all checked objects
+	**/
+	void release_all_CheckedObjects();
 
 	/**
 	 * \brief Compares the old checksum (if available) against the new one and

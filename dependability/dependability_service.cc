@@ -17,22 +17,11 @@ namespace dep {
 			}
 			/*
 			crc32 = __builtin_ia32_crc32si(crc32, bytes[i]);
-			currently failes with: LLVM ERROR: Cannot select: intrinsic %llvm.x86.sse42.crc32.32.32
+			currently fails with: LLVM ERROR: Cannot select: intrinsic %llvm.x86.sse42.crc32.32.32
 			*/
 		}
 		return crc32;
 	}
-
-	/* Implementation remark:
-	 * If more than one thread/core/process checks common checked objects, a
-	 * checker id can be used that allows to synchronize them in a nonblocking
-	 * way. Note that the queue needs synchronization, too.
-	 */
-	enum {
-		checksum_valid = 1,
-		checksum_invalid = 0,
-		checksum_checked = 4,
-	};
 
 	void acquire_CheckedObject(unsigned int obj_index)
 	{
@@ -46,6 +35,13 @@ namespace dep {
 		OS_all_CheckedObjects[obj_index].valid = checksum_invalid;
 	}
 
+	void release_all_CheckedObjects()
+	{
+		for (unsigned int i = 0; i < OS_all_CheckedObjects_size; ++i) {
+			OS_all_CheckedObjects[i].counter = 0;
+		}
+	}
+
 	bool check_CheckedObject(unsigned int obj)
 	{
 		unsigned int oldvalid = OS_all_CheckedObjects[obj].valid;
@@ -56,9 +52,12 @@ namespace dep {
 		}
 
 		unsigned int newchecksum = OS_checkfunction_multiplexer(obj);
-		if (oldvalid == checksum_valid &&
+		if ((oldvalid == checksum_valid &&
 			OS_all_CheckedObjects[obj].valid == checksum_checked &&
-			newchecksum != OS_all_CheckedObjects[obj].checksum) {
+			newchecksum != OS_all_CheckedObjects[obj].checksum) ||
+			((OS_all_CheckedObjects[obj].valid != checksum_invalid) &&
+			(OS_all_CheckedObjects[obj].valid != checksum_valid) &&
+			(OS_all_CheckedObjects[obj].valid != checksum_checked))) {
 				assert(false);
 		}
 		OS_all_CheckedObjects[obj].checksum = newchecksum;

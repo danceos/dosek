@@ -48,3 +48,7 @@ TASK(CheckedTask) {
 	}
 	TerminateTask();
 }
+
+PreIdleHook() {
+	dep::release_all_CheckedObjects();
+}
