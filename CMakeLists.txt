@@ -98,6 +98,12 @@ else()
 	message(STATUS "[${PROJECT_NAME}] Fail Trace All: OFF")
 endif()
 
+OPTION(DEPENDABILITY_FAILURE_LOGGING "Dependability Failure Logging" OFF)
+if(DEPENDABILITY_FAILURE_LOGGING)
+	message(STATUS "[${PROJECT_NAME}] Logging Dependability Failures")
+	add_definitions(-DDEPENDABILITY_FAILURE_LOGGING)
+endif()
+
 # Verbose make
 option(VERBOSE_MAKE "Verbose Makefile output" OFF)
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE_MAKE})

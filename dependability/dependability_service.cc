@@ -3,6 +3,23 @@
 #include "atomics.h"
 
 namespace dep {
+
+	#ifdef DEPENDABILITY_FAILURE_LOGGING
+			volatile unsigned int failure_counter = 0;
+			volatile unsigned int check_counter   = 0;
+			#define DEPLOG(state)                              \
+				++check_counter;                               \
+				if (state == Dependability_Scheduler::FAILURE) \
+						++failure_counter;                     \
+				(void) check_counter;                          \
+				(void) failure_counter;
+				/* The two lines above somehow force the change of
+				 * check_counter and failure_counter!?
+				 */
+	#else
+			#define DEPLOG(state)
+	#endif
+
 	Dependability_Scheduler dep_sched;
 	// From generator:
 	unsigned int crc32(char* bytes, unsigned int len)
@@ -77,6 +94,8 @@ namespace dep {
 					? Dependability_Scheduler::SUCCESS
 					: Dependability_Scheduler::FAILURE
 			;
+
+			DEPLOG(state);
 
 			// Enqueue with new priority
 			dep_sched.update(element, state);

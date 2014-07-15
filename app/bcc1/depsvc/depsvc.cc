@@ -44,6 +44,10 @@ TASK(CheckedTask) {
 	ReleaseCheckedObject(area);
 	kout << c << endl;
 	if (++c > 10) {
+		#ifdef DEPENDABILITY_FAILURE_LOGGING
+			kout << "Dependability Failure Count: " << GET_DEPENDABILITY_FAILURE_COUNT()
+			     << "/" << GET_DEPENDABILITY_CHECK_COUNT() << endl;
+		#endif
 		ShutdownMachine();
 	}
 	TerminateTask();

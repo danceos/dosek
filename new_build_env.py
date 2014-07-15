@@ -44,10 +44,13 @@ def main():
     parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
                       help="Trace all testcases")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="increase verbosity (specify multiple times for more)")
+                      help="Increase verbosity (specify multiple times for more)")
     parser.add_option('-c', '--clean', dest='CLEAN', action="store_true",
                       default = False,
-                      help="remove all files from current directory before")
+                      help="Remove all files from current directory before")
+    parser.add_option('', '--dependability_failure_logging',
+                      dest='DEPFAILLOG', default="no",
+                      help="Log checksum calculation interrupts of the dependability service (default: no)")
 
     (options, args) = parser.parse_args()
 
@@ -69,7 +72,7 @@ def main():
     options.dOSEK_STATE_ASSERTS = cmake_bool(options.STATE_ASSERTS == "yes")
     options.dOSEK_SSE = cmake_bool(options.SSE == "yes")
     options.FAIL_TRACE_ALL = cmake_bool(options.FAIL_TRACE_ALL == "yes")
-
+    options.DEPENDABILITY_FAILURE_LOGGING = cmake_bool(options.DEPFAILLOG == "yes")
 
 
     logging.info("Build System: %s", options.GENERATOR)
@@ -81,6 +84,7 @@ def main():
     logging.info("Symbolic System Execution: %s", options.dOSEK_SSE)
     logging.info("Generator Arguments: %s", options.GENERATOR_ARGS)
     logging.info("Fail Trace All: %s", options.FAIL_TRACE_ALL)
+    logging.info("Dependability Failure Logging: %s", options.DEPENDABILITY_FAILURE_LOGGING)
 
 
     # Don't think too much about it
@@ -103,6 +107,8 @@ def main():
                      "-DdOSEK_SSE=%s" % options["dOSEK_SSE"],
                      "-DGENERATOR_ARGS='%s'"%options["GENERATOR_ARGS"],
                      "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
+                     "-DDEPENDABILITY_FAILURE_LOGGING=%s" % options["DEPENDABILITY_FAILURE_LOGGING"],
+
                      options["REPODIR"]])
 
 if __name__ == '__main__':
