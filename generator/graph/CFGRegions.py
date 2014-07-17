@@ -131,12 +131,12 @@ class CFGRegions(Analysis):
 
         # Generate DataObject that holds the curren region mask
         self.marker_dataobject = DataObject("uint32_t", "OS_CFG_REGION_MASK")
-        generator.source_file.data_manager.add(self.marker_dataobject, namespace= ("os",))
+        generator.source_file.data_manager.add(self.marker_dataobject)
 
         for region in self.regions:
             const = DataObject("const uint32_t", region, str(self.region_mask[region]))
             const.allocation_prefix = "constexpr "
-            generator.source_file.data_manager.add(const, namespace= ("os",))
+            generator.source_file.data_manager.add(const)
 
     def system_enter_hook(self, generator, abb, hook):
         """This function is called by the code generation, when the system
