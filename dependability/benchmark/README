@@ -1,0 +1,35 @@
+APPLICATION AND BENCHMARK CREATION
+
+createresults.py:
+	Creates and runs some benchmarking applications and stores their results in a file.
+	It prints status messages on stdout and uses runbench.py for application generation.
+	(Currently by invoking "runbench.py 10 64 128"). For parallel runs, each process
+	requires its own source directory. The result file contains the consecutive information
+	about the applications that was given by runbench.py and the serial output of each
+	application which consists of the amount of Checksum calculation runs and interruptions.
+
+	Arguments: builddir outputfile number
+
+	builddir: The directory used for building the applications (will be wiped!)
+	outputfile: The file in which the results are stored
+	number: The number of applications benchmarked
+
+	Output format:
+		seed: [...]
+		repetitions: [...]
+		[...]
+		standard_deviation_of_waiting_durations: [...]
+		<number of interruptions>/<number of checksum calculations>
+
+runbench.py:
+	Creates an benchmarking application in /app/bcc1/depbench called bcc1_depbench. Some
+	statistical values are printed on stdout. In contrary to its name, no application will
+	be run!
+
+	Arguments: repetitions slots objects [seed]
+	
+	repetitions: The number of times the main loop is repeated
+	slots: The number of slots used to distritbute CheckedObjects
+	objects: The number of objects created in the application
+	seed: Optional parameter - if given it is used as the seed for the python random
+			number generator.
