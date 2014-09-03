@@ -35,7 +35,7 @@ if __name__ == "__main__":
     source_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, os.path.abspath(os.path.join(source_dir, "..")))
 
-    from generator import SystemDescription, RTSCAnalysis, LLVMPYAnalysis, Generator
+    from generator import LLVMPYAnalysis, Generator, RTSCAnalysis, RTSCSystemDescription, OILSystemDescription
     from generator.rules import *
     from generator.graph import *
     from generator.tools import panic, wrap_typecheck_functions
@@ -45,8 +45,8 @@ if __name__ == "__main__":
 
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option("", "--system-xml",
-                      metavar="SYSTEM_XML", help="the system description file")
+    parser.add_option("", "--system-desc",
+                      metavar="SYSTEM_DESC", help="the system description file (.xml or .oil)")
     parser.add_option("", "--rtsc-analyze-xml",
                       metavar="RTSC_ANALYZE_XML", help="the RTSC Analyze file")
     parser.add_option("-p", "--prefix",
@@ -88,14 +88,26 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     setup_logging(options.verbose)
-
-    system_description = SystemDescription.SystemDescription(options.system_xml)
-
-
     graph = SystemGraph()
     pass_manager = graph
     pass_manager.read_verify_script(options.verify)
-    graph.read_system_description(system_description)
+
+    if options.system_desc:
+        if options.system_desc.lower().endswith(".xml"):
+            system_description = RTSCSystemDescription.RTSCSystemDescription(options.system_desc)
+            graph.read_xml_system_description(system_description)
+        elif options.system_desc.lower().endswith(".oil"):
+            system_description = OILSystemDescription.OILSystemDescription(options.system_desc)
+            graph.read_oil_system_description(system_description)
+        else:
+            print("No valid system description file")
+            parser.print_help()
+            sys.exit(-1)
+    else:
+        print("No system description file passed")
+        parser.print_help()
+        sys.exit(-1)
+
 
     systemanalysis = None
 

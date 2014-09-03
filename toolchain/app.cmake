@@ -1,13 +1,11 @@
 include(CMakeParseArguments)
 include(rtsc)
 
-
-MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITIONS LIBS GENERATOR_ARGS)
+MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS LIBS GENERATOR_ARGS)
   SET(DOSEK_ANNOTATE_SOURCE "${DOSEK_GENERATOR_DIR}/annotate/cored_annotate.cc")
   SET(DOSEK_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${NAME}")
   file(MAKE_DIRECTORY "${DOSEK_OUTPUT_DIR}")
   SET(DOSEK_ANNOTATE_OBJECT "${DOSEK_OUTPUT_DIR}/cored_annotate.ll")
-
   # compile annotate file
   set(ISA_CXX_FLAGS_LIST ${ISA_CXX_FLAGS})
   separate_arguments(ISA_CXX_FLAGS_LIST)
@@ -40,8 +38,6 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITIONS 
   string(REPLACE " " ";" COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
 
   # First we have to compile all source files with clang
-
-  #COMMAND ${CLANGPP_BINARY} -S -emit-llvm -O0 -std=c++11 ${ISA_CXX_FLAGS_LIST} ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
   foreach(src ${SOURCES})
     set(llvm_bytecode "${DOSEK_OUTPUT_DIR}/${src}.ll")
     add_custom_command(OUTPUT ${llvm_bytecode}
@@ -55,25 +51,6 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITIONS 
 
     list(APPEND DOSEK_BINARY_LLVM_BYTECODE ${llvm_bytecode})
   endforeach(src)
-
-  #  # Use RTSC to analyze and merge the source system bytecode
-  #  add_custom_command(OUTPUT "${DOSEK_SOURCE_SYSTEM}"
-  #  DEPENDS ${DOSEK_ANNOTATE_OBJECT}
-  #            ${DOSEK_BINARY_LLVM_BYTECODE}
-  #            ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
-  #  COMMAND ${EAG_BINARY} -data-deps=explicit -verify
-  #     -sysann=${DOSEK_ANNOTATE_OBJECT}
-  #     -sourcesystem=${SYSTEM_XML}
-  #     -out=${DOSEK_OUTPUT_DIR}
-  #     -analyze-tasks -dump-source-system
-  #       -dump-graphs
-  #     ${DOSEK_BINARY_LLVM_BYTECODE}
-  #    COMMENT "[${PROJECT_NAME}/${NAME}] Analyzing application with RTSC")
-  #
-  #  # Add Target for the analysis step
-  #  add_custom_target(${NAME}-rtsc-analyze
-  #  DEPENDS ${DOSEK_SOURCE_SYSTEM})
-
 
   # All python source files are a dependency
   SET(DOSEK_GENERATOR_ARGS "${GENERATOR_ARGS}")
@@ -97,14 +74,18 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITIONS 
     set(DOSEK_GENERATOR_ARGS ${DOSEK_GENERATOR_ARGS} --specialize-systemcalls)
   endif()
 
+  # Check system description file
+  file(GLOB XMLDESCS "${CMAKE_CURRENT_SOURCE_DIR}/*.xml")
+  file(GLOB OILDESCS "${CMAKE_CURRENT_SOURCE_DIR}/*.oil")
+  set(SYSDESCS ${XMLDESCS} ${OILDESCS})
+
   # Generating DOSEK System
   add_custom_command(OUTPUT "${DOSEK_GENERATED_SOURCE}"  "${DOSEK_GENERATED_LINKER}" "${DOSEK_SOURCE_SYSTEM}"
-  DEPENDS ${PYTHON_SOURCE} "${SYSTEM_XML}" ${DOSEK_BINARY_LLVM_BYTECODE} 
-             ${CMAKE_CURRENT_SOURCE_DIR}/*.xml
+  DEPENDS ${PYTHON_SOURCE} "${SYSTEM_DESC}" ${DOSEK_BINARY_LLVM_BYTECODE} ${SYSDESCS}
              ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
     COMMAND ${CMAKE_COMMAND} -E remove -f ${DOSEK_OUTPUT_DIR}/gen_*.dot
     COMMAND ${DOSEK_GENERATOR}
-     --system-xml "${SYSTEM_XML}"
+     --system-desc "${SYSTEM_DESC}"
      --source-bytecode "${DOSEK_BINARY_LLVM_BYTECODE}"
      --merged-bytecode "${DOSEK_SOURCE_SYSTEM}"
        --prefix ${DOSEK_OUTPUT_DIR}
@@ -147,17 +128,16 @@ ENDMACRO()
 
 MACRO(DOSEK_BINARY)
   set(options TEST_ISO FAIL)
-  set(oneValueArgs SYSTEM_XML NAME VERIFY)
+  set(oneValueArgs SYSTEM_DESC NAME VERIFY)
   set(multiValuedParameters SOURCES LIBS GENERATOR_ARGS)
   cmake_parse_arguments(DOSEK_BINARY "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
   set(DOSEK_BINARY_SOURCES "${DOSEK_BINARY_UNPARSED_ARGUMENTS};${DOSEK_BINARY_SOURCES}")
-  SET(DOSEK_SYSTEM_XML "${CMAKE_CURRENT_SOURCE_DIR}/${DOSEK_BINARY_SYSTEM_XML}")
+  SET(DOSEK_SYSTEM_DESC "${CMAKE_CURRENT_SOURCE_DIR}/${DOSEK_BINARY_SYSTEM_DESC}")
   set(DOSEK_VERIFY_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${DOSEK_BINARY_VERIFY}")
   SET(NAME "${DOSEK_BINARY_NAME}")
 
-  DOSEK_BINARY_EXECUTABLE(${NAME} "${DOSEK_BINARY_SOURCES}" ${DOSEK_SYSTEM_XML} ${DOSEK_VERIFY_SCRIPT} 
+  DOSEK_BINARY_EXECUTABLE(${NAME} "${DOSEK_BINARY_SOURCES}" ${DOSEK_SYSTEM_DESC} ${DOSEK_VERIFY_SCRIPT} 
     "" "${DOSEK_BINARY_LIBS}" "${DOSEK_BINARY_GENERATOR_ARGS}")
-
   add_custom_command(TARGET ${NAME} POST_BUILD
     COMMENT "Gathering binary statistics for ${NAME}"
     COMMAND ${DOSEK_GENERATOR_DIR}/stats_binary.py
@@ -165,7 +145,7 @@ MACRO(DOSEK_BINARY)
     --elf ${PROJECT_BINARY_DIR}/${NAME})
 
   if((${DOSEK_BINARY_FAIL} STREQUAL "TRUE") OR FAIL_TRACE_ALL)
-    DOSEK_BINARY_EXECUTABLE(fail-${NAME} "${DOSEK_BINARY_SOURCES}" ${DOSEK_SYSTEM_XML} ${DOSEK_VERIFY_SCRIPT} 
+    DOSEK_BINARY_EXECUTABLE(fail-${NAME} "${DOSEK_BINARY_SOURCES}" ${DOSEK_SYSTEM_DESC} ${DOSEK_VERIFY_SCRIPT} 
       "FAIL=1" "${DOSEK_BINARY_LIBS}" "${DOSEK_BINARY_GENERATOR_ARGS}")
 
     fail_test(${NAME} fail-${NAME})

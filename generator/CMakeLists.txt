@@ -1,6 +1,6 @@
 
 set(PYTHON_MODULES_TEST
-  SystemDescription
+  RTSCSystemDescription
   RTSCAnalysis
 )
 

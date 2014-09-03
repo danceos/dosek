@@ -1,0 +1,99 @@
+
+CPU Josek_x86 {
+	OS JOSEK {
+		USEPARAMETERACCESS = FALSE;
+		STATUS = STANDARD;
+		USERESSCHEDULER = TRUE;
+		USEGETSERVICEID = FALSE;
+		POSTTASKHOOK = TRUE : "Description of posttaskhook";
+		STARTUPHOOK = TRUE;
+		PRETASKHOOK = TRUE;
+	};
+
+	TASK task1 {
+		AUTOSTART = TRUE {
+		APPMODE = appmode1;
+		APPMODE = appmode2;
+		};
+		ACTIVATION = 1;
+		PRIORITY = 1;
+		SCHEDULE = NON;
+	};
+
+	TASK task2 {
+		AUTOSTART = FALSE;
+		ACTIVATION = 1;
+		PRIORITY = 1;
+		SCHEDULE = NON;
+		RESOURCE = res1;
+		RESOURCE = res2;
+	} : "This is the second task";
+
+
+	APPMODE appmode1 { };
+	APPMODE appmode2 { };
+
+	RESOURCE res1 {
+		RESOURCEPROPERTY = STANDARD;
+	};
+
+	RESOURCE res2 {
+		RESOURCEPROPERTY = STANDARD;
+	};
+
+	COUNTER Timer {
+		MINCYCLE = 16; MAXALLOWEDVALUE = 127; TICKSPERBASE = 90;
+	};
+
+	ALARM WakeTaskA {
+		COUNTER = Timer;
+		ACTION = SETEVENT {
+			TASK = task2;
+			EVENT = event1;
+		};
+		AUTOSTART = FALSE;
+	 };
+
+	COUNTER SysCounter {
+		MINCYCLE = 16; MAXALLOWEDVALUE = 127; TICKSPERBASE = 90;
+	};
+
+
+
+	ALARM WakeTaskB {
+		COUNTER = SysCounter;
+		ACTION = ACTIVATETASK {
+			TASK = task1;
+		};
+		AUTOSTART = TRUE {
+			 ALARMTIME = 50;
+			 CYCLETIME = 100;
+			 APPMODE = appmode1;
+			 APPMODE = appmode2;
+		};
+	};
+
+	EVENT event1 {
+		MASK = 0xf2; // TODO: hex allow to parse hex digits
+	};
+
+	EVENT event2 {
+		MASK = AUTO;
+	};
+
+
+	ALARM RunCallbackC {
+		COUNTER = SysCounter;
+		ACTION = ALARMCALLBACK {
+			ALARMCALLBACKNAME = "CallbackC";
+		 };
+		AUTOSTART = FALSE;
+	};
+
+	ISR isr1 {
+		CATEGORY = 2;
+		RESOURCE = res1;
+		DEVICE = 32;
+	};
+
+} : "Das ist eine Beschreibung der CPU" ;

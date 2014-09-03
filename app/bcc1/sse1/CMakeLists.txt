@@ -2,7 +2,7 @@
 
 DOSEK_BINARY(
   NAME bcc1_sse1a
-  SYSTEM_XML system.xml
+  SYSTEM_DESC system.xml
   LIBS libtest
   VERIFY verify_a.py
   TEST_ISO
@@ -11,7 +11,7 @@ DOSEK_BINARY(
 
 DOSEK_BINARY(
   NAME bcc1_sse1b
-  SYSTEM_XML system.xml
+  SYSTEM_DESC system.xml
   LIBS libtest
   VERIFY verify_b.py
   TEST_ISO
@@ -21,7 +21,7 @@ DOSEK_BINARY(
 
 DOSEK_BINARY(
   NAME bcc1_sse1c
-  SYSTEM_XML system.xml
+  SYSTEM_DESC system.xml
   LIBS libtest
   VERIFY verify_c.py
   TEST_ISO

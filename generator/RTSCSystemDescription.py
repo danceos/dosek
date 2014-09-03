@@ -3,7 +3,7 @@ import os
 from collections import namedtuple
 
 
-class SystemDescription:
+class RTSCSystemDescription:
     """The system description represents the system.xml, that describes
     the elements within the application (tasks, alarms, etc...). 
 
@@ -191,9 +191,9 @@ class SystemDescription:
 ################################################################
 import unittest
 
-class TestSystemDescription(unittest.TestCase):
+class TestRTSCSystemDescription(unittest.TestCase):
     def setUp(self):
-        self.desc = SystemDescription("test/system.xml")
+        self.desc = RTSCSystemDescription("test/system.xml")
     def test_osek_attributes(self):
         self.assertEqual(self.desc.getName(), "TestSystem")
         self.assertFalse(self.desc.isExtended())

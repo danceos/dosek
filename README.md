@@ -31,13 +31,14 @@ Software Requirements
     apt-get install binutils-dev build-essential clang-3.4 cmake \
         g++-multilib gcc-multilib git grub-common grub-pc-bin    \
         llvm-3.3-dev llvm-3.3-runtime python-minimal python3     \
-        python3-lxml python3-pip qemu-system-x86 xorriso         \
+        python3-lxml python3-pyparsing python3-pip               \
+        qemu-system-x86 xorriso
 
     LLVM_CONFIG_PATH=/usr/bin/llvm-config-3.3 pip3 install llvmpy
 
 For the ARM version, you will  additionally need
 
-    gcc-arm-none-eabi gdb-arm-none-eabi
+    gcc-arm-none-eabi gdb-arm-none-eabi qemu-system-arm
 
 Building
 --------

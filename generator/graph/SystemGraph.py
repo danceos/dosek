@@ -8,6 +8,7 @@ from generator.graph.Sporadic import Alarm, ISR
 from generator.graph.Resource import Resource
 from generator.graph.common import GraphObject
 from generator.statistics import Statistics
+from collections import namedtuple
 
 
 class SystemGraph(GraphObject, PassManager):
@@ -93,8 +94,107 @@ class SystemGraph(GraphObject, PassManager):
         """The scheduler priority is higher than the highest task"""
         return max([x.static_priority for x in self.get_subtasks()]) + 1
 
-    def read_system_description(self, system):
-        """Reads in the system description and builds the tasks and subtask
+
+    def read_oil_system_description(self, system):
+        """Reads in the system description out of an OIL file and builds the tasks and subtask
+        objects and connects them"""
+        maxprio = 0  #  Maximum task prio according to OIL file
+        for task_desc in system.getTasks():
+            taskname = task_desc.name
+            task = Task(self, "Task:" + taskname)
+            self.tasks.append(task)
+            self.stats.add_child(self, "task", task)
+            subtask = Subtask(self, taskname, "OSEKOS_TASK_" + taskname)
+            # Every subtask belongs to a task
+            task.add_subtask(subtask)
+            # Every subtask is also a function
+            self.functions[subtask.function_name] = subtask
+            self.stats.add_child(task, "subtask", subtask)
+            assert task_desc.priority != 0, \
+                    "No user thread can have the priority 0, reserved for the idle thread"
+            subtask.set_static_priority(task_desc.priority)
+
+            if task_desc.priority > maxprio:
+                maxprio = task_desc.priority
+
+            subtask.set_preemptable(task_desc.preemptable)
+            subtask.set_basic_task(True)
+            subtask.set_max_activations(task_desc.max_activations)
+            subtask.set_autostart(task_desc.autostart)
+            subtask.set_is_isr(False)
+            self.stats.add_data(subtask, "is_isr", False, scalar = True)
+
+        #  ISR
+        isr_prio = maxprio + 1  # ISR get priorities above maximum task prio
+        for isr_desc in system.getISRs():
+            task = Task(self, "ISRTask:" + isr_desc.name)
+            self.tasks.append(task)
+            self.stats.add_child(self, "task", task)
+            subtask = Subtask(self, isr_desc.name, "OSEKOS_ISR_" + isr_desc.name)
+            task.add_subtask(subtask)
+            self.functions[subtask.function_name] = subtask
+            self.stats.add_child(task, "subtask", subtask)
+
+            prio = isr_desc.PRIORITY
+            if prio == -1:
+                prio = isr_prio
+                isr_prio = isr_prio + 1 # increment isr prio
+
+            subtask.set_static_priority(prio)
+
+            # Assumption: Our subtasks are non-preemptable basic-tasks
+            subtask.set_preemptable(False)
+            subtask.set_basic_task(True)
+            subtask.set_max_activations(1)
+            subtask.set_autostart(False)
+            subtask.set_is_isr(True, isr_desc.device)
+            self.stats.add_data(subtask, "is_isr", True, scalar = True)
+
+            self.isrs.append(ISR(self, subtask))
+
+        #  Counters
+        Counter = namedtuple("Counter", ["name", "maxallowedvalue", "ticksperbase", "mincycle"])
+        for ctr in system.getCounters():
+            self.counters.append(Counter(name = ctr.name,
+                                         maxallowedvalue = ctr.MAXALLOWEDVALUE,
+                                         ticksperbase = ctr.TICKSPERBASE,
+                                         mincycle = ctr.MINCYCLE))
+
+        #  Alarms
+        for alarm in system.getAlarms():
+            assert alarm.activated_task() != None, "Alarm does not activate any task! (maybe callback?)"
+            activated_subtask = self.functions["OSEKOS_TASK_" + alarm.activated_task()]
+            belongs_to_task = activated_subtask.task
+
+            #  Generate an Alarm Handler SubTask
+            name = "OSEKOS_ALARM_HANDLER_" + alarm.name
+            subtask = Subtask(self, alarm.name, name)
+            subtask.set_static_priority(1<<31)
+            subtask.set_preemptable(False)
+            subtask.set_basic_task(True)
+            subtask.set_max_activations(1)
+            subtask.set_autostart(False)
+            subtask.set_is_isr(True)
+
+            #  And add it to the task where the activated task belongs to
+            belongs_to_task.add_subtask(subtask)
+            self.functions[subtask.function_name] = subtask
+
+            self.alarms.append(Alarm(self, subtask, alarm, activated_subtask))
+
+        #  Resources
+        for res in system.getResources():
+            self.resources[res.name] = Resource(self, res.name, res.tasks)
+
+        if not "RES_SCHEDULER" in self.resources:
+            sched = "RES_SCHEDULER"
+            subtasks = [x.name for x in self.get_subtasks()
+                        if not x.is_isr]
+            self.resources[sched] = Resource(self, sched, subtasks)
+
+
+    def read_xml_system_description(self, system):
+        """Reads in the system description out of an XML file and builds the tasks and subtask
         objects and connects them"""
 
         for task_desc in system.getTasks():
@@ -173,6 +273,7 @@ class SystemGraph(GraphObject, PassManager):
             subtasks = [x.name for x in self.get_subtasks()
                        if not x.is_isr]
             self.resources[sched] = Resource(self, sched, subtasks)
+
 
     def read_llvmpy_analysis(self, llvmpy):
         self.llvmpy = llvmpy

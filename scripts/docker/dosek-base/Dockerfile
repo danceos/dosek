@@ -18,6 +18,7 @@ RUN apt-get update; apt-get install -y \
     python3             \
     python3-lxml        \
     python3-pip         \
+    python3-pyparsing   \
     qemu-system-x86     \
     screen              \
     vim                 \

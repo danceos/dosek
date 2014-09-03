@@ -1,0 +1,53 @@
+CPU TestSystem {
+
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+    TASK H1 {
+        SCHEDULE = FULL;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    TASK H2 {
+        SCHEDULE = FULL;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    TASK H3 {
+        SCHEDULE = FULL;
+        PRIORITY = 3;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    ALARM A1 {
+        COUNTER = C1;
+        ACTION = ACTIVATETASK {
+            TASK = H2;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 100;
+            CYCLETIME = 100;
+        };
+    };
+
+
+    COUNTER C1 {
+        MAXALLOWEDVALUE = 1000;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+    };
+
+
+};
+

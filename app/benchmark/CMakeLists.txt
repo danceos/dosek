@@ -1,6 +1,6 @@
 DOSEK_BINARY(
   NAME bench-task1a
-  SYSTEM_XML system.xml
+  SYSTEM_DESC system.xml
   FAIL
   a.cc
 )

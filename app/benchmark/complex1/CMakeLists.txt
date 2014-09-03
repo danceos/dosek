@@ -1,6 +1,6 @@
 DOSEK_BINARY(
   NAME bench-complex1d
-  SYSTEM_XML system.xml
+  SYSTEM_DESC system.xml
   FAIL
   d.cc
 )
