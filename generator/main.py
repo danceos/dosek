@@ -111,7 +111,7 @@ if __name__ == "__main__":
                 print("Cannot open", options.mergedoutput, "for writing")
                 sys.exit(1)
         llvmpy_analysis = LLVMPYAnalysis.LLVMPYAnalysis(options.llfiles, mergedoutfile, graph)
-        # TODO Write out adapted source ll files
+
         graph.read_llvmpy_analysis(llvmpy_analysis)
         llvmpy_analysis.writeout_merged_source()
         systemanalysis = llvmpy_analysis

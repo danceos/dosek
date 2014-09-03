@@ -32,7 +32,7 @@ def main():
     parser.add_option('', '--encoded', dest='ENCODED', default = "yes",
                       help="Build an unencoded system (default: yes)")
     parser.add_option('', '--mpu', dest='MPU', default = "yes",
-                      help="Build an unencoded system (default: yes)")
+                      help="Enable memory protection (default: yes)")
     parser.add_option('', '--specialize', dest='SPECIALIZE', default = "no",
                       help="Use system analysis for specialized system calls (default: no)")
     parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
