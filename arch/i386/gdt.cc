@@ -46,8 +46,8 @@ void GDT::init() {
 	asm volatile("lgdt %0" :: "m"(gdt) : "memory");
 
 	// zero TSS
-	// manual memset(&tss, 0, sizeof(tss));
-	for(uint32_t* addr = (uint32_t*) &tss; addr < (uint32_t*)&tss+(sizeof(tss)/4); addr++) *addr = 0;
+	// manual memset(&tss, 0, sizeof(tss)); (addr is volatile to prevent llvm generating a call to memset ...)
+	for(volatile uint32_t* addr = (uint32_t*) &tss; addr < (uint32_t*)&tss+(sizeof(tss)/4); addr++) *addr = 0;
 
 	// prepare TSS
 	tss.esp0 = (uint32_t) (&_estack_os - 16);	// TODO: multiple stacks for concurrent irqs?

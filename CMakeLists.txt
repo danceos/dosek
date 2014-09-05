@@ -78,7 +78,9 @@ set(EXECUTABLES "" CACHE INTERNAL "List of executables")
 # Hardware dependent code
 set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories")
 add_subdirectory(arch)
-coredos_include_dir(${ARCH_INCLUDE_DIRS})
+foreach(ARCH_INCLUDE_DIR ${ARCH_INCLUDE_DIRS})
+	coredos_include_dir(${ARCH_INCLUDE_DIR})
+endforeach()
 
 # Tests
 add_subdirectory(test)

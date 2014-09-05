@@ -157,6 +157,8 @@ if __name__ == "__main__":
 
     if options.arch == "i386":
         arch_rules = X86Arch()
+    elif options.arch == "ARM":
+        arch_rules = ARMArch()
     elif options.arch == "posix":
         arch_rules = PosixArch()
     else:

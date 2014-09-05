@@ -2,57 +2,45 @@
 set(RAM_SIZE "8" CACHE STRING "(Emulated) RAM size in MB")
 
 # Debugger to use
-find_program(DEBUGGER "gdb" DOC "Debugger (gdb/ddd)")
+find_program(DEBUGGER "arm-none-eabi-gdb" DOC "Debugger (gdb/ddd)")
 
 # (Random) port for debugging
 string(RANDOM LENGTH 4 ALPHABET "123456789" DPORT)
 set(DEBUG_PORT ${DPORT} CACHE STRING "Debug (stub) port")
 message(STATUS "[${PROJECT_NAME}] Using port ${DEBUG_PORT} for debug stub")
 
+# Include platform-specific files
+add_subdirectory(platforms)
+coredos_include_dir(${ARCH_INCLUDE_DIRS})
+
 # Build option to disable MMU protection
-option(MPU_PROTECTION "Use MPU protection" ON)
+option(MPU_PROTECTION "Use MPU protection" OFF)
 if(NOT MPU_PROTECTION)
 	message(STATUS "[${PROJECT_NAME}] Disabling MPU protection")
 	add_definitions(-DMPU_DISABLED)
 endif()
 
 # Enable emulators
-OPTION(X86_TARGET_BOCHS "Bochs" ON)
-OPTION(X86_TARGET_QEMU "QEMU" ON)
+OPTION(ARM_TARGET_GEM5 "gem5" ON)
 
-if(X86_TARGET_BOCHS OR X86_TARGET_QEMU)
+if(ARM_TARGET_GEM5)
 	set(ADDITIONAL_TARGETS ${ADDITIONAL_TARGETS}
-		${CMAKE_CURRENT_SOURCE_DIR}/grub CACHE INTERNAL STRING)
-endif()
-if(X86_TARGET_BOCHS)
-	set(ADDITIONAL_TARGETS ${ADDITIONAL_TARGETS}
-		${CMAKE_CURRENT_SOURCE_DIR}/bochs CACHE INTERNAL STRING)
-endif()
-if(X86_TARGET_QEMU)
-	set(ADDITIONAL_TARGETS ${ADDITIONAL_TARGETS}
-		${CMAKE_CURRENT_SOURCE_DIR}/qemu CACHE INTERNAL STRING)
+		${CMAKE_CURRENT_SOURCE_DIR}/gem5 CACHE INTERNAL STRING)
 endif()
 
-# setup x86-32 specific sources
+# setup ARM specific sources
 set(SRCS
     constructors.cc
 	startup.cc
 	startup.s
-	gdt.cc
-	idt.cc
-	idt.S
-	paging.cc
-	cga.cc
+	irq.cc
+	irq.S
 	serial.cc
 	output.cc
-	pic.cc
-	lapic.cc
-	ioapic.cc
-	pit.cc
 	dispatch.cc
 	syscall.cc
 	reschedule-ast.cc
-    machine.cc
+    #machine.cc
 )
 
 # Create arch library
@@ -67,9 +55,9 @@ set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INT
 set(LINKER_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld.in CACHE INTERNAL STRING)
 
 # Find objdump for pagetable generation
-find_program(OBJDUMP "objdump")
+find_program(OBJDUMP "${ARCH_PREFIX}objdump")
 
-# i386 CoRedOS executable macro
+# ARM CoRedOS executable macro
 # usage: coredos_executable(ELFFILE ... [DEFINTIONS ...])
 # Creates CoRedOS executable named ELFFILE. All parameters after ELFFILE until
 # (optional) DEFINITIONS are passed directly to add_executable.
@@ -101,17 +89,17 @@ macro(coredos_executable ELFFILE)
 	target_link_libraries(${PRELINK} ${TARGET_LIBS})
 
 	# Generate pagetables from first executable
-	set(PAGETABLES ${ELFNAME}-pagetables.cc)
-	set(GENERATOR ${PROJECT_SOURCE_DIR}/arch/i386/generate-pagetables.py)
-	add_custom_command(
-		DEPENDS ${PRELINK} ${GENERATOR}
-		COMMAND ${PYTHON} ${GENERATOR} -o ${OBJDUMP} -c ${PAGETABLES} -e ${PRELINK}
-		COMMENT "Generating static page tables for ${ELFFILE}"
-		OUTPUT ${PAGETABLES}
-	)
+	# set(PAGETABLES ${ELFNAME}-pagetables.cc)
+	# set(GENERATOR ${PROJECT_SOURCE_DIR}/arch/i386/generate-pagetables.py)
+	# add_custom_command(
+	# 	DEPENDS ${PRELINK} ${GENERATOR}
+	# 	COMMAND ${PYTHON} ${GENERATOR} -o ${OBJDUMP} -c ${PAGETABLES} -e ${PRELINK}
+	# 	COMMENT "Generating static page tables for ${ELFFILE}"
+	# 	OUTPUT ${PAGETABLES}
+	# )
 
 	# The actual executable
-	add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES} ${PAGETABLES})
+	add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES} )# ${PAGETABLES})
 	target_link_libraries(${ELFFILE} ${TARGET_LIBS})
 
 	# set definitions
@@ -142,7 +130,7 @@ endmacro()
 
 
 macro(coredos_add_test FN)
-    add_test(${FN} qemu-system-i386 -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -nographic -cdrom "${PROJECT_BINARY_DIR}/${FN}.iso")
+    add_test(${FN} ${GEM5} ${GEM5_OPTIONS} ; cat m5out/system.terminal)
     set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 20)
     add_dependencies( tests iso-${FN} )
 endmacro()

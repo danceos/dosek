@@ -28,7 +28,7 @@ def main():
     parser.add_option('-g', '--generator', dest='GENERATOR', default = "make",
                       help="CMake Generator (make|ninja|eclipse)")
     parser.add_option('-a', '--arch', dest='ARCH', default = "i386",
-                      help="Architecture (i386|posix)")
+                      help="Architecture (i386|ARM|posix)")
     parser.add_option('', '--encoded', dest='ENCODED', default = "yes",
                       help="Build an unencoded system (default: yes)")
     parser.add_option('', '--mpu', dest='MPU', default = "yes",

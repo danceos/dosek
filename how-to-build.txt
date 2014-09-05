@@ -1,0 +1,36 @@
+# Some typical development packages
+cmake
+python
+python3-pip
+
+# for llvmpy, currently only llvm-3.3 is supported, so
+llvm-3.3 llvm-3.3-runtime
+
+# retrieve and build llvmpy from pip
+sudo sh -c "LLVM_CONFIG_PATH=/usr/bin/llvm-config-3.3 pip3 install llvmpy"
+
+# We need clang-3.4 for compiling ARM variant
+clang-3.4
+
+# and definitively some debugger
+gdb (gdbtui, cgdb, ddd)
+
+# X86 related: a qemu for testing, and grub2/xorriso for building a bootable ISO
+qemu-system-i386
+grub-common
+xorriso
+
+# X86: host is 64 bit? Then we need some 32 bit libs:
+gcc-multilib
+g++-multilib
+
+
+# ARM related: Toolchain and debugger
+gcc-arm-none-eabi
+gdb-arm-none-eabi
+
+# TLDR; just works out of the box with Ubuntu Utopic Unicorn (14.10)
+sudo apt-get install llvm-3.3 llvm-3.3-runtime clang-3.4 gcc-arm-none-eabi gdb-arm-none-eabi python python3-pip cmake grub-common xorriso gcc-multilib g++-multilib qemu-system-i386 \
+ && \
+sudo sh -c "LLVM_CONFIG_PATH=/usr/bin/llvm-config-3.3 pip3 install llvmpy"
+

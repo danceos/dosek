@@ -1,0 +1,10 @@
+file @ELF_ABS@
+set remote Z-packet on
+set tdesc filename @GDB_FEATURES_XML@
+target remote localhost:7000
+
+define pe
+  printf "[vc] %u - [B] %u %% [A] %u = %u (rem %u)\n", $arg0.vc, $arg0.B, $arg0.A, (($arg0.vc - $arg0.B) / $arg0.A), (($arg0.vc - $arg0.B) % $arg0.A)
+
+define ped
+  printf "[vc] %u - [B] %u - [D] %u %% [A] %u = %u (rem %u)\n", $arg0.vc, $arg0.B, $arg0.D, $arg0.A, (($arg0.vc - $arg0.B - $arg0.D) / $arg0.A), (($arg0.vc - $arg0.B - $arg0.D) % $arg0.A)

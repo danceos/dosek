@@ -10,6 +10,8 @@ import glob
 def is_llvm_file(file):
     if not os.path.exists(file):
         return False
+    if os.path.isdir(file):
+        return False
     if file.endswith(".ll"):
         return True
     with open(file) as fd:
@@ -66,16 +68,15 @@ def llvm_opt(input, output):
                   "-std-compile-opts", "-inlinehint-threshold=2000000000", "-o", output, input])
     return output
 
-def llvm_llc(file, output):
-    check_output([os.path.join(args.llvm_dir, "bin", "llc"),
-                  "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss", "-mattr=-sse", "-o", output, file])
+def llvm_llc(file, output, flags):
+    check_output([os.path.join(args.llvm_dir, "bin", "llc")] + flags + ["-o", output, file])
     return output
 
 def start_ld(flags, objects, output):
     # check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
     #             + flags + ["-c", "-o", output + ".obj"])
 
-    check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
+    check_output([args.clang, "-Wl,--start-group"] + objects + ["-Wl,--end-group"]
                  + flags + ["-o", output])
 
 if __name__ == "__main__":
@@ -85,6 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", "-o", metavar='OUT', help='The file to generate')
     parser.add_argument("--linker-prefix", metavar='PREFIX', help='Output file prefix')
     parser.add_argument("--llvm-dir", metavar='LLVM_DIR', help='Where are the llvm binaries located')
+    parser.add_argument("--clang", metavar='CLANG_BINARY', help='Clang binary location')
 
     args, unkown_args = parser.parse_known_args()
     archives = [x for x in unkown_args if x.endswith(".a")]
@@ -103,7 +105,8 @@ if __name__ == "__main__":
         # Link all bitcode files together
         bitcode     = llvm_link(llvm_files, args.linker_prefix + "-stage1.bc")
         bitcode_opt = llvm_opt(bitcode, args.linker_prefix + "-stage2.bc")
-        system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj")
+        llc_flags = ["-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
+        system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj", llc_flags)
 
         start_ld(linker_flags, [system_object] + elf_files, args.output)
     finally:

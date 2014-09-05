@@ -1,12 +1,22 @@
-# Generic system
-# removes -rdynamic from the linker, which llvm-ld does not support.
+# Prepare cross compiler
 set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_C_ARCH "i386")
-set(CMAKE_C_FLAGS "-march=${CMAKE_C_ARCH} -fno-builtin -ffreestanding -m32 -Wall -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
-set(CMAKE_ASM_FLAGS "-Qunused-arguments -fno-builtin " CACHE STRING "ASMFLAGS")
+set(CMAKE_C_ARCH "armv7a-none-elf")
+set(ARCH_PREFIX "arm-none-eabi-")
 
-set(CMAKE_EXE_LINKER_FLAGS "-fno-builtin -nostartfiles -Wl,--gc-sections" CACHE STRING "LDFLAGS")
+find_program(CROSS_GCC "${ARCH_PREFIX}gcc")
+
+# gcc -print-search-dirs first line: install: ...
+execute_process(COMMAND ${CROSS_GCC} -print-search-dirs OUTPUT_VARIABLE GCC_SEARCH_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
+STRING(REGEX REPLACE "^install: ([^ ]+)\n.*" "\\1" CROSS_ROOT_PATH ${GCC_SEARCH_PATH})
+
+find_program(CROSS_AR "${ARCH_PREFIX}ar")
+find_program(CROSS_AS "${ARCH_PREFIX}as")
+find_program(CROSS_NM "${ARCH_PREFIX}nm")
+find_program(CROSS_RANLIB "${ARCH_PREFIX}ranlib")
+# Find objdump for pagetable generation
+find_program(CROSS_OBJDUMP "${ARCH_PREFIX}objdump")
+
+message(STATUS "Cross compiler root: ${CROSS_ROOT_PATH}")
 
 # Setup LLVM Tooling
 SET(LLVM_RECOMMENDED_VERSION 3.4)
@@ -44,31 +54,34 @@ endif()
 message(STATUS "LLVM C/C++ compiler: ${LLVM_C_COMPILER} ${LLVM_CXX_COMPILER}")
 
 
+# Setup ARM specific flags
+set(COMMON_ARM_FLAGS "-target ${CMAKE_C_ARCH} -I/usr/lib/arm-none-eabi/include -mcpu=cortex-a9 -mthumb -ccc-gcc-name ${ARCH_PREFIX}gcc -no-integrated-as")
+set(CMAKE_C_FLAGS "${COMMON_ARM_FLAGS} -mfloat-abi=soft -ffreestanding -Wall -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
+set(CMAKE_CXX_FLAGS " -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
+set(CMAKE_ASM_FLAGS "${COMMON_ARM_FLAGS} -Qunused-arguments" CACHE STRING "ASMFLAGS")
+
+set(CMAKE_EXE_LINKER_FLAGS "-nostartfiles -Wl,--gc-sections" CACHE STRING "LDFLAGS")
+
+# Setup compilers
 set(CCDIR "${LLVM_ROOT}")
 set(CMAKE_C_COMPILER  ${LLVM_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${LLVM_CXX_COMPILER})
 set(CMAKE_RANLIB "${CCDIR}/bin/llvm-ranlib" CACHE INTERNAL STRING)
 set(CMAKE_AR "${CCDIR}/bin/llvm-ar" CACHE INTERNAL STRING)
 
-SET(CMAKE_FIND_ROOT_PATH ${CCDIR})
+SET(CMAKE_FIND_ROOT_PATH ${CROSS_ROOT_PATH})
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 ## Add *additional* architecture specific compiler flags here.
 # Note that the flags set in toolchain.cmake are still present and used.
-set(ISA_C_FLAGS "-fno-builtin -S -emit-llvm -O0 -m32" CACHE INTERNAL STRING)
-set(ISA_CXX_FLAGS "-fno-builtin" CACHE INTERNAL STRING)
-set(ISA_ASM_FLAGS "-fno-builtin -m32" CACHE INTERNAL STRING)
-set(ISA_LD_FLAGS "-fno-builtin -m32 -static -nostdlib -Qunused-arguments -Wl,--build-id=none" CACHE INTERNAL STRING)
+set(ISA_C_FLAGS "-S -emit-llvm -O0" CACHE INTERNAL STRING)
+set(ISA_CXX_FLAGS "" CACHE INTERNAL STRING)
+set(ISA_ASM_FLAGS "${COMMON_ARM_FLAGS}" CACHE INTERNAL STRING)
+set(ISA_LD_FLAGS "${COMMON_ARM_FLAGS} -static -nostdlib -Qunused-arguments -Wl,--build-id=none" CACHE INTERNAL STRING)
 
-set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker script")
+# ENABLE ARM platform
+set(BUILD_ARM "on" CACHE INTERNAL STRING)
+set(COREDOS_ARCHITECTURE "ARM")
 
-## The kernel will live at 3GB + 1MB in the virtual
-##   address space, which will be mapped to 1MB in the
-##   physical address space.
-set(LD_KERNEL_START_ADDRESS 0x100000 CACHE INTERNAL "Start address of the first section.")
-
-# ENABLE x86 32 platform
-set(BUILD_i386 "on" CACHE INTERNAL STRING)
-set(COREDOS_ARCHITECTURE "i386")
