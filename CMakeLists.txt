@@ -98,6 +98,23 @@ foreach(TARGETS ${ADDITIONAL_TARGETS})
 	add_subdirectory(${TARGETS})
 endforeach()
 
+set(APPTARGETSTRING "")
+set(APPTARGETS_LOCAL ${APPTARGETS}) # Copy CACHE list to local variable
+set(APPTARGETS "" CACHE INTERNAL "application targets") # clear CACHE variable to prevent aggregation due to multiple cmake calls
+foreach(TARGET ${APPTARGETS_LOCAL})
+    set(APPTARGETSTRING "${TARGET}\t\t${APPTARGETSTRING}")
+endforeach()
+add_custom_target(h
+    COMMENT "Target overview:
+    * make build_and_test -> Build *all* test cases and run ctest on them
+    * make <appname> -> e.g., make bcc1_task1a (re-)build application
+    * make qtest-<appname> -> Build iso from app and run qemu (default RAM size: 8 MB! [-m 8])
+    * make iso-<appname> -> Generate bootable iso
+available targets:
+${APPTARGETSTRING}"
+)
+
+
 # Static analysis (oclint/clang-static-analyzer
 # Find all sources for code cccc metrics.
 file(GLOB_RECURSE ALLSRCS RELATIVE ${PROJECT_SOURCE_DIR} *.cc *.h )

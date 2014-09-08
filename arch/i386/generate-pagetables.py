@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """Generate static C++ pagetables from given CoRedOS ELF file."""
 
@@ -71,16 +71,17 @@ def read_regions(objdump, elf_file):
 
 Region = namedtuple("Region", ["name", "writeable", "usermode"])
 
+
+
 def generate_pagetables(regions, allowed):
     """Generate static pagetables from regions"""
 
     # init dict of pagetables
-    pagetables = {};
-
+    pagedirectory = {};
+    max_table_len = 1024
     # iterate allowed regions
     for region in allowed:
         rrange = regions[region.name]
-#        region_is_mapped(regions, region.name)
         rrange["mapped"] = True
 
         # get length and page count
@@ -90,27 +91,30 @@ def generate_pagetables(regions, allowed):
 
         length = end - start
         if(length <= 0): continue
-        pages = ((length-1) / 4096)+1
+        pages_to_place = ((length-1) / 4096)+1
 
         # page directory/pagetable indices
-        pagetable = (start & 0xFFC00000) >> 22
-        offset = (start & 0x003FF000) >> 12
+        pagedir_idx_start = (start & 0xFFC00000) >> 22 # pagedir
+        pagetable_idx_start = (start & 0x003FF000) >> 12    # pagetable
 
-        # get/create empty pagetable as needed
-        table = pagetables.setdefault( pagetable, [] )
+        table = pagedirectory.setdefault(pagedir_idx_start, {})
 
-        # create empty pagetable entries as needed
-        for x in range(offset+pages - len(table)):
-            table.append(None)
+        diridx = pagedir_idx_start
+        pidx = pagetable_idx_start
+        placed_pages = 0
 
-        if "VERBOSE" in os.environ:
-            print hex(rrange["start"]), hex(rrange["end"]),  region
+        while placed_pages < pages_to_place:
+            table = pagedirectory.setdefault(diridx, {}) # Get pagetable from directory
+            # fill up current table
+            while pidx < max_table_len and placed_pages < pages_to_place: # while table has free entries AND we still have to place a page:
+                # add page
+                table[pidx] = (hex(start+(placed_pages*4096)), str(region.writeable).lower(), str(region.usermode).lower(), region.name,"dir: " + str(diridx) +" pagetableindex: " + str(pidx))
+                placed_pages += 1 # one more page placed...
+                pidx += 1 # ...and we consumed another entry in the page table
+            diridx += 1 # page table is full (or no more pages to place), increment index in page directory
+            pidx = 0    # reset page index
 
-        # insert pagetable entries
-        for off in range(pages):
-            table[offset+off] = (hex(start+off*4096), str(region.writeable).lower(), str(region.usermode).lower(), region.name)
-
-    return pagetables
+    return pagedirectory
 
 def write_output(filename, ptables, paging_start):
     """Write C++ output file from pagetables"""
@@ -124,14 +128,14 @@ def write_output(filename, ptables, paging_start):
     for name, pagetables in iter(sorted(ptables.items())):
         # start of pagetables for this pagedir
         start = offset
-
         # print all pagetables
         for idx, table in iter(sorted(pagetables.items())):
             offset += 4096
             f.write(PAGETABLE.format(name + "_" + str(idx)))
-            for page in table:
-                if(page != None):
-                    f.write("""\t {{ {}, {}, {} }}, // {}\n""".format(*page))
+            for idx in range(1024):
+                if idx in table:
+                    page = table[idx]
+                    f.write("""\t {{ {}, {}, {} }}, // {}  - offset: {}\n""".format(*page))
                 else:
                     f.write("\t{},\n")
             f.write("""};\n""")
@@ -140,9 +144,9 @@ def write_output(filename, ptables, paging_start):
         f.write(PAGEDIR.format(name))
         offset += 4096
         table = 0 # non-empty pagetable number
-        for idx in xrange(0, 1023):
+        for idx in range(1024):
             if idx in pagetables:
-                f.write("""\t{{ {}, true }},\n""".format(hex(start+table*4096)))
+                f.write("""\t{{ {}, true }}, // index: {}, ({})\n""".format(hex(start+table*4096), hex(idx), idx))
                 table += 1
             else:
                 f.write("\t{},\n")
@@ -158,6 +162,7 @@ def main(options, args):
     # Collect task names:
     tasks = set()
     for region in regions:
+        #print(region)
         if region.startswith("text_task"):
             tasks.add (region[len("text_task"):])
 
@@ -199,7 +204,7 @@ def main(options, args):
     ptables["os"] = generate_pagetables(regions, allowed_os)
     for task in allowed_task:
         if "VERBOSE" in os.environ:
-            print task
+            print( task)
         ptables[task] = generate_pagetables(regions, allowed_task[task])
 
     write_output(options.cfile, ptables, regions["paging"]["start"])

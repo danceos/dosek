@@ -12,6 +12,9 @@
 #include "test/test.h"
 
 
+// Test memory protection (spanning over more than one 4k page in x86)
+volatile int testme[1024*4*10] __attribute__ ((section (".data.Handler12")));
+
 DeclareTask(Handler11);
 DeclareTask(Handler12);
 DeclareTask(Handler13);
@@ -28,6 +31,7 @@ TASK(Handler11) {
 }
 
 TASK(Handler12) {
+    testme[1024*2] = 42;
 	test_trace('2');
 	TerminateTask();
 }

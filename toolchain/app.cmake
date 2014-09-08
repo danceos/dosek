@@ -1,6 +1,7 @@
 include(CMakeParseArguments)
 include(rtsc)
 
+
 MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITIONS LIBS GENERATOR_ARGS)
   SET(COREDOS_ANNOTATE_SOURCE "${COREDOS_GENERATOR_DIR}/annotate/cored_annotate.cc")
   SET(COREDOS_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${NAME}")
@@ -119,7 +120,7 @@ MACRO(COREDOS_BINARY_EXECUTABLE NAME SOURCES SYSTEM_XML VERIFY_SCRIPT DEFINITION
     COMMAND ${CMAKE_COMMAND} -E remove -f ${COREDOS_OUTPUT_DIR}/* ${COREDOS_BINARY_LLVM_BYTECODE}
   )
 
-
+  set(APPTARGETS ${APPTARGETS} ${NAME} CACHE INTERNAL "application targets")
   # Since COREDOS_SOURCE_SYSTEM end in .ll the add_executable would
   # simply *silently* ignore the "object" file, by declaring it
   # external it is passed on to the linker
