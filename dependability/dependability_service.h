@@ -23,8 +23,8 @@ namespace dep {
 		Checked_Object(void *pos, unsigned int length)
 				: location(reinterpret_cast<char*>(pos)), size(length),
 				  counter(0), valid(checksum_invalid), weight(1) {}
-		char *location;
-		unsigned int size;
+		const char * const location;
+		const unsigned int size;
 		unsigned int checksum;
 		/* For synchronisation */
 		volatile unsigned int counter;
@@ -67,7 +67,7 @@ namespace dep {
 	/**
 	 * \brief Calculates the crc32 checksum of given byte array with given length.
 	**/
-	unsigned int crc32(char *bytes, unsigned int length);
+	unsigned int crc32(const char *bytes, unsigned int length);
 
 	/* From generator */
 	extern Checked_Object OS_all_CheckedObjects[];

@@ -22,7 +22,7 @@ namespace dep {
 
 	Dependability_Scheduler dep_sched;
 	// From generator:
-	unsigned int crc32(char* bytes, unsigned int len)
+	unsigned int crc32(const char* bytes, unsigned int len)
 	{
 		unsigned int crc32 = 0;
 		for (unsigned int i = 0; i < len * 8; ++i) {

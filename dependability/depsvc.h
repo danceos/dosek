@@ -34,7 +34,7 @@ namespace dep {
 	void release_all_CheckedObjects();
 
 	/** \brief Calculates the crc32 checksum of the given data **/
-	unsigned int crc32(char *bytes, unsigned int length);
+	unsigned int crc32(const char *bytes, unsigned int length);
 
 	#ifdef DEPENDABILITY_FAILURE_LOGGING
 		extern volatile unsigned int failure_counter;
