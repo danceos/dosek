@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from lxml import objectify
 
 from collections import namedtuple

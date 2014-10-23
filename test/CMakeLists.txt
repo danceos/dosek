@@ -39,7 +39,7 @@ add_custom_target( ctest2jenkins
 add_custom_command(
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMAND ctest -V  -D ExperimentalTest || true
-    COMMAND python ${CONVERTPY} ${PROJECT_BINARY_DIR} ${CONVXSL} > BaseTest.xml
+    COMMAND python3 ${CONVERTPY} ${PROJECT_BINARY_DIR} ${CONVXSL} > BaseTest.xml
     DEPENDS tests
     OUTPUT ${XUNITOUTPUT}
 )

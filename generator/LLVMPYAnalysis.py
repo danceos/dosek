@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import llvm
 import llvm.core
 import sys

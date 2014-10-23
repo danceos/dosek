@@ -1,18 +1,14 @@
 from lxml import etree
-import StringIO
 import sys
 
 TAGfile = open(sys.argv[1]+"/Testing/TAG", 'r')
 dirname = TAGfile.readline().strip()
 
-xmlfile = open(sys.argv[1]+"/Testing/"+dirname+"/Test.xml", 'r')
-xslfile = open(sys.argv[2], 'r')
+xmlfile = sys.argv[1]+"/Testing/"+dirname+"/Test.xml"
+xslfile = sys.argv[2]
 
-xmlcontent = xmlfile.read()
-xslcontent = xslfile.read()
-
-xmldoc = etree.parse(StringIO.StringIO(xmlcontent))
-xslt_root = etree.XML(xslcontent)
+xmldoc = etree.parse(xmlfile)
+xslt_root = etree.parse(xslfile)
 transform = etree.XSLT(xslt_root)
 
 result_tree = transform(xmldoc)
