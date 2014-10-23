@@ -100,7 +100,7 @@ public:
 			}
 			return true;
 		}
-		return false;
+		return false; // was false!
 	}
 
 };

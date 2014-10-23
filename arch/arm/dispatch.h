@@ -11,7 +11,7 @@
 #include "os/util/encoded.h"
 #include "os/scheduler/task.h"
 #include "os/hooks.h"
-#include "irq.h"
+#include "gic.h"
 #include "machine.h"
 #include "syscall.h"
 #include "tcb.h"
@@ -50,7 +50,7 @@ public:
 		GIC::trigger(IRQ_DISPATCH);
 
 		// unblock ISR2s by lowering GIC task priority
-		GIC::set_task_prio(255);
+		GIC::set_task_prio(IRQ_PRIO_LOWEST);
 
         // wait for interrupt
         Machine::halt();
@@ -86,7 +86,7 @@ public:
 		CALL_HOOK(PreIdleHook);
 
 		// allow all interrupts
-		// LAPIC::set_task_prio(0);
+		GIC::set_task_prio(IRQ_PRIO_LOWEST);
 
 		/* enable interrupts and go to sleep */
 		while (true) Machine::goto_sleep();
@@ -98,12 +98,12 @@ public:
 
 	/** \brief Run idle loop */
 	static forceinline void idle(void) {
-		/* Call the idle loop callback (does end with
+		/* Call the idle loop callback (ends with
 		   Machine::enable_interrupts())*/
 		CALL_HOOK(PreIdleHook);
 
 		// allow all interrupts
-		// LAPIC::set_task_prio(0);
+		GIC::set_task_prio(IRQ_PRIO_LOWEST);
 
 		// do nothing forever
 		while(true) Machine::nop();

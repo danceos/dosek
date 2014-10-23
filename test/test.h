@@ -283,8 +283,9 @@ inlinehint void test_main(void)
 }
 
 inlinehint void test_trace(char chr) {
-    fail_trace = (uint32_t) chr;
-	if (trace_table_idx < 0xff)
+	//kout << 'x' << endl;
+    //fail_trace = (uint32_t) chr;
+	//if (trace_table_idx < 0xff)
 		trace_table[trace_table_idx++] = chr;
 }
 

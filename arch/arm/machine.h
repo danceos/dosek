@@ -2,6 +2,7 @@
 #define __MACHINE_H__
 
 #include "os/util/inline.h"
+#include "stdint.h"
 #include "output.h"
 
 /**
@@ -102,19 +103,19 @@ struct Machine
 	 * \brief Reset all general-purpose registers to 0
 	 */
 	static forceinline void clear_registers() {
-        asm volatile("mov %%r0, #0" ::: "r0");
-        asm volatile("mov %%r1, #0" ::: "r1");
-        asm volatile("mov %%r2, #0" ::: "r2");
-        asm volatile("mov %%r3, #0" ::: "r3");
-        asm volatile("mov %%r4, #0" ::: "r4");
-        asm volatile("mov %%r5, #0" ::: "r5");
-        asm volatile("mov %%r6, #0" ::: "r6");
-        asm volatile("mov %%r7, #0" ::: "r7");
-        asm volatile("mov %%r8, #0" ::: "r8");
-        asm volatile("mov %%r9, #0" ::: "r9");
-        asm volatile("mov %%r10, #0" ::: "r10");
-        asm volatile("mov %%r11, #0" ::: "r11");
-        asm volatile("mov %%r12, #0" ::: "r12");
+        asm volatile("mov r0, #0" ::: "r0");
+        asm volatile("mov r1, #0" ::: "r1");
+        asm volatile("mov r2, #0" ::: "r2");
+        asm volatile("mov r3, #0" ::: "r3");
+        asm volatile("mov r4, #0" ::: "r4");
+        asm volatile("mov r5, #0" ::: "r5");
+        asm volatile("mov r6, #0" ::: "r6");
+        asm volatile("mov r7, #0" ::: "r7");
+        asm volatile("mov r8, #0" ::: "r8");
+        asm volatile("mov r9, #0" ::: "r9");
+        asm volatile("mov r10, #0" ::: "r10");
+        asm volatile("mov r11, #0" ::: "r11");
+        asm volatile("mov r12, #0" ::: "r12");
 	}
 
 	/**
@@ -123,6 +124,8 @@ struct Machine
 	static forceinline void enable_interrupts() {
         //set_cpsr(get_cpsr() & ~(1 << 7));
         asm volatile("CPSIE i");
+        asm volatile("DSB");
+        asm volatile("ISB");
 	}
 
     /**
@@ -139,6 +142,8 @@ struct Machine
 	static forceinline void disable_interrupts() {
         //set_cpsr(get_cpsr() | (1 << 7));
         asm volatile("CPSID i");
+        asm volatile("DSB");
+        asm volatile("ISB");
 	}
 
     /**
@@ -166,7 +171,7 @@ struct Machine
      * \brief Switch ARM processor mode
      */
     static forceinline void switch_mode(mode_t mode) {
-        asm volatile("cps %0" :: "i"(mode));
+        asm volatile("cps %0" :: "i"(mode) : "lr");
     }
 
 	/**
@@ -192,19 +197,14 @@ struct Machine
         return (get_cpsr() & (1<<6)) == 0;
     }
 
-#if 0
 	/**
 	 * \brief Trigger a software interrupt
 	 *
 	 * Trigger a synchronous software interrupt using the int(errupt)
 	 * instruction.
 	 *
-	 * On i386 this will call the interrupt routine even when interrupts
-	 * are disabled.
 	 */
-	static forceinline void software_interrupt(uint8_t irq) {
-		//asm volatile("int %0" :: "i"(irq));
-	}
+	static void trigger_interrupt(uint8_t irq);
 
 	/**
 	 * \brief Trigger a non-software interrupt
@@ -215,11 +215,11 @@ struct Machine
 	 *
 	 * On i386 this interrupt is triggered using the local APIC.
 	 */
-	static forceinline void trigger_interrupt(uint8_t irq) {
-		//arch::LAPIC::trigger(irq);
-	}
+	//static forceinline void trigger_interrupt(uint8_t irq) {
+	//  //arch::LAPIC::trigger(irq);
+	//}
 	static void trigger_interrupt_from_user(uint8_t irq);
-#endif
+
 
 	/**
 	 * \brief Unreachable code
@@ -285,9 +285,13 @@ struct Machine
 	}
 #endif
 
+
+    static void reset(void);
+
 	/**
-	 * \brief Shutdown machine using ACPI
-	 * The static ACPI values work for QEMU and Bochs but probably not on real PCs!
+	 * \brief Shutdown machine
+	 * Shutdown by doing a soft-reset (use no-reboot in qemu!)
+     * At the moment there is no real shutdown sequence.
 	 */
 	static forceinline void shutdown(void) {
 		#if DEBUG
@@ -297,6 +301,7 @@ struct Machine
         // TODO
 		// write EOT on serial console to exit gem5 simulation
 		kout << ((char) 0x04);
+        Machine::reset();
 		#endif
 
 		// No unreachable() here, otherwise the generator will be unhappy!

@@ -8,12 +8,15 @@
 #define __RESCHEDULE_AST_H__
 
 #include "os/util/inline.h"
-#include "irq.h"
+#include "gic.h"
 
 namespace arch {
 
 /** \brief Request the reschedule AST to run after all other interrupts compelete. */
 forceinline void request_reschedule_ast() {
+    // reset save_sp to detect IRQ from non-userspace in idt.S
+    save_sp = 0;
+
 	GIC::trigger(IRQ_RESCHEDULE);
 }
 

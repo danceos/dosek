@@ -60,9 +60,9 @@ inlinehint void test_trace(uint32_t val)\
     fail_trace = val;
 
     #ifndef FAIL
-    static uint32_t i = 1;
+	static uint32_t  i = 1;
 
-    kout << "T " << i++;
+    kout << "T " << (int)i++;
     kout << ": " <<  hex << val << dec << endl;
     #endif
 }

@@ -8,7 +8,7 @@
 #define __SYSCALL_H__
 
 #include "os/util/inline.h"
-#include "irq.h"
+#include "gic.h"
 
 namespace arch {
 
@@ -39,11 +39,12 @@ forceinline void syscall(F fun) {
         asm volatile(
             "push {lr};"
 		 	"mov r1, sp;" // save stackptr ...
-		 	"mov r0, $1f; push {r0};" // save return address ...
+		 	"adr r0, $1f; orr r0, r0, #1; push {r0};" // save return address ...
             "mov r0, %0;"
 		 	"svc #0;" // start syscall
-		 	"1: pop {lr}" // return address: restore %ebp
-            :: "Ir"(fun)
+		 	"1:"
+			"  pop {lr};" // return
+            :: "r"(fun)
             : "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "memory", "cc"
         );
 
@@ -58,13 +59,15 @@ forceinline void syscall(F fun) {
 
 template<bool direct=false, typename F, typename A>
 forceinline void syscall(F fun, A arg1) {
-	asm volatile("mov %%r2, %0" :: "irm"(*((uint32_t*) &arg1)));
+    uint32_t a1 = *(uint32_t*) &arg1;
+    asm volatile("mov r2, %0" :: "l" (a1) : "r2");
 	syscall<direct>(fun);
 }
 
 template<bool direct=false, typename F, typename A, typename B>
 forceinline void syscall(F fun, A arg1, B arg2) {
-    asm volatile("mov %%r3, %0" :: "irm"(*((uint32_t*) &arg2)));
+    uint32_t a2 = *(uint32_t*) &arg2;
+    asm volatile("mov r3, %0" :: "l" (a2) : "r3");
 	syscall<direct>(fun, arg1);
 }
 
@@ -79,7 +82,7 @@ forceinline void syscall(F fun, A arg1, B arg2) {
 /** \brief Return true if calling code is running as part of a syscall */
 forceinline bool in_syscall() {
 	// TODO: determine using some (encoded) system variable instead of hardware register?
-	return (GIC::get_task_prio() == 128);
+	return (GIC::get_task_prio() == IRQ_PRIO_SYSCALL);
 }
 
 } // namespace arch

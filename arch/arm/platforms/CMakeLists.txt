@@ -1,5 +1,5 @@
 # TODO: make configurable
-set(PANDABOARD ON)
+set(ZEDBOARD ON)
 
 # Hardware dependent code
 if(PANDABOARD)
@@ -8,6 +8,9 @@ if(PANDABOARD)
 elseif(VEXPRESS_EMM)
 	set(PLATFORM_DIR "vexpress_emm")
 	message(STATUS "[${PROJECT_NAME}] ARM hardware platform: VExpress EMM")
+elseif(ZEDBOARD)
+	set(PLATFORM_DIR "zedboard" CACHE STRING "")
+	message(STATUS "[${PROJECT_NAME}] ARM hardware platform: Zedboard")
 else()
 	message(FATAL_ERROR "Hardware platform not found :(")
 endif()

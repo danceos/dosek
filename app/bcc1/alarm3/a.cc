@@ -39,7 +39,6 @@ TASK(H4) {
 
 TASK(H5) {
 	test_trace('5');
-
     test_trace('[');
     for (counter = 0; counter < max_count; counter++) {}
 	test_trace(']');

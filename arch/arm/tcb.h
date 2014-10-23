@@ -38,11 +38,11 @@ struct TCB {
 	}
 
 	inline void reset(void) const {
-		set_sp((uint8_t*)stack + stacksize - 16);
+		set_sp((uint8_t*)stack + stacksize -4);
 	}
 
 	inline bool is_running(void) const {
-		return get_sp() != (uint8_t*)stack + stacksize - 16;
+		return get_sp() != (uint8_t*)stack + stacksize - 4;
 	}
 
 	constexpr TCB(fptr_t f, void *s, void* &sptr, int stacksize)

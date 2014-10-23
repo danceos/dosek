@@ -4,83 +4,57 @@
  * @brief i386 interrupt handling
  */
 
-#include "irq.h"
-//#include "gdt.h"
-//#include "exception.h"
+#include "gic.h"
 #include "machine.h"
-//#include "lapic.h"
+#include "dispatch.h"
 #include "output.h"
 
 #define CONTINUE_UNHANDLED_IRQ 0
 
 namespace arch {
 
+extern void ** const OS_stackptrs[];
+
 void GIC::init() {
     enable();
 }
 
-extern "C" uint32_t test_handler_1(uint32_t return_address, uint32_t id) {
-    kout << "! " << (int) id << endl;
-    GIC::send_eoi(id);
-    return return_address;
-}
-
-extern "C" uint32_t test_handler_2(uint32_t return_address, uint32_t id) {
-    kout << "! " << (int) id << endl;
-    GIC::send_eoi(id);
-    return return_address;
-}
-
-extern "C" uint32_t test_handler_3(uint32_t return_address, uint32_t id) {
-    kout << "! " << (int) id << endl;
-    GIC::send_eoi(id);
-    return return_address;
-}
-
-extern "C" uint32_t test_handler_4(uint32_t return_address, uint32_t id) {
-    kout << "! " << (int) id << endl;
-    GIC::send_eoi(id);
-    return return_address;
-}
-
-extern "C" __attribute__((naked)) void irq_exit(uint32_t return_address) {
-    asm volatile("mov lr, %0" :: "r"(return_address));
-    asm volatile("pop {r0, r1, r2, r3}");
-    asm volatile("subs pc, lr, #0");
-
-    Machine::unreachable();
-}
-
-extern "C" uint32_t irq_handler_0(uint32_t return_address, uint32_t id);
-
-typedef uint32_t (* const fptr_t)(uint32_t, uint32_t);
-extern "C"  __attribute__((section(".text.irq_handlers"))) constexpr fptr_t const handlers[] = {
-    irq_handler_0,
-    test_handler_1,
-    test_handler_2,
-    test_handler_3,
-    test_handler_4
-};
-
-
-// test IRQ handler
-extern "C" __attribute__((naked)) void irq_handler(uint32_t return_address) {
-    //irq_id id = GIC::accept();
-    asm volatile("ldr r1, [%0]" :: "r"(GIC::GICC_IAR) : "r0","r1"); // read IRQ info
-    asm volatile("bfc r1, #12, #20" ::: "r0","r1"); // get interrupt number only
-
-    //handlers[id](return_address, id);
-    asm volatile("mov lr, irq_exit");
-    asm volatile("ldr pc, [%0, +r1, LSL #2]" :: "r"(handlers) : "r0","r1");
-/*
+extern "C" void * irq_handler_unhandled(void* task_sp, uint32_t id) {
     //kout << "! " << (int) id << endl;
     GIC::send_eoi(id);
+    return task_sp;
+}
 
-    asm volatile("mov lr, %0" :: "r"(return_address));
-    asm volatile("pop {r0, r1, r2, r3}");
-    asm volatile("subs pc, lr, #0");
-*/
-    Machine::unreachable();
+// IRQ gate
+extern "C" void * irq_handler(void * task_sp) {
+    irq_id id = GIC::accept();
+	// void *lr;
+	// asm volatile("mov %0, lr" : "=r"(lr) ::);
+
+	// kout << "#" << (save_sp & 0xffff) << " " << task_sp << " " << id
+	// 	 << "% " << (void*)((uint32_t *)task_sp)[-1] 
+	// 	 << ": " << lr
+	// 	 << endl;
+
+    // asm volatile("ldr r1, [%0]" :: "r"(GIC::GICC_IAR) : "r0", "r1"); // read IRQ info
+    // asm volatile("bfc r1, #12, #20" ::: "r0", "r1"); // place interrupt number in r1
+
+    // save stack pointer
+    uint32_t ssp = save_sp;
+	if (ssp != 0) {
+		assert( (ssp & 0xFFFF) == (ssp >> 16) );
+		*OS_stackptrs[ssp & 0xFFFF] = task_sp;
+	}
+
+    void* ret = irq_handlers[id](task_sp, id);
+
+
+	return ret;
+	//asm volatile("mov r0, %0" :: "r"(task_sp) : "r0", "r1");
+	//asm volatile("mov r1, %0" :: "r"(id) : "r0", "r1");
+    //asm volatile("ldr pc, [%0, +%1, LSL #2]" :: "r"(handlers), "r"(id): "r0","r1");
+
+    //Machine::unreachable();
 }
 
 
@@ -220,19 +194,6 @@ IRQ_HANDLER(2) {
 	Machine::halt();
 }
 
-
-
-extern "C" IDTDescriptor theidt[256];
-constexpr InterruptDescriptorTable IDT::idt __attribute__ ((aligned (8))) = {
-	sizeof(theidt)-1,
-	&theidt[0]
-};
-
-
-void IDT::init() {
-	// load static IDT
-	asm volatile("lidt %0" : : "m"(IDT::idt) : "memory");
-}
 #endif
 
 }; // namespace arch

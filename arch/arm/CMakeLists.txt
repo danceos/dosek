@@ -28,19 +28,28 @@ if(ARM_TARGET_GEM5)
 		${CMAKE_CURRENT_SOURCE_DIR}/gem5 CACHE INTERNAL STRING)
 endif()
 
+OPTION(ARM_TARGET_QEMU "QEMU" ON)
+if(ARM_TARGET_QEMU)
+	set(ADDITIONAL_TARGETS ${ADDITIONAL_TARGETS}
+		${CMAKE_CURRENT_SOURCE_DIR}/qemu CACHE INTERNAL STRING)
+endif()
+
+
 # setup ARM specific sources
 set(SRCS
     constructors.cc
 	startup.cc
 	startup.s
-	irq.cc
+	gic.cc
 	irq.S
-	serial.cc
+	platforms/${PLATFORM_DIR}/serial.cc
+	platforms/${PLATFORM_DIR}/machine_impl.cc
+    timer.cc
 	output.cc
 	dispatch.cc
 	syscall.cc
 	reschedule-ast.cc
-    #machine.cc
+    machine.cc
 )
 
 # Create arch library
@@ -130,8 +139,9 @@ endmacro()
 
 
 macro(dosek_add_test FN)
-    add_test(${FN} ${GEM5} ${GEM5_OPTIONS} ; cat m5out/system.terminal)
+#    add_test(${FN} ${GEM5} ${GEM5_OPTIONS} ; cat m5out/system.terminal)
+    add_test(${FN} qemu-system-arm -M xilinx-zynq-a9 -m ${RAM_SIZE} -no-reboot -nographic -serial null -serial mon:stdio -kernel "${PROJECT_BINARY_DIR}/${FN}")
     set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 20)
-    add_dependencies( tests iso-${FN} )
+    add_dependencies( tests ${FN} )
 endmacro()
 

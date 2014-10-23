@@ -71,24 +71,65 @@ class ARMArch(SimpleArch):
 
         self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
 
+    def generate_isr_table(self, isrs):
+        self.generator.source_file.includes.add(Include("machine.h"))
+        self.generator.source_file.includes.add(Include("gic.h"))
+
+        installed_irq_handlers = {0,      # Dispatch
+                                  1,      # Reschedule
+                                  29,     # Alarm
+                              }
+        for isr in isrs:
+            irq_number = self.generate_isr(isr)
+            installed_irq_handlers.add(irq_number)
+
+        # Generate the ISR table
+        irq_handler_arr = DataObjectArray("arch::irq_handler_t const", "irq_handlers", "",
+                                          extern_c = True)
+        self.generator.source_file.data_manager.add(irq_handler_arr)
+        for irq in range(0, max(installed_irq_handlers)+1):
+            if irq in installed_irq_handlers:
+                irq_handler_arr.add_static_initializer("irq_handler_%d" % irq)
+            else:
+                irq_handler_arr.add_static_initializer("irq_handler_unhandled")
+
+
     def generate_isr(self, isr):
         self.generator.source_file.includes.add(Include("machine.h"))
+        self.generator.source_file.includes.add(Include("gic.h"))
         isr_desc = self.generator.system_graph.get_subtask(isr.name)
-        handler = FunctionDefinitionBlock('ISR', [str(isr_desc.isr_device)])
+        irq_number = isr_desc.isr_device
+        handler = FunctionDefinitionBlock('ISR', [str(irq_number)])
         self.generator.source_file.function_manager.add(handler)
 
         # Forward declaration for the user defined function
         forward = FunctionDeclaration(isr.function_name, "void", [], extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
+        # Forward declaration for our handler
+        forward = FunctionDeclaration("irq_handler_%d" %(irq_number),
+                                      "void*", ["void*", "uint32_t"], extern_c=True)
+        self.generator.source_file.function_manager.add(forward)
+
         # Call the user defined function
         self.call_function(handler, isr.function_name, "void", [])
 
-        # Call the end of interrupt function
-        self.call_function(handler, "LAPIC::send_eoi", "void", [])
+        prio = "IRQ_PRIO_LOCAL_TIMER"
+
+        # Call give the IRQ a priority at startuo, and enable it
+        self.call_function(self.objects["StartOS"],
+                           "arch::GIC::enable_irq",
+                           "void", [str(irq_number)],
+                           prepend = True)
+        self.call_function(self.objects["StartOS"],
+                           "arch::GIC::set_irq_priority",
+                           "void", [str(irq_number), prio],
+                           prepend = True)
+
+        return irq_number
 
     def generate_kernelspace(self, userspace, abb, arguments):
-        """When a systemcall is done from a app (synchroanous syscall), then we
+        """When a systemcall is done from a app (synchronous syscall), then we
            disable interrupts. In the interrupt handler they are already
            disabled.
         """
@@ -125,20 +166,34 @@ class ARMArch(SimpleArch):
         userspace.add(post_hook)
 
         self.call_function(userspace, "Machine::enable_interrupts", "void", [])
+        self.call_function(userspace, "Machine::switch_mode",
+                           "void", ["Machine::USER"])
 
         self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         return self.KernelSpace(pre_hook, syscall, None)
 
     def get_syscall_argument(self, block, i):
+        # directly pass on the arguments, should be in register in ARM anyway.
         argument = block.arguments()[i]
-        block.unused_parameter(argument[0])
-        var = VariableDefinition.new(self.generator, argument[1])
-        regs = ["a", "b", "S"]
-        block.prepend(Statement("asm volatile(\"\" : \"=%s\"(%s))" % (regs[i], var.name)))
-        block.prepend(var)
+        var = VariableDefinition(argument[1], argument[0])
         return var
 
+    def kickoff(self, block, abb):
+        self.call_function(block, "Machine::enable_interrupts",
+                           "void", [])
+        self.call_function(block, "Machine::switch_mode",
+                           "void", ["Machine::USER"])
+
+    def enable_irq(self, block):
+        self.call_function(block,
+                           "arch::GIC::set_task_prio",
+                           "void", ["IRQ_PRIO_LOWEST"])
+
+    def disable_irq(self, block):
+        self.call_function(block,
+                           "arch::GIC::set_task_prio",
+                           "void", ["0"])
 
 
 class LinkerScriptTemplate(CodeTemplate):

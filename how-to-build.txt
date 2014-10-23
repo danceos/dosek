@@ -27,6 +27,7 @@ g++-multilib
 
 
 # ARM related: Toolchain and debugger
+qemu-system-arm
 gcc-arm-none-eabi
 gdb-arm-none-eabi
 

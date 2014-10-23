@@ -165,14 +165,4 @@ SECTIONS {
         *(COMMON);
         _edata = .;
     }
-
-    /* Memory-mapped I/O APIC */
-    _sioapic = 0xFEC00000;
-    ioapic = 0xFEC00000;
-    _eioapic = 0xFEC00FFF;
-
-    /* Memory-mapped Local APIC */
-    _slapic = 0xFEE00000;
-    lapic = 0xFEE00000;
-    _elapic = 0xFEE00FFF;
 }

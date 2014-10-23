@@ -37,6 +37,10 @@ class PosixArch(SimpleArch):
             self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
             self.objects[subtask].update({"tcb_descriptor": desc})
 
+    def generate_isr_table(self, isrs):
+        self.generator.source_file.includes.add(Include("machine.h"))
+        for isr in isrs:
+            self.generate_isr(isr)
 
     def generate_isr(self, isr):
         # Forward declaration for the user defined function
@@ -54,6 +58,10 @@ class PosixArch(SimpleArch):
                            "arch::irq.set_handler", "void", [str(isr_desc.isr_device), isr.function_name],
                            prepend = True)
 
+    def generate_isr_table(self, isrs):
+        self.generator.source_file.includes.add(Include("machine.h"))
+        for isr in isrs:
+            self.generate_isr(isr)
 
     def generate_kernelspace(self, userspace, abb, arguments):
         """When a systemcall is done from a app (synchroanous syscall), then we

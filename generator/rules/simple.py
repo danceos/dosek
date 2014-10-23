@@ -160,6 +160,20 @@ class SimpleArch(BaseRules):
         self.call_function(block, "asm_label", "void",
                            ['"%s"' % label])
 
+    def kickoff(self, block, abb):
+        self.call_function(block, "Machine::enable_interrupts",
+                           "void", [])
+
+    def enable_irq(self, block):
+        self.call_function(block,
+                           "Machine::enable_interrupts",
+                           "void", [])
+
+    def disable_irq(self, block):
+        self.call_function(block,
+                           "Machine::disable_interrupts",
+                           "void", [])
+
 class AlarmTemplate(CodeTemplate):
     def __init__(self, rules):
         CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")

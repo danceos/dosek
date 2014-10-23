@@ -164,9 +164,11 @@ class Generator:
         self.os_rules.generate_hooks()
 
         # Generate systemcalls
+        isrs = []
         for isr in self.system_graph.get_subtasks():
             if isr.is_isr and isr.isr_device:
-                self.arch_rules.generate_isr(isr)
+                isrs.append(isr)
+        self.arch_rules.generate_isr_table(isrs)
 
 
         # Write source files to file

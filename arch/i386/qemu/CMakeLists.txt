@@ -48,7 +48,7 @@ foreach(ELF ${EXECUTABLES})
 	add_custom_target(qdebug${DSUFFIX}
 		DEPENDS iso${DSUFFIX} ${ELF}
 		COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 debug mode. "
-		COMMAND ${QEMU} ${QEMU_ARGS} -gdb tcp::${DEBUG_PORT} -S &
+		COMMAND ${QEMU} ${QEMU_ARGS} -nographic  -gdb tcp::${DEBUG_PORT} -S &
         COMMAND sleep 1
 		COMMAND ${DEBUGGER} -n -x ${GDBINITFILE} $<TARGET_FILE:${ELF}>
 	)

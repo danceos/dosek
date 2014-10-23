@@ -61,8 +61,7 @@ class FullSystemCalls(BaseRules):
     def kickoff(self, block, abb):
         block.attributes.append("inlinehint")
         if not abb.function.subtask.is_isr:
-            self.call_function(block, "Machine::enable_interrupts",
-                               "void", [])
+            self.arch_rules.kickoff(block, abb)
 
     def TerminateTask(self, block, abb):
         self.call_function(block, "scheduler_.TerminateTask_impl",
@@ -140,9 +139,7 @@ class FullSystemCalls(BaseRules):
             assert all(disabled)
             return
 
-        self.call_function(block,
-                           "Machine::disable_interrupts",
-                           "void", [])
+        self.arch_rules.disable_irq(block)
 
     def enable_irq(self, block, abb):
         before = abb.get_outgoing_nodes(E.task_level)
@@ -153,9 +150,7 @@ class FullSystemCalls(BaseRules):
             assert all(disabled)
             return
 
-        self.call_function(block,
-                           "Machine::enable_interrupts",
-                           "void", [])
+        self.arch_rules.enable_irq(block)
 
     def DisableAllInterrupts(self, userspace, abb):
         self.disable_irq(userspace, abb)

@@ -1,0 +1,96 @@
+from http://community.cadence.com/cadence_blogs_8/b/sd/archive/2011/07/22/arm-generic-interrupt-controller-architecture-howto
+
+The ARM GIC is primarily used in the Cortex-A MPCore series processors, but it
+not specific to any processor. The ARM GIC is part of the ARM processor private
+bus interface. The GIC is a centralized resource for supporting and managing
+interrupts in a system that includes at least one processor. GIC architecture
+splits logically into a Distributor block and one or more CPU Interface blocks.
+More details about the GIC can be found in the ARM® Generic Interrupt
+Controller Architecture Specification.
+
+In this short introduction, the security and pre-emption features supported by
+GIC are not discussed. Instead this focuses on providing a HOWTO introduction
+to configure the GIC so that an interrupt from a peripheral is detected by GIC
+and sent to the appropriate processor. This basic setup is frequently needed
+when developing new Virtual Platform models and running software tests on an
+ARM CPU to confirm proper operation of the new peripheral model.
+
+Configuration Steps
+
+The first thing to keep in mind is that the GIC is part of ARM private bus and
+hence the base address is determined by something called peripheral base, the
+base address of the internal MPCore peripherals. The GIC distributor base
+address DISTBASE = PERIPHBASE + 0x1000 and CPU interface base is CPUBASE =
+PERIPHBASE + 0x100.
+
+Note that the GIC works on interrupt IDs and not the physical IRQS lines.
+Interrupt ID 0 to 15 is usually used for S/W interrupts. In most of the cases
+the physical line IRQS[0]  will correspond to interrupt ID 32. This is
+essential because all the enable/disable and other configuration is based on
+the function ID.
+
+Ensure that the distributor and CPU interface is not enabled (register at
+offset 0). After reset the distributor and CPU interface are disabled. If the
+distributor/cpu interface is enabled then the write is not permitted to other
+registers in distributor or CPU interface respectively
+
+Read the distributor Interrupt Controller Type Register (ICDICTR). The field
+ITLinesNumber indicates the maximum number of interrupts that the GIC supports.
+If this field is 0x3 then max interrupts supported is 32(N+1) = 128. i.e.
+function ID 0 to 127. Ensure that the interrupt line that is connected to GIC
+falls within function ID 0 to 127 (i.e. physical IRQS line 0 to 96).
+
+Enable the interrupt set enable register (ICDISERn). So if interrupt ID (N) 77
+is to be configured then offset of ICDISERn = 0x100 + (4*M), where M = N/32
+(integer division).  The bit number of the required Set-enable bit in this
+register is N MOD 32
+
+Configure Interrupt Processor Targets Registers (ICDIPTRn). This register
+determines to which processor the interrupt needs to be sent. For interrupt ID
+N, when DIV and MOD are the integer division and modulo operations:
+
+the corresponding ICDIPTR number, M, is given by M = N DIV 4
+the offset of the required ICDIPTR is (0x800 + (4*M))
+the byte offset of the required Priority field in this register is N MOD 4, where:
+byte offset 0 refers to register bits [7:0]
+byte offset 1 refers to register bits [15:8]
+byte offset 2 refers to register bits [23:16]
+byte offset 3 refers to register bits [31:24]
+Set Interrupt configuration register ICDICFRn to configure the interrupt to be
+level sensitive or edge sensitive. Each Interrupt ID has 2 bit field. Bit0 of
+the bitfield is reserved and Bit1 = 0 => level sensitive. This bit is not
+programmable for S/W interrupts.
+
+Configure in CPU interface register map, Interrupt Priority Mask Register
+(ICCPMR). A value of 0xffff means lowest priority. Any priority higher than the
+value programmed in this register is serviced.
+
+Enable CPU interface and Distributor. This is all that is needed to setup
+interrupt delivery.
+
+Example to Enable an Interrupt
+
+This example uses Interrupt ID 76 (IRQS[44]) is to be enabled. In this system
+the PERIPHBASE = 0x2c0c0000, DISTBASE = 0x2c0c1000 and CPUBASE=0x2c0c0100. For
+ARM models used in Virtual Platforms the PERIPHBASE is set at the start of
+simulation via a model parameter. It's important this is done correctly or none
+of the GIC accesses will work correctly.
+
+// Set Interrupt Enable Registers. Offset = 0x100 + dec_to_hex(76/32*4) = 0x108
+hw_write(0x2c0c1000 + 0x108, 0xFFFFFFFF);
+
+// Set ICDIPTRn Registers to cpu0. Offset = 0x800 + dec_to_hex(76/4*4) =  0x84c
+hw_write(0x2c0c1000 + 0x84C, 0x01010101);
+
+// Set Interrupt Configuration Registers (ICDICFR0) to level sensitive. Offset = 0xC00 + dec_to_hex(76/16 *4) = 0xC10.
+hw_write(0x2c0c1000 + 0xC10, 0x0);
+
+// Priority Mask. Enable interrupts for lowest priority also. 
+hw_write(0x2c0c0100 + 0x4, 0xFFFF);
+
+// enable signaling of interrupt
+hw_write(0x2c0c0100 + 0x0, 0x3);
+
+// Configure the Distributor Control Register (ICDDCR) to send pending interrupts to cpus
+hw_write(0x2c0c1000 + 0x000, 0x1);
+So any peripheral that generates an interrupt and whose interrupt line is connected to IRQS[44] , the GIC will detect and send it to CPU0.

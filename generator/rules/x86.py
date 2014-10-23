@@ -71,8 +71,12 @@ class X86Arch(SimpleArch):
 
         self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
 
-    def generate_isr(self, isr):
+    def generate_isr_table(self, isrs):
         self.generator.source_file.includes.add(Include("machine.h"))
+        for isr in isrs:
+            self.generate_isr(isr)
+
+    def generate_isr(self, isr):
         isr_desc = self.generator.system_graph.get_subtask(isr.name)
         handler = FunctionDefinitionBlock('ISR', [str(isr_desc.isr_device)])
         self.generator.source_file.function_manager.add(handler)
