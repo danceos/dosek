@@ -218,8 +218,24 @@ struct Machine
 					 "ia"(flags), "d"(ip), "c"(sp));
 		unreachable();
 	}
-
-
+	/**
+	 * 8042 reset
+	 */
+	static void reboot(void) {
+		uint8_t temp;
+		Machine::disable_interrupts();
+		/* Clear keyboard buffers */
+		do {
+			temp = inb(0x64); // 0x64: Keyboard Interface: empty user data
+			if(temp & 1) {
+				inb(0x60); // empty keyboard data
+			}
+		} while(temp & 2);
+		outb(0x64, 0xFE); // Pulse CPU reset line
+		while(1) {
+			Machine::halt(); // last resort, loop forever, even on NMIs...
+		}
+	}
 	/**
 	 * \brief Shutdown machine using ACPI
 	 * The static ACPI values work for QEMU and Bochs but probably not on real PCs!
@@ -231,6 +247,8 @@ struct Machine
 		#else
 		// write shutdown command to ACPI port
 		asm volatile( "outw %0, %1" :: "a"((unsigned short) 0x2000), "Nd"((unsigned short) 0xB004));
+		// if the above did not work (as in qemu-system-i386 v2.1.0, we fall through to a reset
+		Machine::reboot();
 		#endif
 
 		// No unreachable() here, otherwise the generator will be unhappy!
