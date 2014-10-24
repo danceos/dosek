@@ -114,9 +114,9 @@ macro(fail_targets TNAME ELF TEST)
 		set(TRACEFILE "${FAIL_DIR}/trace.pb")
 		set(CHECKPOINTFILE "${FAIL_DIR}/checkpoint.trace")
 		set(STATEDIR "${FAIL_DIR}/state")
-		set(STATS_BINARY ${COREDOS_GENERATOR_DIR}/stats_binary.py)
+		set(STATS_BINARY ${DOSEK_GENERATOR_DIR}/stats_binary.py)
 		set(STATS_TRACE ${PROJECT_SOURCE_DIR}/fail/trace-analyze.py)
-		set(STATS_DICT ${COREDOS_OUTPUT_DIR}/stats.dict.py)
+		set(STATS_DICT ${DOSEK_OUTPUT_DIR}/stats.dict.py)
 		add_custom_command(
 			DEPENDS ${ELF} iso-fail-${TNAME} ${GIT_REV_FILE} fail-trace-plugin-python ${STATS_BINARY} ${STATS_TRACE}
 			COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${GIT_REV_FILE} -g ${GIT}

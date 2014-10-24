@@ -83,5 +83,5 @@ set(ISA_LD_FLAGS "${COMMON_ARM_FLAGS} -static -nostdlib -Qunused-arguments -Wl,-
 
 # ENABLE ARM platform
 set(BUILD_ARM "on" CACHE INTERNAL STRING)
-set(COREDOS_ARCHITECTURE "ARM")
+set(DOSEK_ARCHITECTURE "ARM")
 

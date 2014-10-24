@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm2a
   SYSTEM_XML system.xml
   LIBS libtest
@@ -6,7 +6,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm2b
   SYSTEM_XML system.xml
   LIBS libtest
@@ -14,7 +14,7 @@ COREDOS_BINARY(
   b.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm2c
   SYSTEM_XML system.xml
   LIBS libtest

@@ -1,6 +1,6 @@
 /**
  * @page concept_overview Design Concept
- * @brief __CoRedOS maxim: Use all (a priori) knowledge of the behaviour of a OSEK system to leverage effective dependability measures.__
+ * @brief __dOSEK maxim: Use all (a priori) knowledge of the behaviour of a OSEK system to leverage effective dependability measures.__
  *
  * We claim a static system design is the right choice for a dependable RTOS: @subpage static_design
  *

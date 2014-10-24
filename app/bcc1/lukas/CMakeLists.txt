@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_lukas_dispatch
   SYSTEM_XML dispatch.xml
   LIBS libtest
@@ -7,7 +7,7 @@ COREDOS_BINARY(
 )
 
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_lukas_alarmstress
   SYSTEM_XML alarmstress.xml
   LIBS libtest
@@ -15,7 +15,7 @@ COREDOS_BINARY(
   alarmstress.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_lukas_isr2
   SYSTEM_XML isr2.xml
   LIBS libtest

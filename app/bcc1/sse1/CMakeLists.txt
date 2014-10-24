@@ -1,6 +1,6 @@
 # SSE is the symbolic system execution
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_sse1a
   SYSTEM_XML system.xml
   LIBS libtest
@@ -9,7 +9,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_sse1b
   SYSTEM_XML system.xml
   LIBS libtest
@@ -19,7 +19,7 @@ COREDOS_BINARY(
 )
 
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_sse1c
   SYSTEM_XML system.xml
   LIBS libtest

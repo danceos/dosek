@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource2a
   SYSTEM_XML system.xml
   VERIFY verify_a.py
@@ -7,7 +7,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource2b
   SYSTEM_XML system.xml
   VERIFY verify_b.py

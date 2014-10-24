@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6.2)
 
-PROJECT(CoRedOS)
+PROJECT(dOSEK)
 enable_language(ASM)
 enable_testing()
 set(PROJECT_VERSION "0.1" CACHE STRING "Project version number")
@@ -66,8 +66,8 @@ set(ADDITIONAL_TARGETS "" CACHE INTERNAL STRING)
 include(helpers)
 
 # Include source directory
-coredos_include_dir(${PROJECT_SOURCE_DIR})
-coredos_include_dir(${PROJECT_SOURCE_DIR}/os)
+dosek_include_dir(${PROJECT_SOURCE_DIR})
+dosek_include_dir(${PROJECT_SOURCE_DIR}/os)
 
 # Documentation
 add_subdirectory(toolchain/doxygen)
@@ -79,7 +79,7 @@ set(EXECUTABLES "" CACHE INTERNAL "List of executables")
 set(ARCH_INCLUDE_DIRS "" CACHE INTERNAL "Hardware dependent include directories")
 add_subdirectory(arch)
 foreach(ARCH_INCLUDE_DIR ${ARCH_INCLUDE_DIRS})
-	coredos_include_dir(${ARCH_INCLUDE_DIR})
+	dosek_include_dir(${ARCH_INCLUDE_DIR})
 endforeach()
 
 # Tests

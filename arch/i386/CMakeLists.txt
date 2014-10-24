@@ -60,7 +60,7 @@ add_library(arch ${SRCS})
 target_link_libraries(arch generic)
 
 # Add to include directories
-coredos_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
+dosek_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
 set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)
 
 # Set linker script template
@@ -69,21 +69,21 @@ set(LINKER_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld.in CACHE INTERNAL STRI
 # Find objdump for pagetable generation
 find_program(OBJDUMP "objdump")
 
-# i386 CoRedOS executable macro
-# usage: coredos_executable(ELFFILE ... [DEFINTIONS ...])
-# Creates CoRedOS executable named ELFFILE. All parameters after ELFFILE until
+# i386 dOSEK executable macro
+# usage: dosek_executable(ELFFILE ... [DEFINTIONS ...])
+# Creates dOSEK executable named ELFFILE. All parameters after ELFFILE until
 # (optional) DEFINITIONS are passed directly to add_executable.
 # To set compile definitions specify them after DEFINITIONS keyword.
-macro(coredos_executable ELFFILE)
+macro(dosek_executable ELFFILE)
 	# parse DEFINITIONS
     set(options "EXCLUDE_FROM_ALL")
     set(oneValueArgs "LINKER_SCRIPT")
     set(multiValuedParameters DEFINITIONS LIBS SOURCES)
-    cmake_parse_arguments(COREDOS_EXECUTABLE "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
-	set(SOURCES ${COREDOS_EXECUTABLE_SOURCES} ${COREDOS_EXECUTABLE_UNPARSED_ARGUMENTS})
-	set(DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
+    cmake_parse_arguments(DOSEK_EXECUTABLE "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
+	set(SOURCES ${DOSEK_EXECUTABLE_SOURCES} ${DOSEK_EXECUTABLE_UNPARSED_ARGUMENTS})
+	set(DEFINITIONS ${DOSEK_EXECUTABLE_DEFINITIONS})
     set(ADD_EXECUTABLE_OPTIONS "")
-    if(${COREDOS_EXECUTABLE_EXCLUDE_FROM_ALL} STREQUAL "TRUE")
+    if(${DOSEK_EXECUTABLE_EXCLUDE_FROM_ALL} STREQUAL "TRUE")
       set(ADD_EXECUTABLE_OPTIONS "EXCLUDE_FROM_ALL")
     endif()
 
@@ -92,7 +92,7 @@ macro(coredos_executable ELFFILE)
 	get_filename_component(ELFNAME ${ELFFILE} NAME_WE)
 
 	# libraries to link with application
-	set(TARGET_LIBS os arch ${COREDOS_EXECUTABLE_LIBS})
+	set(TARGET_LIBS os arch ${DOSEK_EXECUTABLE_LIBS})
 
 	# First executable with empty, weak page tables
 	set(PRELINK ${ELFNAME}.prelink.elf)
@@ -115,14 +115,14 @@ macro(coredos_executable ELFFILE)
 	target_link_libraries(${ELFFILE} ${TARGET_LIBS})
 
 	# set definitions
-	if(COREDOS_EXECUTABLE_DEFINITIONS)
-		set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES COMPILE_DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
+	if(DOSEK_EXECUTABLE_DEFINITIONS)
+		set_target_properties(${ELFFILE} ${PRELINK} PROPERTIES COMPILE_DEFINITIONS ${DOSEK_EXECUTABLE_DEFINITIONS})
 	endif()
 
 	# Set custom linker script/flags
 	# libgcc added here to be used as needed (compiler helper functions)and not included in full
-	if(COREDOS_EXECUTABLE_LINKER_SCRIPT)
-		set(LINKER_SCRIPT ${COREDOS_EXECUTABLE_LINKER_SCRIPT})
+	if(DOSEK_EXECUTABLE_LINKER_SCRIPT)
+		set(LINKER_SCRIPT ${DOSEK_EXECUTABLE_LINKER_SCRIPT})
 	else()
 		set(LINKER_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/${ELFNAME}_linker.ld)
 	endif()
@@ -141,7 +141,7 @@ macro(coredos_executable ELFFILE)
 endmacro()
 
 
-macro(coredos_add_test FN)
+macro(dosek_add_test FN)
     add_test(${FN} qemu-system-i386 -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -nographic -cdrom "${PROJECT_BINARY_DIR}/${FN}.iso")
     set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 20)
     add_dependencies( tests iso-${FN} )

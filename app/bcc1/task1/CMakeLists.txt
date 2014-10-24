@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1a
   SYSTEM_XML system.xml
   VERIFY verify_a.py
@@ -7,7 +7,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1a_sse
   SYSTEM_XML system.xml
   VERIFY verify_a.py
@@ -17,7 +17,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1b
   SYSTEM_XML system.xml
   VERIFY verify_b.py
@@ -26,7 +26,7 @@ COREDOS_BINARY(
   b.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1c
   SYSTEM_XML system.xml
   VERIFY verify_c.py
@@ -35,7 +35,7 @@ COREDOS_BINARY(
   c.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1d
   SYSTEM_XML system.xml
   VERIFY verify_d.py
@@ -44,7 +44,7 @@ COREDOS_BINARY(
   d.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1e
   SYSTEM_XML system.xml
   VERIFY verify_e.py
@@ -53,7 +53,7 @@ COREDOS_BINARY(
   e.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1f
   SYSTEM_XML system.xml
   VERIFY verify_f.py
@@ -62,7 +62,7 @@ COREDOS_BINARY(
   f.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_task1g
   SYSTEM_XML system.xml
   VERIFY verify_g.py

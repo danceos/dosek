@@ -40,7 +40,7 @@ noinline void test_finish()
 inlinehint void test_main(void)
 {
     debug.setcolor(Color::RED, Color::WHITE);
-    debug << "CoRedOS start" << endl;
+    debug << "dOSEK start" << endl;
     debug.setcolor(Color::YELLOW, Color::BLACK);
 
     // run tests
@@ -51,7 +51,7 @@ inlinehint void test_main(void)
 
     // halt system
     debug.setcolor(Color::RED, Color::WHITE);
-    debug << "CoRedOS halt" << endl;
+    debug << "dOSEK halt" << endl;
     Machine::shutdown();
 }
 

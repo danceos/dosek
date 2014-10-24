@@ -102,7 +102,7 @@ class Generator:
         """Generate into output file"""
         self.file_prefix = output_file_prefix
         self.source_file = SourceFile()
-        self.source_files["coredos.cc"] = self.source_file
+        self.source_files["dosek.cc"] = self.source_file
         
 
         #include "os.h"

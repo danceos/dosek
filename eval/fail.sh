@@ -30,7 +30,7 @@ make fail-$BENCH-regs
 make fail-$BENCH-mem
 make fail-$BENCH-ip
 
-VARIANT=CoRedOS-`cat fail-$BENCH/.gitrev`
+VARIANT=dOSEK-`cat fail-$BENCH/.gitrev`
 NAME=$VARIANT-$BENCH-encoded-mpu
 objdump -wC -t -j .data -j .text fail-$BENCH/fail-$BENCH > $START_DIR/$NAME.syms
 cp fail-$BENCH/fail-$BENCH $START_DIR/$NAME.elf

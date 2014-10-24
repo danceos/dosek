@@ -31,7 +31,7 @@ set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 configure_file(Doxyfile.in ${DOXYFILE}  @ONLY )
 
 ## call make doc to generate documentation
-set(line0 "[${PROJECT_NAME}] Generating CoRedOS documentation with Doxygen")
+set(line0 "[${PROJECT_NAME}] Generating dOSEK documentation with Doxygen")
 set(line1 "       Directories: ${DOXY_SOURCE}")
 set(line2 "       Excluded patterns: ${DOXY_EXCLUDE_PATTERNS}")
 set(line3 "       HTML output: ${DOXY_OUTPUT}/${DOXY_HTML_OUTPUT}")

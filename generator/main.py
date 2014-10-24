@@ -50,11 +50,11 @@ if __name__ == "__main__":
     parser.add_option("", "--rtsc-analyze-xml",
                       metavar="RTSC_ANALYZE_XML", help="the RTSC Analyze file")
     parser.add_option("-p", "--prefix",
-                      metavar="DIR", help="where to place the coredos source (prefix)")
+                      metavar="DIR", help="where to place the dosek source (prefix)")
     parser.add_option("-n", "--name",
                       metavar="STRING", help="system name")
     parser.add_option("-a", "--arch",
-                      metavar="STRING", help="for which coredos architecture?")
+                      metavar="STRING", help="for which dosek architecture?")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)",
                       default = 0)

@@ -67,7 +67,7 @@ class SymbolMap(dict):
                     self[i] = symbol
                     self[symbol.name] = symbol
 
-class CoredosDetector:
+class dOSEKDetector:
     START  = 1
     WITHIN = 2
     END    = 4
@@ -186,7 +186,7 @@ class SyscallRegion:
 def syscall_regions(trace_events, symbol_map):
     """Generator that returns detected syscall regions"""
     last_addr = current_addr = next_addr = None
-    detector = CoredosDetector(symbol_map)
+    detector = dOSEKDetector(symbol_map)
 
     region = None
 

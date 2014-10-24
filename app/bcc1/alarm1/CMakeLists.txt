@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm1a
   SYSTEM_XML system.xml
   VERIFY verify_a.py
@@ -7,7 +7,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm1b
   SYSTEM_XML system.xml
   VERIFY verify_b.py
@@ -16,7 +16,7 @@ COREDOS_BINARY(
   b.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm1c
   SYSTEM_XML system.xml
   VERIFY verify_c.py
@@ -25,7 +25,7 @@ COREDOS_BINARY(
   c.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm1d
   SYSTEM_XML system.xml
   VERIFY verify_d.py
@@ -34,7 +34,7 @@ COREDOS_BINARY(
   d.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm1e
   SYSTEM_XML system.xml
   VERIFY verify_e.py
@@ -44,7 +44,7 @@ COREDOS_BINARY(
 )
 
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_alarm1f
   SYSTEM_XML system.xml
   # VERIFY verify_f.py

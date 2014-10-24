@@ -3,7 +3,7 @@ set(INCLUDEDIRS "" CACHE INTERNAL "List of include dirs")
 set(INCLUDEDIRS_FLAGS "" CACHE INTERNAL "List of include dirs (in flag form)")
 
 
-macro(coredos_include_dir IDIR)
+macro(dosek_include_dir IDIR)
     set(INCLUDEDIRS ${INCLUDEDIRS} ${IDIR})
     set(INCLUDEDIRS_FLAGS ${INCLUDEDIRS_FLAGS} -I${IDIR})
 

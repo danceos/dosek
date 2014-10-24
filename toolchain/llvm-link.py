@@ -82,7 +82,7 @@ def start_ld(flags, objects, output):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Linker for CoRedOS.')
+    parser = argparse.ArgumentParser(description='Linker for dOSEK.')
     parser.add_argument("--output", "-o", metavar='OUT', help='The file to generate')
     parser.add_argument("--linker-prefix", metavar='PREFIX', help='Output file prefix')
     parser.add_argument("--llvm-dir", metavar='LLVM_DIR', help='Where are the llvm binaries located')

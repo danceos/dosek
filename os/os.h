@@ -1,5 +1,5 @@
-#ifndef _COREDOS_OS_OS_H_
-#define _COREDOS_OS_OS_H_
+#ifndef _DOSEK_OS_OS_H_
+#define _DOSEK_OS_OS_H_
 
 #include "os/util/inline.h"
 #include "os/helper.h"

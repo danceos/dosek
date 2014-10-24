@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_complex1a
   SYSTEM_XML system.xml
   VERIFY verify_a.py
@@ -7,7 +7,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_complex1b
   SYSTEM_XML system.xml
   VERIFY verify_b.py
@@ -16,7 +16,7 @@ COREDOS_BINARY(
   b.cc
  )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_complex1c
   SYSTEM_XML system.xml
   VERIFY verify_c.py
@@ -25,7 +25,7 @@ COREDOS_BINARY(
   c.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_complex1d
   SYSTEM_XML system.xml
   LIBS libtest

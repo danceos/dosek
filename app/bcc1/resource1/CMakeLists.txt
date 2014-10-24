@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1a
   SYSTEM_XML system.xml
   LIBS libtest
@@ -7,7 +7,7 @@ COREDOS_BINARY(
   a.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1b
   SYSTEM_XML system.xml
   LIBS libtest
@@ -16,7 +16,7 @@ COREDOS_BINARY(
   b.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1c
   SYSTEM_XML system.xml
   LIBS libtest
@@ -25,7 +25,7 @@ COREDOS_BINARY(
   c.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1d
   SYSTEM_XML system.xml
   LIBS libtest
@@ -34,7 +34,7 @@ COREDOS_BINARY(
   d.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1e
   SYSTEM_XML system.xml
   LIBS libtest
@@ -43,7 +43,7 @@ COREDOS_BINARY(
   e.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1f
   SYSTEM_XML system.xml
   LIBS libtest
@@ -53,7 +53,7 @@ COREDOS_BINARY(
 )
 
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1g
   SYSTEM_XML system.xml
   LIBS libtest
@@ -62,7 +62,7 @@ COREDOS_BINARY(
   g.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1h
   SYSTEM_XML system.xml
   LIBS libtest
@@ -71,7 +71,7 @@ COREDOS_BINARY(
   h.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1j
   SYSTEM_XML system.xml
   LIBS libtest
@@ -80,7 +80,7 @@ COREDOS_BINARY(
   j.cc
 )
 
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bcc1_resource1k
   SYSTEM_XML system.xml
   LIBS libtest

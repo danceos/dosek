@@ -3,7 +3,7 @@
 
 We use a recent version of the [I4Copter](https://www4.cs.fau.de/trac/I4Copter) system as real world evaluation scenario.
 The I4Copter system architecture allows to separate functional application code from non-functional OS interaction.
-Therefore, we are able to exchange the underlying operating systems easily and evaluate our ''CoRedOS'' and a usual COTS eCos system.
+Therefore, we are able to exchange the underlying operating systems easily and evaluate our ''dOSEK'' and a usual COTS eCos system.
 In a first phase we mocked the functional application code and mimic the original execution behavior.
 
 ### Fault Injection Parameters ###

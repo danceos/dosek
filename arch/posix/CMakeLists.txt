@@ -31,7 +31,7 @@ add_library(arch ${SRCS})
 target_link_libraries(arch generic)
 
 # Add to include directories
-coredos_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
+dosek_include_dir(${CMAKE_CURRENT_SOURCE_DIR})
 set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL STRING)
 
 # Setup linker script
@@ -41,16 +41,16 @@ set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INT
 # Show target specific sources, linker script
 #message(STATUS "Linker script: ${LINKER_SCRIPT}")
 
-# POSIX CoRedOS executable macro
-macro(coredos_executable ELFFILE)
+# POSIX dOSEK executable macro
+macro(dosek_executable ELFFILE)
     set(options "EXCLUDE_FROM_ALL")
     set(oneValueArgs "LINKER_SCRIPT")
     set(multiValuedParameters DEFINITIONS LIBS SOURCES)
-    cmake_parse_arguments(COREDOS_EXECUTABLE "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
-	set(SOURCES ${COREDOS_EXECUTABLE_SOURCES} ${COREDOS_EXECUTABLE_UNPARSED_ARGUMENTS})
-	set(DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
+    cmake_parse_arguments(DOSEK_EXECUTABLE "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
+	set(SOURCES ${DOSEK_EXECUTABLE_SOURCES} ${DOSEK_EXECUTABLE_UNPARSED_ARGUMENTS})
+	set(DEFINITIONS ${DOSEK_EXECUTABLE_DEFINITIONS})
     set(ADD_EXECUTABLE_OPTIONS "")
-    if(${COREDOS_EXECUTABLE_EXCLUDE_FROM_ALL} STREQUAL "TRUE")
+    if(${DOSEK_EXECUTABLE_EXCLUDE_FROM_ALL} STREQUAL "TRUE")
       set(ADD_EXECUTABLE_OPTIONS "EXCLUDE_FROM_ALL")
     endif()
 
@@ -58,15 +58,15 @@ macro(coredos_executable ELFFILE)
 	get_filename_component(ELFNAME ${ELFFILE} NAME_WE)
 
 	# libraries to link with application
-	set(TARGET_LIBS os arch ${COREDOS_EXECUTABLE_LIBS})
+	set(TARGET_LIBS os arch ${DOSEK_EXECUTABLE_LIBS})
 
 	# The actual executable
 	add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES})
 	target_link_libraries(${ELFFILE} ${TARGET_LIBS})
 
 	# set definitions
-	if(COREDOS_EXECUTABLE_DEFINITIONS)
-		set_target_properties(${ELFFILE} PROPERTIES COMPILE_DEFINITIONS ${COREDOS_EXECUTABLE_DEFINITIONS})
+	if(DOSEK_EXECUTABLE_DEFINITIONS)
+		set_target_properties(${ELFFILE} PROPERTIES COMPILE_DEFINITIONS ${DOSEK_EXECUTABLE_DEFINITIONS})
 	endif()
 
 
@@ -86,7 +86,7 @@ macro(coredos_executable ELFFILE)
 	set(EXECUTABLES ${EXECUTABLES} ${ELFFILE} CACHE INTERNAL STRING)
 endmacro()
 
-macro(coredos_add_test FN)
+macro(dosek_add_test FN)
     add_test(${FN} ${PROJECT_BINARY_DIR}/${FN})
     set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 10)
     add_dependencies( tests ${FN} )

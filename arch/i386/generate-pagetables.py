@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Generate static C++ pagetables from given CoRedOS ELF file."""
+"""Generate static C++ pagetables from given dOSEK ELF file."""
 
 import os, sys
 from optparse import OptionParser

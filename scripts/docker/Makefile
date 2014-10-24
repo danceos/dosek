@@ -1,8 +1,8 @@
 all:
-	docker build -t dosek-base dosek-base
+	docker build -t danceos/dosek-base dosek-base
 
 run:
-	docker run --name dosek-base -d dosek-base
+	docker run --name dosek-base -d danceos/dosek-base
 
 ssh:
 	ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no \

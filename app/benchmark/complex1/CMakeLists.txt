@@ -1,4 +1,4 @@
-COREDOS_BINARY(
+DOSEK_BINARY(
   NAME bench-complex1d
   SYSTEM_XML system.xml
   FAIL

@@ -32,7 +32,7 @@ set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker sc
 
 # ENABLE posix platform
 set(BUILD_posix "on" CACHE INTERNAL STRING)
-set(COREDOS_ARCHITECTURE "posix")
+set(DOSEK_ARCHITECTURE "posix")
 
 
 
