@@ -9,10 +9,10 @@ solutions mainly concentrate on the hardening of applications, while
 the underlying operating system is often left as unreliable computing
 base.
 
-dosek aims to bridge that gap by utilizing consquent design and
+dOSEK aims to bridge that gap by utilizing consquent design and
 implementation concepts for contructing a reliable computing base even
-on unreliable hardware. dosek is developed from scratch with
-dependability as the first-class design goal Targeting
+on unreliable hardware. dOSEK is developed from scratch with
+dependability as the first-class design goal targeting
 safety-critical, embedded applications, the system provides an
 OSEK/AUTOSAR-conform interface (currently BCC1).
 
@@ -43,11 +43,12 @@ For the ARM version, you will  additionally need
 Building
 --------
 
-dOSEK uses cmake as a build system, and therefore supports out of
-source builds. To build and run all test-cases you have to type:
+dOSEK uses cmake as a build system.
+We recommend to make an out-of-source build
+To build and run all test-cases you have to type:
 
     mkdir build; cd build
-    ../new_build_env.py
+    <Path to dOSEK>/new_build_env.py
     make build_and_test
 
 To get help about the available targets use
@@ -64,7 +65,7 @@ Docker Images
 [![Docker badge](http://docker0.serv.pw:8080/danceos/dosek-base)](https://registry.hub.docker.com/u/danceos/dosek-base/)
 
 
-We provide a [docker.io](http://www.docker.com) images for a basic
+We provide [docker.io](http://www.docker.com) images for a basic
 build environment. These images provide an SSH port and access to an
 Ubuntu machine that contains all build dependencies. You can either
 build the images yourself with
