@@ -8,8 +8,11 @@ from generator.tools import stack, unwrap_seq, group_by, IntEnum
 class StateTransitionEdge(IntEnum):
     """All used edge types"""
     common = 1
+    saved  = 2
 
 StateTransition = StateTransitionEdge.common
+SavedStateTransition = StateTransitionEdge.saved
+
 
 class SymbolicSystemExecution(Analysis, GraphObject):
     """This pass executes the system state symbolic. The whole system
@@ -68,8 +71,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             real_instance = self.states[target_state]
             source_state.add_cfg_edge(real_instance, StateTransition)
         else:
-            self.working_stack.push(target_state)
-            source_state.add_cfg_edge(target_state, StateTransition)
+            self.working_stack.push((source_state, target_state))
 
     def state_functor(self, state):
         # Do the System Call
@@ -134,18 +136,29 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             before_StartOS.call_stack[subtask.subtask_id] = stack()
         before_StartOS.frozen = True
 
+        # The working stack consists of possible state edges. If the
+        # first part of the tuple is none, we have the starting
+        # condition.
         self.working_stack = stack()
-        self.working_stack.push(before_StartOS)
+        self.working_stack.push((None, before_StartOS))
 
         state_count = 0
         ignored_count = 0
         while not self.working_stack.isEmpty():
-            # Current is a system state
-            current = self.working_stack.pop()
+            # Current is a system state and its state predecessor
+            before_current, current = self.working_stack.pop()
+
             # State was already marked as done!
             if current in self.states:
+                # Althoug it was already done, we have to add the edge
+                # noted in the working stack.
+                current = self.states[current]
+                before_current.add_cfg_edge(current, StateTransition)
                 ignored_count += 1
                 continue
+            elif before_current:
+                # Add the state edge
+                before_current.add_cfg_edge(current, StateTransition)
             # The current state is marked as done. This dictionary is
             # used to translate all equal system states to a single instance/object.
             self.states[current] = current
@@ -158,6 +171,14 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         logging.info(" + symbolic execution done")
 
+
+        # Before we transform the state graph, we copy the original
+        # state graph away
+        for outgoing_state in self.states:
+            for incoming_state in outgoing_state.get_outgoing_nodes(StateTransition):
+                outgoing_state.add_cfg_edge(incoming_state, SavedStateTransition)
+
+        # Cut out the isr transitions to match the SSF GCFG
         self.transform_isr_transitions()
 
         # Group States by ABB
@@ -165,6 +186,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         logging.info(" + %d system states", len(self.states))
 
         # Set analysis to valid, since only statistics follow from here.
+        self.states = set(self.states.keys())
         self.valid = True
 
         ################################################################
@@ -236,12 +258,12 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             source.add_cfg_edge(target, StateTransition)
 
     def fsck(self):
-        pass
-        #for state in self.states:
-        #    for next_state in state.get_outgoing_nodes(StateTransition):
-        #        assert id(self.states[state]) == id(state)
-        #    for next_state in state.get_incoming_nodes(StateTransition):
-        #        assert id(self.states[state]) == id(state)
+        state_ids = set([id(X) for X in self.states])
+        for sse_state in self.states:
+            for X in sse_state.get_incoming_nodes(SavedStateTransition):
+                assert id(X) in state_ids, X
+            for X in sse_state.get_outgoing_nodes(SavedStateTransition):
+                assert id(X) in state_ids, X
 
     def for_abb(self, abb):
         """Return a GlobalAbbInformation object for this object"""
