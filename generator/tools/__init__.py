@@ -71,6 +71,12 @@ def group_by(seq : iterable, field):
         ret[key].append(item)
     return ret
 
+def pairwise(elements):
+    tmp = []
+    for x in elements:
+        for y in tmp:
+            yield (x, y)
+        tmp.append(x)
 
 def wrap_typecheck_functions(prefix = "generator",
                              ignore = "generator.tools.typecheck"):
@@ -115,3 +121,7 @@ def myexcepthook(type, value, tb):
     sys.stderr.write(highlight(tbtext, lexer, formatter))
 
 sys.excepthook = myexcepthook
+
+def bitwidth(self, A):
+    """Number of bits needed to encode this number"""
+    return int(math.ceil(math.log(A, 2)))

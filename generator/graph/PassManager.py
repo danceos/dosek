@@ -95,6 +95,7 @@ class PassManager:
         return list(ret)
 
     def analyze(self, basefilename):
+        self.basefilename = basefilename
         verifiers_called = set()
         pass_number = 0
 

@@ -163,6 +163,9 @@ if __name__ == "__main__":
     pass_manager.register_analysis(CFGRegions())
     pass_manager.register_analysis(GenerateAssertionsPass())
 
+    pass_manager.register_analysis(FiniteStateMachineBuilder())
+
+
     # Statistics modules
     pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
 

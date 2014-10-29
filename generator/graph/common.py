@@ -49,6 +49,8 @@ class GraphObject:
         edges.extend(self.graph_edges())
 
         for subobject in self.graph_subobjects():
+            if not hasattr(subobject, "dump_as_dot"):
+                continue
             text, edges_ = subobject.dump_as_dot(current_depth + 1)
             # Merge with edges from lower levels
             edges.extend(edges_)
@@ -180,7 +182,7 @@ class Edge:
         self.level = level
 
     def dump_as_dot(self):
-        ret = "#%s nach %s\n" %( self.source, self.target )
+        ret = ""
         ret += "Node_%s -> Node_%s[minlen=3,ltail=%s,lhead=%s,label=\"%s\",color=%s];" %(
             self.source.graph_dot_id(),
             self.target.graph_dot_id(),

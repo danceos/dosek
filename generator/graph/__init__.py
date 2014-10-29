@@ -17,12 +17,13 @@ from generator.graph.PrioritySpreadingPass import PrioritySpreadingPass
 from generator.graph.Resource import Resource
 from generator.graph.Sporadic import Alarm
 from generator.graph.Subtask import Subtask
-from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution
+from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution, StateTransition, SavedStateTransition
 from generator.graph.SystemGraph import SystemGraph
 from generator.graph.SystemSemantic import *
 from generator.graph.SystemStateFlow import *
 from generator.graph.GenerateAssertions import *
 from generator.graph.DominanceAnalysis import *
+from generator.graph.FiniteStateMachineBuilder import *
 from generator.graph.CFGRegions import CFGRegions
 
 
