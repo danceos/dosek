@@ -253,6 +253,8 @@ extern void test_prepare();
 
 inlinehint void test_init(void) {
 	// prepare tests
+	trace_table_idx = 0;
+	experiment_number = 0;
 	global_all_ok = true;
 	if (test_prepare != 0) {
 		test_prepare();
@@ -283,10 +285,11 @@ inlinehint void test_main(void)
 }
 
 inlinehint void test_trace(char chr) {
-	//kout << 'x' << endl;
-    //fail_trace = (uint32_t) chr;
-	//if (trace_table_idx < 0xff)
+	//kout << chr;
+    fail_trace = (uint32_t) chr;
+	if (trace_table_idx < 0xff)
 		trace_table[trace_table_idx++] = chr;
+	//kout << trace_table[trace_table_idx-1] << endl;
 }
 
 #ifdef FAIL
