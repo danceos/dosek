@@ -29,8 +29,11 @@ class Timer {
     static volatile PRV_Timer_regs * const timer;
 
 public:
-   	/** \brief Initialize the Timer */
+	/** \brief Initialize the Timer */
 	static void init();
+
+	/** \brief Stop the Timer */
+	static void stop();
 
 	/** \brief Generate periodic interrupt at given rate (in Hz) */
 	static void set_periodic(uint16_t rate);

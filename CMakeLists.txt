@@ -28,6 +28,7 @@ if(GENERATOR_ARGS)
   message(STATUS "[${PROJECT_NAME}] Additional Generator Arguments: ${GENEATOR_ARGS}")
   add_definitions(-DGENERATOR_ARGS="${GENERATOR_ARGS}")
 else()
+  add_definitions(-DGENERATOR_ARGS="")
   set(GENEATOR_ARGS "" CACHE STRING "")
 endif()
 

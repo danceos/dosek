@@ -1,0 +1,6784 @@
+
+CPU TestSystem {
+
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+    RESOURCE RES_SCHEDULER {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    ISR reboot {
+       CATEGORY = 2;
+       DEVICE = 5;
+    };
+
+    ISR isrA {
+       CATEGORY = 2;
+       DEVICE = 32;
+    };
+
+    ISR isrB {
+        CATEGORY = 2;
+        DEVICE = 33;
+    };
+
+
+   /* TaskPair 1 */
+
+    TASK T_1_H {
+        SCHEDULE = FULL;
+        PRIORITY = 58;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_1_L {
+        SCHEDULE = NON;
+        PRIORITY = 1;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_1_hard {
+        MAXALLOWEDVALUE = 45851;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_1_soft {
+        MAXALLOWEDVALUE = 45207;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_1_hard {
+        COUNTER = C_1_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_1_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_1_soft {
+        COUNTER = C_1_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_1_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 2 */
+
+    TASK T_2_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1127;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_2_L {
+        SCHEDULE = NON;
+        PRIORITY = 2;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_2_hard {
+        MAXALLOWEDVALUE = 43261;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_2_soft {
+        MAXALLOWEDVALUE = 47682;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_2_hard {
+        COUNTER = C_2_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_2_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_2_soft {
+        COUNTER = C_2_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_2_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 3 */
+
+    TASK T_3_H {
+        SCHEDULE = FULL;
+        PRIORITY = 53;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_3_L {
+        SCHEDULE = NON;
+        PRIORITY = 3;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_3_hard {
+        MAXALLOWEDVALUE = 49059;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_3_soft {
+        MAXALLOWEDVALUE = 44138;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_3_hard {
+        COUNTER = C_3_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_3_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_3_soft {
+        COUNTER = C_3_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_3_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 4 */
+
+    TASK T_4_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1129;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_4_L {
+        SCHEDULE = NON;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_4_hard {
+        MAXALLOWEDVALUE = 48145;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_4_soft {
+        MAXALLOWEDVALUE = 45049;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_4_hard {
+        COUNTER = C_4_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_4_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_4_soft {
+        COUNTER = C_4_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_4_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 5 */
+
+    TASK T_5_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1130;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_5_L {
+        SCHEDULE = NON;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_5_hard {
+        MAXALLOWEDVALUE = 45860;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_5_soft {
+        MAXALLOWEDVALUE = 43565;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_5_hard {
+        COUNTER = C_5_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_5_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_5_soft {
+        COUNTER = C_5_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_5_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 6 */
+
+    TASK T_6_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1131;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_6_L {
+        SCHEDULE = NON;
+        PRIORITY = 6;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_6_hard {
+        MAXALLOWEDVALUE = 45031;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_6_soft {
+        MAXALLOWEDVALUE = 48636;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_6_hard {
+        COUNTER = C_6_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_6_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_6_soft {
+        COUNTER = C_6_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_6_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 7 */
+
+    TASK T_7_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1132;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_7_L {
+        SCHEDULE = NON;
+        PRIORITY = 7;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_7_hard {
+        MAXALLOWEDVALUE = 45324;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_7_soft {
+        MAXALLOWEDVALUE = 40563;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_7_hard {
+        COUNTER = C_7_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_7_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 18;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_7_soft {
+        COUNTER = C_7_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_7_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 8 */
+
+    TASK T_8_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1133;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_8_L {
+        SCHEDULE = NON;
+        PRIORITY = 8;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_8_hard {
+        MAXALLOWEDVALUE = 44635;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_8_soft {
+        MAXALLOWEDVALUE = 45641;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_8_hard {
+        COUNTER = C_8_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_8_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 9;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_8_soft {
+        COUNTER = C_8_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_8_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 9 */
+
+    TASK T_9_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1134;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_9_L {
+        SCHEDULE = NON;
+        PRIORITY = 9;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_9_hard {
+        MAXALLOWEDVALUE = 47819;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_9_soft {
+        MAXALLOWEDVALUE = 46550;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_9_hard {
+        COUNTER = C_9_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_9_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_9_soft {
+        COUNTER = C_9_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_9_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 10 */
+
+    TASK T_10_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1135;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_10_L {
+        SCHEDULE = NON;
+        PRIORITY = 10;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_10_hard {
+        MAXALLOWEDVALUE = 43651;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_10_soft {
+        MAXALLOWEDVALUE = 47984;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_10_hard {
+        COUNTER = C_10_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_10_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_10_soft {
+        COUNTER = C_10_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_10_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 11 */
+
+    TASK T_11_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1136;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_11_L {
+        SCHEDULE = NON;
+        PRIORITY = 11;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_11_hard {
+        MAXALLOWEDVALUE = 48545;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_11_soft {
+        MAXALLOWEDVALUE = 46418;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_11_hard {
+        COUNTER = C_11_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_11_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_11_soft {
+        COUNTER = C_11_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_11_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 12 */
+
+    TASK T_12_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1137;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_12_L {
+        SCHEDULE = NON;
+        PRIORITY = 12;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_12_hard {
+        MAXALLOWEDVALUE = 40929;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_12_soft {
+        MAXALLOWEDVALUE = 45336;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_12_hard {
+        COUNTER = C_12_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_12_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 16;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_12_soft {
+        COUNTER = C_12_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_12_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 13 */
+
+    TASK T_13_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1138;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_13_L {
+        SCHEDULE = NON;
+        PRIORITY = 13;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_13_hard {
+        MAXALLOWEDVALUE = 40568;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_13_soft {
+        MAXALLOWEDVALUE = 46454;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_13_hard {
+        COUNTER = C_13_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_13_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_13_soft {
+        COUNTER = C_13_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_13_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 14 */
+
+    TASK T_14_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1139;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_14_L {
+        SCHEDULE = NON;
+        PRIORITY = 14;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_14_hard {
+        MAXALLOWEDVALUE = 43325;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_14_soft {
+        MAXALLOWEDVALUE = 48288;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_14_hard {
+        COUNTER = C_14_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_14_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_14_soft {
+        COUNTER = C_14_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_14_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 15 */
+
+    TASK T_15_H {
+        SCHEDULE = FULL;
+        PRIORITY = 112;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_15_L {
+        SCHEDULE = NON;
+        PRIORITY = 15;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_15_hard {
+        MAXALLOWEDVALUE = 45921;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_15_soft {
+        MAXALLOWEDVALUE = 45618;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_15_hard {
+        COUNTER = C_15_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_15_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_15_soft {
+        COUNTER = C_15_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_15_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 16 */
+
+    TASK T_16_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1141;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_16_L {
+        SCHEDULE = NON;
+        PRIORITY = 16;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_16_hard {
+        MAXALLOWEDVALUE = 42232;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_16_soft {
+        MAXALLOWEDVALUE = 43011;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_16_hard {
+        COUNTER = C_16_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_16_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_16_soft {
+        COUNTER = C_16_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_16_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 17 */
+
+    TASK T_17_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1142;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_17_L {
+        SCHEDULE = NON;
+        PRIORITY = 17;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_17_hard {
+        MAXALLOWEDVALUE = 41973;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_17_soft {
+        MAXALLOWEDVALUE = 48546;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_17_hard {
+        COUNTER = C_17_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_17_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 20;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_17_soft {
+        COUNTER = C_17_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_17_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 18 */
+
+    TASK T_18_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1143;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_18_L {
+        SCHEDULE = NON;
+        PRIORITY = 18;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_18_hard {
+        MAXALLOWEDVALUE = 44820;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_18_soft {
+        MAXALLOWEDVALUE = 41795;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_18_hard {
+        COUNTER = C_18_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_18_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 14;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_18_soft {
+        COUNTER = C_18_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_18_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 19 */
+
+    TASK T_19_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1144;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_19_L {
+        SCHEDULE = NON;
+        PRIORITY = 19;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_19_hard {
+        MAXALLOWEDVALUE = 43928;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_19_soft {
+        MAXALLOWEDVALUE = 46007;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_19_hard {
+        COUNTER = C_19_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_19_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_19_soft {
+        COUNTER = C_19_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_19_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 20 */
+
+    TASK T_20_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1145;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_20_L {
+        SCHEDULE = NON;
+        PRIORITY = 20;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_20_hard {
+        MAXALLOWEDVALUE = 49772;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_20_soft {
+        MAXALLOWEDVALUE = 41262;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_20_hard {
+        COUNTER = C_20_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_20_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 16;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_20_soft {
+        COUNTER = C_20_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_20_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 21 */
+
+    TASK T_21_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1146;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_21_L {
+        SCHEDULE = NON;
+        PRIORITY = 21;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_21_hard {
+        MAXALLOWEDVALUE = 45419;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_21_soft {
+        MAXALLOWEDVALUE = 45653;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_21_hard {
+        COUNTER = C_21_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_21_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 17;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_21_soft {
+        COUNTER = C_21_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_21_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 22 */
+
+    TASK T_22_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1147;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_22_L {
+        SCHEDULE = NON;
+        PRIORITY = 22;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_22_hard {
+        MAXALLOWEDVALUE = 41712;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_22_soft {
+        MAXALLOWEDVALUE = 41882;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_22_hard {
+        COUNTER = C_22_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_22_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 1;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_22_soft {
+        COUNTER = C_22_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_22_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 23 */
+
+    TASK T_23_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1148;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_23_L {
+        SCHEDULE = NON;
+        PRIORITY = 23;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_23_hard {
+        MAXALLOWEDVALUE = 47146;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_23_soft {
+        MAXALLOWEDVALUE = 42696;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_23_hard {
+        COUNTER = C_23_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_23_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_23_soft {
+        COUNTER = C_23_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_23_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 24 */
+
+    TASK T_24_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1149;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_24_L {
+        SCHEDULE = NON;
+        PRIORITY = 24;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_24_hard {
+        MAXALLOWEDVALUE = 45746;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_24_soft {
+        MAXALLOWEDVALUE = 43240;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_24_hard {
+        COUNTER = C_24_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_24_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 1;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_24_soft {
+        COUNTER = C_24_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_24_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 25 */
+
+    TASK T_25_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1150;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_25_L {
+        SCHEDULE = NON;
+        PRIORITY = 25;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_25_hard {
+        MAXALLOWEDVALUE = 41907;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_25_soft {
+        MAXALLOWEDVALUE = 47979;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_25_hard {
+        COUNTER = C_25_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_25_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 14;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_25_soft {
+        COUNTER = C_25_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_25_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 26 */
+
+    TASK T_26_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1151;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_26_L {
+        SCHEDULE = NON;
+        PRIORITY = 26;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_26_hard {
+        MAXALLOWEDVALUE = 40582;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_26_soft {
+        MAXALLOWEDVALUE = 42025;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_26_hard {
+        COUNTER = C_26_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_26_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_26_soft {
+        COUNTER = C_26_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_26_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 27 */
+
+    TASK T_27_H {
+        SCHEDULE = FULL;
+        PRIORITY = 100;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_27_L {
+        SCHEDULE = NON;
+        PRIORITY = 27;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_27_hard {
+        MAXALLOWEDVALUE = 40968;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_27_soft {
+        MAXALLOWEDVALUE = 47472;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_27_hard {
+        COUNTER = C_27_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_27_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 9;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_27_soft {
+        COUNTER = C_27_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_27_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 28 */
+
+    TASK T_28_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1153;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_28_L {
+        SCHEDULE = NON;
+        PRIORITY = 28;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_28_hard {
+        MAXALLOWEDVALUE = 42825;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_28_soft {
+        MAXALLOWEDVALUE = 40555;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_28_hard {
+        COUNTER = C_28_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_28_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_28_soft {
+        COUNTER = C_28_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_28_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 29 */
+
+    TASK T_29_H {
+        SCHEDULE = FULL;
+        PRIORITY = 91;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_29_L {
+        SCHEDULE = NON;
+        PRIORITY = 29;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_29_hard {
+        MAXALLOWEDVALUE = 46754;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_29_soft {
+        MAXALLOWEDVALUE = 41479;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_29_hard {
+        COUNTER = C_29_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_29_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_29_soft {
+        COUNTER = C_29_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_29_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 30 */
+
+    TASK T_30_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1155;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_30_L {
+        SCHEDULE = NON;
+        PRIORITY = 30;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_30_hard {
+        MAXALLOWEDVALUE = 44856;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_30_soft {
+        MAXALLOWEDVALUE = 42862;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_30_hard {
+        COUNTER = C_30_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_30_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 8;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_30_soft {
+        COUNTER = C_30_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_30_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 31 */
+
+    TASK T_31_H {
+        SCHEDULE = FULL;
+        PRIORITY = 80;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_31_L {
+        SCHEDULE = NON;
+        PRIORITY = 31;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_31_hard {
+        MAXALLOWEDVALUE = 44398;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_31_soft {
+        MAXALLOWEDVALUE = 42431;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_31_hard {
+        COUNTER = C_31_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_31_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_31_soft {
+        COUNTER = C_31_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_31_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 32 */
+
+    TASK T_32_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1157;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_32_L {
+        SCHEDULE = NON;
+        PRIORITY = 32;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_32_hard {
+        MAXALLOWEDVALUE = 46595;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_32_soft {
+        MAXALLOWEDVALUE = 49022;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_32_hard {
+        COUNTER = C_32_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_32_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_32_soft {
+        COUNTER = C_32_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_32_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 33 */
+
+    TASK T_33_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1158;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_33_L {
+        SCHEDULE = NON;
+        PRIORITY = 33;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_33_hard {
+        MAXALLOWEDVALUE = 47110;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_33_soft {
+        MAXALLOWEDVALUE = 44133;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_33_hard {
+        COUNTER = C_33_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_33_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 17;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_33_soft {
+        COUNTER = C_33_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_33_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 34 */
+
+    TASK T_34_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1159;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_34_L {
+        SCHEDULE = NON;
+        PRIORITY = 34;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_34_hard {
+        MAXALLOWEDVALUE = 48006;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_34_soft {
+        MAXALLOWEDVALUE = 44777;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_34_hard {
+        COUNTER = C_34_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_34_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_34_soft {
+        COUNTER = C_34_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_34_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 35 */
+
+    TASK T_35_H {
+        SCHEDULE = FULL;
+        PRIORITY = 64;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_35_L {
+        SCHEDULE = NON;
+        PRIORITY = 35;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_35_hard {
+        MAXALLOWEDVALUE = 46075;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_35_soft {
+        MAXALLOWEDVALUE = 47446;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_35_hard {
+        COUNTER = C_35_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_35_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_35_soft {
+        COUNTER = C_35_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_35_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 36 */
+
+    TASK T_36_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1161;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_36_L {
+        SCHEDULE = NON;
+        PRIORITY = 36;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_36_hard {
+        MAXALLOWEDVALUE = 45205;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_36_soft {
+        MAXALLOWEDVALUE = 43665;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_36_hard {
+        COUNTER = C_36_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_36_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 9;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_36_soft {
+        COUNTER = C_36_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_36_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 37 */
+
+    TASK T_37_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1162;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_37_L {
+        SCHEDULE = NON;
+        PRIORITY = 37;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_37_hard {
+        MAXALLOWEDVALUE = 40870;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_37_soft {
+        MAXALLOWEDVALUE = 45858;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_37_hard {
+        COUNTER = C_37_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_37_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_37_soft {
+        COUNTER = C_37_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_37_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 38 */
+
+    TASK T_38_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1163;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_38_L {
+        SCHEDULE = NON;
+        PRIORITY = 38;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_38_hard {
+        MAXALLOWEDVALUE = 40100;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_38_soft {
+        MAXALLOWEDVALUE = 46997;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_38_hard {
+        COUNTER = C_38_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_38_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 2;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_38_soft {
+        COUNTER = C_38_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_38_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 39 */
+
+    TASK T_39_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1164;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_39_L {
+        SCHEDULE = NON;
+        PRIORITY = 39;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_39_hard {
+        MAXALLOWEDVALUE = 46961;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_39_soft {
+        MAXALLOWEDVALUE = 49487;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_39_hard {
+        COUNTER = C_39_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_39_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_39_soft {
+        COUNTER = C_39_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_39_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 40 */
+
+    TASK T_40_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1165;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_40_L {
+        SCHEDULE = NON;
+        PRIORITY = 40;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_40_hard {
+        MAXALLOWEDVALUE = 43384;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_40_soft {
+        MAXALLOWEDVALUE = 40495;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_40_hard {
+        COUNTER = C_40_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_40_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_40_soft {
+        COUNTER = C_40_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_40_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 41 */
+
+    TASK T_41_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1166;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_41_L {
+        SCHEDULE = NON;
+        PRIORITY = 41;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_41_hard {
+        MAXALLOWEDVALUE = 41362;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_41_soft {
+        MAXALLOWEDVALUE = 41782;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_41_hard {
+        COUNTER = C_41_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_41_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_41_soft {
+        COUNTER = C_41_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_41_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 42 */
+
+    TASK T_42_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1167;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_42_L {
+        SCHEDULE = NON;
+        PRIORITY = 42;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_42_hard {
+        MAXALLOWEDVALUE = 47489;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_42_soft {
+        MAXALLOWEDVALUE = 40707;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_42_hard {
+        COUNTER = C_42_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_42_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_42_soft {
+        COUNTER = C_42_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_42_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 43 */
+
+    TASK T_43_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1168;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_43_L {
+        SCHEDULE = NON;
+        PRIORITY = 43;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_43_hard {
+        MAXALLOWEDVALUE = 46237;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_43_soft {
+        MAXALLOWEDVALUE = 44991;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_43_hard {
+        COUNTER = C_43_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_43_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_43_soft {
+        COUNTER = C_43_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_43_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 44 */
+
+    TASK T_44_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1169;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_44_L {
+        SCHEDULE = NON;
+        PRIORITY = 44;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_44_hard {
+        MAXALLOWEDVALUE = 49255;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_44_soft {
+        MAXALLOWEDVALUE = 41681;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_44_hard {
+        COUNTER = C_44_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_44_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_44_soft {
+        COUNTER = C_44_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_44_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 45 */
+
+    TASK T_45_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1170;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_45_L {
+        SCHEDULE = NON;
+        PRIORITY = 45;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_45_hard {
+        MAXALLOWEDVALUE = 47117;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_45_soft {
+        MAXALLOWEDVALUE = 42090;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_45_hard {
+        COUNTER = C_45_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_45_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 18;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_45_soft {
+        COUNTER = C_45_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_45_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 46 */
+
+    TASK T_46_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1171;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_46_L {
+        SCHEDULE = NON;
+        PRIORITY = 46;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_46_hard {
+        MAXALLOWEDVALUE = 46737;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_46_soft {
+        MAXALLOWEDVALUE = 44130;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_46_hard {
+        COUNTER = C_46_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_46_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 18;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_46_soft {
+        COUNTER = C_46_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_46_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 47 */
+
+    TASK T_47_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1172;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_47_L {
+        SCHEDULE = NON;
+        PRIORITY = 47;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_47_hard {
+        MAXALLOWEDVALUE = 45880;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_47_soft {
+        MAXALLOWEDVALUE = 44048;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_47_hard {
+        COUNTER = C_47_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_47_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 18;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_47_soft {
+        COUNTER = C_47_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_47_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 48 */
+
+    TASK T_48_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1173;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_48_L {
+        SCHEDULE = NON;
+        PRIORITY = 48;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_48_hard {
+        MAXALLOWEDVALUE = 44785;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_48_soft {
+        MAXALLOWEDVALUE = 44902;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_48_hard {
+        COUNTER = C_48_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_48_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 17;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_48_soft {
+        COUNTER = C_48_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_48_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 49 */
+
+    TASK T_49_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1174;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_49_L {
+        SCHEDULE = NON;
+        PRIORITY = 49;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_49_hard {
+        MAXALLOWEDVALUE = 45160;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_49_soft {
+        MAXALLOWEDVALUE = 46393;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_49_hard {
+        COUNTER = C_49_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_49_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_49_soft {
+        COUNTER = C_49_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_49_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 50 */
+
+    TASK T_50_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1175;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_50_L {
+        SCHEDULE = NON;
+        PRIORITY = 50;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_50_hard {
+        MAXALLOWEDVALUE = 46587;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_50_soft {
+        MAXALLOWEDVALUE = 48365;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_50_hard {
+        COUNTER = C_50_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_50_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 16;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_50_soft {
+        COUNTER = C_50_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_50_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 51 */
+
+    TASK T_51_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1176;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_51_L {
+        SCHEDULE = NON;
+        PRIORITY = 51;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_51_hard {
+        MAXALLOWEDVALUE = 45694;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_51_soft {
+        MAXALLOWEDVALUE = 45427;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_51_hard {
+        COUNTER = C_51_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_51_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 1;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_51_soft {
+        COUNTER = C_51_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_51_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 52 */
+
+    TASK T_52_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1177;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_52_L {
+        SCHEDULE = NON;
+        PRIORITY = 52;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_52_hard {
+        MAXALLOWEDVALUE = 48171;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_52_soft {
+        MAXALLOWEDVALUE = 45990;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_52_hard {
+        COUNTER = C_52_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_52_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_52_soft {
+        COUNTER = C_52_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_52_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 53 */
+
+    TASK T_53_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1178;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_53_L {
+        SCHEDULE = NON;
+        PRIORITY = 1128;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_53_hard {
+        MAXALLOWEDVALUE = 46657;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_53_soft {
+        MAXALLOWEDVALUE = 45692;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_53_hard {
+        COUNTER = C_53_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_53_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_53_soft {
+        COUNTER = C_53_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_53_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 54 */
+
+    TASK T_54_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1179;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_54_L {
+        SCHEDULE = NON;
+        PRIORITY = 54;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_54_hard {
+        MAXALLOWEDVALUE = 45023;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_54_soft {
+        MAXALLOWEDVALUE = 42631;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_54_hard {
+        COUNTER = C_54_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_54_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 17;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_54_soft {
+        COUNTER = C_54_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_54_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 55 */
+
+    TASK T_55_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1180;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_55_L {
+        SCHEDULE = NON;
+        PRIORITY = 55;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_55_hard {
+        MAXALLOWEDVALUE = 41958;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_55_soft {
+        MAXALLOWEDVALUE = 40870;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_55_hard {
+        COUNTER = C_55_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_55_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 17;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_55_soft {
+        COUNTER = C_55_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_55_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 56 */
+
+    TASK T_56_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1181;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_56_L {
+        SCHEDULE = NON;
+        PRIORITY = 56;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_56_hard {
+        MAXALLOWEDVALUE = 47810;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_56_soft {
+        MAXALLOWEDVALUE = 41984;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_56_hard {
+        COUNTER = C_56_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_56_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_56_soft {
+        COUNTER = C_56_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_56_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 57 */
+
+    TASK T_57_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1182;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_57_L {
+        SCHEDULE = NON;
+        PRIORITY = 57;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_57_hard {
+        MAXALLOWEDVALUE = 42737;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_57_soft {
+        MAXALLOWEDVALUE = 42026;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_57_hard {
+        COUNTER = C_57_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_57_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_57_soft {
+        COUNTER = C_57_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_57_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 58 */
+
+    TASK T_58_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1183;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_58_L {
+        SCHEDULE = NON;
+        PRIORITY = 1126;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_58_hard {
+        MAXALLOWEDVALUE = 43118;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_58_soft {
+        MAXALLOWEDVALUE = 47042;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_58_hard {
+        COUNTER = C_58_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_58_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_58_soft {
+        COUNTER = C_58_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_58_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 59 */
+
+    TASK T_59_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1184;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_59_L {
+        SCHEDULE = NON;
+        PRIORITY = 59;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_59_hard {
+        MAXALLOWEDVALUE = 46935;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_59_soft {
+        MAXALLOWEDVALUE = 44655;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_59_hard {
+        COUNTER = C_59_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_59_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_59_soft {
+        COUNTER = C_59_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_59_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 60 */
+
+    TASK T_60_H {
+        SCHEDULE = FULL;
+        PRIORITY = 68;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_60_L {
+        SCHEDULE = NON;
+        PRIORITY = 60;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_60_hard {
+        MAXALLOWEDVALUE = 45117;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_60_soft {
+        MAXALLOWEDVALUE = 41801;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_60_hard {
+        COUNTER = C_60_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_60_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_60_soft {
+        COUNTER = C_60_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_60_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 61 */
+
+    TASK T_61_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1186;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_61_L {
+        SCHEDULE = NON;
+        PRIORITY = 61;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_61_hard {
+        MAXALLOWEDVALUE = 40554;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_61_soft {
+        MAXALLOWEDVALUE = 41917;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_61_hard {
+        COUNTER = C_61_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_61_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_61_soft {
+        COUNTER = C_61_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_61_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 62 */
+
+    TASK T_62_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1187;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_62_L {
+        SCHEDULE = NON;
+        PRIORITY = 62;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_62_hard {
+        MAXALLOWEDVALUE = 49769;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_62_soft {
+        MAXALLOWEDVALUE = 42858;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_62_hard {
+        COUNTER = C_62_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_62_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 9;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_62_soft {
+        COUNTER = C_62_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_62_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 63 */
+
+    TASK T_63_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1188;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_63_L {
+        SCHEDULE = NON;
+        PRIORITY = 63;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_63_hard {
+        MAXALLOWEDVALUE = 42546;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_63_soft {
+        MAXALLOWEDVALUE = 45919;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_63_hard {
+        COUNTER = C_63_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_63_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 12;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_63_soft {
+        COUNTER = C_63_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_63_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 64 */
+
+    TASK T_64_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1189;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_64_L {
+        SCHEDULE = NON;
+        PRIORITY = 1160;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_64_hard {
+        MAXALLOWEDVALUE = 40880;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_64_soft {
+        MAXALLOWEDVALUE = 46469;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_64_hard {
+        COUNTER = C_64_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_64_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_64_soft {
+        COUNTER = C_64_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_64_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 65 */
+
+    TASK T_65_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1190;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_65_L {
+        SCHEDULE = NON;
+        PRIORITY = 65;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_65_hard {
+        MAXALLOWEDVALUE = 42287;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_65_soft {
+        MAXALLOWEDVALUE = 42636;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_65_hard {
+        COUNTER = C_65_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_65_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 1;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_65_soft {
+        COUNTER = C_65_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_65_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 66 */
+
+    TASK T_66_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1191;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_66_L {
+        SCHEDULE = NON;
+        PRIORITY = 66;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_66_hard {
+        MAXALLOWEDVALUE = 47273;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_66_soft {
+        MAXALLOWEDVALUE = 41524;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_66_hard {
+        COUNTER = C_66_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_66_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_66_soft {
+        COUNTER = C_66_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_66_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 67 */
+
+    TASK T_67_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1192;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_67_L {
+        SCHEDULE = NON;
+        PRIORITY = 67;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_67_hard {
+        MAXALLOWEDVALUE = 49075;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_67_soft {
+        MAXALLOWEDVALUE = 49698;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_67_hard {
+        COUNTER = C_67_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_67_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_67_soft {
+        COUNTER = C_67_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_67_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 68 */
+
+    TASK T_68_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1193;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_68_L {
+        SCHEDULE = NON;
+        PRIORITY = 1185;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_68_hard {
+        MAXALLOWEDVALUE = 43015;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_68_soft {
+        MAXALLOWEDVALUE = 43740;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_68_hard {
+        COUNTER = C_68_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_68_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_68_soft {
+        COUNTER = C_68_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_68_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 69 */
+
+    TASK T_69_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1194;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_69_L {
+        SCHEDULE = NON;
+        PRIORITY = 69;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_69_hard {
+        MAXALLOWEDVALUE = 49160;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_69_soft {
+        MAXALLOWEDVALUE = 45515;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_69_hard {
+        COUNTER = C_69_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_69_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 20;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_69_soft {
+        COUNTER = C_69_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_69_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 70 */
+
+    TASK T_70_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1195;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_70_L {
+        SCHEDULE = NON;
+        PRIORITY = 70;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_70_hard {
+        MAXALLOWEDVALUE = 48739;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_70_soft {
+        MAXALLOWEDVALUE = 40405;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_70_hard {
+        COUNTER = C_70_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_70_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_70_soft {
+        COUNTER = C_70_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_70_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 71 */
+
+    TASK T_71_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1196;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_71_L {
+        SCHEDULE = NON;
+        PRIORITY = 71;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_71_hard {
+        MAXALLOWEDVALUE = 46542;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_71_soft {
+        MAXALLOWEDVALUE = 42132;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_71_hard {
+        COUNTER = C_71_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_71_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 1;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_71_soft {
+        COUNTER = C_71_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_71_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 72 */
+
+    TASK T_72_H {
+        SCHEDULE = FULL;
+        PRIORITY = 79;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_72_L {
+        SCHEDULE = NON;
+        PRIORITY = 72;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_72_hard {
+        MAXALLOWEDVALUE = 44344;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_72_soft {
+        MAXALLOWEDVALUE = 44637;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_72_hard {
+        COUNTER = C_72_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_72_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 17;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_72_soft {
+        COUNTER = C_72_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_72_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 73 */
+
+    TASK T_73_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1198;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_73_L {
+        SCHEDULE = NON;
+        PRIORITY = 73;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_73_hard {
+        MAXALLOWEDVALUE = 47114;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_73_soft {
+        MAXALLOWEDVALUE = 40931;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_73_hard {
+        COUNTER = C_73_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_73_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 16;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_73_soft {
+        COUNTER = C_73_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_73_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 74 */
+
+    TASK T_74_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1199;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_74_L {
+        SCHEDULE = NON;
+        PRIORITY = 74;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_74_hard {
+        MAXALLOWEDVALUE = 47119;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_74_soft {
+        MAXALLOWEDVALUE = 48313;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_74_hard {
+        COUNTER = C_74_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_74_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_74_soft {
+        COUNTER = C_74_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_74_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 75 */
+
+    TASK T_75_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1200;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_75_L {
+        SCHEDULE = NON;
+        PRIORITY = 75;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_75_hard {
+        MAXALLOWEDVALUE = 41222;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_75_soft {
+        MAXALLOWEDVALUE = 44637;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_75_hard {
+        COUNTER = C_75_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_75_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_75_soft {
+        COUNTER = C_75_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_75_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 76 */
+
+    TASK T_76_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1201;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_76_L {
+        SCHEDULE = NON;
+        PRIORITY = 76;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_76_hard {
+        MAXALLOWEDVALUE = 45715;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_76_soft {
+        MAXALLOWEDVALUE = 40738;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_76_hard {
+        COUNTER = C_76_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_76_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 20;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_76_soft {
+        COUNTER = C_76_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_76_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 77 */
+
+    TASK T_77_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1202;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_77_L {
+        SCHEDULE = NON;
+        PRIORITY = 77;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_77_hard {
+        MAXALLOWEDVALUE = 43647;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_77_soft {
+        MAXALLOWEDVALUE = 46008;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_77_hard {
+        COUNTER = C_77_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_77_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_77_soft {
+        COUNTER = C_77_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_77_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 78 */
+
+    TASK T_78_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1203;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_78_L {
+        SCHEDULE = NON;
+        PRIORITY = 78;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_78_hard {
+        MAXALLOWEDVALUE = 49811;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_78_soft {
+        MAXALLOWEDVALUE = 49500;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_78_hard {
+        COUNTER = C_78_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_78_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_78_soft {
+        COUNTER = C_78_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_78_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 79 */
+
+    TASK T_79_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1204;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_79_L {
+        SCHEDULE = NON;
+        PRIORITY = 1197;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_79_hard {
+        MAXALLOWEDVALUE = 45052;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_79_soft {
+        MAXALLOWEDVALUE = 41366;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_79_hard {
+        COUNTER = C_79_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_79_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 14;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_79_soft {
+        COUNTER = C_79_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_79_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 80 */
+
+    TASK T_80_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1205;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_80_L {
+        SCHEDULE = NON;
+        PRIORITY = 1156;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_80_hard {
+        MAXALLOWEDVALUE = 47391;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_80_soft {
+        MAXALLOWEDVALUE = 41075;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_80_hard {
+        COUNTER = C_80_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_80_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_80_soft {
+        COUNTER = C_80_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_80_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 81 */
+
+    TASK T_81_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1206;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_81_L {
+        SCHEDULE = NON;
+        PRIORITY = 81;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_81_hard {
+        MAXALLOWEDVALUE = 40023;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_81_soft {
+        MAXALLOWEDVALUE = 42277;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_81_hard {
+        COUNTER = C_81_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_81_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_81_soft {
+        COUNTER = C_81_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_81_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 82 */
+
+    TASK T_82_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1207;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_82_L {
+        SCHEDULE = NON;
+        PRIORITY = 82;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_82_hard {
+        MAXALLOWEDVALUE = 40355;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_82_soft {
+        MAXALLOWEDVALUE = 48782;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_82_hard {
+        COUNTER = C_82_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_82_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_82_soft {
+        COUNTER = C_82_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_82_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 83 */
+
+    TASK T_83_H {
+        SCHEDULE = FULL;
+        PRIORITY = 84;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_83_L {
+        SCHEDULE = NON;
+        PRIORITY = 83;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_83_hard {
+        MAXALLOWEDVALUE = 42794;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_83_soft {
+        MAXALLOWEDVALUE = 43943;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_83_hard {
+        COUNTER = C_83_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_83_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_83_soft {
+        COUNTER = C_83_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_83_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 84 */
+
+    TASK T_84_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1209;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_84_L {
+        SCHEDULE = NON;
+        PRIORITY = 1208;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_84_hard {
+        MAXALLOWEDVALUE = 41423;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_84_soft {
+        MAXALLOWEDVALUE = 49070;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_84_hard {
+        COUNTER = C_84_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_84_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_84_soft {
+        COUNTER = C_84_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_84_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 85 */
+
+    TASK T_85_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1210;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_85_L {
+        SCHEDULE = NON;
+        PRIORITY = 85;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_85_hard {
+        MAXALLOWEDVALUE = 44917;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_85_soft {
+        MAXALLOWEDVALUE = 48385;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_85_hard {
+        COUNTER = C_85_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_85_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 2;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_85_soft {
+        COUNTER = C_85_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_85_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 86 */
+
+    TASK T_86_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1211;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_86_L {
+        SCHEDULE = NON;
+        PRIORITY = 86;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_86_hard {
+        MAXALLOWEDVALUE = 45162;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_86_soft {
+        MAXALLOWEDVALUE = 49230;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_86_hard {
+        COUNTER = C_86_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_86_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 14;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_86_soft {
+        COUNTER = C_86_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_86_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 87 */
+
+    TASK T_87_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1212;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_87_L {
+        SCHEDULE = NON;
+        PRIORITY = 87;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_87_hard {
+        MAXALLOWEDVALUE = 42495;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_87_soft {
+        MAXALLOWEDVALUE = 40608;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_87_hard {
+        COUNTER = C_87_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_87_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 16;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_87_soft {
+        COUNTER = C_87_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_87_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 88 */
+
+    TASK T_88_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1213;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_88_L {
+        SCHEDULE = NON;
+        PRIORITY = 88;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_88_hard {
+        MAXALLOWEDVALUE = 47244;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_88_soft {
+        MAXALLOWEDVALUE = 42836;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_88_hard {
+        COUNTER = C_88_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_88_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 9;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_88_soft {
+        COUNTER = C_88_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_88_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 89 */
+
+    TASK T_89_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1214;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_89_L {
+        SCHEDULE = NON;
+        PRIORITY = 89;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_89_hard {
+        MAXALLOWEDVALUE = 41004;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_89_soft {
+        MAXALLOWEDVALUE = 43967;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_89_hard {
+        COUNTER = C_89_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_89_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_89_soft {
+        COUNTER = C_89_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_89_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 90 */
+
+    TASK T_90_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1215;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_90_L {
+        SCHEDULE = NON;
+        PRIORITY = 90;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_90_hard {
+        MAXALLOWEDVALUE = 44540;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_90_soft {
+        MAXALLOWEDVALUE = 49452;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_90_hard {
+        COUNTER = C_90_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_90_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_90_soft {
+        COUNTER = C_90_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_90_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 91 */
+
+    TASK T_91_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1216;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_91_L {
+        SCHEDULE = NON;
+        PRIORITY = 1154;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_91_hard {
+        MAXALLOWEDVALUE = 44023;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_91_soft {
+        MAXALLOWEDVALUE = 49524;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_91_hard {
+        COUNTER = C_91_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_91_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_91_soft {
+        COUNTER = C_91_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_91_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 92 */
+
+    TASK T_92_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1217;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_92_L {
+        SCHEDULE = NON;
+        PRIORITY = 92;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_92_hard {
+        MAXALLOWEDVALUE = 44391;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_92_soft {
+        MAXALLOWEDVALUE = 47081;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_92_hard {
+        COUNTER = C_92_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_92_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 2;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_92_soft {
+        COUNTER = C_92_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_92_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 93 */
+
+    TASK T_93_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1218;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_93_L {
+        SCHEDULE = NON;
+        PRIORITY = 93;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_93_hard {
+        MAXALLOWEDVALUE = 43186;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_93_soft {
+        MAXALLOWEDVALUE = 40166;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_93_hard {
+        COUNTER = C_93_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_93_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_93_soft {
+        COUNTER = C_93_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_93_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 94 */
+
+    TASK T_94_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1219;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_94_L {
+        SCHEDULE = NON;
+        PRIORITY = 94;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_94_hard {
+        MAXALLOWEDVALUE = 42644;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_94_soft {
+        MAXALLOWEDVALUE = 45991;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_94_hard {
+        COUNTER = C_94_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_94_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 14;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_94_soft {
+        COUNTER = C_94_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_94_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 95 */
+
+    TASK T_95_H {
+        SCHEDULE = FULL;
+        PRIORITY = 96;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_95_L {
+        SCHEDULE = NON;
+        PRIORITY = 95;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_95_hard {
+        MAXALLOWEDVALUE = 44106;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_95_soft {
+        MAXALLOWEDVALUE = 48410;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_95_hard {
+        COUNTER = C_95_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_95_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_95_soft {
+        COUNTER = C_95_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_95_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 96 */
+
+    TASK T_96_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1221;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_96_L {
+        SCHEDULE = NON;
+        PRIORITY = 1220;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_96_hard {
+        MAXALLOWEDVALUE = 40030;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_96_soft {
+        MAXALLOWEDVALUE = 40308;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_96_hard {
+        COUNTER = C_96_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_96_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_96_soft {
+        COUNTER = C_96_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_96_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 97 */
+
+    TASK T_97_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1222;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_97_L {
+        SCHEDULE = NON;
+        PRIORITY = 97;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_97_hard {
+        MAXALLOWEDVALUE = 43191;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_97_soft {
+        MAXALLOWEDVALUE = 46799;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_97_hard {
+        COUNTER = C_97_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_97_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_97_soft {
+        COUNTER = C_97_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_97_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 98 */
+
+    TASK T_98_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1223;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_98_L {
+        SCHEDULE = NON;
+        PRIORITY = 98;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_98_hard {
+        MAXALLOWEDVALUE = 42256;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_98_soft {
+        MAXALLOWEDVALUE = 43482;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_98_hard {
+        COUNTER = C_98_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_98_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 14;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_98_soft {
+        COUNTER = C_98_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_98_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 99 */
+
+    TASK T_99_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1224;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_99_L {
+        SCHEDULE = NON;
+        PRIORITY = 99;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_99_hard {
+        MAXALLOWEDVALUE = 49057;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_99_soft {
+        MAXALLOWEDVALUE = 41706;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_99_hard {
+        COUNTER = C_99_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_99_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 2;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_99_soft {
+        COUNTER = C_99_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_99_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 100 */
+
+    TASK T_100_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1225;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_100_L {
+        SCHEDULE = NON;
+        PRIORITY = 1152;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_100_hard {
+        MAXALLOWEDVALUE = 45582;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_100_soft {
+        MAXALLOWEDVALUE = 43701;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_100_hard {
+        COUNTER = C_100_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_100_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_100_soft {
+        COUNTER = C_100_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_100_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 101 */
+
+    TASK T_101_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1226;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_101_L {
+        SCHEDULE = NON;
+        PRIORITY = 101;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_101_hard {
+        MAXALLOWEDVALUE = 41850;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_101_soft {
+        MAXALLOWEDVALUE = 49872;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_101_hard {
+        COUNTER = C_101_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_101_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 12;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_101_soft {
+        COUNTER = C_101_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_101_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 102 */
+
+    TASK T_102_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1227;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_102_L {
+        SCHEDULE = NON;
+        PRIORITY = 102;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_102_hard {
+        MAXALLOWEDVALUE = 45239;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_102_soft {
+        MAXALLOWEDVALUE = 42004;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_102_hard {
+        COUNTER = C_102_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_102_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_102_soft {
+        COUNTER = C_102_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_102_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 103 */
+
+    TASK T_103_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1228;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_103_L {
+        SCHEDULE = NON;
+        PRIORITY = 103;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_103_hard {
+        MAXALLOWEDVALUE = 41830;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_103_soft {
+        MAXALLOWEDVALUE = 48798;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_103_hard {
+        COUNTER = C_103_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_103_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_103_soft {
+        COUNTER = C_103_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_103_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 104 */
+
+    TASK T_104_H {
+        SCHEDULE = FULL;
+        PRIORITY = 108;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_104_L {
+        SCHEDULE = NON;
+        PRIORITY = 104;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_104_hard {
+        MAXALLOWEDVALUE = 49567;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_104_soft {
+        MAXALLOWEDVALUE = 40803;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_104_hard {
+        COUNTER = C_104_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_104_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_104_soft {
+        COUNTER = C_104_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_104_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 105 */
+
+    TASK T_105_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1230;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_105_L {
+        SCHEDULE = NON;
+        PRIORITY = 105;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_105_hard {
+        MAXALLOWEDVALUE = 49661;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_105_soft {
+        MAXALLOWEDVALUE = 49945;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_105_hard {
+        COUNTER = C_105_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_105_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_105_soft {
+        COUNTER = C_105_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_105_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 106 */
+
+    TASK T_106_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1231;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_106_L {
+        SCHEDULE = NON;
+        PRIORITY = 106;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_106_hard {
+        MAXALLOWEDVALUE = 43571;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_106_soft {
+        MAXALLOWEDVALUE = 44138;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_106_hard {
+        COUNTER = C_106_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_106_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_106_soft {
+        COUNTER = C_106_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_106_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 107 */
+
+    TASK T_107_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1232;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_107_L {
+        SCHEDULE = NON;
+        PRIORITY = 107;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_107_hard {
+        MAXALLOWEDVALUE = 44636;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_107_soft {
+        MAXALLOWEDVALUE = 49974;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_107_hard {
+        COUNTER = C_107_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_107_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_107_soft {
+        COUNTER = C_107_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_107_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 108 */
+
+    TASK T_108_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1233;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_108_L {
+        SCHEDULE = NON;
+        PRIORITY = 1229;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_108_hard {
+        MAXALLOWEDVALUE = 44945;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_108_soft {
+        MAXALLOWEDVALUE = 47033;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_108_hard {
+        COUNTER = C_108_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_108_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 9;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_108_soft {
+        COUNTER = C_108_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_108_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 109 */
+
+    TASK T_109_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1234;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_109_L {
+        SCHEDULE = NON;
+        PRIORITY = 109;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_109_hard {
+        MAXALLOWEDVALUE = 46212;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_109_soft {
+        MAXALLOWEDVALUE = 45752;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_109_hard {
+        COUNTER = C_109_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_109_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 20;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_109_soft {
+        COUNTER = C_109_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_109_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 110 */
+
+    TASK T_110_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1235;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_110_L {
+        SCHEDULE = NON;
+        PRIORITY = 110;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_110_hard {
+        MAXALLOWEDVALUE = 44068;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_110_soft {
+        MAXALLOWEDVALUE = 47119;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_110_hard {
+        COUNTER = C_110_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_110_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_110_soft {
+        COUNTER = C_110_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_110_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 111 */
+
+    TASK T_111_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1236;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_111_L {
+        SCHEDULE = NON;
+        PRIORITY = 111;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_111_hard {
+        MAXALLOWEDVALUE = 49689;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_111_soft {
+        MAXALLOWEDVALUE = 44424;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_111_hard {
+        COUNTER = C_111_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_111_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_111_soft {
+        COUNTER = C_111_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_111_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 112 */
+
+    TASK T_112_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1237;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_112_L {
+        SCHEDULE = NON;
+        PRIORITY = 1140;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_112_hard {
+        MAXALLOWEDVALUE = 44039;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_112_soft {
+        MAXALLOWEDVALUE = 42790;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_112_hard {
+        COUNTER = C_112_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_112_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 18;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_112_soft {
+        COUNTER = C_112_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_112_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 113 */
+
+    TASK T_113_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1238;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_113_L {
+        SCHEDULE = NON;
+        PRIORITY = 113;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_113_hard {
+        MAXALLOWEDVALUE = 46329;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_113_soft {
+        MAXALLOWEDVALUE = 46046;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_113_hard {
+        COUNTER = C_113_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_113_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 1;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_113_soft {
+        COUNTER = C_113_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_113_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 114 */
+
+    TASK T_114_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1239;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_114_L {
+        SCHEDULE = NON;
+        PRIORITY = 114;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_114_hard {
+        MAXALLOWEDVALUE = 43012;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_114_soft {
+        MAXALLOWEDVALUE = 43530;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_114_hard {
+        COUNTER = C_114_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_114_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_114_soft {
+        COUNTER = C_114_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_114_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 115 */
+
+    TASK T_115_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1240;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_115_L {
+        SCHEDULE = NON;
+        PRIORITY = 115;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_115_hard {
+        MAXALLOWEDVALUE = 46287;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_115_soft {
+        MAXALLOWEDVALUE = 41243;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_115_hard {
+        COUNTER = C_115_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_115_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_115_soft {
+        COUNTER = C_115_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_115_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 116 */
+
+    TASK T_116_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1241;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_116_L {
+        SCHEDULE = NON;
+        PRIORITY = 116;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_116_hard {
+        MAXALLOWEDVALUE = 47433;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_116_soft {
+        MAXALLOWEDVALUE = 40460;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_116_hard {
+        COUNTER = C_116_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_116_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 7;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_116_soft {
+        COUNTER = C_116_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_116_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 117 */
+
+    TASK T_117_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1242;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_117_L {
+        SCHEDULE = NON;
+        PRIORITY = 117;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_117_hard {
+        MAXALLOWEDVALUE = 45299;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_117_soft {
+        MAXALLOWEDVALUE = 41879;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_117_hard {
+        COUNTER = C_117_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_117_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 20;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_117_soft {
+        COUNTER = C_117_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_117_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 118 */
+
+    TASK T_118_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1243;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_118_L {
+        SCHEDULE = NON;
+        PRIORITY = 118;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_118_hard {
+        MAXALLOWEDVALUE = 42848;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_118_soft {
+        MAXALLOWEDVALUE = 47384;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_118_hard {
+        COUNTER = C_118_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_118_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 15;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_118_soft {
+        COUNTER = C_118_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_118_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 2;
+        };
+    };
+
+   /* TaskPair 119 */
+
+    TASK T_119_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1244;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_119_L {
+        SCHEDULE = NON;
+        PRIORITY = 119;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_119_hard {
+        MAXALLOWEDVALUE = 41251;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_119_soft {
+        MAXALLOWEDVALUE = 48267;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_119_hard {
+        COUNTER = C_119_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_119_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_119_soft {
+        COUNTER = C_119_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_119_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 120 */
+
+    TASK T_120_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1245;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_120_L {
+        SCHEDULE = NON;
+        PRIORITY = 120;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_120_hard {
+        MAXALLOWEDVALUE = 44360;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_120_soft {
+        MAXALLOWEDVALUE = 45214;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_120_hard {
+        COUNTER = C_120_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_120_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 13;
+            CYCLETIME = 6;
+        };
+    };
+
+    ALARM A_120_soft {
+        COUNTER = C_120_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_120_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 1;
+        };
+    };
+
+   /* TaskPair 121 */
+
+    TASK T_121_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1246;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_121_L {
+        SCHEDULE = NON;
+        PRIORITY = 121;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_121_hard {
+        MAXALLOWEDVALUE = 49203;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_121_soft {
+        MAXALLOWEDVALUE = 47827;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_121_hard {
+        COUNTER = C_121_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_121_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 11;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_121_soft {
+        COUNTER = C_121_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_121_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 6;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 122 */
+
+    TASK T_122_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1247;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_122_L {
+        SCHEDULE = NON;
+        PRIORITY = 122;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_122_hard {
+        MAXALLOWEDVALUE = 44194;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_122_soft {
+        MAXALLOWEDVALUE = 41501;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_122_hard {
+        COUNTER = C_122_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_122_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 7;
+        };
+    };
+
+    ALARM A_122_soft {
+        COUNTER = C_122_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_122_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 123 */
+
+    TASK T_123_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1248;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_123_L {
+        SCHEDULE = NON;
+        PRIORITY = 123;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_123_hard {
+        MAXALLOWEDVALUE = 46170;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_123_soft {
+        MAXALLOWEDVALUE = 45287;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_123_hard {
+        COUNTER = C_123_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_123_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 5;
+        };
+    };
+
+    ALARM A_123_soft {
+        COUNTER = C_123_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_123_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 5;
+            CYCLETIME = 3;
+        };
+    };
+
+   /* TaskPair 124 */
+
+    TASK T_124_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1249;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_124_L {
+        SCHEDULE = NON;
+        PRIORITY = 124;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_124_hard {
+        MAXALLOWEDVALUE = 47311;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_124_soft {
+        MAXALLOWEDVALUE = 46675;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_124_hard {
+        COUNTER = C_124_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_124_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 16;
+            CYCLETIME = 3;
+        };
+    };
+
+    ALARM A_124_soft {
+        COUNTER = C_124_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_124_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 4;
+            CYCLETIME = 4;
+        };
+    };
+
+   /* TaskPair 125 */
+
+    TASK T_125_H {
+        SCHEDULE = FULL;
+        PRIORITY = 1250;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    TASK T_125_L {
+        SCHEDULE = NON;
+        PRIORITY = 125;
+        ACTIVATION = 1;
+        RESOURCE = RES_SCHEDULER;
+        AUTOSTART = FALSE;
+    };
+
+    COUNTER C_125_hard {
+        MAXALLOWEDVALUE = 42094;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = FALSE;
+    };
+
+    COUNTER C_125_soft {
+        MAXALLOWEDVALUE = 41689;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+        SOFTCOUNTER = TRUE;
+    };
+
+    ALARM A_125_hard {
+        COUNTER = C_125_hard;
+        ACTION = ACTIVATETASK {
+            TASK = T_125_L;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 19;
+            CYCLETIME = 4;
+        };
+    };
+
+    ALARM A_125_soft {
+        COUNTER = C_125_soft;
+        ACTION = ACTIVATETASK {
+            TASK = T_125_H;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 3;
+            CYCLETIME = 1;
+        };
+    };
+
+
+};

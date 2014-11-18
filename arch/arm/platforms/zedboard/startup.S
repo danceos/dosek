@@ -170,82 +170,82 @@ OKToRun:
 	orr	r0, r0, #(0x01 )		/* */		
 	mcr	p15, 0, r0, c1, c0, 1		/* Write ACTLR*/
 
-/* Invalidate caches and TLBs */
-	mov	r0,#0				/* r0 = 0  */
-	mcr	p15, 0, r0, c8, c7, 0		/* invalidate TLBs */
-	mcr	p15, 0, r0, c7, c5, 0		/* invalidate icache */
-	mcr	p15, 0, r0, c7, c5, 6		/* Invalidate branch predictor array */
-	bl	invalidate_dcache		/* invalidate dcache */
+;; /* Invalidate caches and TLBs */
+;; 	mov	r0,#0				/* r0 = 0  */
+;; 	mcr	p15, 0, r0, c8, c7, 0		/* invalidate TLBs */
+;; 	mcr	p15, 0, r0, c7, c5, 0		/* invalidate icache */
+;; 	mcr	p15, 0, r0, c7, c5, 6		/* Invalidate branch predictor array */
+;; 	bl	invalidate_dcache		/* invalidate dcache */
 
-/* Invalidate L2c Cache */
-/* For AMP, assume running on CPU1. Don't initialize L2 Cache (up to Linux) */
-#if USE_AMP!=1
-	ldr	r0,=L2CCCrtl			/* Load L2CC base address base + control register */
-	mov	r1, #0				/* force the disable bit */
-	str	r1, [r0]			/* disable the L2 Caches */
+;; /* Invalidate L2c Cache */
+;; /* For AMP, assume running on CPU1. Don't initialize L2 Cache (up to Linux) */
+;; #if USE_AMP!=1
+;; 	ldr	r0,=L2CCCrtl			/* Load L2CC base address base + control register */
+;; 	mov	r1, #0				/* force the disable bit */
+;; 	str	r1, [r0]			/* disable the L2 Caches */
 
-	ldr	r0,=L2CCAuxCrtl			/* Load L2CC base address base + Aux control register */
-	ldr	r1,[r0]				/* read the register */
-	ldr	r2,=L2CCAuxControl		/* set the default bits */
-	orr	r1,r1,r2
-	str	r1, [r0]			/* store the Aux Control Register */
+;; 	ldr	r0,=L2CCAuxCrtl			/* Load L2CC base address base + Aux control register */
+;; 	ldr	r1,[r0]				/* read the register */
+;; 	ldr	r2,=L2CCAuxControl		/* set the default bits */
+;; 	orr	r1,r1,r2
+;; 	str	r1, [r0]			/* store the Aux Control Register */
 
-	ldr	r0,=L2CCTAGLatReg		/* Load L2CC base address base + TAG Latency address */
-	ldr	r1,=L2CCTAGLatency		/* set the latencies for the TAG*/
-	str	r1, [r0]			/* store the TAG Latency register Register */
+;; 	ldr	r0,=L2CCTAGLatReg		/* Load L2CC base address base + TAG Latency address */
+;; 	ldr	r1,=L2CCTAGLatency		/* set the latencies for the TAG*/
+;; 	str	r1, [r0]			/* store the TAG Latency register Register */
 
-	ldr	r0,=L2CCDataLatReg		/* Load L2CC base address base + Data Latency address */
-	ldr	r1,=L2CCDataLatency		/* set the latencies for the Data*/
-	str	r1, [r0]			/* store the Data Latency register Register */
+;; 	ldr	r0,=L2CCDataLatReg		/* Load L2CC base address base + Data Latency address */
+;; 	ldr	r1,=L2CCDataLatency		/* set the latencies for the Data*/
+;; 	str	r1, [r0]			/* store the Data Latency register Register */
 
-	ldr	r0,=L2CCWay			/* Load L2CC base address base + way register*/
-	ldr	r2, =0xFFFF
-	str	r2, [r0]			/* force invalidate */
+;; 	ldr	r0,=L2CCWay			/* Load L2CC base address base + way register*/
+;; 	ldr	r2, =0xFFFF
+;; 	str	r2, [r0]			/* force invalidate */
 
-	ldr	r0,=L2CCSync			/* need to poll 0x730, PSS_L2CC_CACHE_SYNC_OFFSET */
-						/* Load L2CC base address base + sync register*/
-	/* poll for completion */
-Sync:	ldr	r1, [r0]
-	cmp	r1, #0
-	bne	Sync
+;; 	ldr	r0,=L2CCSync			/* need to poll 0x730, PSS_L2CC_CACHE_SYNC_OFFSET */
+;; 						/* Load L2CC base address base + sync register*/
+;; 	/* poll for completion */
+;; Sync:	ldr	r1, [r0]
+;; 	cmp	r1, #0
+;; 	bne	Sync
 
-	ldr	r0,=L2CCIntRaw			/* clear pending interrupts */
-	ldr	r1,[r0]
-	ldr	r0,=L2CCIntClear	
-	str	r1,[r0]
-#endif
+;; 	ldr	r0,=L2CCIntRaw			/* clear pending interrupts */
+;; 	ldr	r1,[r0]
+;; 	ldr	r0,=L2CCIntClear	
+;; 	str	r1,[r0]
+;; #endif
 
-	/* Disable MMU, if enabled */
-	mrc	p15, 0, r0, c1, c0, 0		/* read CP15 register 1 */
-	bic	r0, r0, #0x1			/* clear bit 0 */
-	mcr	p15, 0, r0, c1, c0, 0		/* write value back */
+;; 	/* Disable MMU, if enabled */
+;; 	mrc	p15, 0, r0, c1, c0, 0		/* read CP15 register 1 */
+;; 	bic	r0, r0, #0x1			/* clear bit 0 */
+;; 	mcr	p15, 0, r0, c1, c0, 0		/* write value back */
 
-#ifdef SHAREABLE_DDR
-	/* Mark the entire DDR memory as shareable */
-	ldr	r3, =0x3ff			/* 1024 entries to cover 1G DDR */
-	ldr	r0, =TblBase			/* MMU Table address in memory */
-	ldr	r2, =0x15de6			/* S=b1 TEX=b101 AP=b11, Domain=b1111, C=b0, B=b1 */
-shareable_loop:
-	str	r2, [r0]			/* write the entry to MMU table */
-	add	r0, r0, #0x4			/* next entry in the table */
-	add	r2, r2, #0x100000		/* next section */
-	subs	r3, r3, #1
-	bge	shareable_loop			/* loop till 1G is covered */
-#endif
+;; #ifdef SHAREABLE_DDR
+;; 	/* Mark the entire DDR memory as shareable */
+;; 	ldr	r3, =0x3ff			/* 1024 entries to cover 1G DDR */
+;; 	ldr	r0, =TblBase			/* MMU Table address in memory */
+;; 	ldr	r2, =0x15de6			/* S=b1 TEX=b101 AP=b11, Domain=b1111, C=b0, B=b1 */
+;; shareable_loop:
+;; 	str	r2, [r0]			/* write the entry to MMU table */
+;; 	add	r0, r0, #0x4			/* next entry in the table */
+;; 	add	r2, r2, #0x100000		/* next section */
+;; 	subs	r3, r3, #1
+;; 	bge	shareable_loop			/* loop till 1G is covered */
+;; #endif
 
-	/* In case of AMP, map virtual address 0x20000000 to 0x00000000  and mark it as non-cacheable */
-#if USE_AMP==1
-	ldr	r3, =0x1ff			/* 512 entries to cover 512MB DDR */
-	ldr	r0, =TblBase			/* MMU Table address in memory */
-	add	r0, r0, #0x800			/* Address of entry in MMU table, for 0x20000000 */
-	ldr	r2, =0x0c02			/* S=b0 TEX=b000 AP=b11, Domain=b0, C=b0, B=b0 */
-mmu_loop:
-	str	r2, [r0]			/* write the entry to MMU table */
-	add	r0, r0, #0x4			/* next entry in the table */
-	add	r2, r2, #0x100000		/* next section */
-	subs	r3, r3, #1
-	bge	mmu_loop			/* loop till 512MB is covered */
-#endif
+;; 	/* In case of AMP, map virtual address 0x20000000 to 0x00000000  and mark it as non-cacheable */
+;; #if USE_AMP==1
+;; 	ldr	r3, =0x1ff			/* 512 entries to cover 512MB DDR */
+;; 	ldr	r0, =TblBase			/* MMU Table address in memory */
+;; 	add	r0, r0, #0x800			/* Address of entry in MMU table, for 0x20000000 */
+;; 	ldr	r2, =0x0c02			/* S=b0 TEX=b000 AP=b11, Domain=b0, C=b0, B=b0 */
+;; mmu_loop:
+;; 	str	r2, [r0]			/* write the entry to MMU table */
+;; 	add	r0, r0, #0x4			/* next entry in the table */
+;; 	add	r2, r2, #0x100000		/* next section */
+;; 	subs	r3, r3, #1
+;; 	bge	mmu_loop			/* loop till 512MB is covered */
+;; #endif
 
 	mrs	r0, cpsr			/* get the current PSR */
 	mvn	r1, #0x1f			/* set up the irq stack pointer */
@@ -293,34 +293,35 @@ mmu_loop:
 
 	isb					/* isb	flush prefetch buffer */
 
+    b before_arch
+
 /* For AMP, assume running on CPU1. Don't initialize L2 Cache (up to Linux) */
-#if USE_AMP!=1
-    #warning "Enable L2 Caches"
-	ldr	r0,=L2CCCrtl			/* Load L2CC base address base + control register */
-	ldr	r1,[r0]				/* read the register */
-	mov	r2, #L2CCControl		/* set the enable bit */
-	orr	r1,r1,r2
-	str	r1, [r0]			/* enable the L2 Caches */
-#endif
+;; #if USE_AMP!=1
+;; 	ldr	r0,=L2CCCrtl			/* Load L2CC base address base + control register */
+;; 	ldr	r1,[r0]				/* read the register */
+;; 	mov	r2, #L2CCControl		/* set the enable bit */
+;; 	orr	r1,r1,r2
+;; 	str	r1, [r0]			/* enable the L2 Caches */
+;; #endif
 
-	mov	r0, r0
-	mrc	p15, 0, r1, c1, c0, 2		/* read cp access control register (CACR) into r1 */
-	orr	r1, r1, #(0xf << 20)		/* enable full access for p10 & p11 */
-	mcr	p15, 0, r1, c1, c0, 2		/* write back into CACR */
+	;; mov	r0, r0
+	;; mrc	p15, 0, r1, c1, c0, 2		/* read cp access control register (CACR) into r1 */
+	;; orr	r1, r1, #(0xf << 20)		/* enable full access for p10 & p11 */
+	;; mcr	p15, 0, r1, c1, c0, 2		/* write back into CACR */
 
-	/* enable vfp */
-	//fmrx	r1, FPEXC			/* read the exception register */
-	//orr	r1,r1, #FPEXC_EN		/* set VFP enable bit, leave the others in orig state */
-	//fmxr	FPEXC, r1			/* write back the exception register */
+	;; /* enable vfp */
+	;; //fmrx	r1, FPEXC			/* read the exception register */
+	;; //orr	r1,r1, #FPEXC_EN		/* set VFP enable bit, leave the others in orig state */
+	;; //fmxr	FPEXC, r1			/* write back the exception register */
 
 	mrc	p15,0,r0,c1,c0,0		/* flow prediction enable */
 	orr	r0, r0, #(0x01 << 11)		/* #0x8000 */		
 	mcr	p15,0,r0,c1,c0,0
 
-	mrc	p15,0,r0,c1,c0,1		/* read Auxiliary Control Register */
-	orr	r0, r0, #(0x1 << 2)		/* enable Dside prefetch */
-	orr	r0, r0, #(0x1 << 1)		/* enable L2 Prefetch hint */
-	mcr	p15,0,r0,c1,c0,1		/* write Auxiliary Control Register */
+	;; mrc	p15,0,r0,c1,c0,1		/* read Auxiliary Control Register */
+	;; orr	r0, r0, #(0x1 << 2)		/* enable Dside prefetch */
+	;; orr	r0, r0, #(0x1 << 1)		/* enable L2 Prefetch hint */
+	;; mcr	p15,0,r0,c1,c0,1		/* write Auxiliary Control Register */
 
 before_arch:    
         

@@ -134,7 +134,7 @@ void Machine::reset(void) {
 #define XPS_L2CC_AUX_HPSODRE_MASK	0x00000400	/* High Priority for SO and Dev Reads Enable */
 #define XPS_L2CC_AUX_FLZE_MASK		0x00000001	/* Full line of zero enable */
 
-#define XPS_L2CC_AUX_REG_DEFAULT_MASK	0x72360000	/* Enable all prefetching, */
+#define XPS_L2CC_AUX_REG_DEFAULT_MASK	0x72160000	/* Enable all prefetching, */
                                                     /* Cache replacement policy, Parity enable, */
                                                     /* Event monitor bus enable and Way Size (64 KB) */
 #define XPS_L2CC_AUX_REG_ZERO_MASK	0xFFF1FFFF	/* */
@@ -241,7 +241,7 @@ void Xil_L2CacheEnable(void)
 		/* lockdown: enable/disable data/instruction caching for each core */
 		/* CPU0: enable data, disable instruction caching */
 		Xil_Out32(XPS_L2CC_BASEADDR + XPS_L2CC_CACHE_ILCKDWN_0_WAY_OFFSET,
-			 0x0000FFFF);
+				  0x0000FFFF);
 
 		/* CPU1: disable both data and instructions caching */
 		Xil_Out32(XPS_L2CC_BASEADDR + XPS_L2CC_CACHE_DLCKDWN_1_WAY_OFFSET,
@@ -265,6 +265,7 @@ void Xil_L2CacheEnable(void)
         /* synchronize the processor */
 	    dsb();
 
+		kout << endl << "L2 Cache reconfigured" << endl;
     }
 }
 
@@ -279,6 +280,11 @@ void Machine::setup_caches(void) {
 	HAL_DCACHE_ENABLE();
 	HAL_ICACHE_ENABLE();
 
+    // Invalidate caches
+    HAL_DCACHE_INVALIDATE_ALL();
+    HAL_ICACHE_INVALIDATE_ALL();
+
+
     // Disable parity checking for the L1 cache.
     // This setting should be default, anyway.
     asm volatile (  "MRC p15, 0,r1, c1, c0, 1;"
@@ -290,6 +296,6 @@ void Machine::setup_caches(void) {
         );
 
     // Enable the L2 cache
-    Xil_L2CacheEnable();
+	Xil_L2CacheInvalidate();
+	Xil_L2CacheEnable();
 }
-

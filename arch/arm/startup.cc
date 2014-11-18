@@ -65,7 +65,8 @@ extern "C" void arch_startup()
 	// unblock ISR2s by lowering GIC task priority
 	GIC::set_task_prio(IRQ_PRIO_LOWEST);
 
-    kout << "Starting dOSEK" << endl;
+    kout << "SSSSSS [[[[[[ Starting dOSEK ]]]]]]" << endl;
+	kout << "APP_BOOT" << endl;
 	// Proceed to generic initialisation
 	init_generic();
 }

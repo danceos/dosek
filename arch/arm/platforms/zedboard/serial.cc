@@ -52,9 +52,13 @@ static struct XUARTPS *UART1 = (struct XUARTPS*) SERIAL_BASE;
 /*Baudrates assuming input clock speed is 3125000L */
 /*Baud_rate_gen_reg0*/
 #define XUARTPS_BRGR_CD_115200       62 /*Baud Rate Clock Divisor*/
+#define XUARTPS_BRGR_CD_9600       651 /*Baud Rate Clock Divisor*/
+
 
 /*Register Baud_rate_divider_reg0 Details*/
 #define XUARTPS_BDIV_CD_115200       6  /*Baud Rate Clock Divisor*/
+#define XUARTPS_BDIV_CD_9600       7  /*Baud Rate Clock Divisor*/
+
 
 #define XUARTPS_MR_PAR_NONE (1<<5)      /* 1xx: no parity*/
 
@@ -77,12 +81,19 @@ Serial::Serial() {
 
 void Serial::putchar(char character) {
 	/*Make sure that the uart is ready for new char's before continuing*/
-	while ((( UART1->channel_sts_reg0 ) & UART_STS_TXFULL) > 0) ;
+
+	if (character == '\n') {
+		while ((( UART1->channel_sts_reg0 ) & UART_STS_TXEMPTY) != UART_STS_TXEMPTY) {};
+		UART1->tx_rx_fifo = (unsigned int)'\r'; /* Transmit char */
+	}
+
+
+	while ((( UART1->channel_sts_reg0 ) & UART_STS_TXEMPTY) != UART_STS_TXEMPTY) {};
 	/* Loop until end of string */
 	UART1->tx_rx_fifo= (unsigned int) character; /* Transmit char */
 
-	if (character == '\n')
-		Serial::putchar('\r');
+
+
 }
 
 void Serial::puts(const char* data) {

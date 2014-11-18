@@ -1,5 +1,6 @@
 # Prepare cross compiler
 set(CMAKE_SYSTEM_NAME Generic)
+set(BUILD_ARM TRUE CACHE BOOL "")
 set(CMAKE_C_ARCH "armv7a-none-elf")
 set(ARCH_PREFIX "arm-none-eabi-")
 
