@@ -31,12 +31,18 @@ extern "C" void * irq_handler(void * task_sp) {
 	// void *lr;
 	// asm volatile("mov %0, lr" : "=r"(lr) ::);
 
-	// kout << "#" << (save_sp & 0xffff) << " " << task_sp << " " << id
+	// kout << endl << "#" << (save_sp & 0xffff) << " " << task_sp << " " << id
 	// 	 << "% " << (void*)((uint32_t *)task_sp)[-1] 
 	// 	 << ": " << lr
 	// 	 << endl;
 
-    // asm volatile("ldr r1, [%0]" :: "r"(GIC::GICC_IAR) : "r0", "r1"); // read IRQ info
+	// for (int i = -1; i < 17; i++) {
+	// 	kout << dec << i << " " << hex << ((uint32_t*)task_sp)[i] << dec << endl;
+	// }
+	// kout << "------------" << endl;
+
+
+	// asm volatile("ldr r1, [%0]" :: "r"(GIC::GICC_IAR) : "r0", "r1"); // read IRQ info
     // asm volatile("bfc r1, #12, #20" ::: "r0", "r1"); // place interrupt number in r1
 
     // save stack pointer
@@ -153,47 +159,11 @@ extern "C" void kernel_dump(panic_frame* pf) {
     kout << "SP:  " << hex << sp << endl;
     kout << "LR:  " << hex << lr << endl;
 
+	irq_id id = GIC::accept();
+	kout << "GIC-IRQ:  " << dec << id << endl;
+
     kout << "=============" << endl;
 }
 
-#if 0
-/** \brief Default handler for interrupts */
-ISR(unhandled) {
-	// interrupt number passed in %eax
-	uint32_t intno;
-	asm volatile("" : "=a"(intno));
-
-	// print and halt when debugging
-	#if DEBUG
-	uint32_t ip = cpu->eip;
-	debug << "unhandled interrupt ";
-	debug << dec << intno;
-	debug << " @ 0x";
-	debug << hex << ip;
-	debug << endl;
-
-	asm("hlt");
-	#endif
-
-	#if CONTINUE_UNHANDLED_IRQ
-	// send end-of-interrupt (unless exception)
-	if(intno > 31) LAPIC::send_eoi();
-	#else // CONTINUE_UNHANDLED_IRQ
-	// panic on unhandled interrupts
-	Machine::panic();
-	#endif // CONTINUE_UNHANDLED_IRQ
-}
-
-
-
-// NMI error handler
-IRQ_HANDLER(2) {
-	// TODO: anything useful left to do?
-	debug << "PANIC" << endl;
-
-	Machine::halt();
-}
-
-#endif
 
 }; // namespace arch

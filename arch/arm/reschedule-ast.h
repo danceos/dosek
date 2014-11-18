@@ -15,7 +15,7 @@ namespace arch {
 /** \brief Request the reschedule AST to run after all other interrupts compelete. */
 forceinline void request_reschedule_ast() {
     // reset save_sp to detect IRQ from non-userspace in idt.S
-    save_sp = 0;
+    //save_sp = 0;
 
 	GIC::trigger(IRQ_RESCHEDULE);
 }

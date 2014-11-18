@@ -47,6 +47,11 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	uint32_t *sp = (uint32_t *) tcb->get_sp();
 	//assert(tcb->check_sp());
 
+	// send end-of-interrupt signal
+	GIC::set_task_prio(IRQ_PRIO_LOWEST);
+	GIC::send_eoi(IRQ_DISPATCH);
+
+
 	if(tcb->is_running()) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
@@ -56,23 +61,30 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 		ip = (void*) ((ipv & 0x7FFFFFFF));
 
 		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
+
+		//kout << "D: " << id << " " << ip << " " << sp << endl;
+
+		// Set the user's stack pointer
+		// We leave to the user mode in system mode
+		asm volatile("mov r1, %0;"
+					 "mov r0, %1;"
+					 "bx r1" :: "l"(ip), "l"(sp) : "r0", "r1");
 	} else {
 		// start function from beginning
 		ip = (void*) tcb->fun;
 
+		//kout << "D(S): " << id << " " << ip << " " << sp << endl;
+
+
+		// Set the user's stack pointer
+		// We leave to the user mode in system mode
+		asm volatile("mov r1, %0;"
+					 "mov r0, %1;"
+					 "cps #31;"
+					 "mov sp, r0;"
+					 "bx r1" :: "l"(ip), "l"(sp) : "r0", "r1");
+
 	}
-
-	//kout << "D: " << id << " " << ip << " " << sp << endl;
-
-	// send end-of-interrupt signal
-	GIC::send_eoi(IRQ_DISPATCH);
-
-	// Set the user's stack pointer
-	// We leave to the user mode in system mode
-	Machine::switch_mode(Machine::SYSTEM);
-	asm volatile("mov sp, %0" :: "r"(sp));
-    asm volatile("mov r0, %0" :: "r"(sp) : "r0");
-    asm volatile("bx %0" :: "r"(ip));
     Machine::unreachable();
 	return 0;
 }

@@ -10,18 +10,34 @@
 .align 4
 
 .arm
+.global interrupt_vector_table
 interrupt_vector_table:
-    b _start		@ Reset
-    b panic			@ Undefined instruction
+    b _boot		@ Reset
+    b panic_a			@ Undefined instruction
     b syscall_hndlr	@ SWI instruction
-    b panic			@ Prefetch Abort
-    b panic			@ Data Abort
-    b panic			@ reserved
+    b panic_b			@ Prefetch Abort
+    b panic_c			@ Data Abort
+    b panic_d			@ reserved
     b irq_entry		@ IRQ
     b firq_hndlr	@ FIRQ
 
-
 .section .text.irq_handlers
+
+panic_a:
+    mov r0, 0xaa
+    b panic
+
+panic_b:
+    mov r0, 0xbb
+    b panic
+
+panic_c:
+    mov r0, 0xcc
+    b panic
+
+panic_d:
+    mov r0, 0xdd
+    b panic
 
 .global panic
 panic:
@@ -54,27 +70,26 @@ irq_entry:
     # Virtually do the increment, the SRSDB has not written back
     sub lr, lr, #8
     # Push the task's registers to the user stack
-    stmdb lr, {r0-r12,sp,lr}^
+    stmdb lr, {r0-lr}^
     sub   lr, lr, #60
     #--------- User's registers are safe ------
 	# Task's SP is 1st argument
 	mov r0, lr
     # Save our return point to the user stack
     adr r1, irq_entry_return
-    stmdb lr!, {r1}
+    stmdb lr, {r1}
     # Branch with link, and exchange instruction set: ARM to Thumb
 	blx irq_handler
+.global irq_entry_return
 irq_entry_return:
     # This NOP is important!
     nop
     # r0 is the stack pointer we want to return to
     mov lr, r0
-    # Remove return address (1:) from user stack
-    # ldmia lr!, {r0}
     # Pop the register set
-    ldmia lr, {r0-r12,sp,lr}^
-    add   sp, lr, #60
-    rfeia sp!
+    ldmia lr, {r0-lr}^
+    add   lr, lr, #60
+    rfeia lr
     nop
 .size irq_entry, . - irq_entry
 

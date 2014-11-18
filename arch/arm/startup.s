@@ -6,7 +6,7 @@
 .global _start
 .type _start, function
 .arm
-_start:
+_boot:
 	# setup startup stack
 	ldr sp, =_estack_os-16
 

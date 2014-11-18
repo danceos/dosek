@@ -226,7 +226,6 @@ struct Machine
 	 * Will trigger interrupt if this is actually executed.
 	 */
 	static forceinline void unreachable(void) {
-		//asm volatile("int3");
 		__builtin_unreachable(); // allow compiler optimization
 	}
 
@@ -300,7 +299,7 @@ struct Machine
 		#else
         // TODO
 		// write EOT on serial console to exit gem5 simulation
-		kout << ((char) 0x04);
+		//		kout << ((char) 0x04);
         Machine::reset();
 		#endif
 

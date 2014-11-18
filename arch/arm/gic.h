@@ -145,8 +145,9 @@ public:
         } while(1);
 
         // enable cpu interface
-        // enable IRQs [0], FIRQs [1], and map Group1 to FIRQs [3]
-        GICcpu().ICR = (1<<3) | (1<<1) | (1<<0);
+        // enable IRQs [0]
+        GICcpu().ICR = (1<<0);
+
     }
 
     /** \brief Enable the GIC (distributor and CPU interface) */
@@ -206,7 +207,13 @@ public:
         // write software generated irq register
         // distribute only to requesting (this) CPU: 0b10 at bit 24
         GICdist().SGIR = ((irq & 0xFF) | (2 << 24));
-        //write_reg(GICD_SGIR, (irq & 0xFF) | (2 << 24));
+		/* We add this loop here, since QEMU triggers software generated
+		   interrupts only with a large delay. For details on this bug, see:
+
+		   http://lists.gnu.org/archive/html/qemu-discuss/2014-03/msg00028.html
+		*/
+		volatile int i = 0;
+		while (i < 100) i++;
     }
 
     /** \brief Set task priority

@@ -48,7 +48,7 @@ ISR2(ISR1) {
 
 ALARMCALLBACK(A1) {
 	test_trace('<');
-	Machine::trigger_interrupt(37);
+	Machine::trigger_interrupt(5);
 	test_trace('>');
 }
 

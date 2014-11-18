@@ -39,10 +39,10 @@ endif()
 set(SRCS
     constructors.cc
 	startup.cc
-	startup.s
 	gic.cc
 	irq.S
 	platforms/${PLATFORM_DIR}/serial.cc
+	platforms/${PLATFORM_DIR}/translation_table.s
 	platforms/${PLATFORM_DIR}/machine_impl.cc
     timer.cc
 	output.cc
@@ -51,6 +51,17 @@ set(SRCS
 	reschedule-ast.cc
     machine.cc
 )
+
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/platforms/${PLATFORM_DIR}/startup.S)
+  set(SRCS ${SRCS} platforms/${PLATFORM_DIR}/startup.S)
+else()
+  set(SRCS ${SRCS} startup.s)
+endif()
+
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/platforms/${PLATFORM_DIR}/CMakeLists.txt)
+  add_subdirectory(platforms/${PLATFORM_DIR})
+endif()
+
 
 # Create arch library
 add_library(arch ${SRCS})
@@ -135,6 +146,11 @@ macro(dosek_executable ELFFILE)
 
 	# add to executables list
 	set(EXECUTABLES ${EXECUTABLES} ${ELFFILE} CACHE INTERNAL STRING)
+
+    # Add Platform specific stuff
+    if(COMMAND dosek_arm_platform_executable)
+      dosek_arm_platform_executable(${ELFFILE})
+    endif()
 endmacro()
 
 

@@ -25,10 +25,10 @@ TASK(H1) {
 	TerminateTask();
 }
 
-extern uint32_t save_sp;
 TASK(H2) {
 	test_trace('2');
-	Machine::trigger_interrupt_from_user(37);
+	Machine::trigger_interrupt_from_user(5);
+
 	test_trace('_');
 	TerminateTask();
 }

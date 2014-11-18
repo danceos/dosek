@@ -1,5 +1,5 @@
 /* Kernel entry function */
-ENTRY(_start)
+ENTRY(interrupt_vector_table)
 
 SECTIONS {
 
@@ -11,15 +11,16 @@ SECTIONS {
     }
 
     /* Code and readonly data */
-    . = 0;
+    . = 0x0;
     .text : {
-        /* fill gaps with invalid opcode to detect invalid jumps */
-        FILL(0xFEDEFFE7)
 
         /* interrupt vectors */
-        . = 0;
+        /* . = 0; */
         irq_vectors = .;
         KEEP (*(".text.irq_vectors"))
+
+        /* fill gaps with invalid opcode to detect invalid jumps */
+        /* FILL(0xFEDEFFE7)*/
 
         /* start of interrupt handlers */
         _stext_irqs = .;
@@ -37,6 +38,7 @@ SECTIONS {
 
         _etext_irqs = .;
         . += 16; /* padding after data, workaround for import-trace */
+
 
         /* startup code */
         . = ALIGN(4096);
@@ -117,12 +119,12 @@ SECTIONS {
     }
 
     /* Page tables and directories */
-    .rodata.paging ALIGN(0x1000) : {
-        _spaging = .;
-        KEEP (*(".paging*"));
-        _epaging = .;
-    }
-
+    .mmu_tbl : {
+	   . = ALIGN(32768);
+	   __mmu_tbl_start = .;
+	   *(.mmu_tbl)
+	   __mmu_tbl_end = .;
+	}
 
     /* Data and Stacks */
     . = 0x200000;

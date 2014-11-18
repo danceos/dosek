@@ -15,6 +15,8 @@ find_program(CROSS_NM "${ARCH_PREFIX}nm")
 find_program(CROSS_RANLIB "${ARCH_PREFIX}ranlib")
 # Find objdump for pagetable generation
 find_program(CROSS_OBJDUMP "${ARCH_PREFIX}objdump")
+find_program(CROSS_OBJCOPY "${ARCH_PREFIX}objcopy")
+
 
 message(STATUS "Cross compiler root: ${CROSS_ROOT_PATH}")
 
