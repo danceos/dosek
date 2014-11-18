@@ -52,6 +52,8 @@ panic:
 	b .
 .size panic, . - panic
 
+.extern __OS_HOOK_FaultDetectedHook
+
 .global irq_entry
 irq_entry:
     # Switch to the OS stack
@@ -72,6 +74,35 @@ irq_entry:
     # Push the task's registers to the user stack
     stmdb lr, {r0-lr}^
     sub   lr, lr, #60
+#ifdef ENCODED
+	# XOR task context checksum
+	eor r1, r0,  r1
+	eor r1, r2,  r1
+	eor r1, r3,  r1
+	eor r1, r4,  r1
+	eor r1, r5,  r1
+	eor r1, r6,  r1
+	eor r1, r7,  r1
+	eor r1, r8,  r1
+	eor r1, r9,  r1
+	eor r1, r10, r1
+	eor r1, r11, r1
+	eor r1, r12, r1
+    # load stored CPSR:
+	ldr r0, [lr,#64]
+	eor r1, r0, r1
+    # load stored user return:
+	ldr r0, [lr,#60]
+	eor r1, r0, r1
+	# load stored user lr:
+    ldr r0, [lr,#56]
+	eor r1, r0, r1
+    # load stored user sp:
+	ldr r0, [lr,#52]
+	eor r1, r0, r1
+	# Store checksum on stack
+	stmdb lr!, {r1}
+#endif
     #--------- User's registers are safe ------
 	# Task's SP is 1st argument
 	mov r0, lr
@@ -86,9 +117,59 @@ irq_entry_return:
     nop
     # r0 is the stack pointer we want to return to
     mov lr, r0
+
+#ifdef ENCODED
+	# ignore stored checksum
+	add lr, lr, #4
+	# load store registers
+	ldmia lr, {r0-r12,sp,lr}^
+	# Get checksum from stack
+	ldr r1, [lr,-4]
+	eor r1, r0,  r1
+	eor r1, r2,  r1
+	eor r1, r3,  r1
+	eor r1, r4,  r1
+	eor r1, r5,  r1
+	eor r1, r6,  r1
+	eor r1, r7,  r1
+	eor r1, r8,  r1
+	eor r1, r9,  r1
+	eor r1, r10, r1
+	eor r1, r11, r1
+	eor r1, r12, r1
+	# also check stored sp:
+	ldr r0, [lr,#52]
+	eor r1, r0, r1
+	# and stored lr:
+	ldr r0, [lr,#56]
+	eor r1, r0, r1
+    # load stored user return:
+	ldr r0, [lr,#60]
+	eor r1, r0, r1
+    # load stored CPSR:
+	ldr r0, [lr,#64]
+	eor r1, r0, r1
+	# r1 should now equal the original r1 stored on stack (lr+4)
+	# let's check this:
+	ldr r2, [lr,4]
+	teq r2, r1
+	beq 1f
+	# Set fault detected type (1==XORdetected)
+	mov r0, 1
+	# save lr (= stack pointer) in callee saved register
+	mov r4, lr
+	blx __OS_HOOK_FaultDetectedHook
+    # fix lr
+	mov lr, r4
+1:
+    # restore r0 - r4
+	ldmia lr, {r0-r4}
+#else
     # Pop the register set
-    ldmia lr, {r0-lr}^
-    add   lr, lr, #60
+    ldmia lr, {r0-r12,sp,lr}^
+#endif
+    # Pop the register set
+	add   lr, lr, #60
     rfeia lr
     nop
 .size irq_entry, . - irq_entry

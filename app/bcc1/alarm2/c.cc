@@ -13,7 +13,6 @@ DeclareCounter(C2);
 TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
-	static int counter = 0;
 	test_trace('1');
 	CancelAlarm(A1);
 	// Wait very long, so that we can check wheter A1 was really

@@ -99,10 +99,13 @@ class SimpleSystem(BaseRules):
 
 
     def generate_hooks(self):
-        hooks = ["PreIdleHook"]
-        for hook in hooks:
-            hook_function = Function("__OS_HOOK_" + hook, "void", [])
+        hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"])]
+        for hook,args in hooks:
+            hook_function = Function("__OS_HOOK_" + hook, "void", args)
             self.generator.source_file.function_manager.add(hook_function)
+            # Cast arguments to void, to get rid of unused parameter warning
+            for i in range(0, len(args)):
+                hook_function.unused_parameter(i);
 
             # In the pre idle hook, we place the kickoff method of the
             # idle subtask
@@ -115,7 +118,8 @@ class SimpleSystem(BaseRules):
 
             user_defined = "__OS_HOOK_DEFINED_" + hook
             if user_defined in self.system_graph.functions:
-                self.call_function(hook_function, user_defined, "void", [])
+                # Generate actual call, only if user had defined the hook function
+                self.call_function(hook_function, user_defined, "void", hook_function.arguments_names())
 
 
 class SimpleArch(BaseRules):

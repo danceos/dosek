@@ -9,7 +9,7 @@ extern "C" uint8_t _estack_os;
 
 namespace arch {
 
-IRQ_HANDLER(IRQ_RESCHEDULE) {
+__attribute__((noreturn)) IRQ_HANDLER(IRQ_RESCHEDULE) {
     // block ISR2s by raising GIC task priority
     GIC::set_task_prio(IRQ_PRIO_SYSCALL);
 
@@ -31,6 +31,7 @@ IRQ_HANDLER(IRQ_RESCHEDULE) {
     asm volatile("subs pc, lr, #0");
 
     Machine::unreachable();
+	while(1); // should be unreachable
 }
 
 }; // namespace arch

@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "assert.h"
 #include "machine.h"
+#include "os/hooks.h"
 
 #ifdef UINT16_MAX
 #undef UINT16_MAX
@@ -66,8 +67,12 @@ public:
 	{
 		bool nooverflow = vc < static_cast<value_coded_t>((__V_MAX * A) + B + D);
 		bool noremainder = (((vc - B - D) % A) == 0);
-
-		return  (nooverflow && noremainder);
+		if (nooverflow && noremainder) {
+			return true;
+		} else {
+			CALL_HOOK(FaultDetectedHook, ANBdetected, nooverflow, noremainder);
+			return false;
+		}
 	};
 };
 

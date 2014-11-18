@@ -55,6 +55,13 @@ class Function:
             block.add(stmt)
         return [block, "\n"]
 
+    def arguments_names(self):
+        return [arg[0] for arg in self.arguments()]
+
+    def arguments_types(self):
+        return [arg[1] for arg in self.arguments()]
+
+
     def arguments(self):
         ret = []
         for i in range(0, len(self.argstype)):

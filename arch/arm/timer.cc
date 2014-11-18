@@ -30,6 +30,7 @@ void Timer::set_periodic(uint16_t rate_in_ms) {
 }
 
 extern "C" void* irq_handler_29(void* task_sp, uint32_t irq) {
+	(void)irq;
     Timer::ack_isr(); // acknowledge timer IRQ
 
     GIC::set_task_prio(IRQ_PRIO_LOWEST); // TODO: enable ISR2, in_syscall -> false
