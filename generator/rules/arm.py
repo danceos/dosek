@@ -134,7 +134,7 @@ class ARMArch(SimpleArch):
            disabled.
         """
         pre_hook  = Hook("SystemEnterHook")
-        post_hook = Hook("SystemLeaveHook")
+        post_hook = Hook("SystemLeaveHook", userspace.arguments())
 
         userspace.attributes.append("inlinehint")
 
@@ -171,7 +171,7 @@ class ARMArch(SimpleArch):
 
         self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
-        return self.KernelSpace(pre_hook, syscall, None)
+        return self.KernelSpace(pre_hook, syscall, post_hook)
 
     def get_syscall_argument(self, block, i):
         # directly pass on the arguments, should be in register in ARM anyway.

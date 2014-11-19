@@ -73,9 +73,10 @@ class PosixArch(SimpleArch):
         else:
             self.call_function(userspace, "Machine::disable_interrupts", "void", [])
 
-        pre_hook  = Hook("SystemEnterHook")
-        system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
-        post_hook = Hook("SystemLeaveHook")
+        args = [(arg.name, arg.datatype) for arg in arguments]
+        pre_hook  = Hook("SystemEnterHook",arguments =  args)
+        system    = Block(arguments = args)
+        post_hook = Hook("SystemLeaveHook", userspace.arguments())
 
         userspace.add(pre_hook)
         userspace.add(system)

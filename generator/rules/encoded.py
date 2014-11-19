@@ -50,6 +50,22 @@ class EncodedSystem(UnencodedSystem):
                                                      alarm_info.initial_cycletime))
         return alarm
 
+    def get_syscall_return_variable(self, Type):
+        """Returns a Variable, that is able to capture the return value of a
+           system call. The self.return_variables dict is defined in the super class.
+
+        """
+        if Type in self.return_variables:
+            return self.return_variables[Type]
+
+        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
+
+        var = DataObject("os::redundant::WithLinkage<uint32_t, os::redundant::MergedDMR>",
+                         "syscall_return_%s" % Type)
+        self.generator.source_file.data_manager.add(var)
+        self.return_variables[Type] = var
+        return var
+
 class EncodedTaskListTemplate(TaskListTemplate):
     def __init__(self, rules):
         TaskListTemplate.__init__(self, rules)

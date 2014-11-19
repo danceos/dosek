@@ -5,6 +5,13 @@
 
 namespace os { namespace redundant {
 
+template<typename T, template <typename> class Wrapped>
+class WithLinkage : public Wrapped<T> {
+	T data_store;
+ public:
+    WithLinkage() : Wrapped<T>(data_store) {}
+ };
+
 /**
  * "Redundant" data type without redudancy
  */
@@ -60,10 +67,11 @@ public:
 	}
 };
 
+template<typename T = uint32_t>
 class MergedDMR {
-	 uint32_t&  data;
+	 T&  data;
  public:
-	 constexpr MergedDMR(uint32_t &t) : data(t) {};
+	 constexpr MergedDMR(T &t) : data(t) {};
 
 	 inline void set(uint16_t x) const {
 		 data = (x) | (x << 16);

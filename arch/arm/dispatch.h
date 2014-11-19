@@ -27,7 +27,7 @@ extern volatile void* startup_sp;
 
 // next task to dispatch (used by dispatch interrupt)
 #ifdef ENCODED
-extern os::redundant::MergedDMR save_sp;
+extern os::redundant::MergedDMR<uint32_t> save_sp;
 extern volatile Encoded_Static<A0, 42> dispatch_task;
 #else
 extern os::redundant::Plain<uint32_t> save_sp;

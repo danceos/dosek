@@ -97,7 +97,7 @@ class X86Arch(SimpleArch):
            disabled.
         """
         pre_hook  = Hook("SystemEnterHook")
-        post_hook = Hook("SystemLeaveHook")
+        post_hook = Hook("SystemLeaveHook", userspace.arguments())
 
         userspace.attributes.append("inlinehint")
 
@@ -132,7 +132,7 @@ class X86Arch(SimpleArch):
 
         self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
-        return self.KernelSpace(pre_hook, syscall, None)
+        return self.KernelSpace(pre_hook, syscall, post_hook)
 
     def get_syscall_argument(self, block, i):
         argument = block.arguments()[i]

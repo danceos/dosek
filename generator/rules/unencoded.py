@@ -1,6 +1,6 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
-    Block, Statement, Comment, Function, Hook
+    Block, Statement, Comment, Function, Hook, DataObject
 from generator.graph.AtomicBasicBlock import S
 
 class UnencodedSystem(SimpleSystem):
@@ -9,6 +9,7 @@ class UnencodedSystem(SimpleSystem):
         self.task_list = TaskListTemplate
         self.scheduler = SchedulerTemplate
         self.alarms = AlarmTemplate
+        self.return_variables = {}
 
     def sigs(self, count):
         return ""
@@ -44,7 +45,8 @@ class UnencodedSystem(SimpleSystem):
         self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
 
         if abb.isA([S.TerminateTask, S.ActivateTask, S.ChainTask,
-                    S.CancelAlarm, S.GetResource, S.ReleaseResource]):
+                    S.CancelAlarm, S.GetResource, S.ReleaseResource,
+                    S.AdvanceCounter]):
             # Need a kernelspace
             kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, [])
             pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
@@ -68,6 +70,10 @@ class UnencodedSystem(SimpleSystem):
         elif systemcall.function == "GetResource":
             userspace.unused_parameter(0)
             self.syscall_rules.GetResource(kernelspace.system, abb)
+
+        elif systemcall.function == "AdvanceCounter":
+            userspace.unused_parameter(0)
+            self.syscall_rules.AdvanceCounter(kernelspace.system, abb)
 
         elif systemcall.function == "ReleaseResource":
             userspace.unused_parameter(0)
@@ -97,6 +103,13 @@ class UnencodedSystem(SimpleSystem):
             userspace.add(post_hook)
             self.syscall_rules.EnableAllInterrupts(userspace, abb)
         # Alarms
+        elif systemcall.function == "GetAlarm":
+            userspace.unused_parameter(0)
+            kernelspace = self.arch_rules.\
+                          generate_kernelspace(userspace, abb, [])
+            pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
+
+            self.syscall_rules.GetAlarm(post_hook, kernelspace.system, abb)
         elif systemcall.function == "SetRelAlarm":
             userspace.unused_parameter(0)
             arg1 = self.convert_argument(userspace, userspace.arguments()[1])
@@ -124,6 +137,22 @@ class UnencodedSystem(SimpleSystem):
 
     def system_leave_hook(self, abb, hook):
         self.callback_in_valid_passes("system_leave_hook", abb, hook)
+
+    def get_syscall_return_variable(self, Type):
+        """Returns a Variable, that is able to capture the return value of a
+           system call.
+
+        """
+        if Type in self.return_variables:
+            return self.return_variables[Type]
+
+        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
+
+        var = DataObject("os::redundant::WithLinkage<uint16_t, os::redundant::Plain>",
+                         "syscall_return_%s" % Type)
+        self.generator.source_file.data_manager.add(var)
+        self.return_variables[Type] = var
+        return var
 
 class TaskListTemplate(CodeTemplate):
     def __init__(self, rules):

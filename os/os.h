@@ -95,6 +95,8 @@ struct MESSAGEStruct {
 typedef struct MESSAGEStruct* MessageIdentifier;
 
 typedef uint16_t TickType;
+typedef TickType * TickRefType;
+
 
 /******************************************************************************
  *                                                                            *
@@ -174,13 +176,16 @@ typedef uint16_t TickType;
   OSEKOS_GetAlarmBase(&OSEKOS_ALARM_Struct_##x,b)
 
 #define DeclareCounter(x)			\
-  struct COUNTERStruct OSEKOS_MESSAGE_Struct_##x
+  struct COUNTERStruct OSEKOS_COUNTER_Struct_##x
 
 #define AdvanceCounter(x)			\
-  OSEKOS_AdvanceCounter(&OSEKOS_MESSAGE_Struct_##x)
+  OSEKOS_AdvanceCounter(&OSEKOS_COUNTER_Struct_##x)
 
 #define IncrementCounter(x)			\
-  OSEKOS_AdvanceCounter(&OSEKOS_MESSAGE_Struct_##x)
+  OSEKOS_AdvanceCounter(&OSEKOS_COUNTER_Struct_##x)
+
+#define GetCounter(x)								\
+	OSEKOS_GetCounter(&OSEKOS_COUNTER_Struct_##x)
 
 #define DeclareMessage(x)				\
   struct MESSAGEStruct OSEKOS_MESSAGE_Struct_##x

@@ -165,8 +165,8 @@ class FunctionCall(SourceElement):
         return [Statement(statement)]
 
 class Hook(Block):
-    def __init__(self, name):
-        Block.__init__(self)
+    def __init__(self, name, arguments = None):
+        Block.__init__(self, arguments = arguments)
         self.name = name
 
     def expand(self, generator):

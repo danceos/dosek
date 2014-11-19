@@ -96,6 +96,10 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         return after_states
 
+
+
+
+
     def do(self):
         old_copy_count = SystemState.copy_count
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
@@ -112,6 +116,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.kickoff         : scc.do_computation, # NO ISRS
                             S.SetRelAlarm     : scc.do_computation, # ignore
                             S.CancelAlarm     : scc.do_computation, # ignore
+                            S.GetAlarm        : scc.do_computation, # ignore
+                            S.AdvanceCounter  : scc.do_AdvanceCounter,
                             # Done in DynamicPriorityAnalysis
                             S.GetResource          : scc.do_computation,
                             S.ReleaseResource      : scc.do_computation,
@@ -122,6 +128,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.ResumeAllInterrupts  : scc.do_computation,
                             S.SuspendOSInterrupts  : scc.do_computation,
                             S.ResumeOSInterrupts   : scc.do_computation,
+
 
                             S.Idle            : scc.do_Idle,
                             S.iret            : scc.do_TerminateTask}

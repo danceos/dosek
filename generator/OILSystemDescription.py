@@ -117,6 +117,8 @@ class Counter(OILObject):
         self.MAXALLOWEDVALUE = ""
         self.TICKSPERBASE = ""
         self.MINCYCLE = ""
+        self.SOFTCOUNTER = ""
+
 
 
 class Alarm(OILObject):

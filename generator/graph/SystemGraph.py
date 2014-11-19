@@ -18,7 +18,7 @@ class SystemGraph(GraphObject, PassManager):
     def __init__(self):
         GraphObject.__init__(self, "SystemGraph", root = True)
         PassManager.__init__(self, self)
-        self.counters = []
+        self.counters = {}
         self.tasks = []
         self.functions = {}
         self.all_abbs = {}
@@ -153,12 +153,14 @@ class SystemGraph(GraphObject, PassManager):
             self.isrs.append(ISR(self, subtask))
 
         #  Counters
-        Counter = namedtuple("Counter", ["name", "maxallowedvalue", "ticksperbase", "mincycle"])
+        Counter = namedtuple("Counter", ["name", "maxallowedvalue", "ticksperbase", "mincycle",
+                                         "softcounter"])
         for ctr in system.getCounters():
-            self.counters.append(Counter(name = ctr.name,
-                                         maxallowedvalue = ctr.MAXALLOWEDVALUE,
-                                         ticksperbase = ctr.TICKSPERBASE,
-                                         mincycle = ctr.MINCYCLE))
+            self.counters[ctr.name] = Counter(name = ctr.name,
+                                          maxallowedvalue = ctr.MAXALLOWEDVALUE,
+                                          ticksperbase = ctr.TICKSPERBASE,
+                                          mincycle = ctr.MINCYCLE,
+                                          softcounter = ctr.SOFTCOUNTER)
 
         #  Alarms
         for alarm in system.getAlarms():
@@ -243,7 +245,7 @@ class SystemGraph(GraphObject, PassManager):
 
 
 
-        self.counters = system.getHardwareCounters()
+        self.counters = {x.name: x for x in system.getHardwareCounters()}
 
         for alarm in system.getAlarms():
             activated_subtask = self.functions["OSEKOS_TASK_" + alarm.task]

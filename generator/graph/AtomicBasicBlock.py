@@ -67,6 +67,9 @@ class SyscallType(IntEnum):
     SuspendOSInterrupts  = 31
     ResumeOSInterrupts   = 32
 
+    GetAlarm = 33
+    AdvanceCounter = 34
+
     def isRealSyscall(self):
         return self.value >= SyscallType.kickoff
 
@@ -177,6 +180,9 @@ class AtomicBasicBlock(Node):
                 if x.startswith("OSEKOS_TASK_Struct_"):
                     handler_name = x[len("OSEKOS_TASK_Struct_"):]
                     x = self.system_graph.functions["OSEKOS_TASK_" + handler_name]
+                elif x.startswith("OSEKOS_COUNTER_Struct_"):
+                    name = x[len("OSEKOS_COUNTER_Struct_"):]
+                    x = name
                 elif x.startswith("OSEKOS_RESOURCE_Struct_"):
                     res_name = x[len("OSEKOS_RESOURCE_Struct_"):]
                     x = self.system_graph.resources[res_name]

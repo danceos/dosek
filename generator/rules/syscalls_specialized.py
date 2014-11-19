@@ -169,6 +169,9 @@ class SpecializedSystemCalls(FullSystemCalls):
         maybe_ready = set()
         for iret in irets:
             abb_info = self.global_abb_info.for_abb(iret)
+            if not abb_info:
+                # iret belongs to the activate task of an soft-counter
+                continue
             for subtask in self.system_graph.get_subtasks():
                 if abb_info.state_before.is_maybe_ready(subtask):
                     maybe_ready.add(subtask)

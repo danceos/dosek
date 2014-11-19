@@ -97,7 +97,6 @@ class SystemStateFlow(Analysis):
 
         return after_states
 
-
     def block_functor(self, fixpoint, block):
         self.debug("{{{ " + str(block))
 
@@ -121,6 +120,8 @@ class SystemStateFlow(Analysis):
              S.kickoff         : scc.do_computation, # NO ISRS!
              S.SetRelAlarm     : scc.do_computation, # ignore
              S.CancelAlarm     : scc.do_computation, # ignore
+             S.GetAlarm        : scc.do_computation, # ignore
+             S.AdvanceCounter  : scc.do_AdvanceCounter,
              # Done in DynamicPriorityAnalysis
              S.GetResource     : scc.do_computation,
              S.ReleaseResource : scc.do_computation,

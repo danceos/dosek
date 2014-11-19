@@ -1,5 +1,6 @@
-from generator.tools import stack, unwrap_seq
+from generator.tools import stack, unwrap_seq, panic
 from generator.graph.AtomicBasicBlock import E, S
+from generator.graph.Sporadic import Alarm
 from generator.graph.common import Node, Edge, EdgeType, NodeType
 
 
@@ -55,6 +56,33 @@ class SystemCallSemantic:
             after.add_continuation(activated, activated.entry_abb)
         after.set_ready(activated)
         return [after]
+
+    def do_AdvanceCounter(self, block, before):
+        # Either we directly return
+        notrigger = before.copy_if_needed()
+        cont = block.definite_after(E.task_level)
+        notrigger.set_continuation(self.running_task.for_abb(block),
+                               cont)
+        ret = [notrigger]
+
+        # Or we trigger the counter
+        counter_id = block.arguments[0]
+        sporadic_events = []
+        for alarm in self.system_graph.alarms:
+            if not(isinstance(alarm , Alarm) and alarm.counter == counter_id):
+                continue
+
+            after = before.copy()
+            cont = block.definite_after(E.task_level)
+            after.set_continuation(self.running_task.for_abb(block),
+                                   cont)
+            activated = alarm.carried_syscall.arguments[0]
+            if not after.is_surely_ready(activated):
+                after.add_continuation(activated, activated.entry_abb)
+            after.set_ready(activated)
+            ret.append(after)
+        assert len(ret) > 1, "No Alarm for Soft-Counter defined (%s)"%counter_id
+        return ret
 
     def do_Idle(self, block, before):
         after = before.copy_if_needed()

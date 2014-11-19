@@ -65,6 +65,12 @@ class Alarm(SporadicEvent):
         self.initial_cycletime = alarm_info.cycletime
         self.initial_reltime = alarm_info.reltime
 
+    def can_trigger(self,state):
+        # Soft Counters cannot be triggered from the interrupt
+        if self.system_graph.counters[self.counter].softcounter:
+            return False
+        return SporadicEvent.can_trigger(self, state)
+
 class ISR(SporadicEvent):
     def __init__(self, system_graph, isr_handler):
         SporadicEvent.__init__(self, system_graph, isr_handler.function_name,

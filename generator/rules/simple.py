@@ -77,7 +77,7 @@ class SimpleSystem(BaseRules):
     def generate_dataobjects_counters_and_alarms(self):
         self.objects["counter"] = {}
         self.objects["alarm"] = {}
-        for counter_info in self.generator.system_graph.counters:
+        for counter_info in self.generator.system_graph.counters.values():
             assert counter_info.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 
             counter = self.generate_counter(counter_info)
@@ -191,7 +191,10 @@ class AlarmTemplate(CodeTemplate):
 
     def increase_and_check_counters(self, snippet, args):
         ret = []
-        for counter in self.system_graph.counters:
+        for counter in self.system_graph.counters.values():
+            # Softcounters are ignored by the hardware interrupt
+            if counter.softcounter:
+                continue
             ret += self.expand_snippet("increase_counter",
                                        name = self.objects["counter"][counter.name].name)
         return ret

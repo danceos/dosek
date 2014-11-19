@@ -98,6 +98,44 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb)])
 
+    def AdvanceCounter(self, kernelspace, abb):
+        counter_id = abb.arguments[0]
+        counter = self.objects["counter"][counter_id]
+
+        # Increase Counter and check the counter
+        kernelspace.add(Statement("%s.do_tick()" % counter.name))
+        kernelspace.add(Statement("Alarm::checkCounter(%s)" % counter.name))
+
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(abb)])
+
+    def GetAlarm(self, userspace, kernelspace, abb):
+        alarm_id = abb.arguments[0]
+        alarm_object = self.objects["alarm"][alarm_id]
+
+        return_variable = self.os_rules.get_syscall_return_variable("TickType")
+
+        # Fill return variable
+        kernelspace.add(Statement("%s.set(%s.getRemainingTicks())"%(
+            return_variable.name,
+            alarm_object.name)))
+
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(abb)])
+
+        # Read out the result of the system call
+        userspace.add(Statement("%s.check()" %(
+            return_variable.name
+        )))
+        userspace.add(Statement("*%s = %s.get()" %(
+            userspace.arguments()[1][0], # Name of the first argument
+            return_variable.name
+        )))
+
     def CancelAlarm(self, kernelspace, abb):
         alarm_id = abb.arguments[0]
         alarm_object = self.objects["alarm"][alarm_id]

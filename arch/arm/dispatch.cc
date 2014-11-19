@@ -15,7 +15,7 @@ volatile void* startup_sp = 0;
 static uint32_t _save_sp = 0;
 
 #ifdef ENCODED
-os::redundant::MergedDMR save_sp(_save_sp);
+os::redundant::MergedDMR<uint32_t> save_sp(_save_sp);
 volatile Encoded_Static<A0, 42> dispatch_task;
 #else
 os::redundant::Plain<uint32_t> save_sp(_save_sp);

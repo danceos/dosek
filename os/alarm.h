@@ -171,20 +171,17 @@ public:
 		return cycleTime_;
 	}
 
-	template<class RET>
-	RET getRemainingTicks() {
-		RET ret;
-
+	TickType getRemainingTicks() {
 		auto abstime = getAbsoluteTime();
 		auto counter = configuration_->getValue();
 
-		if( (abstime <= counter) == 1) {
-			ret = abstime + (configuration_->maxallowedvalue - counter);
+		if( (abstime <= Encoded_Static<A0, decltype(abstime)::B+6>(counter)) == 1) {
+			auto ret = abstime + (configuration_->maxallowedvalue - counter);
+			return ret.decode();
 		} else {
-			ret = abstime - counter;
+			auto ret = abstime - counter;
+			return ret.decode();
 		}
-
-		return ret;
 	}
 
 	forceinline bool checkTrigger() {

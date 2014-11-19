@@ -61,6 +61,7 @@ class CFGRegions(Analysis):
             )
             self.regions[region_id] = region
             self.region_mask[region_id] = region_mask
+            logging.debug("Region %s: 0x%x", region, region_mask)
             # Generate new mask for next region
             region_mask <<= 1
 

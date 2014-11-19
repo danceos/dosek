@@ -15,7 +15,7 @@ void inlinehint Alarm::checkCounter(const Counter &counter) {
 
     {{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
     {{{snippet:if_alarm:counter,alarm|if ((&counter == &%(counter)s) && %(alarm)s.checkTrigger()) {
-    debug << "Alarm triggered" << endl;}}}
+    debug << "Alarm %(alarm)s triggered" << endl;}}}
     {{{snippet:endif_alarm:counter,alarm|} }}}
     {{{generate:trigger_alarms}}}
 }

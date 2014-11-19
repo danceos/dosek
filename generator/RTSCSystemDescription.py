@@ -136,7 +136,8 @@ class RTSCSystemDescription:
                                      reltime = reltime))
         return alarms
 
-    Counter = namedtuple("Counter", ["name", "maxallowedvalue", "ticksperbase", "mincycle"])
+    Counter = namedtuple("Counter", ["name", "maxallowedvalue", "ticksperbase", "mincycle",
+                                     "softcounter"])
 
     def getHardwareCounters(self):
         counters = []
@@ -146,7 +147,8 @@ class RTSCSystemDescription:
             counters.append(self.Counter(name = counter.name,
                                          maxallowedvalue = counter.MAXALLOWEDVALUE,
                                          ticksperbase = counter.TICKSPERBASE,
-                                         mincycle = counter.MINCYCLE))
+                                         mincycle = counter.MINCYCLE,
+                                         softcounter = False))
         return counters
 
 
