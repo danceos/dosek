@@ -50,6 +50,10 @@ public:
 
 		// unblock ISR2s by lowering APIC task priority
 		LAPIC::set_task_prio(0);
+
+		// This is a wait period for qemu to trigger the interrupt in
+		// time.
+		while(1) Machine::nop();
 	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
