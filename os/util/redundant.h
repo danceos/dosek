@@ -60,6 +60,31 @@ public:
 	}
 };
 
+class MergedDMR {
+	 uint32_t&  data;
+ public:
+	 constexpr MergedDMR(uint32_t &t) : data(t) {};
+
+	 inline void set(uint16_t x) const {
+		 data = (x) | (x << 16);
+	 }
+
+	 inline uint16_t get() const {
+		 return data & 0xffff;
+	 }
+
+	 inline bool check() const {
+		 if ((data & 0xffff) != (data >> 16)) {
+			 CALL_HOOK(FaultDetectedHook, DMRdetected,
+					   data & 0xffff,
+					   data >> 16);
+			 return false;
+		 }
+		 return true;
+	 }
+ };
+
+
 } }
 
 #endif

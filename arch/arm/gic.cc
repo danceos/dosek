@@ -47,15 +47,15 @@ extern "C" void * irq_handler(void * task_sp) {
     // asm volatile("bfc r1, #12, #20" ::: "r0", "r1"); // place interrupt number in r1
 
     // save stack pointer
-    uint32_t ssp = save_sp;
+    uint16_t ssp = save_sp.get();
 	if (ssp != 0) {
 #ifdef ENCODED
-		assert( (ssp & 0xFFFF) == (ssp >> 16) );
-		os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp & 0xFFFF]);
+		save_sp.check();
+		os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp]);
 		SP.set(task_sp);
 #else
-		assert( (ssp & 0xFFFF) == (ssp >> 16) );
-		*OS_stackptrs[ssp & 0xFFFF] = task_sp;
+		save_sp.check();
+		*OS_stackptrs[ssp] = task_sp;
 #endif
 	}
 

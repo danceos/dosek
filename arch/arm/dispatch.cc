@@ -11,11 +11,14 @@ extern TCB * const OS_tcbs[];
 
 /** \brief Startup stackpointer (save location) */
 volatile void* startup_sp = 0;
-extern "C" volatile uint32_t save_sp = 0;
+
+static uint32_t _save_sp = 0;
 
 #ifdef ENCODED
+os::redundant::MergedDMR save_sp(_save_sp);
 volatile Encoded_Static<A0, 42> dispatch_task;
 #else
+os::redundant::Plain<uint32_t> save_sp(_save_sp);
 volatile uint16_t dispatch_task;
 #endif
 
@@ -36,8 +39,8 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	const TCB * const tcb = OS_tcbs[id];
 
 	// set save_sp
-	assert(save_sp == 0);
-	save_sp = id | ((id) << 16);
+	assert(save_sp.get() == 0);
+	save_sp.set(id);
 
 	// set new page directory
 	//MMU::switch_task(id);

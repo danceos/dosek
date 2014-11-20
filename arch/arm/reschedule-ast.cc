@@ -17,7 +17,7 @@ __attribute__((noreturn)) IRQ_HANDLER(IRQ_RESCHEDULE) {
     //PageDirectory::enable(pagedir_os);
 
     // reset save_sp to detect IRQ from non-userspace in idt.S
-    save_sp = 0;
+    save_sp.set(0);
 
     // send end-of-interrupt signal
     GIC::send_eoi(irq);

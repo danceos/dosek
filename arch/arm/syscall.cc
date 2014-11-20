@@ -27,16 +27,15 @@ extern "C" __attribute__((naked)) void syscall_handler(void *fun, void *sp, uint
     Machine::enable_interrupts();
 
     // save stack pointer
-    uint32_t ssp = save_sp;
+    uint32_t ssp = save_sp.get();
 #ifdef ENCODED
-	assert( (ssp & 0xFFFF) == (ssp >> 16) );
-	os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp & 0xFFFF]);
+	save_sp.check();
+	os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp]);
 	SP.set(sp);
 #else
-	assert( (ssp & 0xFFFF) == (ssp >> 16) );
-	*OS_stackptrs[ssp & 0xFFFF] = sp;
+	*OS_stackptrs[ssp] = sp;
 #endif
-	save_sp = 0; // to detect IRQ from userspace in idt.S
+	save_sp.set(0); // to detect IRQ from userspace in idt.S
 
     // exit system
     Machine::set_spsr(0x30);
