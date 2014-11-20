@@ -8,6 +8,7 @@
 #include "machine.h"
 #include "dispatch.h"
 #include "output.h"
+#include "os/util/redundant.h"
 
 #define CONTINUE_UNHANDLED_IRQ 0
 
@@ -48,8 +49,14 @@ extern "C" void * irq_handler(void * task_sp) {
     // save stack pointer
     uint32_t ssp = save_sp;
 	if (ssp != 0) {
+#ifdef ENCODED
+		assert( (ssp & 0xFFFF) == (ssp >> 16) );
+		os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp & 0xFFFF]);
+		SP.set(task_sp);
+#else
 		assert( (ssp & 0xFFFF) == (ssp >> 16) );
 		*OS_stackptrs[ssp & 0xFFFF] = task_sp;
+#endif
 	}
 
     void* ret = irq_handlers[id](task_sp, id);

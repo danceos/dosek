@@ -2,6 +2,8 @@
 #define __ARCH_X86_TCB
 
 #include "os/util/assert.h"
+#include "os/util/redundant.h"
+
 
 namespace arch {
 
@@ -15,26 +17,24 @@ struct TCB {
 	void * const stack;
 
 	// reference to saved stack pointer
-	// TODO: encode?
-	void* &sp;
+#ifdef ENCODED
+	const os::redundant::HighParity<void *> sp;
+#else
+	const os::redundant::Plain<void *> sp;
+#endif
 
 	const int stacksize;
 
 	inline bool check_sp(void) const {
-		return (__builtin_parity((uint32_t) sp) == 1);
+		return sp.check();
 	}
 
 	inline void* get_sp(void) const {
-		return (void *) ((uint32_t)sp & 0x7FFFFFFF);
+		return sp.get();
 	}
 
 	inline void set_sp(void* s) const {
-		uint32_t _sp = (uint32_t) s;
-		if(__builtin_parity(_sp) == 1) {
-			sp = s;
-		} else {
-			sp = (void*) (_sp | 0x80000000);
-		}
+		sp.set(s);
 	}
 
 	inline void reset(void) const {

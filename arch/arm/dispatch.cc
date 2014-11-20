@@ -45,7 +45,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// push instruction pointer
 	void* ip;
 	uint32_t *sp = (uint32_t *) tcb->get_sp();
-	//assert(tcb->check_sp());
+	tcb->check_sp();
 
 	// send end-of-interrupt signal
 	GIC::set_task_prio(IRQ_PRIO_LOWEST);

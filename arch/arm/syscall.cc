@@ -3,6 +3,7 @@
 #include "gic.h"
 #include "machine.h"
 #include "util/assert.h"
+#include "os/util/redundant.h"
 
 extern "C" uint8_t _estack_os;
 
@@ -27,8 +28,14 @@ extern "C" __attribute__((naked)) void syscall_handler(void *fun, void *sp, uint
 
     // save stack pointer
     uint32_t ssp = save_sp;
+#ifdef ENCODED
+	assert( (ssp & 0xFFFF) == (ssp >> 16) );
+	os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp & 0xFFFF]);
+	SP.set(sp);
+#else
 	assert( (ssp & 0xFFFF) == (ssp >> 16) );
 	*OS_stackptrs[ssp & 0xFFFF] = sp;
+#endif
 	save_sp = 0; // to detect IRQ from userspace in idt.S
 
     // exit system

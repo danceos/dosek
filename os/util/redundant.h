@@ -1,6 +1,8 @@
 #ifndef __OS_UTIL_REDUNANT_TYPES
 #define __OS_UTIL_REDUNANT_TYPES
 
+#include "os/hooks.h"
+
 namespace os { namespace redundant {
 
 /**
@@ -50,7 +52,11 @@ public:
 	}
 
 	inline bool check() const {
-		return (__builtin_parity((uint32_t) data) == 1);
+		if (__builtin_parity((uint32_t) data) != 1) {
+			CALL_HOOK(FaultDetectedHook, PARITYdetected, (uint32_t)data, 0);
+			return false;
+		}
+		return true;
 	}
 };
 

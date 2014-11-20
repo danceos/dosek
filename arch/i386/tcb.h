@@ -16,7 +16,6 @@ struct TCB {
 	void * const stack;
 
 	// reference to saved stack pointer
-	// TODO: encode?
 #ifdef ENCODED
 	const os::redundant::HighParity<void *> sp;
 #else
