@@ -57,7 +57,7 @@ message(STATUS "LLVM C/C++ compiler: ${LLVM_C_COMPILER} ${LLVM_CXX_COMPILER}")
 
 
 # Setup ARM specific flags
-set(COMMON_ARM_FLAGS "-target ${CMAKE_C_ARCH} -I/usr/lib/arm-none-eabi/include -mcpu=cortex-a9 -mfloat-abi=soft -mthumb -ccc-gcc-name ${ARCH_PREFIX}gcc -no-integrated-as -include ${PROJECT_SOURCE_DIR}/arch/arm/types.h")
+set(COMMON_ARM_FLAGS "-target ${CMAKE_C_ARCH} -I/usr/lib/arm-none-eabi/include -mcpu=cortex-a9 -mfloat-abi=soft -mthumb  -Xclang -no-implicit-float -ccc-gcc-name ${ARCH_PREFIX}gcc -no-integrated-as -include ${PROJECT_SOURCE_DIR}/arch/arm/types.h")
 set(CMAKE_C_FLAGS "${COMMON_ARM_FLAGS} -mfloat-abi=soft -ffreestanding -Wall -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
 set(CMAKE_CXX_FLAGS " -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
 set(CMAKE_ASM_FLAGS "${COMMON_ARM_FLAGS} -Qunused-arguments" CACHE STRING "ASMFLAGS")

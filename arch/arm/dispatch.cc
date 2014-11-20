@@ -55,14 +55,19 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	if(tcb->is_running()) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
-		uint32_t ipv = (uint32_t) *(sp - 1);
+		uint32_t ip = (uint32_t) *(sp - 1);
+#ifdef ENCODED
+		uint32_t ip2 = (uint32_t) *(sp - 2);
+		if (ip != ip2) {
+			CALL_HOOK(FaultDetectedHook, DMRdetected, ip, ip2);
+		}
+		// clear IP to prevent this from remaining valid in memory
+		*(sp - 2) = 0;
+#endif
+		// clear IP to prevent this from remaining valid in memory
+		*(sp - 1) = 0;
 
-		//assert(__builtin_parity(ipv) == 1);
-		ip = (void*) ((ipv & 0x7FFFFFFF));
-
-		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
-
-		//kout << "D: " << id << " " << ip << " " << sp << endl;
+		// kout << "D: " << id << " " << ip << " " << sp << endl;
 
 		// Set the user's stack pointer
 		// We leave to the user mode in system mode

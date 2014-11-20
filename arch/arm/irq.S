@@ -108,7 +108,11 @@ irq_entry:
 	mov r0, lr
     # Save our return point to the user stack
     adr r1, irq_entry_return
+    stmdb lr!, {r1}
+#ifdef ENCODED
+    # Push the return address twice
     stmdb lr, {r1}
+#endif
     # Branch with link, and exchange instruction set: ARM to Thumb
 	blx irq_handler
 .global irq_entry_return

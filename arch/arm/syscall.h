@@ -37,7 +37,11 @@ forceinline void syscall(F fun) {
 	asm volatile(
 				 "push {r7,lr};"
 				 "mov r1, sp;" // save stackptr ...
-				 "adr r0, $1f; orr r0, r0, #1; push {r0};" // save return address ...
+				 "adr r0, $1f; orr r0, r0, #1;" // Add thumb mode bit
+				 "push {r0};" // save return address ...
+#ifdef ENCODED
+				 "push {r0};" // .. twice
+#endif
 				 "mov r0, %0;"
 				 "svc #0;" // start syscall
 				 "1:"
