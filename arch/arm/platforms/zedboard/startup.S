@@ -119,7 +119,7 @@
 
 .set FPEXC_EN,		0x40000000		/* FPU enable bit, (1 << 30) */
 
-.section .boot,"ax"
+.section .text.startup,"ax"
 
 
 /* this initializes the various processor modes */

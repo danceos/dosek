@@ -1,6 +1,16 @@
 /* Kernel entry function */
 ENTRY(interrupt_vector_table)
 
+MEMORY {
+   ROM : ORIGIN = 0x100000, LENGTH = 4M
+   RAM : ORIGIN = 0x500000, LENGTH = 2M
+}
+
+REGION_ALIAS("REGION_TEXT", ROM);
+REGION_ALIAS("REGION_RODATA", ROM);
+REGION_ALIAS("REGION_DATA", RAM);
+REGION_ALIAS("REGION_BSS", RAM);
+
 SECTIONS {
 
     /DISCARD/ : {
@@ -13,7 +23,7 @@ SECTIONS {
     }
 
     /* Code and readonly data */
-    . = 0x0;
+    /* . = 0x0; */
     .text : {
 
         /* interrupt vectors */
@@ -118,55 +128,62 @@ SECTIONS {
         *(".text*")
         *(".rodata*")
         _etext = .;
-    }
 
     /* Page tables and directories */
-    .mmu_tbl : {
 	   . = ALIGN(32768);
 	   __mmu_tbl_start = .;
 	   *(.mmu_tbl)
 	   __mmu_tbl_end = .;
-	}
+
+       /* End of ROM marker. In the ROM, here the initialized .data
+          section follows */
+       _erom   = .;
+	} > ROM
+
+    .stacks : {
+            . = ALIGN(4096);
+            _bstart = .;
+            /* Stacks */
+            _sstack = .;
+
+            _sstack_os = .;
+            KEEP (*(".startup_stack"))
+            KEEP (*(".kernel_stack"))
+            _estack_os = .;
+
+            {{{generate:task_stacks}}}
+
+            _estack = .;
+     } > RAM
+
+     .bss : {
+            *(COMMON);
+            _bend   = .;
+     } > RAM
+
+
 
     /* Data and Stacks */
-    . = 0x200000;
+    /* . = 0x200000; */
     .data : {
-        /* TSS at known address */
-        _stss = .;
-        tss = .;
-        . += 104;
-        _etss = .;
-
-        /* Stacks */
-        . = ALIGN(4096);
-        _sstack = .;
-
-        _sstack_os = .;
-        KEEP (*(".startup_stack"))
-        KEEP (*(".kernel_stack"))
-        _estack_os = .;
-
-        {{{generate:task_stacks}}}
-
-        _estack = .;
+        /* Marker for the begin of the Data section */
+        _data = .;
 
         /* Data */
-        . = ALIGN(4096);
         _sdata_os = .;
         *(".data._Z*2os*")
         _edata_os = .;
 
-        . = ALIGN(4096);
         _sdata_arch = .;
         *(".data._Z*4arch*")
         _edata_arch = .;
 
         {{{generate:task_data}}}
 
-        . = ALIGN(4096);
         _sdata = .;
         *(".data*")
-        *(COMMON);
         _edata = .;
-    }
+    } > RAM AT> ROM
+
+
 }
