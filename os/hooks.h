@@ -28,6 +28,7 @@ typedef enum DetectedFault_t {
 	DMRdetected = 2,
 	ANBdetected = 3,
 	PARITYdetected = 4,
+	APPdetected = 5,
 } DetectedFault_t;
 
 

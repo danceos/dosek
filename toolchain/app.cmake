@@ -36,6 +36,7 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
 
   # Fix whitespace escaping in CXX FLAGS
   string(REPLACE " " ";" COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
+  SET(DOSEK_GENERATOR_ARGS "")
 
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
@@ -50,10 +51,11 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
       COMMENT "[${PROJECT_NAME}/${NAME}] Compiling application ${NAME}/${src} with clang")
 
     list(APPEND DOSEK_BINARY_LLVM_BYTECODE ${llvm_bytecode})
+    SET(DOSEK_GENERATOR_ARGS ${DOSEK_GENERATOR_ARGS} --source-bytecode ${llvm_bytecode})
   endforeach(src)
 
   # All python source files are a dependency
-  SET(DOSEK_GENERATOR_ARGS "${GENERATOR_ARGS}")
+  SET(DOSEK_GENERATOR_ARGS ${DOSEK_GENERATOR_ARGS} ${GENERATOR_ARGS})
   file(GLOB_RECURSE PYTHON_SOURCE "${DOSEK_GENERATOR_DIR}/*.py")
   file(GLOB_RECURSE OS_TEMPLATES "${PROJECT_SOURCE_DIR}/os/*.in")
   if(EXISTS "${VERIFY_SCRIPT}")
@@ -85,9 +87,8 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
              ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
     COMMAND ${CMAKE_COMMAND} -E remove -f ${DOSEK_OUTPUT_DIR}/gen_*.dot
     COMMAND ${DOSEK_GENERATOR}
-     --system-desc "${SYSTEM_DESC}"
-     --source-bytecode "${DOSEK_BINARY_LLVM_BYTECODE}"
-     --merged-bytecode "${DOSEK_SOURCE_SYSTEM}"
+       --system-desc "${SYSTEM_DESC}"
+       --merged-bytecode "${DOSEK_SOURCE_SYSTEM}"
        --prefix ${DOSEK_OUTPUT_DIR}
        --name ${NAME}
        --template-base ${PROJECT_SOURCE_DIR}

@@ -184,8 +184,9 @@ class LLVMPYAnalysis:
             source_modules.append(llvm.core.Module.from_assembly(open(filename)))
 
         # Link them all together
-        source_module = reduce(lambda a, b: a.link_in(b), source_modules)
-        return source_module
+        for idx in range(1, len(source_modules)):
+            source_modules[0].link_in(source_modules[idx])
+        return source_modules[0]
 
     def __add_kickoff_to_subtask_entries(self):
         """ Add a call to kickoff at each entry of a user (sub)task """

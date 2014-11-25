@@ -19,7 +19,11 @@ import logging
 import optparse
 
 def split_lls_callback(option, opt, value, parser):
-    setattr(parser.values, option.dest, value.split(','))
+    x = value.split(',')
+    y = getattr(parser.values, option.dest)
+    if y != None:
+        x = y + x
+    setattr(parser.values, option.dest, x)
 
 def setup_logging(log_level : int):
     """ setup the logging module with the given log_level """
