@@ -77,7 +77,7 @@ def get_size(symbols, name):
     if start > 0 and end > 0:
         return end.addr - start.addr
     else:
-        print("no size found for " + name)
+        #print("no size found for " + name)
         return 0
 
 
