@@ -10,5 +10,7 @@ void Machine::reset(void) {
     
 }
 
+void Machine:setup_caches(void) {
 
+}
 

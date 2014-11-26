@@ -28,6 +28,8 @@ extern "C" void arch_startup()
     // run constructors of global objects
     run_constructors();
 
+	Machine::setup_caches();
+
     kout << "Booted" << endl;
 
     //wait_for_debugger();
