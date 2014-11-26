@@ -3,16 +3,6 @@ namespace scheduler {
 
 using namespace os::tasks;
 
- {{{snippet:hint_arg:task,desc|, bool %(task)s = true}}}
- {{{snippet:hint_body:task,desc|static const bool %(task)s_is_possible = %(task)s;
-		 }}}
-
-template<bool Idle = true{{{generate:foreach_subtask_snippet:hint_arg}}}>
-struct SchedulerTargetHint {
-	static const bool Idle_is_possible = Idle;
-	{{{generate:foreach_subtask_snippet:hint_body}}}
-};
-
 struct Scheduler {
     os::scheduler::TaskList tlist;
 
@@ -24,31 +14,7 @@ struct Scheduler {
 
     static constexpr prio_t scheduler_prio = {{{generate:scheduler_prio}}};
 
-	template<typename TargetHint = SchedulerTargetHint<> >
-    forceinline void Reschedule(void) {
-        // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
-        if (current_prio != scheduler_prio) {
-            // set current (=next) task from task list
-            tlist.head<TargetHint>(current_task, current_prio);
-        }
-
-        // dispatch or enter idle
-        // TODO: generated signature
-{{{snippet:reschedule_dispatch_task:task,desc|if(TargetHint::%(task)s_is_possible && current_task == %(desc)s.id) {
-    if (%(desc)s.preemptable == false) {
-        // promote non-preemptable task to RES_SCHEDULER
-        tlist.promote(%(desc)s.id, scheduler_prio);
-        current_prio = scheduler_prio;
-    }
-    Dispatcher::Dispatch(%(desc)s);
-} else }}}
-        {{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(TargetHint::Idle_is_possible && current_task == TaskList::idle_id) {
-            Dispatcher::idle();
-        } else {
-            assert(false);
-        }
-    }
-
+    noinline void Reschedule(void);
 
     forceinline void SetReady_impl(const Task &task) {
 		tlist.insert(task.id, task.prio);
@@ -83,21 +49,15 @@ struct Scheduler {
     }
 
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
-        auto from_id = from.id;
-        assert(from_id == current_task);
-
-        SetSuspended_impl(from);
+        // auto from_id = from.id;
+		SetSuspended_impl(from);
 		SetReady_impl(to);
         Schedule_impl();
     }
 
     forceinline void TerminateTask_impl(const Task &from) {
-        auto id = from.id;
-		//kout << "TT " << (int)id << " " << (int)current_task << endl;
-        assert(id == current_task);
-
+        // auto id = from.id;
         SetSuspended_impl(from);
-
         Schedule_impl();
     }
 
@@ -140,6 +100,30 @@ struct Scheduler {
 	}
 
 };
+
+void Scheduler::Reschedule() {
+	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
+	if (current_prio != scheduler_prio) {
+		// set current (=next) task from task list
+		tlist.head(current_task, current_prio);
+	}
+
+	// dispatch or enter idle
+	// TODO: generated signature
+	{{{snippet:reschedule_dispatch_task:task,desc|if(current_task == %(desc)s.id) {
+					if (%(desc)s.preemptable == false) {
+						// promote non-preemptable task to RES_SCHEDULER
+						tlist.promote(%(desc)s.id, scheduler_prio);
+						current_prio = scheduler_prio;
+					}
+					Dispatcher::Dispatch(%(desc)s);
+				} else }}}
+	{{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(current_task == TaskList::idle_id) {
+		Dispatcher::idle();
+	} else {
+		assert(false);
+	}
+}
 
 constexpr Scheduler::prio_t Scheduler::scheduler_prio;
 Scheduler scheduler_;

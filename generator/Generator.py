@@ -1,34 +1,7 @@
 from generator.elements import *
+from generator.rules import SignatureGenerator
 import logging
 
-class SignatureGenerator:
-    def __init__(self, start = 1000):
-        self.sig = start
-        self.used = set()
-    def new(self):
-        i = 1
-        while (self.sig + i) in self.used:
-            i += 1
-        x = self.sig + i
-        self.sig = x
-        self.used.add(x)
-        return x
-    def lessthan(self, other):
-        i = 1
-        while (other - i) in self.used:
-            i += 1
-        x = other - i
-        assert x > 0
-        self.used.add(x)
-        return x
-    def morethan(self, other):
-        i = 1
-        while (other + i) in self.used:
-            i += 1
-        x = other + i
-        assert x > 0
-        self.used.add(x)
-        return x
 
 
 class Generator:
@@ -45,7 +18,9 @@ class Generator:
         self.rules = []
         self.__used_variable_names = set()
         self.template_base = None
-        self.signature_generator = SignatureGenerator()
+        number_of_tasks = len([x for x in self.system_graph.get_subtasks()
+                               if not x.is_isr])
+        self.signature_generator = SignatureGenerator(number_of_tasks)
 
         self.file_prefix = None
         self.source_file = None

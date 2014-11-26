@@ -3,16 +3,6 @@ namespace scheduler {
 
 using namespace os::tasks;
 
-{{{snippet:hint_arg:task,desc|, bool %(task)s = true}}}
-{{{snippet:hint_body:task,desc|static const bool %(task)s_is_possible = %(task)s;
-}}}
-
-template<bool Idle = true{{{generate:foreach_subtask_snippet:hint_arg}}}>
-struct SchedulerTargetHint {
-    static const bool Idle_is_possible = Idle;
-    {{{generate:foreach_subtask_snippet:hint_body}}}
-};
-
 struct Scheduler  {
     os::scheduler::TaskList tlist;
 
@@ -21,40 +11,8 @@ struct Scheduler  {
 
     static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{generate:scheduler_prio}}});
 
-    template<typename TargetHint = SchedulerTargetHint<> >
-    forceinline void Reschedule(void) {
-        // TODO: control flow check
-		//  tlist.dump();
+    noinline void Reschedule(void);
 
-        // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
-        if (current_prio != scheduler_prio) {
-            // set current (=next) task from task list
-            tlist.head<TargetHint>(current_task, current_prio);
-        }
-	assert(current_task.check());
-	assert(current_prio.check());
-
-        // dispatch or enter idle
-        // TODO: generated signature
-{{{snippet:reschedule_dispatch_task:task,desc|if(TargetHint::%(task)s_is_possible && current_task == %(desc)s.enc_id<1>()) {
-    if (%(desc)s.preemptable == false) {
-        // promote non-preemptable task to RES_SCHEDULER
-        tlist.promote(%(desc)s.enc_id<1>(), scheduler_prio);
-        current_prio = scheduler_prio;
-    }
-    Dispatcher::Dispatch(%(desc)s);
-} else }}}
-        {{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(TargetHint::Idle_is_possible && current_task == TaskList::idle_id) {
-            Dispatcher::idle();
-        } else {
-            assert(false);
-        }
-    }
-
-	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-    forceinline void SetReady_impl(const Task &task) {
-		IncreasePriority<TASK_SIG>(task, task.prio);
-    }
 
     forceinline void Schedule_impl(void) {
         if(in_syscall()) {
@@ -67,40 +25,35 @@ struct Scheduler  {
         }
     }
 
-	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-    forceinline void SetSuspended_impl(const Task &t) {
-        t.tcb.reset();
+	void forceinline SetReady_impl(const Task &task) {
+		tlist.insert(task.id, EC(2, task.prio));
+	}
 
-        tlist.remove(t.enc_id<TASK_SIG>());
-        if (t.preemptable == false) {
-            // restore non-preemptable task to original priority
-            // this is required for the optimization in Reschedule()
-            current_prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
-        }
-    }
+	void forceinline SetSuspended_impl(const Task &t) {
+		t.tcb.reset();
 
-	template<int TO_SIG = {{{generate:arbitrary_new_signature}}}>
+		tlist.remove(t.id);
+		if (t.preemptable == false) {
+			// restore non-preemptable task to original priority
+			// this is required for the optimization in Reschedule()
+			current_prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
+		}
+	}
+
+
     forceinline void ActivateTask_impl(const Task &to) {
-		SetReady_impl<TO_SIG>(to);
+		SetReady_impl(to);
 		Schedule_impl();
     }
 
-	template<int FROM_SIG, int TO_SIG>
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
-        auto from_id = from.enc_id<FROM_SIG>();
-        assert(from_id == current_task);
-
-        SetSuspended_impl<FROM_SIG>(from);
-		SetReady_impl<TO_SIG>(to);
+        SetSuspended_impl(from);
+		SetReady_impl(to);
 		Schedule_impl();
     }
 
     forceinline void TerminateTask_impl(const Task &from) {
-        auto id = from.enc_id<{{{generate:arbitrary_new_signature}}}>();
-        assert(id == current_task);
-
         SetSuspended_impl(from);
-
         Schedule_impl();
     }
 
@@ -120,14 +73,13 @@ struct Scheduler  {
     }
 
 	// Low level interface to the task list
-	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
 	forceinline void SetCurrentTask(const Task &task) {
 		if (task.preemptable == false) {
 			// promote non-preemptable task to RES_SCHEDULER
-			tlist.set(task.enc_id<1>(), scheduler_prio);
+			tlist.set(task.id, scheduler_prio);
 			current_prio = scheduler_prio;
 		}
-		current_task = task.enc_id<TASK_SIG>();
+		current_task = task.enc_id<1>();
 	}
 
 	forceinline void SetSystemPriority(const int new_prio) {
@@ -137,30 +89,40 @@ struct Scheduler  {
 
 
 	forceinline void SetPriority(const Task &task, const int new_prio) {
-		auto id = task.enc_id<1>();
 		auto new_prio_encoded = EC(2, new_prio);
-		tlist.set(id, new_prio_encoded);
+		tlist.set(task.id, new_prio_encoded);
 	}
 
 	forceinline bool isSuspended(const Task &task) {
-		auto id = task.enc_id<1>();
-		return tlist.isSuspended(id);
-	}
-
-
-	template<int TASK_SIG = {{{generate:arbitrary_new_signature}}}>
-	forceinline void IncreasePriority(const Task &task, const int new_prio) {
-	auto id = task.enc_id<TASK_SIG>();
-        // TODO: generated signature
-		{{{snippet:activate_task_task:task,id_sig,prio_sig,task_prio_sig|if (id == %(task)s.enc_id<1>()) {
-	value_coded_t signature = tlist.insert(%(task)s.enc_id<%(id_sig)s>(), EC(%(prio_sig)s, new_prio));
-	assert((signature - (%(task_prio_sig)s - %(prio_sig)s)) %% decltype(id)::A == 0);
-} else }}}
-        {{{generate:activate_task_foreach_task}}}{
-            assert(false);
-        }
+		return tlist.isSuspended(task.id);
 	}
 };
+
+void Scheduler::Reschedule(void) {
+        // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
+        if (current_prio != scheduler_prio) {
+            // set current (=next) task from task list
+            tlist.head(current_task, current_prio);
+        }
+	assert(current_task.check());
+	assert(current_prio.check());
+
+        // dispatch or enter idle
+        // TODO: generated signature
+{{{snippet:reschedule_dispatch_task:task,desc|if(current_task == %(desc)s.enc_id<1>()) {
+    if (%(desc)s.preemptable == false) {
+        // promote non-preemptable task to RES_SCHEDULER
+        tlist.promote(%(desc)s.id, scheduler_prio);
+        current_prio = scheduler_prio;
+    }
+    Dispatcher::Dispatch(%(desc)s);
+} else }}}
+        {{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(current_task == TaskList::idle_id) {
+            Dispatcher::idle();
+        } else {
+            assert(false);
+        }
+    }
 
 constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> Scheduler::scheduler_prio;
 Scheduler scheduler_;

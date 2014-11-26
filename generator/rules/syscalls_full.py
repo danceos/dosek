@@ -70,13 +70,13 @@ class FullSystemCalls(BaseRules):
 
     def ActivateTask(self, block, abb):
         self.call_function(block,
-                           "scheduler_.ActivateTask_impl" + self.os_rules.sigs(1),
+                           "scheduler_.ActivateTask_impl",
                            "void",
                            [self.task_desc(abb.arguments[0])])
 
     def ChainTask(self, block, abb):
         self.call_function(block,
-                           "scheduler_.ChainTask_impl" + self.os_rules.sigs(2),
+                           "scheduler_.ChainTask_impl",
                            "void",
                            [self.get_calling_task_desc(abb),
                             self.task_desc(abb.arguments[0])])
@@ -104,7 +104,9 @@ class FullSystemCalls(BaseRules):
 
         # Increase Counter and check the counter
         kernelspace.add(Statement("%s.do_tick()" % counter.name))
-        kernelspace.add(Statement("Alarm::checkCounter(%s)" % counter.name))
+        for alarm in self.system_graph.alarms:
+            if alarm.counter == counter_id:
+                kernelspace.add(Statement("AlarmCheck%s()" % self.objects["alarm"][alarm.name].name))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call_function(kernelspace, "Dispatcher::ResumeToTask",

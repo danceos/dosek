@@ -10,7 +10,8 @@ class PosixArch(SimpleArch):
 
     def generate_linkerscript(self):
         """Posix does not require a linker script"""
-        pass
+        with self.generator.open_file("linker.ld") as fd:
+            fd.write("IGNORED IN POSIX")
 
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""

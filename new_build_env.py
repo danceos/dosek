@@ -83,7 +83,7 @@ def main():
 
     subprocess.call(["cmake", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
                      '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain_file,
-                     "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                     "-DCMAKE_BUILD_TYPE=Release",
                      "-G", options["GENERATOR"],
                      "-DENCODED_SYSTEM=%s" % options["ENCODED_SYSTEM"],
                      "-DMPU_PROTECTION=%s" % options["MPU_PROTECTION"],

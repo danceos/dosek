@@ -2,6 +2,49 @@ from generator.rules.unencoded import UnencodedSystem, TaskListTemplate, \
     SchedulerTemplate
 from generator.elements import *
 
+class SignatureGenerator:
+    def __init__(self, number_of_tasks, start = 10000):
+        self.sig = start
+        self.number_of_tasks = number_of_tasks
+        self.used = set()
+
+        self.sigPos = 3
+        self.scheduler_prio   = 12
+        self.current_prio = 11
+        self.current_task = 10
+        self.minimum_task_prio = (self.sigPos * (self.number_of_tasks + 1)) \
+                                 + self.scheduler_prio
+
+    def new(self):
+        i = 1
+        while (self.sig + i) in self.used:
+            i += 1
+        x = self.sig + i
+        self.sig = x
+        self.used.add(x)
+        return x
+
+    def new_task_id(self):
+        return self.morethan(self.minimum_task_prio)
+
+    def lessthan(self, other):
+        i = 1
+        while (other - i) in self.used:
+            i += 1
+        x = other - i
+        assert x > 0
+        self.used.add(x)
+        return x
+    def morethan(self, other):
+        i = 1
+        while (other + i) in self.used:
+            i += 1
+        x = other + i
+        assert x > 0
+        self.used.add(x)
+        return x
+
+
 class EncodedSystem(UnencodedSystem):
     def __init__(self):
         UnencodedSystem.__init__(self)
@@ -9,17 +52,14 @@ class EncodedSystem(UnencodedSystem):
         self.scheduler = EncodedSchedulerTemplate
         self.counter_signatures = {}
 
-    def sigs(self, count):
-        Bs = [str(self.generator.signature_generator.new()) for _ in range(0, count)]
-        return "<%s>" %(", ".join(Bs))
-
     def generate_system_code(self):
         # The current_prio_sig has to be allocated before the tasklist
         # is instanciated. Otherwise a TAssert in tasklist.h fails
+        self.sigs = self.generator.signature_generator
         self.objects["Scheduler"] = {}
-        self.objects["Scheduler"]["scheduler_prio_sig"] = self.generator.signature_generator.new()
-        self.objects["Scheduler"]["current_prio_sig"] = self.generator.signature_generator.lessthan(100)
-        self.objects["Scheduler"]["current_task_sig"] = self.generator.signature_generator.lessthan(100)
+        self.objects["Scheduler"]["scheduler_prio_sig"] = self.sigs.scheduler_prio
+        self.objects["Scheduler"]["current_prio_sig"] = self.sigs.current_prio
+        self.objects["Scheduler"]["current_task_sig"] = self.sigs.current_task
 
         UnencodedSystem.generate_system_code(self)
 
@@ -73,8 +113,12 @@ class EncodedTaskListTemplate(TaskListTemplate):
         self.__head_signature_vc = self.generator.signature_generator.new()
         # Generate signatures for each task for prio and id
         for subtask in self.system_graph.get_subtasks():
-            self.objects[subtask]["task_id_sig"] = self.generator.signature_generator.new()
-            self.objects[subtask]["task_prio_sig"] = self.generator.signature_generator.new()
+            # ISR do not need an signature
+            if subtask.is_isr:
+                continue
+            sig = self.generator.signature_generator.new_task_id()
+            self.objects[subtask]["task_id_sig"] = sig
+            self.objects[subtask]["task_prio_sig"] = sig
 
     def template_file(self):
         return "os/scheduler/tasklist.h.in"
@@ -119,8 +163,8 @@ class EncodedTaskListTemplate(TaskListTemplate):
         """Generate the update max cascade for tasklist::head"""
         def do(subtask):
             # Generate a new signature for this cascade step
-            last_sig = self.__head_signature_vc
-            next_sig = self.generator.signature_generator.new() % 71
+            last_sig = 3 #self.__head_signature_vc
+            next_sig = 3  #self.generator.signature_generator.new() % 71
             self.__head_signature_vc = next_sig
             do.i += 1
             return self.expand_snippet("head_update_max",
@@ -138,7 +182,7 @@ class EncodedTaskListTemplate(TaskListTemplate):
 
         # Update current prio for idle task
         last_sig = self.__head_signature_vc
-        self.__head_signature_vc = self.generator.signature_generator.new()
+        self.__head_signature_vc = 3
         ret += self.expand_snippet("head_update_idle_prio",
                                    last_sig = last_sig,
                                    next_sig = self.__head_signature_vc,

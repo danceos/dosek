@@ -103,29 +103,6 @@ class SpecializedSystemCalls(FullSystemCalls):
         self.Dispatch(kernelspace, abb, task)
 
 
-    def ScheduleTargetHint(self, tasks):
-        """Returns a SchedulerTargetHint template instanciation for a given
-           set of tasks"""
-        args = []
-        if self.system_graph.get_subtask("Idle") in tasks:
-            args.append("true")
-        else:
-            args.append("false")
-
-        def do(subtask):
-            if subtask in tasks:
-                args.append("true")
-            else:
-                args.append("false")
-
-            return ""
-        # We use foreach_subtask from BaseRules here, since it is also
-        # used in the Scheduler template to build the
-        # SchedulerTargetHint C++ template. By this we ensure the right order
-        self.foreach_subtask(do)
-        return "SchedulerTargetHint<%s>" %( ", ".join(args))
-
-
     def Schedule(self, kernelspace, abb):
         if abb.function.subtask.is_isr:
             self.Comment(kernelspace, """OPTIMIZATION: Each ABB is either in an
@@ -153,11 +130,10 @@ class SpecializedSystemCalls(FullSystemCalls):
         tasks = list(abb_info.tasks_after.keys())
         self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s", 
                      tasks)
-        schedule_hint = self.ScheduleTargetHint(tasks)
         self.stats.add_data(abb, "opt:Schedule:possible-tasks", len(tasks))
 
         self.call_function(kernelspace,
-                           "scheduler_.Reschedule< %s >" % (schedule_hint),
+                           "scheduler_.Reschedule",
                            "void", [])
 
     def ASTSchedule(self, kernelspace):
@@ -176,13 +152,12 @@ class SpecializedSystemCalls(FullSystemCalls):
                 if abb_info.state_before.is_maybe_ready(subtask):
                     maybe_ready.add(subtask)
 
-        schedule_hint = self.ScheduleTargetHint(maybe_ready)
         self.stats.add_data(self.system_graph.system_task,
                             "opt:ASTSchedule:possible-tasks", len(maybe_ready))
 
         if(len(maybe_ready) > 0):
             self.call_function(kernelspace,
-                               "scheduler_.Reschedule< %s >" % (schedule_hint),
+                               "scheduler_.Reschedule",
                                "void", [])
         else:
             self.call_function(kernelspace,

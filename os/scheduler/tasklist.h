@@ -43,10 +43,10 @@ public:
 
 		if(result) {
 			current_prio->vc = sigPrio + (other_prio.vc - other_prio.getB()) + sig - sigPos;
-			current_id->vc = sigId + other_id.vc + sig;
+			current_id->vc = sigId + other_id.vc + sig - other_id.getB();
 		} else {
 			current_prio->vc += (sigPos - sigNeg) + (sig - sigPos);
-			current_id->vc += (sigPos - sigNeg) + other_id.getB() + sig;
+			current_id->vc += (sigPos - sigNeg) + sig;
 		}
 
 		// return finished control flow signature
@@ -55,7 +55,7 @@ public:
 
 		//return sig + sigCond;
 		sigPrio += sig;
-		sigId += sig + sigPos + other_id.getB();
+		sigId += sig + sigPos;
 	}
 
 	// Effect: a = max{a, b} with a <= b

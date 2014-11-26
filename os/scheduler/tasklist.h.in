@@ -6,6 +6,8 @@ namespace os { namespace scheduler {
 
 /* Simpler array based task queue */
 struct TaskList : public TaskListStatic {
+    typedef uint8_t id_t;
+
 	// encoded task priorities
 	{{{snippet:ready_flag:name,A,B|Encoded_Static<%(A)s, %(B)s> %(name)s;}}}
 	{{{generate:ready_flag_variables}}}
@@ -19,8 +21,7 @@ struct TaskList : public TaskListStatic {
 
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
-	template<typename T>
-	forceinline value_coded_t isSuspended(const T id) {
+	forceinline value_coded_t isSuspended(const id_t id) {
 		{{{snippet:task_get_entry:name|if(id == %(id)s) {
 	return %(name)s.getCodedValue() == EC(decltype(%(name)s)::B, 0).getCodedValue();
 } else }}}
@@ -33,8 +34,8 @@ struct TaskList : public TaskListStatic {
 
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
-	template<typename T, typename S>
-	forceinline value_coded_t set(const T id, const S prio) {
+	template<typename S>
+	forceinline value_coded_t set(const id_t id, const S prio) {
 {{{snippet:task_set_entry:name|if(id == %(id)s) {
 	%(name)s = prio;
 	return (%(name)s - prio).getCodedValue();
@@ -48,8 +49,8 @@ struct TaskList : public TaskListStatic {
 
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
-	template<typename T, typename S>
-	forceinline value_coded_t increasePrio(const T id, const S newprio) {
+	template<typename S>
+	forceinline value_coded_t increasePrio(const id_t id, const S newprio) {
 		{{{snippet:task_increasePrio_entry:name|if(id == %(id)s) {
 	%(name)s.vc += 10;
 	updateMax<10, 11>(%(name)s, newprio);
@@ -65,7 +66,7 @@ struct TaskList : public TaskListStatic {
 		}
 	}
 
-	template<typename TargetHint, typename T, typename S>
+	template<typename T, typename S>
 	forceinline value_coded_t head(T& id, S& prio) const {
 		B_t sigId = id.getB();
 		B_t sigPrio = prio.getB();
@@ -73,34 +74,37 @@ struct TaskList : public TaskListStatic {
 		bool first = true;
 
 {{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
-// This branch is taken statically
-if (TargetHint::%(task)s_is_possible) {
-	if(first) {
-		first=false;
-		sigId += %(next_sig)s;
-		sigPrio += %(next_sig)s;
-		id.vc = Encoded::encode(%(task_id)s, A0, sigId, 0);
-		prio.vc = %(task)s.vc + (sigPrio - %(task)s.getB());
-	} else {
-		// %(task)s >= prio?
-		updateMax(sigPrio, sigId, %(next_sig)s, &prio, %(task)s, &id, EC(%(task_id_sig)s, %(task_id)s));
+if(first) {
+	first=false;
+	sigId += %(next_sig)s;
+	sigPrio += %(next_sig)s;
+	id.vc = Encoded::encode(%(task_id)s, A0, sigId, 0);
+	prio.vc = %(task)s.vc + (sigPrio - %(task)s.getB());
+} else {
+	// %(task)s >= prio?
+	updateMax(sigPrio, sigId, %(next_sig)s, &prio, %(task)s, &id, EC(%(task_id_sig)s, %(task_id)s));
 
-		assert((prio.vc + id.vc) %% A0 == (sigPrio + sigId));
+	if ((prio.vc + id.vc) %% A0 != (sigPrio + sigId)) {
+		CALL_HOOK(FaultDetectedHook, ANBdetected, prio.vc, id.vc);
+	}
+
+	/* Recode if sigID got too big */
+	if (sigId > A0 / 2) {
+		id.vc = id.vc - sigId + 3;
+		sigId = 3;
 	}
 }
 }}}
 {{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
-if (TargetHint::Idle_is_possible) {
-	if(first) {
-		first=false;
-		id=idle_id;
-		prio=idle_prio;
-	} else {
-		// restore idle_id if idle_id >= prio
-		updateMax(sigPrio, sigId, %(next_sig)s, &prio, idle_prio, &id, idle_id);
+if(first) {
+	first=false;
+	id=idle_id;
+	prio=idle_prio;
+} else {
+	// restore idle_id if idle_id >= prio
+	updateMax(sigPrio, sigId, %(next_sig)s, &prio, idle_prio, &id, idle_id);
 
-		// last comparison, needs no assert
-	}
+	// last comparison, needs no assert
 }
 }}}
 		{{{generate:head_update_max_cascade}}}
@@ -116,21 +120,19 @@ if (TargetHint::Idle_is_possible) {
 		return 0;
 	}
 
-	template<typename TID, typename NewPrio>
-		forceinline value_coded_t insert(const TID& id, const NewPrio &newprio) {
+	template<typename NewPrio>
+		forceinline value_coded_t insert(const id_t id, const NewPrio &newprio) {
 
 		return increasePrio(id, newprio);
 	}
 
-	template<typename T>
-	forceinline value_coded_t remove(const T& id) {
+	forceinline value_coded_t remove(const id_t id) {
 		// The signature here is arbitrary, and won't be exposed.
 		return set(id, EC(3, 0));
 	}
 
-	template<typename T, typename S>
-	forceinline value_coded_t promote(const T& id, const S& newprio) {
-
+	template<typename S>
+	forceinline value_coded_t promote(const id_t id, const S& newprio) {
 		return set(id, newprio);
 	}
 

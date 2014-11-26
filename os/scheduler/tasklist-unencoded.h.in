@@ -56,7 +56,6 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-	template<typename TargetHint>
     forceinline void head(id_t& id, prio_t& prio) const {
         // start with idle id/priority
         id = idle_id;
@@ -64,7 +63,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
 {{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
 
-		if(TargetHint::%(task)s_is_possible && %(task)s > prio) {
+		if(%(task)s > prio) {
             prio = %(task)s;
             id = %(task_id)s;
         }

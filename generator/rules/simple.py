@@ -189,7 +189,7 @@ class AlarmTemplate(CodeTemplate):
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.rules.foreach_subtask
 
-    def increase_and_check_counters(self, snippet, args):
+    def increase_counters(self, snippet, args):
         ret = []
         for counter in self.system_graph.counters.values():
             # Softcounters are ignored by the hardware interrupt
@@ -199,13 +199,22 @@ class AlarmTemplate(CodeTemplate):
                                        name = self.objects["counter"][counter.name].name)
         return ret
 
-    def trigger_alarms(self, snippet, args):
+
+    def check_alarms(self, snippet, args):
+        ret = []
+        for alarm in self.system_graph.alarms:
+            counter = self.system_graph.counters[alarm.counter]
+            if counter.softcounter:
+                continue
+            ret += "    AlarmCheck%s();\n" % self.objects["alarm"][alarm.name].name
+        return ret
+
+    def generate_check_alarms(self, snippet, args):
         ret = []
         for alarm in self.system_graph.alarms:
             callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
             has_callback  = (callback_name in self.system_graph.functions)
-            args = {"counter": self.objects["counter"][alarm.counter].name,
-                    "alarm":   self.objects["alarm"][alarm.name].name}
+            args = {"alarm":   self.objects["alarm"][alarm.name].name}
             ret += self.expand_snippet("if_alarm", **args) + "\n"
             # This alarm has an callback
             if has_callback:
@@ -213,7 +222,7 @@ class AlarmTemplate(CodeTemplate):
                 decl = FunctionDeclaration(callback_name, "void", [], extern_c = True)
                 self.generator.source_file.function_manager.add(decl)
                 ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
-            ret += "    " + alarm.carried_syscall.generated_function_name() + "(0);\n"
+            ret += "        " + alarm.carried_syscall.generated_function_name() + "(0);\n"
             ret += self.expand_snippet("endif_alarm", **args) + "\n"
 
 

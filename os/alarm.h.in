@@ -3,22 +3,22 @@
 
 namespace os {
 
+{{{snippet:if_alarm:counter,alarm|static void inlinehint AlarmCheck%(alarm)s() {
+	if (%(alarm)s.checkTrigger()) {
+}}}
+{{{snippet:endif_alarm:counter,alarm|    }
+}
+}}}
+{{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
+{{{generate:generate_check_alarms}}}
+
+
 void inlinehint Counter::tick() {
     {{{snippet:increase_counter:name|%(name)s.do_tick();
-    Alarm::checkCounter(%(name)s);
-    }}}
-    {{{generate:increase_and_check_counters}}}
+}}}
+    {{{generate:increase_counters}}}
+    {{{generate:check_alarms}}}
+
 }
-
-void inlinehint Alarm::checkCounter(const Counter &counter) {
-	(void) counter; // unused argument warning might happen
-
-    {{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
-    {{{snippet:if_alarm:counter,alarm|if ((&counter == &%(counter)s) && %(alarm)s.checkTrigger()) {
-    debug << "Alarm %(alarm)s triggered" << endl;}}}
-    {{{snippet:endif_alarm:counter,alarm|} }}}
-    {{{generate:trigger_alarms}}}
-}
-
 
 } // os
