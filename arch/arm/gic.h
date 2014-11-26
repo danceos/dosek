@@ -314,8 +314,8 @@ extern "C"  __attribute__((section(".text.irq_handlers"))) irq_handler_t const i
  */
 #define ISR_HANDLER(irqno, handler) \
 	IRQ_HNDLR(irqno) {				\
-		handler();					\
 		arch::GIC::send_eoi(irqno);	\
+		handler();					\
 		return task_sp;			\
 	}
 

@@ -29,6 +29,13 @@ extern "C" void * irq_handler_unhandled(void* task_sp, uint32_t id) {
 // IRQ gate
 extern "C" void * irq_handler(void * task_sp) {
     irq_id id = GIC::accept();
+
+	/* Capture a spurious interrupt */
+	if (id == 0x3ff) {
+		GIC::send_eoi(0x3ff);
+		return task_sp;
+	}
+
 	// void *lr;
 	// asm volatile("mov %0, lr" : "=r"(lr) ::);
 

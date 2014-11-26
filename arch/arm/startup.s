@@ -8,7 +8,7 @@
 .arm
 _boot:
 	# setup startup stack
-	ldr sp, =_estack_os-16
+	ldr sp, =os_stack + (_estack_os - _sstack_os) -16
 
 	# debug loop
 	mov r0, #42

@@ -16,6 +16,10 @@
 extern "C" void init_generic();
 extern "C" void run_constructors(void);
 
+extern "C" {
+	__attribute__((section(".kernel_stack"))) char os_stack[4096];
+}
+
 using namespace arch;
 
 //!< arm specific startup code
