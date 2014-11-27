@@ -36,6 +36,8 @@ static struct XUARTPS *UART1 = (struct XUARTPS*) SERIAL_BASE;
         0: Tx FIFO is not full
         1: Tx FIFO is full*/
 
+#define UART_STS_TXEMPTY 1<<3
+
 /*Register Control_reg0 BitMask */
 #define XUARTPS_CR_STOPBRK (1<<8) /* Stop transmitter break */
 #define XUARTPS_CR_STTBRK (1<<7) /* Start transmitter break */
@@ -57,6 +59,8 @@ static struct XUARTPS *UART1 = (struct XUARTPS*) SERIAL_BASE;
 #define XUARTPS_MR_PAR_NONE (1<<5)      /* 1xx: no parity*/
 
 Serial::Serial() {
+	while ((( UART1->channel_sts_reg0 ) & UART_STS_TXEMPTY) != UART_STS_TXEMPTY) {};
+
 	/* Disable the transmitter and receiver before writing to the Baud Rate Generator */
 	UART1->control_reg0=0;
 

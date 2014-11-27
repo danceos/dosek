@@ -29,6 +29,9 @@ typedef enum DetectedFault_t {
 	ANBdetected = 3,
 	PARITYdetected = 4,
 	APPdetected = 5,
+	TRAPdetected = 6,
+	IRQ_SPURdetected = 7,
+	LOGIC_ERRORdetected = 8,
 } DetectedFault_t;
 
 

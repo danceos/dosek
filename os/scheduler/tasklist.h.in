@@ -56,7 +56,9 @@ struct TaskList : public TaskListStatic {
 	updateMax<10, 11>(%(name)s, newprio);
 	%(name)s.vc -= 11;
 	value_coded_t ret = (%(name)s - newprio).getCodedValue();
-	assert (ret >= 0);
+	if ((ret %% A0) != (decltype(%(name)s)::B - decltype(newprio)::B)) {
+		CALL_HOOK(FaultDetectedHook, ANBdetected, 0, 0);
+	}
 	return ret;
 } else }}}
 

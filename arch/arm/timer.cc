@@ -36,7 +36,6 @@ extern "C" void* irq_handler_29(void* task_sp, uint32_t irq) {
     GIC::set_task_prio(IRQ_PRIO_LOWEST); // TODO: enable ISR2, in_syscall -> false
 	os::Counter::tick();
 
-    GIC::send_eoi(IRQ_LOCAL_TIMER);
     return task_sp;
 }
 

@@ -58,7 +58,7 @@ public:
 
 	forceinline value_t getValue() const {
 		value_t res;
-		assert(value.check());
+		value.check();
 		res.vc = value.vc;
 		return res;
 	}

@@ -9,6 +9,8 @@
 #include "dispatch.h"
 #include "output.h"
 #include "os/util/redundant.h"
+#include "os/hooks.h"
+
 
 #define CONTINUE_UNHANDLED_IRQ 0
 
@@ -21,19 +23,21 @@ void GIC::init() {
 }
 
 extern "C" void * irq_handler_unhandled(void* task_sp, uint32_t id) {
-    //kout << "! " << (int) id << endl;
-    GIC::send_eoi(id);
-    return task_sp;
+	CALL_HOOK(FaultDetectedHook, IRQ_SPURdetected, id, (uint32_t)task_sp);
+	return task_sp;
 }
 
 // IRQ gate
 extern "C" void * irq_handler(void * task_sp) {
     irq_id id = GIC::accept();
+	GIC::send_eoi(id);
 
 	/* Capture a spurious interrupt */
 	if (id == 0x3ff) {
-		GIC::send_eoi(0x3ff);
 		return task_sp;
+	}
+	if (id >= 96) {
+		return irq_handler_unhandled(task_sp, id);
 	}
 
 	// void *lr;
@@ -97,6 +101,9 @@ struct panic_frame {
     uint32_t pc;
 };
 extern "C" void kernel_dump(panic_frame* pf) {
+	// Give the user control over the detected trap
+	CALL_HOOK(FaultDetectedHook, TRAPdetected, pf->r0, pf->pc);
+
     kout << endl << "=== PANIC ===" << endl;
 
     //kout << "frame @ 0x" << pf << endl;

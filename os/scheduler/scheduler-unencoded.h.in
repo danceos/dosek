@@ -121,7 +121,7 @@ void Scheduler::Reschedule() {
 	{{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(current_task == TaskList::idle_id) {
 		Dispatcher::idle();
 	} else {
-		assert(false);
+		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
 	}
 }
 

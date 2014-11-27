@@ -217,7 +217,7 @@ CYG_MACRO_END
 
 #define HAL_CACHE_LOCK(_base_, _asize_, _way_)                                          \
     CYG_MACRO_START                                                                     \
-    assert(((uint32_t)(_base_) & (HAL_L2CACHE_LINE_SIZE-1)) == 0,"cache alignment"); \
+    static_assert(((uint32_t)(_base_) & (HAL_L2CACHE_LINE_SIZE-1)) == 0,"cache alignment"); \
     volatile uint32_t irqs;                                                    \
     uint32_t old_lockdown;                                                     \
     uint32_t way = 0xff & (~(1<<_way_));                                     \

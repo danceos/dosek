@@ -2,7 +2,6 @@
 #include "dispatch.h"
 #include "gic.h"
 #include "machine.h"
-#include "util/assert.h"
 #include "os/util/redundant.h"
 
 extern "C" uint8_t _estack_os;

@@ -38,12 +38,17 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
   string(REPLACE " " ";" COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
   SET(DOSEK_GENERATOR_ARGS "")
 
+  # Get the definitions to forward the ADD_DEFINITIONS to the
+  # application (e.g., -DENCODED)
+  get_directory_property(definitions DEFINITIONS)
+  separate_arguments(definitions)
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
     set(llvm_bytecode "${DOSEK_OUTPUT_DIR}/${src}.ll")
     add_custom_command(OUTPUT ${llvm_bytecode}
         COMMAND ${CMAKE_C_COMPILER}
-        ARGS ${COMPILER_FLAGS}
+        ARGS ${COMPILER_FLAGS} 
+        ARGS ${definitions}
         ARGS  -S -emit-llvm -O0 -m32 -std=c++11 ${ISA_CXX_FLAGS} ${DEFINITON_FLAGS} ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
       MAIN_DEPENDENCY ${src}
       DEPENDS ${src}

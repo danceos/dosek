@@ -1,7 +1,6 @@
 #ifndef __ARCH_X86_TCB
 #define __ARCH_X86_TCB
 
-#include "os/util/assert.h"
 #include "os/util/redundant.h"
 
 

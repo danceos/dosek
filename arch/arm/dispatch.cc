@@ -39,7 +39,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	const TCB * const tcb = OS_tcbs[id];
 
 	// set save_sp
-	assert(save_sp.get() == 0);
+	if (save_sp.get() != 0) {
+		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+	}
 	save_sp.set(id);
 
 	// set new page directory
@@ -52,8 +54,6 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 
 	// send end-of-interrupt signal
 	GIC::set_task_prio(IRQ_PRIO_LOWEST);
-	GIC::send_eoi(IRQ_DISPATCH);
-
 
 	if(tcb->is_running()) {
 		// resume from saved IP on stack

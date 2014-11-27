@@ -99,16 +99,16 @@ struct Scheduler  {
 };
 
 void Scheduler::Reschedule(void) {
-        // OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
-        if (current_prio != scheduler_prio) {
-            // set current (=next) task from task list
-            tlist.head(current_task, current_prio);
-        }
-	assert(current_task.check());
-	assert(current_prio.check());
+	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
+	if (current_prio != scheduler_prio) {
+		// set current (=next) task from task list
+		tlist.head(current_task, current_prio);
+	}
+	current_task.check();
+	current_prio.check();
 
-        // dispatch or enter idle
-        // TODO: generated signature
+	// dispatch or enter idle
+	// TODO: generated signature
 {{{snippet:reschedule_dispatch_task:task,desc|if(current_task == %(desc)s.enc_id<1>()) {
     if (%(desc)s.preemptable == false) {
         // promote non-preemptable task to RES_SCHEDULER
@@ -120,7 +120,7 @@ void Scheduler::Reschedule(void) {
         {{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(current_task == TaskList::idle_id) {
             Dispatcher::idle();
         } else {
-            assert(false);
+			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
         }
     }
 

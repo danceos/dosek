@@ -132,7 +132,7 @@ public:
 	}
 
 	decltype(armed_) getArmed () const {
-		assert(armed_.check());
+		armed_.check();
 		return armed_;
 	}
 
@@ -153,7 +153,7 @@ public:
 	}
 
 	decltype(absoluteTime_) getAbsoluteTime () const {
-		assert(absoluteTime_.check());
+		absoluteTime_.check();
 		return absoluteTime_;
 	}
 
@@ -167,7 +167,7 @@ public:
 	}
 
 	decltype(cycleTime_) getCycleTime () const {
-		assert(cycleTime_.check());
+		cycleTime_.check();
 		return cycleTime_;
 	}
 

@@ -48,20 +48,9 @@ public:
 	};
 
 	static value_t decode(value_coded_t vc, A_t A, B_t B, D_t D) {
-		assert(check(vc, A, B, D));
+		check(vc, A, B, D);
 		return static_cast<value_t>((vc - B - D) / A);
 	};
-
-	/* x86 specific _size_ optimization
-	static value_t decode_opt(value_coded_t vc, A_t A, B_t B, D_t D) {
-		assert(vc < static_cast<value_coded_t>((__V_MAX * A) + B + D));
-
-		uint32_t v, rem;
-		asm("xor %%edx, %%edx; divl %2" : "=a"(v), "=d"(rem) : "mr"(static_cast<uint32_t>(A)), "a"(vc - B - D));
-		assert(rem == 0);
-		return static_cast<value_t>(v);
-	};
-	*/
 
 	static bool check(value_coded_t vc, A_t A, B_t B, D_t D)
 	{

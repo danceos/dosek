@@ -121,6 +121,14 @@ class SimpleSystem(BaseRules):
                 # Generate actual call, only if user had defined the hook function
                 self.call_function(hook_function, user_defined, "void", hook_function.arguments_names())
 
+            if hook == "FaultDetectedHook":
+                hook_function.add(Statement("debug << \"FaultDetectedHook \" << arg0<< endl"))
+                self.call_function(hook_function, "ShutdownMachine",
+                                   "void", [])
+                self.call_function(hook_function, "Machine::unreachable",
+                                   "void", [])
+
+
 
 class SimpleArch(BaseRules):
     def __init__(self):

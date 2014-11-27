@@ -87,7 +87,8 @@ class ARMArch(SimpleArch):
         irq_handler_arr = DataObjectArray("arch::irq_handler_t const", "irq_handlers", "",
                                           extern_c = True)
         self.generator.source_file.data_manager.add(irq_handler_arr)
-        for irq in range(0, max(installed_irq_handlers)+1):
+        assert max(installed_irq_handlers)+1 < 96
+        for irq in range(0, 96): # 96 should be enough for everyone
             if irq in installed_irq_handlers:
                 irq_handler_arr.add_static_initializer("irq_handler_%d" % irq)
             else:

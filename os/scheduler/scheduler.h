@@ -6,7 +6,6 @@
 #ifndef __SCHEDULER_H__
 #define __SCHEDULER_H__
 
-#include "util/assert.h"
 #include "scheduler/tasklist.h"
 #include "syscall.h"
 #include "dispatch.h"

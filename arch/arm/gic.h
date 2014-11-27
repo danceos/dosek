@@ -281,7 +281,6 @@ extern "C"  __attribute__((section(".text.irq_handlers"))) irq_handler_t const i
  *
  * This code will be jumped to directly when the interrupt occurs.
  * No context saving or stack adjustment is performed!
- * To finish interrupt handling call arch::GIC::send_eoi(irqno). !
  *
  * \param irqno IRQ number
  */
@@ -314,7 +313,6 @@ extern "C"  __attribute__((section(".text.irq_handlers"))) irq_handler_t const i
  */
 #define ISR_HANDLER(irqno, handler) \
 	IRQ_HNDLR(irqno) {				\
-		arch::GIC::send_eoi(irqno);	\
 		handler();					\
 		return task_sp;			\
 	}

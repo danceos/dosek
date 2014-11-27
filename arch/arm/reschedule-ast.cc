@@ -2,7 +2,6 @@
 #include "dispatch.h"
 #include "gic.h"
 #include "machine.h"
-#include "util/assert.h"
 #include "os/scheduler/scheduler.h"
 
 extern "C" uint8_t _estack_os;
@@ -18,9 +17,6 @@ __attribute__((noreturn)) IRQ_HANDLER(IRQ_RESCHEDULE) {
 
     // reset save_sp to detect IRQ from non-userspace in idt.S
     save_sp.set(0);
-
-    // send end-of-interrupt signal
-    GIC::send_eoi(irq);
 
     // set user SP
     Machine::switch_mode(Machine::SYSTEM);
