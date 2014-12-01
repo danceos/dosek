@@ -1,6 +1,7 @@
 import sys
 from generator.tools import wrap_in_list, stack, IntEnum, unique
 import collections
+import logging
 
 class GraphObject:
     """Any Object that is used within the graph an can be dumped as dot"""
@@ -194,9 +195,11 @@ class Edge:
         return ret
 
     def isA(self, edge_level):
+        if self.level == edge_level:
+            return True
         if isinstance(edge_level, collections.Iterable):
             return self.level in edge_level
-        return self.level == edge_level
+        return False
 
     def __repr__(self):
         return "<%s %s -> %s (%s)>"%(self.__class__.__name__, self.source,
@@ -217,7 +220,7 @@ def dfs(block_functor, take_edge_functor, start_abbs):
     for abb in start_abbs:
         working_stack.append(tuple([None, abb]))
 
-    while len(working_stack) > 0:
+    while working_stack:
         leading_edge, current_block = working_stack.pop()
         # Call the block_functor
         block_functor(leading_edge, current_block)
@@ -242,6 +245,9 @@ class FixpointIteration:
         self.working_stack = list(reversed(starting_objects))
         self.stopped = False
 
+    def __contains__(self, item):
+        return item in self.working_stack
+
     def enqueue_soon(self, item = None, items = None):
         if item and not item in self.working_stack:
             self.working_stack.append(item)
@@ -261,9 +267,13 @@ class FixpointIteration:
 
     def do(self, functor):
         """Functor is called with the fixpoint iteration and the current object."""
+        steps = 0
         while len(self.working_stack) > 0 and not self.stopped:
             item = self.working_stack.pop()
             functor(self, item)
+            steps += 1
+            if steps % 1000 == 0:
+                logging.info(" %d steps (%d in queue)", steps, len(self.working_stack))
 
 
 

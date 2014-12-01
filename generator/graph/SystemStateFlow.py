@@ -24,7 +24,6 @@ class SystemStateFlow(Analysis):
         # A member for the RunningTask analysis
         self.running_task = None
         # States for the fixpoint iteration
-        self.changed_current_block = False
         self.before_abb_states = None
         self.edge_states = None
         self.system_call_semantic = None
@@ -60,17 +59,19 @@ class SystemStateFlow(Analysis):
     def set_state_on_edge(self, source, target, state):
         if not target in source.get_outgoing_nodes(E.state_flow):
             source.add_cfg_edge(target, E.state_flow)
-            self.changed_current_block = True
 
         # We say that on the edge from one ABB to the other one, the
         # running abb is already the target
         state.current_abb = target
-        if (source, target) in self.edge_states:
-            self.edge_states[(source, target)].frozen = False
-            self.edge_states[(source, target)].merge_with(state)
-            self.edge_states[(source, target)].frozen = True
+        if target in self.before_abb_states:
+            self.before_abb_states[target].frozen = False
+            changed = self.before_abb_states[target].merge_with(state)
         else:
-            self.edge_states[(source, target)] = state
+            changed = True
+            self.before_abb_states[target] = state
+        self.before_abb_states[target].frozen = True
+        if changed and not target in self.fixpoint:
+            self.fixpoint.enqueue_later(item = target)
 
     def install_sporadic_events(self):
         # Install the alarm handlers
@@ -100,10 +101,7 @@ class SystemStateFlow(Analysis):
     def block_functor(self, fixpoint, block):
         self.debug("{{{ " + str(block))
 
-        self.changed_current_block, before = \
-                self.update_before_state(self.edge_states,
-                                         self.before_abb_states,
-                                         block, E.state_flow)
+        before = self.before_abb_states[block]
 
         # If this block belongs to a task, it must the highest
         # available task for the input state. Otherwise we wouldn't
@@ -139,12 +137,6 @@ class SystemStateFlow(Analysis):
         for after in after_states:
             self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
 
-        
-        # This has to be done after the system call handling, since
-        # new global links could have been introduced
-        if self.changed_current_block:
-            for node in block.get_outgoing_nodes(E.state_flow):
-                self.fixpoint.enqueue_soon(item = node)
         self.debug("}}}")
 
 
@@ -155,13 +147,18 @@ class SystemStateFlow(Analysis):
         # (ABB, ABB) -> SystemState
         self.edge_states = {}
         # ABB -> SystemState
-        self.before_abb_states = {}
 
         self.system_call_semantic = SystemCallSemantic(self.system_graph, self.running_task)
 
         self.install_sporadic_events()
 
         entry_abb = self.system_graph.functions["StartOS"].entry_abb
+        entry_state = SystemState(self.system_graph)
+        entry_state.current_abb = entry_abb
+        entry_state.freeze()
+
+        self.before_abb_states = {entry_abb: entry_state}
+
         self.fixpoint = FixpointIteration([entry_abb])
         self.fixpoint.do(self.block_functor)
 
@@ -170,11 +167,16 @@ class SystemStateFlow(Analysis):
 
         # Merge SporadicEvents
         for isr in self.sporadic_events:
+            isr.fixup_before_states()
+            if isinstance(isr.wrapped_event, Alarm):
+                counter = self.system_graph.counters[isr.wrapped_event.counter]
+                # Ignore softcounters
+                if counter.softcounter:
+                    continue
             for abb in isr.wrapped_event.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
-                for next_abb in abb.get_outgoing_nodes(E.state_flow_irq):
-                    self.edge_states[(abb, next_abb)] \
-                        = isr.collected_edge_states[(abb, next_abb)]
+
+    
 
         # Record the number of copied system states
         self.system_graph.stats.add_data(self, "copied-system-states",
@@ -236,28 +238,62 @@ class SSF_SporadicEvent(SporadicEvent):
         self.wrapped_event = wrapped_event
 
         self.collected_states = {}
-        self.collected_edge_states = {}
         # Initialize empty states for merging collected states into
         for abb in self.wrapped_event.handler.abbs:
             self.collected_states[abb] = SystemState(self.system_graph)
-            for next_abb in abb.get_outgoing_nodes(E.task_level):
-                self.collected_edge_states[(abb, next_abb)] \
-                    = SystemState(self.system_graph)
 
         # Variables for the fixpoint iterations
-        self.changed_current_block = True
         self.result = None
         self.start_state = None
         self.edge_states = None
         self.before_abb_states = None
         self.fixpoint = None
 
+        irq_entry_state = SystemState(self.system_graph)
+        self.irq_exit_state = SystemState(self.system_graph)
+        for subtask in self.system_graph.get_subtasks():
+            irq_entry_state.set_suspended(subtask)
+            irq_entry_state.set_continuation(subtask, subtask.entry_abb)
+
+        irq_entry_state.set_ready(self.wrapped_event.handler)
+        irq_entry_abb = self.wrapped_event.handler.entry_abb
+        irq_entry_state.current_abb = irq_entry_abb
+
+        self.edge_states = dict()
+        self.before_abb_states = {irq_entry_abb: irq_entry_state}
+
+        self.fixpoint = FixpointIteration([irq_entry_abb])
+        self.fixpoint.do(self.block_functor)
+
+        self.surely_activated = []
+        self.maybe_activated = []
+        self.in_state = SystemState(self.system_graph)
+        for subtask in self.system_graph.get_subtasks():
+            # Only Real Tasks
+            if subtask.is_isr:
+                continue
+            if self.irq_exit_state.is_surely_ready(subtask):
+                self.surely_activated.append(subtask)
+            elif self.irq_exit_state.is_maybe_ready(subtask):
+                self.maybe_activated.append(subtask)
+
+
+    def can_trigger(self, state):
+        return self.wrapped_event.can_trigger(state)
+
+    def do_iret(self, block, before):
+        # When there is no further local abb node, we have reached the
+        # end of the interrupt handler
+        self.irq_exit_state.merge_with(before)
+        self.irq_exit_state.set_suspended(self.wrapped_event.handler)
+
+        return []
+
+
     def block_functor(self, fixpoint, block):
         if block == self.wrapped_event.handler.entry_abb:
             self.changed_current_block = True
-            before = self.start_state.copy()
-            before.set_ready(self.wrapped_event.handler)
-            self.before_abb_states[block] = before
+            before = self.before_abb_states[block]
         else:
             self.changed_current_block, before = \
                 SystemStateFlow.update_before_state(self.edge_states,
@@ -285,15 +321,7 @@ class SSF_SporadicEvent(SporadicEvent):
         # Never leave the handler function here
         assert block.function.subtask == self.wrapped_event.handler.subtask
 
-    def do_iret(self, block, before):
-        # When there is no further local abb node, we have reached the
-        # end of the interrupt handler
-        self.result.merge_with(before)
-        return []
-
-
     def set_state_on_edge(self, source, target, state):
-
         if not target in source.get_outgoing_nodes(E.state_flow_irq):
             source.add_cfg_edge(target, E.state_flow_irq)
             self.changed_current_block = True
@@ -304,51 +332,39 @@ class SSF_SporadicEvent(SporadicEvent):
 
         self.edge_states[(source, target)] = state
 
-    def can_trigger(self, state):
-        return self.wrapped_event.can_trigger(state)
+    def trigger(self, in_state):
+        self.in_state.current_abb = in_state.current_abb
+        self.in_state.merge_with(in_state, return_changed = False)
+        current_subtask = in_state.current_subtask
+        current_abb     = in_state.current_abb
+        # We have also preempted this one
+        self.in_state.add_continuation(current_subtask, current_abb)
+        self.in_state.current_abb = None
 
-    def trigger(self, state):
-        SporadicEvent.trigger(self, state)
-        self.result = state.new()
-        self.start_state = state.copy_if_needed()
-        state = None
-        entry_abb = self.wrapped_event.handler.entry_abb
+        ret_state = in_state.copy()
+        ret_state.set_continuation(current_subtask, current_abb)
 
-        # Save current IP
-        current_subtask = self.start_state.current_abb.function.subtask
-        current_abb     = self.start_state.current_abb
-        self.start_state.set_continuation(current_subtask, current_abb)
+        for subtask in self.surely_activated:
+            # Task was surely activated by ISR
+            ret_state.set_ready(subtask)
+            # If the task is alreay surely running, we cannot add
+            # the entry_abb
+            if not ret_state.is_surely_ready(subtask):
+                ret_state.add_continuation(subtask, subtask.entry_abb)
+        for subtask in self.maybe_activated:
+            # Task was maybe activated by ISR
+            if not ret_state.is_surely_ready(subtask):
+                ret_state.set_unsure(subtask)
+                # If the task is alreay surely running, we cannot add
+                # the entry_abb
+                ret_state.add_continuation(subtask, subtask.entry_abb)
 
-        # Clean old IRQ edges
+        return ret_state
+
+    def fixup_before_states(self):
         for abb in self.wrapped_event.handler.abbs:
-            for edge in abb.get_outgoing_edges(E.state_flow_irq):
-                abb.remove_cfg_edge(edge.target, E.state_flow_irq)
-
-        self.edge_states = dict()
-        self.before_abb_states = dict()
-
-        self.fixpoint = FixpointIteration([entry_abb])
-        self.fixpoint.do(self.block_functor)
-
-        # fixup current running abb for entry_abb
-        self.before_abb_states[entry_abb].current_abb = entry_abb
-
-        # Merge calculated before-block states into the merged states
-        for abb in self.wrapped_event.handler.abbs:
-            self.collected_states[abb].merge_with(
-                self.before_abb_states[abb]
-                )
-            for next_abb in abb.get_outgoing_nodes(E.state_flow_irq):
-                self.collected_edge_states[(abb, next_abb)].merge_with(
-                    self.edge_states[(abb, next_abb)]
-                )
-
-        # IRET
-        self.result.set_suspended(self.wrapped_event.handler)
-        self.result.current_abb = current_abb
-
-        return self.result
-
+            self.in_state.current_abb = abb
+            self.collected_states[abb].merge_with(self.in_state)
 
 class SSF_GlobalAbbInformation(GlobalAbbInfo):
     def __init__(self, analysis, abb):
@@ -368,7 +384,7 @@ class SSF_GlobalAbbInformation(GlobalAbbInfo):
 
         states = []
         for edge in edges:
-            states.append(self.analysis.edge_states[(edge.source, edge.target)])
+            states.append(self.analysis.before_abb_states[edge.target])
         return states
 
     @property

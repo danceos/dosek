@@ -1,6 +1,7 @@
 from generator.tools import stack, unwrap_seq, panic
 from generator.graph.AtomicBasicBlock import E, S
 from generator.graph.Sporadic import Alarm
+from generator.graph.Subtask import Subtask
 from generator.graph.common import Node, Edge, EdgeType, NodeType
 
 
@@ -76,7 +77,7 @@ class SystemCallSemantic:
             cont = block.definite_after(E.task_level)
             after.set_continuation(self.running_task.for_abb(block),
                                    cont)
-            activated = alarm.carried_syscall.arguments[0]
+            activated = alarm.subtask
             if not after.is_surely_ready(activated):
                 after.add_continuation(activated, activated.entry_abb)
             after.set_ready(activated)
@@ -229,9 +230,11 @@ class SystemCallSemantic:
 
             copy_state.current_abb = target
             # If the target is not in the idle loop, we reset the idle
-            # loop, since it always starts from the beginning.
+            # loop, since it always starts from the beginning. But
+            # only if the target is not an ISR2
             if not target.function.subtask or \
-               target.function.subtask != self.system_graph.idle_subtask:
+               (target.function.subtask != self.system_graph.idle_subtask \
+                and not target.function.subtask.is_isr):
                 copy_state.set_continuation(self.system_graph.idle_subtask,
                                             self.system_graph.idle_subtask.entry_abb)
 
@@ -312,6 +315,10 @@ class SystemState(Node):
         assert not self.frozen
         self.states[subtask.subtask_id] = self.READY
 
+    def set_unsure(self, subtask):
+        assert not self.frozen
+        self.states[subtask.subtask_id] = self.READY | self.SUSPENDED
+
     ## Ready state accessors
 
     def is_surely_suspended(self, subtask):
@@ -331,6 +338,8 @@ class SystemState(Node):
 
     ## Continuations
     def get_continuations(self, subtask):
+        if type(subtask) == int:
+            return self.continuations[subtask]
         return self.continuations[subtask.subtask_id]
 
     def set_continuation(self, subtask, abb):
@@ -359,12 +368,14 @@ class SystemState(Node):
     def was_surely_not_kickoffed(self, subtask):
         """Returns whether a task can only continue in the kickoff block."""
         assert subtask.entry_abb.isA(S.kickoff)
+        assert len(self.get_continuations(subtask)) > 0, str(self)
         is_entry = [subtask.entry_abb == x for x in self.get_continuations(subtask)]
         return all(is_entry)
 
     def was_surely_kickoffed(self, subtask):
         """Returns whether a task can only be continued."""
         assert subtask.entry_abb.isA(S.kickoff)
+        assert len(self.get_continuations(subtask)) > 0, str(self)
         is_not_entry = [subtask.entry_abb != x for x in self.get_continuations(subtask)]
         return all(is_not_entry)
 
@@ -407,12 +418,14 @@ class SystemState(Node):
 
     @property
     def current_subtask(self):
+        if not self.current_abb:
+            return None
         return self.current_abb.function.subtask
 
     def freeze(self):
         self.frozen = True
 
-    def merge_with(self, other):
+    def merge_with(self, other, return_changed = True):
         """Returns a newly created state that is the result of the merge of
            self and the other state"""
         assert not self.frozen
@@ -420,18 +433,19 @@ class SystemState(Node):
             "%s != %s" %(self.current_abb.path(), other.current_abb.path())
         self.current_abb = other.current_abb
         changed = False
-        for subtask in self.get_unordered_subtasks():
-            old_state = self.states[subtask.subtask_id]
-            continuations_count = len(self.continuations[subtask.subtask_id])
-            self.states[subtask.subtask_id] |= other.states[subtask.subtask_id]
-            self.continuations[subtask.subtask_id] |= other.get_continuations(subtask)
+        for subtask_id in range(0, Subtask.subtask_id_counter):
+            old_state = self.states[subtask_id]
+            continuations_count = len(self.continuations[subtask_id])
+            self.states[subtask_id] |= other.states[subtask_id]
+            self.continuations[subtask_id] |= other.get_continuations(subtask_id)
             # Check whether one set has changed
-            if self.states[subtask.subtask_id] != old_state \
-               or len(self.continuations[subtask.subtask_id]) != continuations_count:
+            if return_changed and \
+               ( self.states[subtask_id] != old_state \
+                 or len(self.continuations[subtask_id]) != continuations_count):
                 changed = True
 
             # We cannot merge call stacks!
-            self.call_stack[subtask.subtask_id] = None
+            self.call_stack[subtask_id] = None
         return changed
 
     @staticmethod
@@ -451,7 +465,11 @@ class SystemState(Node):
         return "|".join(ret)
 
     def __repr__(self):
-        ret = "<SystemState: %s>\n" %(self.current_abb.path())
+        if self.current_abb:
+            ret = "<SystemState: %s>\n" %(self.current_abb.path())
+        else:
+            ret = "<SystemState: -->\n"
+
         for subtask in self.get_subtasks():
             ret += "  %02x%02x %s: %s in %s \n" %(
                 id(self.states[subtask.subtask_id]) % 256,
@@ -558,6 +576,9 @@ class PreciseSystemState(SystemState):
 
     ## Continuations
     def get_continuations(self, subtask):
+        if type(subtask) == int:
+            return set([self.continuations[subtask]])
+
         return set([self.continuations[subtask.subtask_id]])
 
     def set_continuation(self, subtask, abb):

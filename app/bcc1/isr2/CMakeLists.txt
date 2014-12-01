@@ -34,4 +34,13 @@ DOSEK_BINARY(
   d.cc
 )
 
+DOSEK_BINARY(
+  NAME bcc1_isr2e
+  SYSTEM_DESC system.xml
+  VERIFY verify_e.py
+  LIBS libtest
+  TEST_ISO
+  e.cc
+)
+
 

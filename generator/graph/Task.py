@@ -33,6 +33,8 @@ class Task(GraphObject):
 
     def add_subtask(self, subtask):
         subtask.task = self
+        # Clear the LRU Cache
+        self.system_graph.get_subtasks.cache_clear()
         self.subtasks.append(subtask)
 
     def add_function(self, function):

@@ -9,6 +9,7 @@ from generator.graph.Resource import Resource
 from generator.graph.common import GraphObject
 from generator.statistics import Statistics
 from collections import namedtuple
+import functools
 
 
 class SystemGraph(GraphObject, PassManager):
@@ -62,6 +63,7 @@ class SystemGraph(GraphObject, PassManager):
     def get_abbs(self):
         return self.all_abbs.values()
 
+    @functools.lru_cache(maxsize=None)
     def get_subtasks(self):
         subtasks = []
         for x in self.tasks:

@@ -125,7 +125,8 @@ class RunningTaskToolbox(GlobalABBInfoToolbox):
             abb_info = self.analysis.for_abb(abb)
             if not abb_info:
                 continue
-            assert abb_info.state_before.current_abb == abb, "%s is weird"
+            assert abb_info.state_before.current_abb == abb, "[%s]=%s is weird" % \
+                (abb, abb_info.state_before)
             for state in abb_info.states_after:
                 assert state.current_abb != None
                 assert state.current_abb in abb.get_outgoing_nodes(E.state_flow)
