@@ -11,12 +11,13 @@ class AssertionType(Enum):
 
 
 class Assertion:
-    def __init__(self, _type, _arguments):
+    def __init__(self, _type, _arguments, prio = 0):
         self.Type = _type
         self.arguments = _arguments
+        self.prio = prio
 
     def __repr__(self):
-        return "<assert.%s%s>" %(self.Type.name, self.arguments)
+        return "<assert.%s%s prio=%d>" %(self.Type.name, self.arguments, self.prio)
 
     def __hash__(self):
         return hash(self.Type)
@@ -49,6 +50,7 @@ class GenerateAssertionsPass(Analysis):
         self.abb_info          = None
         self.assertions_before = None
         self.assertions_after  = None
+        self.max_assertions_per_syscall = 45
 
     def requires(self):
         return ["ConstructGlobalCFG"]
@@ -58,22 +60,31 @@ class GenerateAssertionsPass(Analysis):
 
     def state_asserts(self, abb, state):
         ret = []
+
         for subtask in self.system_graph.get_subtasks():
             # Only for real tasks
             if not subtask.is_real_thread():
                 continue
+
+            # Lower is better
+            prio = abs(abb.dynamic_priority - subtask.static_priority)
+
             if state.is_surely_ready(subtask):
-                ret.append(Assertion(AssertionType.TaskIsReady, [subtask]))
+                ret.append(Assertion(AssertionType.TaskIsReady, [subtask],
+                                     prio = prio))
             if state.is_surely_suspended(subtask):
-                ret.append(Assertion(AssertionType.TaskIsSuspended, [subtask]))
+                ret.append(Assertion(AssertionType.TaskIsSuspended, [subtask],
+                                     prio = prio))
 
             # Since we come from the current stack, it is quite sure,
             # were we came from
             if state.current_subtask != subtask:
                 if state.was_surely_not_kickoffed(subtask):
-                    ret.append(Assertion(AssertionType.TaskWasNotKickoffed, [subtask]))
+                    ret.append(Assertion(AssertionType.TaskWasNotKickoffed, [subtask],
+                                         prio = prio * 1.5))
                 if state.was_surely_kickoffed(subtask):
-                    ret.append(Assertion(AssertionType.TaskWasKickoffed, [subtask]))
+                    ret.append(Assertion(AssertionType.TaskWasKickoffed, [subtask],
+                                         prio = prio * 1.5))
         return ret
 
     def state_assertions_before(self, abb):
@@ -161,15 +172,39 @@ class GenerateAssertionsPass(Analysis):
         logging.info(" + %d/%d assertions generated for %d syscalls", 
                      count_before, count_after, len(working_abbs))
 
+        # Limit the maximal assertions to
+        # max_assertions_per_syscall. After system call asserts are
+        # more important, since they capture the influence of a system
+        # call to the system state.
+        pruned_before = 0
+        pruned_after = 0
+        for abb in working_abbs:
+            asserts_left = self.max_assertions_per_syscall
+            x = sorted(self.assertions_after[abb], key = lambda x: x.prio)
+            self.assertions_after[abb] = list(x[:asserts_left])
+            asserts_left -= len(self.assertions_after[abb])
+            if asserts_left < 0:
+                asserts_left = 0
+
+            x = sorted(self.assertions_before[abb], key = lambda x: x.prio)
+            self.assertions_before[abb] = list(x[:asserts_left])
+
+            pruned_before += len(self.assertions_before[abb])
+            pruned_after  += len(self.assertions_after[abb])
+
+        logging.info(" + %d/%d (%d/%d) assertions generated for %d syscalls",
+                     pruned_before, pruned_after,
+                     (pruned_before - count_before),
+                     (pruned_after - count_after),
+                     len(working_abbs))
+
 
     def system_enter_hook(self, generator, abb, hook):
         """This function is called by the code generation, when the system
            enter hook should be filled"""
-        for each in self.assertions_before[abb]:
-            generator.syscall_rules.do_assertion(hook, each)
+        generator.syscall_rules.do_assertions(hook, self.assertions_before[abb])
 
     def system_leave_hook(self, generator, abb, hook):
         """This function is called by the code generation, when the system
            leave hook should be filled"""
-        for each in self.assertions_after[abb]:
-            generator.syscall_rules.do_assertion(hook, each)
+        generator.syscall_rules.do_assertions(hook, self.assertions_after[abb])

@@ -93,8 +93,8 @@ struct Scheduler  {
 		tlist.set(task.id, new_prio_encoded);
 	}
 
-	forceinline bool isSuspended(const Task &task) {
-		return tlist.isSuspended(task.id);
+	forceinline uint32_t isReady(const Task &task) {
+		return tlist.isReady(task.id);
 	}
 };
 

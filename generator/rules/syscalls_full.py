@@ -1,6 +1,6 @@
 from generator.rules.base import BaseRules
 from generator.graph.AtomicBasicBlock import E
-from generator.elements import Statement, Comment, Function, VariableDefinition
+from generator.elements import Statement, Comment, Function, VariableDefinition, Block
 from generator.graph.GenerateAssertions import AssertionType
 from generator.tools import panic
 
@@ -199,24 +199,40 @@ class FullSystemCalls(BaseRules):
         self.enable_irq(userspace, abb)
 
     # Assertions
-    def do_assertion(self, block, assertion):
+    def do_assertions(self, block, assertions):
+        should_equal_zero = []
+        should_unequal_zero = []
+        for a in assertions:
+            (equal_zero, cond) = self.__do_assertion(a)
+            if equal_zero:
+                should_equal_zero.append(cond)
+            else:
+                should_unequal_zero.append(cond)
+
+        call_hook = Statement("CALL_HOOK(FaultDetectedHook, STATE_ASSERTdetected, __LINE__, 0)")
+        if should_equal_zero:
+            check = Block("if ((%s) != 0)" % "  | ".join(should_equal_zero))
+            check.add(call_hook)
+            block.add(check)
+        if should_unequal_zero:
+            check = Block("if ((%s) == 0)" % " * ".join(should_unequal_zero))
+            check.add(call_hook)
+            block.add(check)
+
+
+    def __do_assertion(self, assertion):
+        task = assertion.get_arguments()[0]
         if assertion.isA(AssertionType.TaskIsSuspended):
-            task = assertion.get_arguments()[0]
-            cond = "scheduler_.isSuspended(%s)" % self.task_desc(task)
+            cond = "scheduler_.isReady(%s)" % self.task_desc(task)
+            return (True, cond)
         elif assertion.isA(AssertionType.TaskIsReady):
-            task = assertion.get_arguments()[0]
-            cond = "!scheduler_.isSuspended(%s)" % self.task_desc(task)
+            cond = "scheduler_.isReady(%s)" % self.task_desc(task)
+            return (False, cond)
         elif assertion.isA(AssertionType.TaskWasKickoffed):
-            task = assertion.get_arguments()[0]
             cond = "%s.tcb.is_running()" % self.task_desc(task)
+            return (False, cond)
         elif assertion.isA(AssertionType.TaskWasNotKickoffed):
-            task = assertion.get_arguments()[0]
-            cond =  "!(%s.tcb.is_running())" % self.task_desc(task)
+            cond =  "%s.tcb.is_running()" % self.task_desc(task)
+            return (True, cond)
         else:
             panic("Unsupported assert type %s in %s", assertion, block)
-
-        block.add(Statement("color_assert(%s, COLOR_ASSERT_SYSTEM_STATE)" % \
-                            cond))
-
-
-

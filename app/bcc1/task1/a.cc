@@ -48,7 +48,7 @@ TASK(Handler13) {
 }
 
 FaultDetectedHook() {
-	kout << "Failure" << endl;
+	kout << "Failure " << (int)type << " " << arg1<<  endl;
 }
 
 PreIdleHook() {
