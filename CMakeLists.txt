@@ -24,6 +24,13 @@ else()
 	message(STATUS "[${PROJECT_NAME}] Building UNencoded system")
 endif()
 
+if(GENERATOR_ARGS)
+  message(STATUS "[${PROJECT_NAME}] Additional Generator Arguments: ${GENEATOR_ARGS}")
+  add_definitions(-DGENERATOR_ARGS="${GENERATOR_ARGS}")
+else()
+  set(GENEATOR_ARGS "" CACHE STRING "")
+endif()
+
 OPTION(SPECIALIZE_SYSTEMCALLS "Specialized systemcalls" OFF)
 if(SPECIALIZE_SYSTEMCALLS)
 	message(STATUS "[${PROJECT_NAME}] Specialized Systemcalls: ON")

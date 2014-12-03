@@ -35,6 +35,8 @@ def main():
                       help="Enable memory protection (default: yes)")
     parser.add_option('', '--specialize', dest='SPECIALIZE', default = "no",
                       help="Use system analysis for specialized system calls (default: no)")
+    parser.add_option('', '--generator-args', dest='GENERATOR_ARGS', default = "",
+                      help="Arguments for the system generator (default: )")
     parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
                       help="Trace all testcases")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
@@ -69,6 +71,7 @@ def main():
     logging.info("Encoded System: %s", options.ENCODED_SYSTEM)
     logging.info("MPU Protection: %s", options.MPU_PROTECTION)
     logging.info("Specialized Systemcalls: %s", options.SPECIALIZE_SYSTEMCALLS)
+    logging.info("Generator Arguments: %s", options.GENERATOR_ARGS)
     logging.info("Fail Trace All: %s", options.FAIL_TRACE_ALL)
 
 
@@ -88,6 +91,7 @@ def main():
                      "-DENCODED_SYSTEM=%s" % options["ENCODED_SYSTEM"],
                      "-DMPU_PROTECTION=%s" % options["MPU_PROTECTION"],
                      "-DSPECIALIZE_SYSTEMCALLS=%s" % options["SPECIALIZE_SYSTEMCALLS"],
+                     "-DGENERATOR_ARGS='%s'"%options["GENERATOR_ARGS"],
                      "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
                      options["REPODIR"]])
 
