@@ -185,8 +185,8 @@ macro(fail_targets TNAME ELF TEST)
 	# import objdump
 	set(OBJDUMPED_FILE ${FAIL_DIR}/.objdumped.${TEST})
 	add_custom_command(
-		COMMAND ${FAIL_IMPORT} ${FAIL_OPTS} -t ${TRACEFILE} -i ObjdumpImporter
-			-e ${ELF} --objdump ${OBJDUMP} --sources --debug
+		COMMAND ${FAIL_IMPORT} ${FAIL_OPTS} -t ${TRACEFILE} -i ElfImporter
+			-e ${ELF} --objdump ${OBJDUMP} --sources
 		COMMAND ${CMAKE_COMMAND} -E touch ${OBJDUMPED_FILE}
 		COMMENT "Importing ${ELF} into database for ${FAIL_VARIANT}/${BENCHMARK}"
 		WORKING_DIRECTORY ${FAIL_DIR}
@@ -219,8 +219,8 @@ macro(fail_targets TNAME ELF TEST)
 	set(IMPORTED_FILE ${FAIL_DIR}/.imported.${TEST})
 	add_custom_command(
 		DEPENDS ${TRACEFILE} ${ELF} ${IMPORTER_DEPEND} ${OBJDUMPED_FILE}
-		COMMAND ${FAIL_IMPORT} -t ${TRACEFILE} -i ${IMPORTER}
-			-e ${ELF} ${FAIL_OPTS} ${IMPORTER_ARGS}
+		COMMAND ${FAIL_IMPORT} -t ${TRACEFILE} -i ${IMPORTER} ${FAIL_OPTS} ${IMPORTER_ARGS}
+		COMMAND ${FAIL_IMPORT} -t ${TRACEFILE} -i FullTraceImporter ${FAIL_OPTS} ${IMPORTER_ARGS}
 		COMMAND ${CMAKE_COMMAND} -E touch ${IMPORTED_FILE}
 		COMMENT "Importing ${ELF} into database for ${FAIL_VARIANT}/${BENCHMARK}"
 		WORKING_DIRECTORY ${FAIL_DIR}

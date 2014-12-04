@@ -2,7 +2,7 @@
 # removes -rdynamic from the linker, which llvm-ld does not support.
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_C_ARCH "i386")
-set(CMAKE_C_FLAGS "-march=${CMAKE_C_ARCH} -fno-builtin -ffreestanding -m32 -Wall -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
+set(CMAKE_C_FLAGS "-march=${CMAKE_C_ARCH} -g -fno-builtin -ffreestanding -m32 -Wall -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
 set(CMAKE_ASM_FLAGS "-Qunused-arguments -fno-builtin " CACHE STRING "ASMFLAGS")
 
@@ -57,7 +57,7 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 ## Add *additional* architecture specific compiler flags here.
 # Note that the flags set in toolchain.cmake are still present and used.
-set(ISA_C_FLAGS "-fno-builtin -S -emit-llvm -O0 -m32" CACHE INTERNAL STRING)
+set(ISA_C_FLAGS "-fno-builtin -S -emit-llvm -O0 -g -m32" CACHE INTERNAL STRING)
 set(ISA_CXX_FLAGS "-fno-builtin" CACHE INTERNAL STRING)
 set(ISA_ASM_FLAGS "-fno-builtin -m32" CACHE INTERNAL STRING)
 set(ISA_LD_FLAGS "-fno-builtin -m32 -static -nostdlib -Qunused-arguments -Wl,--build-id=none" CACHE INTERNAL STRING)

@@ -175,8 +175,7 @@ SECTIONS {
         *(".data*")
         *(COMMON);
         _edata = .;
-    }
-
+	}
     /* Memory-mapped I/O APIC */
     _sioapic = 0xFEC00000;
     ioapic = 0xFEC00000;
