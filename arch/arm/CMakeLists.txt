@@ -14,8 +14,8 @@ add_subdirectory(platforms)
 dosek_include_dir(${ARCH_INCLUDE_DIRS})
 
 # Build option to disable MMU protection
-option(MPU_PROTECTION "Use MPU protection" OFF)
-if(NOT MPU_PROTECTION)
+option(dOSEK_MPU_PROTECTION "Use MPU protection" OFF)
+if(NOT dOSEK_MPU_PROTECTION)
 	message(STATUS "[${PROJECT_NAME}] Disabling MPU protection")
 	add_definitions(-DMPU_DISABLED)
 endif()

@@ -10,8 +10,8 @@ set(DEBUG_PORT ${DPORT} CACHE STRING "Debug (stub) port")
 message(STATUS "[${PROJECT_NAME}] Using port ${DEBUG_PORT} for debug stub")
 
 # Build option to disable MMU protection
-option(MPU_PROTECTION "Use MPU protection" ON)
-if(NOT MPU_PROTECTION)
+option(dOSEK_MPU_PROTECTION "Use MPU protection" ON)
+if(NOT dOSEK_MPU_PROTECTION)
 	message(STATUS "[${PROJECT_NAME}] Disabling MPU protection")
 	add_definitions(-DMPU_DISABLED)
 endif()

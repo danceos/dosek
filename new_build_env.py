@@ -35,6 +35,10 @@ def main():
                       help="Enable memory protection (default: yes)")
     parser.add_option('', '--specialize', dest='SPECIALIZE', default = "no",
                       help="Use system analysis for specialized system calls (default: no)")
+    parser.add_option('', '--state-asserts', dest='STATE_ASSERTS', default = "no",
+                      help="Generate OS state assertions (default: no)")
+    parser.add_option('', '--sse', dest='SSE', default = "no",
+                      help="Enable symbolic system execution (default: no)")
     parser.add_option('', '--generator-args', dest='GENERATOR_ARGS', default = "",
                       help="Arguments for the system generator (default: )")
     parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
@@ -59,18 +63,22 @@ def main():
 
     options.GENERATOR = generator_dict[options.GENERATOR]
     options.REPODIR   = base_dir
-    options.ENCODED_SYSTEM = cmake_bool(options.ENCODED == "yes")
-    options.MPU_PROTECTION = cmake_bool(options.MPU == "yes")
-    options.SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE == "yes")
+    options.dOSEK_ENCODED_SYSTEM = cmake_bool(options.ENCODED == "yes")
+    options.dOSEK_MPU_PROTECTION = cmake_bool(options.MPU == "yes")
+    options.dOSEK_SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE == "yes")
+    options.dOSEK_STATE_ASSERTS = cmake_bool(options.STATE_ASSERTS == "yes")
+    options.dOSEK_SSE = cmake_bool(options.SSE == "yes")
     options.FAIL_TRACE_ALL = cmake_bool(options.FAIL_TRACE_ALL == "yes")
 
 
 
     logging.info("Build System: %s", options.GENERATOR)
     logging.info("Arch: %s", options.ARCH)
-    logging.info("Encoded System: %s", options.ENCODED_SYSTEM)
-    logging.info("MPU Protection: %s", options.MPU_PROTECTION)
-    logging.info("Specialized Systemcalls: %s", options.SPECIALIZE_SYSTEMCALLS)
+    logging.info("Encoded System: %s", options.dOSEK_ENCODED_SYSTEM)
+    logging.info("MPU Protection: %s", options.dOSEK_MPU_PROTECTION)
+    logging.info("Specialized Systemcalls: %s", options.dOSEK_SPECIALIZE_SYSTEMCALLS)
+    logging.info("State Asserts: %s", options.dOSEK_STATE_ASSERTS)
+    logging.info("Symbolic System Execution: %s", options.dOSEK_SSE)
     logging.info("Generator Arguments: %s", options.GENERATOR_ARGS)
     logging.info("Fail Trace All: %s", options.FAIL_TRACE_ALL)
 
@@ -88,9 +96,11 @@ def main():
                      '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain_file,
                      "-DCMAKE_BUILD_TYPE=Release",
                      "-G", options["GENERATOR"],
-                     "-DENCODED_SYSTEM=%s" % options["ENCODED_SYSTEM"],
-                     "-DMPU_PROTECTION=%s" % options["MPU_PROTECTION"],
-                     "-DSPECIALIZE_SYSTEMCALLS=%s" % options["SPECIALIZE_SYSTEMCALLS"],
+                     "-DdOSEK_ENCODED_SYSTEM=%s" % options["dOSEK_ENCODED_SYSTEM"],
+                     "-DdOSEK_MPU_PROTECTION=%s" % options["dOSEK_MPU_PROTECTION"],
+                     "-DdOSEK_SPECIALIZE_SYSTEMCALLS=%s" % options["dOSEK_SPECIALIZE_SYSTEMCALLS"],
+                     "-DdOSEK_STATE_ASSERTS=%s" % options["dOSEK_STATE_ASSERTS"],
+                     "-DdOSEK_SSE=%s" % options["dOSEK_SSE"],
                      "-DGENERATOR_ARGS='%s'"%options["GENERATOR_ARGS"],
                      "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
                      options["REPODIR"]])

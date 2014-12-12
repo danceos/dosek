@@ -76,7 +76,7 @@ macro(fail_targets TNAME ELF TEST)
 	if(NOT ENCODED_SYSTEM)
 		set(BENCHMARK "${BENCHMARK}-unencoded")
 	endif()
-	if(NOT MPU_PROTECTION)
+	if(NOT dOSEK_MPU_PROTECTION)
 		set(BENCHMARK "${BENCHMARK}-nompu")
 	endif()
 
