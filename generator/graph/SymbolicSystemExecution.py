@@ -104,7 +104,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         old_copy_count = SystemState.copy_count
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
 
-        # Instanciate a new system call semantic
+        # Instantiate a new system call semantic
         self.system_call_semantic = SystemCallSemantic(self.system_graph, self.running_task)
         scc = self.system_call_semantic
 
@@ -133,7 +133,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.Idle            : scc.do_Idle,
                             S.iret            : scc.do_TerminateTask}
 
-        # Instanciate the big dict (State->State)
+        # Instantiate the big dict (State->State)
         self.states = {}
 
         entry_abb = self.system_graph.functions["StartOS"].entry_abb
@@ -157,7 +157,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
             # State was already marked as done!
             if current in self.states:
-                # Althoug it was already done, we have to add the edge
+                # Although it was already done, we have to add the edge
                 # noted in the working stack.
                 current = self.states[current]
                 before_current.add_cfg_edge(current, StateTransition)

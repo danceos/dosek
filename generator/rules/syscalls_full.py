@@ -38,7 +38,7 @@ class FullSystemCalls(BaseRules):
             if subtask.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
-        # Bootstrap Do the initial syscall
+        # Bootstrap: Do the initial syscall
         dispatch_func = Function("__OS_StartOS_dispatch", "void", ["int"], extern_c = True)
         self.objects["__OS_StartOS_dispatch"] = dispatch_func
         self.generator.source_file.function_manager.add(dispatch_func)

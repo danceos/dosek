@@ -39,7 +39,7 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
         return self.representant_states.keys()
 
     class SimpleEdge:
-        def __init__(self, source, target, label='', 
+        def __init__(self, source, target, label='',
                      color = 'black'):
             self.source = source
             self.target = target

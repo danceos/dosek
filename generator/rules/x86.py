@@ -92,7 +92,7 @@ class X86Arch(SimpleArch):
         self.call_function(handler, "LAPIC::send_eoi", "void", [])
 
     def generate_kernelspace(self, userspace, abb, arguments):
-        """When a systemcall is done from a app (synchroanous syscall), then we
+        """When a systemcall is done from a app (synchronous syscall), then we
            disable interrupts. In the interrupt handler they are already
            disabled.
         """
