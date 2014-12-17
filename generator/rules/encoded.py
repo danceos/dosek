@@ -98,8 +98,6 @@ class EncodedSystem(UnencodedSystem):
         if Type in self.return_variables:
             return self.return_variables[Type]
 
-        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
-
         var = DataObject("os::redundant::WithLinkage<uint32_t, os::redundant::MergedDMR>",
                          "syscall_return_%s" % Type)
         self.generator.source_file.data_manager.add(var)

@@ -35,6 +35,14 @@ if(dOSEK_RETRY_SCHEDULER)
 else()
 endif()
 
+OPTION(dOSEK_STATE_REPLICATOR "OS state replication and correction" OFF)
+if(dOSEK_STATE_REPLICATOR)
+	message(STATUS "[${PROJECT_NAME}] Enabling OS state replication.")
+    add_definitions(-DdOSEK_STATE_REPLICATOR)
+else()
+endif()
+
+
 list(REMOVE_DUPLICATES GENERATOR_ARGS)
 
 OPTION(dOSEK_SSE "Perform symbolic system execution.")

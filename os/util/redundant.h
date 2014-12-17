@@ -92,6 +92,60 @@ class MergedDMR {
 	 }
  };
 
+class EmptyReplicator {
+ public:
+    void update(void) const {};
+    void check(void) const {};
+};
+
+template<typename T>
+class ClassicTMR  {
+	 T&  orig;
+     T rep1;
+     T rep2;
+ public:
+	 ClassicTMR(T &t) : orig(t), rep1(t), rep2(t) {};
+
+	 inline void update(void) {
+		rep1 = orig;
+        rep2 = orig;
+	 }
+
+     void check(void) {
+        if(!check_and_fix()) {
+            CALL_HOOK(FaultDetectedHook, TMRdetected, 0, 0);
+        }
+     }
+
+ private:
+	 inline bool check_and_fix(void) {
+        if((orig == rep1) && (orig == rep2)) {
+            return true;
+        }
+
+        kout << "TMR: Trying to fix" << endl;
+        if(orig == rep1) {  // rep2 wrong
+            rep2 = orig;    // fix
+            return true;
+        }
+
+        if(orig == rep2) {  // rep1 wrong
+            rep1 = orig;    // fix
+            return true;
+        }
+
+        if(rep1 == rep2) { // orig wrong
+            orig = rep1;
+            return true;
+        }
+
+        kout << "TMR: oO :( " << endl;
+		return false;
+	 }
+ };
+
+
+
 
 } }
 

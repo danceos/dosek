@@ -23,6 +23,7 @@ class UnencodedSystem(SimpleSystem):
         self.generator.source_file.declarations.append(self.scheduler(self).expand())
 
         self.generator.source_file.includes.add(Include("os/alarm.h"))
+        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
         self.generator.source_file.declarations.append(self.alarms(self).expand())
 
     def convert_argument(self, block, argument):
@@ -145,8 +146,6 @@ class UnencodedSystem(SimpleSystem):
         """
         if Type in self.return_variables:
             return self.return_variables[Type]
-
-        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
 
         var = DataObject("os::redundant::WithLinkage<uint16_t, os::redundant::Plain>",
                          "syscall_return_%s" % Type)

@@ -3,6 +3,12 @@ namespace scheduler {
 
 using namespace os::tasks;
 
+#ifdef dOSEK_STATE_REPLICATOR
+extern os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_;
+#else
+extern os::redundant::EmptyReplicator state_replicator_;
+#endif
+
 struct Scheduler  {
     os::scheduler::TaskList tlist;
 
@@ -27,6 +33,8 @@ struct Scheduler  {
 
 	void forceinline SetReady_impl(const Task &task) {
 		tlist.insert(task.id, EC(2, task.prio));
+
+        state_replicator_.update();
 	}
 
 	void forceinline SetSuspended_impl(const Task &t) {
@@ -38,21 +46,29 @@ struct Scheduler  {
 			// this is required for the optimization in Reschedule()
 			current_prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
 		}
+
+        state_replicator_.update();
 	}
 
 
     forceinline void ActivateTask_impl(const Task &to) {
+        state_replicator_.check();
+
 		SetReady_impl(to);
 		Schedule_impl();
     }
 
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
+        state_replicator_.check();
+
         SetSuspended_impl(from);
 		SetReady_impl(to);
 		Schedule_impl();
     }
 
     forceinline void TerminateTask_impl(const Task &from) {
+        state_replicator_.check();
+
         SetSuspended_impl(from);
         Schedule_impl();
     }
@@ -70,6 +86,8 @@ struct Scheduler  {
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
 		SetPriority(task, task.prio);
+
+        state_replicator_.update();
     }
 
 	// Low level interface to the task list
@@ -80,6 +98,8 @@ struct Scheduler  {
 			current_prio = scheduler_prio;
 		}
 		current_task = task.enc_id<1>();
+
+        state_replicator_.update();
 	}
 
 	forceinline void SetSystemPriority(const int new_prio) {
@@ -91,6 +111,8 @@ struct Scheduler  {
 	forceinline void SetPriority(const Task &task, const int new_prio) {
 		auto new_prio_encoded = EC(2, new_prio);
 		tlist.set(task.id, new_prio_encoded);
+
+        state_replicator_.update();
 	}
 
 	forceinline uint32_t isReady(const Task &task) {
@@ -144,6 +166,11 @@ void Scheduler::Reschedule(void) {
 constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> Scheduler::scheduler_prio;
 Scheduler scheduler_;
 
+#ifdef dOSEK_STATE_REPLICATOR
+os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.tlist);
+#else
+os::redundant::EmptyReplicator state_replicator_;
+#endif
 
 }; // namespace scheduler
 }; // namespace os
