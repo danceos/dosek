@@ -86,6 +86,8 @@ if __name__ == "__main__":
     parser.add_argument("--output", "-o", metavar='OUT', help='The file to generate')
     parser.add_argument("--linker-prefix", metavar='PREFIX', help='Output file prefix')
     parser.add_argument("--llvm-dir", metavar='LLVM_DIR', help='Where are the llvm binaries located')
+    parser.add_argument("--march", metavar='MARCH', help='Target Architecture for llc [arm|x86]')
+    parser.add_argument("--mcpu", metavar='MCPU', help='Target CPU for llc [cortex-a9|i386')
     parser.add_argument("--clang", metavar='CLANG_BINARY', help='Clang binary location')
 
     args, unkown_args = parser.parse_known_args()
@@ -97,6 +99,16 @@ if __name__ == "__main__":
     linker_flags = [x for x in unkown_args
                    if not(x in archives + elf_files + llvm_files)]
 
+    if args.march:
+        llc_march = "-march=" + args.march
+    else:
+        llc_march = ""
+
+    if args.mcpu:
+        llc_mcpu = "-mcpu=" + args.mcpu
+    else:
+        llc_mcpu = ""
+
     try:
         tempdir = tempfile.mkdtemp()
         (elf_, llvm_) = aggregate_bitcode(archives)
@@ -105,7 +117,7 @@ if __name__ == "__main__":
         # Link all bitcode files together
         bitcode     = llvm_link(llvm_files, args.linker_prefix + "-stage1.bc")
         bitcode_opt = llvm_opt(bitcode, args.linker_prefix + "-stage2.bc")
-        llc_flags = ["-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
+        llc_flags = [llc_march, llc_mcpu, "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
         system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj", llc_flags)
 
         start_ld(linker_flags, [system_object] + elf_files, args.output)
