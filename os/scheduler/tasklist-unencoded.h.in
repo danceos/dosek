@@ -86,5 +86,15 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 };
 
+/** Equality operator (used for TMR) [enc=0] **/
+bool operator==(const TaskList& lhs, const TaskList& rhs) {
+		{{{snippet:eq_operator_snippet:name|if(lhs.%(name)s != rhs.%(name)s) return false;
+}}}
+		{{{generate:task_set_call:eq_operator_snippet}}}
+        return true;
+}
+
+bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs); }
+
 }; // scheduler
 }; // os

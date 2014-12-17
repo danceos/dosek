@@ -33,6 +33,7 @@ typedef enum DetectedFault_t {
 	IRQ_SPURdetected = 7,
 	LOGIC_ERRORdetected = 8,
 	STATE_ASSERTdetected = 9,
+	RERTY_ERRORdetected = 10,
 } DetectedFault_t;
 
 

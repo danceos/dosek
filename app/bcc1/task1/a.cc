@@ -47,10 +47,6 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
-FaultDetectedHook() {
-	kout << "Failure " << (int)type << " " << arg1<<  endl;
-}
-
 PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("ab3c2");

@@ -88,7 +88,11 @@ if(first) {
 	updateMax(sigPrio, sigId, %(next_sig)s, &prio, %(task)s, &id, EC(%(task_id_sig)s, %(task_id)s));
 
 	if ((prio.vc + id.vc) %% A0 != (sigPrio + sigId)) {
+#ifdef RETRYSCHED
+        return 42;
+#else
 		CALL_HOOK(FaultDetectedHook, ANBdetected, prio.vc, id.vc);
+#endif
 	}
 
 	/* Recode if sigID got too big */
@@ -167,6 +171,17 @@ if(first) {
 	}
 	*/
 };
+
+/** Equality operator (used for TMR) [enc=1] **/
+bool operator==(const TaskList& lhs, const TaskList& rhs) {
+		{{{snippet:eq_operator_snippet:name|if(lhs.%(name)s.vc != rhs.%(name)s.vc) return false;
+}}}
+		{{{generate:task_set_call:eq_operator_snippet}}}
+        return true;
+}
+
+bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs); }
+
 
 constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;
 constexpr Encoded_Static<A0, {{{generate:idle_prio_sig}}}> TaskList::idle_prio;

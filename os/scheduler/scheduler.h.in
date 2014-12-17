@@ -99,11 +99,28 @@ struct Scheduler  {
 };
 
 void Scheduler::Reschedule(void) {
+#ifdef RETRYSCHED
+    const auto current_prio_orig = current_prio;
+    const auto current_task_orig = current_task;
+	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
+	if (current_prio != scheduler_prio) {
+		// set current (=next) task from task list
+		if (tlist.head(current_task, current_prio) != 0) { // retry
+            current_task = current_task_orig;
+            current_prio = current_prio_orig;
+            if (tlist.head(current_task, current_prio) != 0) {
+                CALL_HOOK(FaultDetectedHook, RETRY_ERRORdetected, 0, 0);
+            }
+        }
+	}
+#else
 	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
 	if (current_prio != scheduler_prio) {
 		// set current (=next) task from task list
 		tlist.head(current_task, current_prio);
 	}
+#endif
+
 	current_task.check();
 	current_prio.check();
 
