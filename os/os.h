@@ -30,6 +30,7 @@ typedef enum  {
   E_OS_RESOURCE = 6,
   E_OS_STATE = 7,
   E_OS_VALUE = 8,
+  E_NOT_OK = 9, 
 } StatusType;
 
 /**
@@ -119,6 +120,9 @@ typedef TickType * TickRefType;
 
 #define GetResource(x)					\
   OSEKOS_GetResource(OSEKOS_RESOURCE_##x)
+
+#define GetTaskID(x)					\
+  OSEKOS_GetTaskID(x)
 
 #define ReleaseResource(x)				\
   OSEKOS_ReleaseResource(OSEKOS_RESOURCE_##x)
@@ -245,6 +249,11 @@ extern __attribute__((noreturn)) StatusType OSEKOS_ChainTask(TaskType t);
 extern __attribute__((noreturn)) StatusType OSEKOS_TerminateTask();
 
 extern StatusType OSEKOS_Schedule();
+
+/**
+ * Get current Task's ID
+ */
+extern StatusType OSEKOS_GetTaskID(TaskRefType a);
 
 /**
  * \brief Acquire a RESOURCE

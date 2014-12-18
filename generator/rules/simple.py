@@ -3,6 +3,7 @@ from generator.elements.DataObjectManager import ExternalDataObject
 from generator.rules.base import BaseRules
 from generator.graph.Function import Function as GraphFunction
 from .implementations import *
+import logging
 
 from collections import namedtuple
 
@@ -23,7 +24,7 @@ class SimpleSystem(BaseRules):
         self.generate_dataobjects_task_descriptors()
         self.generate_dataobjects_counters_and_alarms()
         self.generate_dataobjects_checkedObjects()
-
+        self.generate_dataobjects_global_keso_ids()
         # Give the passes the chance to generate dataobjects
         self.callback_in_valid_passes("generate_dataobjects")
 
@@ -76,10 +77,12 @@ class SimpleSystem(BaseRules):
     def generate_alarm(self, alarm, counter, task):
         return DataObject("UnencodedAlarm<&%s>" % counter.impl.name,
                            "OS_%s_alarm" %( alarm.conf.name),
-                           "(%s, %s, %d, %d)" % (task,
-                                                 str(alarm.conf.armed).lower(),
-                                                 alarm.conf.reltime,
-                                                 alarm.conf.cycletime))
+                           "(%s, %s, %d, %d, %d)" % (task,
+                                                     str(alarm.conf.armed).lower(),
+                                                     alarm.conf.reltime,
+                                                     alarm.conf.cycletime,
+                                                     alarm.impl.alarm_id,
+                           ))
 
     def generate_dataobjects_counters_and_alarms(self):
         for ctr in self.generator.system_graph.counters:
@@ -91,14 +94,21 @@ class SimpleSystem(BaseRules):
             self.generator.source_file.data_manager.add(impl, namespace = ("os",))
             ctr.impl = impl
 
+        alarm_id = 1
         for alarm in self.generator.system_graph.alarms:
             subtask = alarm.conf.subtask
             task = "os::tasks::" + subtask.impl.task_descriptor.name
+
+            alarm.impl = AlarmImpl()
+            alarm.impl.alarm_id = alarm_id
+            alarm_id += 1
+
             impl = self.generate_alarm(alarm, alarm.counter, task)
 
             # Add and save alarm implementation
             self.generator.source_file.data_manager.add(impl, namespace = ("os",))
-            alarm.impl = impl
+            alarm.impl.name = impl.name
+            alarm.impl.alarm_desc = impl
 
     def generate_system_code(self):
         self.generator.source_file.includes.add(Include("os/alarm.h"))
@@ -106,7 +116,8 @@ class SimpleSystem(BaseRules):
         self.generator.source_file.declarations.append(alarms.expand())
 
     def generate_hooks(self):
-        hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"])]
+        hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"]),
+                 ("StartupHook", []), ("PreTaskHook", []), ("PostTaskHook", [])]
         for hook,args in hooks:
             hook_function = Function("__OS_HOOK_" + hook, "void", args)
             self.generator.source_file.function_manager.add(hook_function)
@@ -127,6 +138,8 @@ class SimpleSystem(BaseRules):
             if self.system_graph.find(GraphFunction, user_defined):
                 # Generate actual call, only if user had defined the hook function
                 self.call_function(hook_function, user_defined, "void", hook_function.arguments_names())
+                if hook == "PostTaskHook":
+                    logging.warning("Be aware that PostTaskHooks are not properly implemented")
 
             if hook == "FaultDetectedHook":
                 hook_function.add(Statement("debug << \"FaultDetectedHook \" << arg0<< endl"))

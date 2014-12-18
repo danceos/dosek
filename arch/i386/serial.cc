@@ -3,7 +3,7 @@
  * @ingroup i386
  * @brief RS232 driver implementation
  */
-#include "serial.h" 
+#include "serial.h"
 #include "ioport.h"
 
 Serial::Serial(ports port) : PORT((uint16_t) port) {

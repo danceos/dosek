@@ -45,6 +45,9 @@ public:
 		dispatch_task = task.id;
         #endif
 
+        // Call PreTaskHook.
+        CALL_HOOK(PreTaskHook);
+
 		// request dispatcher AST
 		LAPIC::trigger(IRQ_DISPATCH);
 

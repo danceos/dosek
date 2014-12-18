@@ -44,6 +44,9 @@ struct Scheduler  {
         state_replicator_.update();
 	}
 
+    forceinline Task::id_t getCurrentTaskID(void) const {
+        return current_task.decode();
+    }
 
     forceinline void ActivateTask_impl(const Task &to) {
         state_replicator_.check();
@@ -179,6 +182,12 @@ os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.
 #else
 os::redundant::EmptyReplicator state_replicator_;
 #endif
+
+extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
+    *a = scheduler_.getCurrentTaskID();
+    return E_OK;
+}
+
 
 }; // namespace scheduler
 }; // namespace os

@@ -113,6 +113,10 @@ struct Scheduler {
 		return tlist.isReady(task.id);
 	}
 
+    forceinline id_t getCurrent_TaskID(void) const {
+        return current_task;
+    }
+
 };
 
 void Scheduler::Reschedule() {
@@ -137,6 +141,11 @@ void Scheduler::Reschedule() {
 
 constexpr Scheduler::prio_t Scheduler::scheduler_prio;
 Scheduler scheduler_;
+
+extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
+    *a = scheduler_.getCurrent_TaskID();
+    return E_OK;
+}
 
 }; // scheduler
 }; // os

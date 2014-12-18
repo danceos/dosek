@@ -9,7 +9,15 @@ class Event(SystemObject):
         self.name = name
         self.task = task
         self.event_id = event_id
-        self.event_mask = (1 << event_id)
+        self.__event_mask = (1 << event_id)
+
+    @property
+    def event_mask(self):
+        return self.__event_mask
+
+    @event_mask.setter
+    def event_mask(self, value):
+        self.__event_mask = value
 
     def __repr__(self):
         return "<Event %s task:%s>" %(self.name, self.task)

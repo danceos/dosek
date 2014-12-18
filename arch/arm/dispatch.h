@@ -44,6 +44,8 @@ public:
 		dispatch_task = task.id;
         #endif
 
+        CALL_HOOK(PreTaskHook);
+
         //kout << "dispatch to " << (int) task.id << endl;
 
 		// request dispatcher AST

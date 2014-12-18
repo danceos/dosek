@@ -21,6 +21,35 @@ EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PreIdleHook(void);
 #define PreIdleHook() \
 	__OS_HOOK_DEFINED_PreIdleHook(void)
 
+/**
+ * \brief Called in StartOS().
+ */
+EXTERN_C_DECL void __OS_HOOK_StartupHook(void);
+EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_StartupHook(void);
+
+#define StartupHook() \
+	__OS_HOOK_DEFINED_StartupHook(void)
+
+
+/**
+ * \brief Currently called in Tasks kickoff().
+ * Should be called before a task enters RUNNING state.
+ */
+EXTERN_C_DECL void __OS_HOOK_PreTaskHook(void);
+EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PreTaskHook(void);
+
+#define PreTaskHook() \
+	__OS_HOOK_DEFINED_PreTaskHook(void)
+
+
+/**
+ * \brief Called on context switch when tasks leave RUNNING state.
+ */
+EXTERN_C_DECL void __OS_HOOK_PostTaskHook(void);
+EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PostTaskHook(void);
+
+#define PostTaskHook() \
+	__OS_HOOK_DEFINED_PostTaskHook(void)
 
 
 typedef enum DetectedFault_t {

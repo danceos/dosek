@@ -46,6 +46,8 @@ class Dispatcher {
 			m_idle.reset();
 		}
 
+		CALL_HOOK(PreTaskHook);
+
 		if ((from == 0) || !from->is_running()) {
 			to->start();
 		} else {

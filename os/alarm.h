@@ -22,15 +22,15 @@ class UnencodedAlarm : public Alarm {
 	bool armed_;
 	TickType absoluteTime_;
 	TickType cycleTime_;
-
 public:
 	/** \brief task to activate */
 	const Task* const task_;
+    const uint32_t id_;
 
-	constexpr UnencodedAlarm() : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
-	constexpr UnencodedAlarm(const Task& task) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
-	constexpr UnencodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime) :
-		armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
+	constexpr UnencodedAlarm(const uint32_t id) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
+	constexpr UnencodedAlarm(const Task& task, const uint32_t id) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
+	constexpr UnencodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime, const uint32_t id) :
+		armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
 
 	void setArmed (bool armed) {
 		armed_ = armed;
@@ -116,11 +116,12 @@ class EncodedAlarm : public Alarm {
 public:
 	/** \brief task to activate */
 	const Task* const task_;
+    const uint32_t id_;
 
-	constexpr EncodedAlarm() : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0) {}
-	constexpr EncodedAlarm(const Task& task) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task) {}
-	constexpr EncodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime) :
-		armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task) {}
+	constexpr EncodedAlarm(const uint32_t id) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
+	constexpr EncodedAlarm(const Task& task, const uint32_t id) : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
+	constexpr EncodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime, const uint32_t id) :
+		armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
 
 	template<typename Encoded>
 	void setArmed(Encoded encoded) {

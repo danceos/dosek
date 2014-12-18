@@ -1,0 +1,53 @@
+
+CPU helloworld {
+	OS dOSEK {
+		STATUS = STANDARD;
+		POSTTASKHOOK = TRUE;
+		STARTUPHOOK = TRUE;
+		PRETASKHOOK = TRUE;
+	};
+
+	TASK helloworldTask {
+		AUTOSTART = TRUE {
+			APPMODE = OSDEFAULTAPPMODE;
+		};
+		EVENT = hello2;
+		EVENT = hello3;
+		EVENT = hello1;
+		ACTIVATION = 1;
+		PRIORITY = 6;
+		SCHEDULE = FULL;
+	};
+
+	ALARM helloAlarm {
+		COUNTER = sysCounter;
+		AUTOSTART = FALSE;
+		ACTION = SETEVENT {
+			TASK = helloworldTask;
+			EVENT = hello3;
+		};
+	};
+
+	APPMODE OSDEFAULTAPPMODE;
+
+	APPMODE OSDEFAULTAPPMODE;
+
+	EVENT hello1 {
+		MASK = 0x1;
+	};
+
+	EVENT hello2 {
+		MASK = 0x2;
+	};
+
+	EVENT hello3 {
+		MASK = 0x4;
+	};
+
+	COUNTER sysCounter {
+		MAXALLOWEDVALUE = 65535;
+		TICKSPERBASE = 1;
+		MINCYCLE = 1;
+	};
+
+};

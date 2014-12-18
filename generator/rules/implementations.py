@@ -29,6 +29,12 @@ class EncodedSchedulerImpl:
         self.current_prio_sig = None
         self.current_task_sig = None
 
+class AlarmImpl:
+    def __init__(self):
+        self.alarm_id   = None
+        self.name = None
+        self.alarm_desc = None
+
 class SyscallImplementation:
     def __init__(self):
         self.userspace   = None

@@ -35,6 +35,8 @@ def setup_logging(log_level):
         l = logging.DEBUG
 
     logging.basicConfig(level=l)
+    logging.addLevelName( logging.WARNING, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+    logging.addLevelName( logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
 
 if __name__ == "__main__":
 

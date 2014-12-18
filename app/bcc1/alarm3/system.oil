@@ -51,7 +51,7 @@ CPU TestSystem {
         };
         AUTOSTART = TRUE {
             ALARMTIME = 100;
-            CYCLETIME = 100;
+            CYCLETIME = 200;
         };
     };
 

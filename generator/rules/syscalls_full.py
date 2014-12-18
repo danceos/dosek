@@ -38,6 +38,9 @@ class FullSystemCalls(BaseRules):
             if subtask.conf.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
+        # Call the StartupHook
+        self.call_function(block, "CALL_HOOK", "void", ["StartupHook"])
+
         # Bootstrap: Do the initial syscall
         dispatch_func = Function("__OS_StartOS_dispatch", "void", ["int"], extern_c = True)
         self.generator.source_file.function_manager.add(dispatch_func)
@@ -297,7 +300,7 @@ class FullSystemCalls(BaseRules):
             event_cleared = assertion.get_arguments()[1]
             event_set = assertion.get_arguments()[2]
             var = "event_mask_%s" % task.name
-            prepare = Statement("uint32_t {var} = scheduler_.GetEvent_impl({task}); kout << \"{task}\"<< {var} << endl".format(
+            prepare = Statement("uint32_t {var} = scheduler_.GetEvent_impl({task});".format(
                 task = self.task_desc(task), var = var))
             conds = []
             if event_cleared:

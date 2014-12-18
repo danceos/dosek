@@ -9,6 +9,7 @@ from generator.graph.Resource import Resource
 from generator.graph.Event import Event
 from generator.graph.common import GraphObject
 from generator.statistics import Statistics
+from generator.tools import panic
 from collections import namedtuple
 import functools
 
@@ -196,9 +197,16 @@ class SystemGraph(GraphObject, PassManager):
             event_id = 0
             # Instantiate events for the current task
             for event in task_desc.events.values():
-                assert event.MASK == "AUTO", "We only support EVENT:MASK = AUTO"
                 event.used = True
                 E = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
+                if event.MASK != "AUTO":
+                    try:
+                        E.event_mask = int(event.MASK)
+                    except ValueError as E:
+                        panic("Event Mask not readable: %s", str(E))
+                    assert len([x for x in bin(E.event_mask) if x == "1"]) == 1, "Exactly one bit must be set in event_mask %s" % E
+
+
                 subtask._events[event.name] = E
                 subtask.event_mask_valid |= E.event_mask
                 self._events[E.name] = E

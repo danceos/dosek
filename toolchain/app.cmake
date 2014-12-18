@@ -47,6 +47,8 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
     set(llvm_bytecode "${DOSEK_OUTPUT_DIR}/${src}.ll")
+    GET_FILENAME_COMPONENT(dirname ${llvm_bytecode} DIRECTORY)
+    file(MAKE_DIRECTORY ${dirname})
     add_custom_command(OUTPUT ${llvm_bytecode}
         COMMAND ${CMAKE_C_COMPILER}
         ARGS ${COMPILER_FLAGS} 

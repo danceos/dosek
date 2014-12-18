@@ -89,10 +89,11 @@ class EncodedSystem(UnencodedSystem):
         alarm = DataObject("EncodedAlarm<%d, %d, &%s>" % (signature, self.counter_signatures[counter.name],
                                                           counter.impl.name),
                            "OS_%s_alarm" %( alarm.conf.name),
-                           "(%s, %s, %d, %d)" % (task,
-                                                 str(alarm.conf.armed).lower(),
-                                                 alarm.conf.reltime,
-                                                 alarm.conf.cycletime))
+                           "(%s, %s, %d, %d, %d)" % (task,
+                                                     str(alarm.conf.armed).lower(),
+                                                     alarm.conf.reltime,
+                                                     alarm.conf.cycletime,
+                                                     alarm.impl.alarm_id))
         return alarm
 
     def get_syscall_return_variable(self, Type):
