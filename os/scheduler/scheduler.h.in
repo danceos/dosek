@@ -71,11 +71,15 @@ struct Scheduler  {
     }
 
     forceinline void GetResource_impl(const Task &current_task, const int new_prio) {
+		state_replicator_.check();
+
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
     }
 
     forceinline void ReleaseResource_impl(const Task &current_task, const int new_prio) {
+		state_replicator_.check();
+
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
 		Schedule_impl();
@@ -96,10 +100,10 @@ struct Scheduler  {
 			// promote non-preemptable task to RES_SCHEDULER
 			tlist.set(task.id, tlist.scheduler_prio);
 			current_prio = tlist.scheduler_prio;
+			state_replicator_.update();
 		}
 		current_task = task.enc_id<1>();
 
-        state_replicator_.update();
 	}
 
 	forceinline void SetSystemPriority(const int new_prio) {
@@ -164,6 +168,7 @@ void Scheduler::Reschedule(void) {
 {{{!if_not_preemptable|
         // promote non-preemptable task to RES_SCHEDULER
         tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
+        state_replicator_.update();
         current_prio = tlist.scheduler_prio;
 }}}
         Dispatcher::Dispatch({{{!subtask_desc}}});

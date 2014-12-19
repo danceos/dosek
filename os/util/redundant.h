@@ -118,12 +118,13 @@ class ClassicTMR  {
      }
 
  private:
-	 inline bool check_and_fix(void) {
+	 bool check_and_fix(void) {
         if((orig == rep1) && (orig == rep2)) {
             return true;
         }
 
-        kout << "TMR: Trying to fix" << endl;
+		kout << "Trying to fix" << endl;
+		fault_detected_port = 42;
         if(orig == rep1) {  // rep2 wrong
             rep2 = orig;    // fix
             return true;

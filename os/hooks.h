@@ -61,6 +61,8 @@ EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_ShutdownHook(StatusType);
 #define ShutdownHook(status)							\
 	__OS_HOOK_DEFINED_ShutdownHook(status)
 
+extern "C" volatile uint32_t fault_detected_port;
+
 
 typedef enum DetectedFault_t {
 	XORdetected = 1,

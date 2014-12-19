@@ -3,6 +3,13 @@ namespace scheduler {
 
 using namespace os::tasks;
 
+#ifdef dOSEK_STATE_REPLICATOR
+extern os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_;
+#else
+extern os::redundant::EmptyReplicator state_replicator_;
+#endif
+
+
 struct Scheduler {
     os::scheduler::TaskList tlist;
 
@@ -18,6 +25,7 @@ struct Scheduler {
 
     forceinline void SetReady_impl(const Task &task) {
 		tlist.activate(task.id, task.prio);
+		state_replicator_.update();
     }
 
 
@@ -36,15 +44,18 @@ struct Scheduler {
         t.tcb.reset();
 
         tlist.remove(t.id);
+        state_replicator_.update();
     }
 
     forceinline void ActivateTask_impl(const Task &task) {
+		state_replicator_.check();
 		SetReady_impl(task);
         Schedule_impl();
     }
 
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
         // auto from_id = from.id;
+		state_replicator_.check();
 		SetSuspended_impl(from);
 		SetReady_impl(to);
         Schedule_impl();
@@ -52,16 +63,19 @@ struct Scheduler {
 
     forceinline void TerminateTask_impl(const Task &from) {
         // auto id = from.id;
+		state_replicator_.check();
         SetSuspended_impl(from);
         Schedule_impl();
     }
 
     forceinline void GetResource_impl(const Task &current_task, const int new_prio) {
+		state_replicator_.check();
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
     }
 
     forceinline void ReleaseResource_impl(const Task &current_task, const int new_prio) {
+		state_replicator_.check();
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
 		Schedule_impl();
@@ -96,6 +110,7 @@ struct Scheduler {
         if (task.preemptable == false) {
             // promote non-preemptable task to RES_SCHEDULER
             tlist.set(task.id, scheduler_prio);
+			state_replicator_.update();
             current_prio = scheduler_prio;
         }
 		current_task = task.id;
@@ -107,6 +122,7 @@ struct Scheduler {
 
 	forceinline void SetPriority(const Task &task, const int new_prio) {
 		tlist.set(task.id, new_prio);
+        state_replicator_.update();
 	}
 
 	forceinline uint32_t isReady(const Task &task) {
@@ -128,6 +144,7 @@ void Scheduler::Reschedule() {
 {{{!if_not_preemptable|
         // promote non-preemptable task to RES_SCHEDULER
         tlist.set({{{!subtask_id}}}, scheduler_prio);
+        state_replicator_.update();
         current_prio = scheduler_prio;
 }}}\
         Dispatcher::Dispatch({{{!subtask_desc}}});
@@ -146,6 +163,12 @@ extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
     *a = scheduler_.getCurrent_TaskID();
     return E_OK;
 }
+
+#ifdef dOSEK_STATE_REPLICATOR
+os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.tlist);
+#else
+os::redundant::EmptyReplicator state_replicator_;
+#endif
 
 }; // scheduler
 }; // os
