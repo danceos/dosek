@@ -118,6 +118,7 @@ if __name__ == "__main__":
         bitcode     = llvm_link(llvm_files, args.linker_prefix + "-stage1.bc")
         bitcode_opt = llvm_opt(bitcode, args.linker_prefix + "-stage2.bc")
         llc_flags = [llc_march, llc_mcpu, "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
+        llc_flags = [x for x in llc_flags if not x == ""]
         system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj", llc_flags)
 
         start_ld(linker_flags, [system_object] + elf_files, args.output)
