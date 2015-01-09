@@ -157,6 +157,7 @@ add_subdirectory(fail)
 
 # Hardware independent kernel code
 add_subdirectory(os)
+add_subdirectory(dependability)
 add_subdirectory(generator)
 add_subdirectory(app)
 

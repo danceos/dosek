@@ -251,6 +251,9 @@ inlinehint void run_checkable_function(void (* volatile testfun)(void), T& resul
 __attribute__((weak_import))
 extern void test_prepare();
 
+__attribute__((weak_import))
+extern void test();
+
 inlinehint void test_init(void) {
 	// prepare tests
 	trace_table_idx = 0;

@@ -81,14 +81,10 @@ namespace dep {
 		return arch::compare_and_swap(&OS_all_CheckedObjects[obj].valid, checksum_checked, checksum_valid);
 	}
 
-	void dependability_service()
-	{
+	void dependability_service() {
 		for (;;) {
 			// Dequeue next element
-			unsigned int element = dep_sched.get_next();
-			if (!element)
-				continue;
-
+		unsigned int element = dep_sched.get_next();
 			Dependability_Scheduler::Object_State state =
 				(check_CheckedObject(element))
 					? Dependability_Scheduler::SUCCESS

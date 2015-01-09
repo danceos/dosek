@@ -122,11 +122,17 @@ class UnencodedSystem(SimpleSystem):
         # Dependability Service
         elif systemcall.function == "AcquireCheckedObject":
             userspace.unused_parameter(0)
+            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
+            userspace.add(pre_hook)
             self.syscall_rules.AcquireCheckedObject(userspace, abb)
+            userspace.add(post_hook)
 
         elif systemcall.function == "ReleaseCheckedObject":
             userspace.unused_parameter(0)
+            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
+            userspace.add(pre_hook)
             self.syscall_rules.ReleaseCheckedObject(userspace, abb)
+            userspace.add(post_hook)
 
         else:
             assert False, "Not yet supported %s"% systemcall.function

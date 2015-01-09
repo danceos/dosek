@@ -248,6 +248,8 @@ class SystemGraph(GraphObject, PassManager):
                     subtask.set_autostart(subtask_osek.autostart)
                     subtask.set_is_isr(False)
                     self.stats.add_data(subtask, "is_isr", False, scalar = True)
+        self.checkedObjects = system.getCheckedObjects()
+
 
 
 
@@ -452,7 +454,6 @@ class SystemGraph(GraphObject, PassManager):
             assert abb in self.get_abbs()
         assert len(self.get_syscalls()) >= len(self.rtsc.syscalls())
 
-        self.checkedObjects = system.getCheckedObjects()
 
     def new_abb(self, bbs=[]):
         self.max_abb_id += 1

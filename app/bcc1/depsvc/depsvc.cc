@@ -1,9 +1,8 @@
-
-
 #include "os.h"
-#include "depsvc.h"
+#include "dependability/depsvc.h"
 #include "arch/generic/hardware_threads.h"
 #include "output.h"
+#include "test/test.h"
 #include "type.h"
 
 DeclareTask(CheckedTask);
@@ -19,13 +18,19 @@ char dependability_stack[stacksize];
 void os_main()
 {
 	data.remote = &area;
+	test_init();
 
 	arch::start_hardware_thread(1, dependability_stack, stacksize, dep::dependability_service);
+
+	test_start();
 	StartOS(0);
 }
 
+int checked;
+
 unsigned int datacheck()
 {
+	checked = 1;
 	unsigned int checksum = 0;
 	for (unsigned int i = 0; i < sizeof(chararray); ++i) {
 		checksum += (*data.remote)[i];
@@ -42,12 +47,15 @@ TASK(CheckedTask) {
 	}
 	ReleaseCheckedObject(data);
 	ReleaseCheckedObject(area);
-	kout << c << endl;
-	if (++c > 10) {
-		#ifdef DEPENDABILITY_FAILURE_LOGGING
-			kout << "Dependability Failure Count: " << GET_DEPENDABILITY_FAILURE_COUNT()
-			     << "/" << GET_DEPENDABILITY_CHECK_COUNT() << endl;
-		#endif
+	test_trace('0' +  c);
+	if (++c > 5) {
+#ifdef DEPENDABILITY_FAILURE_LOGGING
+		kout << "Dependability Failure Count: " << GET_DEPENDABILITY_FAILURE_COUNT()
+			 << "/" << GET_DEPENDABILITY_CHECK_COUNT() << endl;
+#endif
+		test_trace('0' + checked);
+		test_trace_assert("0123451");
+		test_finish();
 		ShutdownMachine();
 	}
 	TerminateTask();

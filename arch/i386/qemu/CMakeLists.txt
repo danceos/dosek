@@ -21,7 +21,7 @@ foreach(ELF ${EXECUTABLES})
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gdbinit.in" ${GDBINITFILE})
 
 	# Common arguments
-	set(QEMU_ARGS -cdrom ${ISOFILE} -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE})
+	set(QEMU_ARGS -cdrom ${ISOFILE} -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -smp 2)
 
 	# Start QEMU
 	add_custom_target(qrun${DSUFFIX}
