@@ -3,8 +3,8 @@
    see: http://portal.osek-vdx.org/files/pdf/specs/oil25.pdf
 """
 from pyparsing import (Word, alphanums, alphas, hexnums,
-        nums, Optional, Keyword, QuotedString, Suppress,
-        Group, Forward, ZeroOrMore, cStyleComment, restOfLine)
+                       nums, Optional, Keyword, QuotedString, Suppress,
+                       Group, Forward, ZeroOrMore, cStyleComment, restOfLine)
 
 """ This is an example oil description:
 CPU Josek_x86 {
@@ -34,6 +34,7 @@ CPU Josek_x86 {
 };
 """
 
+
 class OILObject:
 
     def __init__(self, name=""):
@@ -47,11 +48,12 @@ class OILObject:
 
     def __str__(self):
         ret = self.__class__.__name__ + " : " + self.name
-        for k,v in vars(self).items():
+        for k, v in vars(self).items():
             if k.isupper():  # if it it a uppercase OIL Keyword
                 # lowercase members are special sets or lists
                 ret += "\n\t\t" + str(k) + ": " + str(v)
         return ret
+
 
 class AppMode(OILObject):
 
@@ -82,12 +84,22 @@ class ISR(OILObject):
         self.resources = dict()
         self.messages = dict()
         self.DEVICE = None
+        self.TASKGROUP = None
 
     def get_device(self):
         assert self.DEVICE, "No device number set for ISR '" + self.name + "'"
         return self.DEVICE
 
-    device = property(get_device, None, None, "Returns the ISRs device number")
+    @property
+    def taskgroup(self):
+        if not self.TASKGROUP:
+            return self.name
+        else:
+            return self.TASKGROUP
+
+    @property
+    def device(self):
+        return self.get_device()
 
     def evaluate(self, oil):
         super(ISR, self).evaluate(oil)
@@ -95,12 +107,32 @@ class ISR(OILObject):
             if param[0] == "RESOURCE":
                 self.resources[param[1]] = param[1]
 
-
     def __str__(self):
         ret = super(ISR, self).__str__()
         if self.resources:
             ret += "\n\t\tUses resource(s)" + str(self.resources)
         return ret
+
+
+class CheckedObject(OILObject):
+
+    def __init__(self, name=""):
+        super(CheckedObject, self).__init__(name)
+        self.TYPEDEF = ""
+        self.HEADER = None
+        self.CHECKFUNCTION = None
+
+    @property
+    def typename(self):
+        return self.TYPEDEF
+
+    @property
+    def header(self):
+        return self.HEADER
+
+    @property
+    def checkfunc(self):
+        return self.CHECKFUNCTION
 
 
 class Event(OILObject):
@@ -120,13 +152,12 @@ class Counter(OILObject):
         self.SOFTCOUNTER = ""
 
 
-
 class Alarm(OILObject):
 
     class ActionParam:
         def __str__(self):
             ret = self.__class__.__name__
-            for k,v in vars(self).items():
+            for k, v in vars(self).items():
                 if k.isupper():
                     ret += "\n\t\t\t" + str(k) + ": " + str(v)
             return ret
@@ -154,8 +185,8 @@ class Alarm(OILObject):
         super(Alarm, self).__init__(name)
         self.COUNTER = ""
         self.ACTION = ""
-        self.action_params = ""
-        self.AUTOSTART = ""
+        self.action_params = None
+        self.AUTOSTART = False
         self.autostart_params = None
 
     def evaluate(self, oil):
@@ -163,26 +194,27 @@ class Alarm(OILObject):
         ''' read out alarm actions '''
         for param in oil[1]:
             if param[0] == "ACTION" and len(param) > 2:
-               if param[1] == "SETEVENT":
-                   self.action_params = self.SETEVENT()
-               elif param[1] == "ACTIVATETASK":
-                   self.action_params = self.ACTIVATETASK()
-               elif param[1] == "ALARMCALLBACK":
-                   self.action_params = self.ALARMCALLBACK()
+                if param[1] == "SETEVENT":
+                    self.action_params = self.SETEVENT()
+                elif param[1] == "ACTIVATETASK":
+                    self.action_params = self.ACTIVATETASK()
+                elif param[1] == "ALARMCALLBACK":
+                    self.action_params = self.ALARMCALLBACK()
 
-               for acp in param[2:]:
-                         if hasattr(self.action_params, acp[0]):
-                             setattr(self.action_params, acp[0], acp[1])
+                for acp in param[2:]:
+                    if hasattr(self.action_params, acp[0]):
+                        setattr(self.action_params, acp[0], acp[1])
+
             ''' read out autostart parameters '''
-            if param[0] == "AUTOSTART" and len(param) > 2 and param[1] == True:
-               self.autostart_params = self.AutostartParams()
-               for acp in param[2:]:
-                   if acp[0] == "ALARMTIME":
-                       self.autostart_params.ALARMTIME = int(acp[1])
-                   elif acp[0] == "CYCLETIME":
-                       self.autostart_params.CYCLETIME = int(acp[1])
-                   elif acp[0] == "APPMODE":
-                       self.autostart_params.APPMODE.add(acp[1])
+            if param[0] == "AUTOSTART" and len(param) > 2 and param[1] is True:
+                self.autostart_params = self.AutostartParams()
+                for acp in param[2:]:
+                    if acp[0] == "ALARMTIME":
+                        self.autostart_params.ALARMTIME = int(acp[1])
+                    elif acp[0] == "CYCLETIME":
+                        self.autostart_params.CYCLETIME = int(acp[1])
+                    elif acp[0] == "APPMODE":
+                        self.autostart_params.APPMODE.add(acp[1])
 
     @property
     def counter(self):
@@ -198,11 +230,15 @@ class Alarm(OILObject):
 
     @property
     def cycletime(self):
-        return self.autostart_params.CYCLETIME
+        if self.autostart_params:
+            return self.autostart_params.CYCLETIME
+        return 0
 
     @property
     def reltime(self):
-        return self.autostart_params.ALARMTIME
+        if self.autostart_params:
+            return self.autostart_params.ALARMTIME
+        return 0
 
     def activated_task(self):
         if self.action_params.TASK:
@@ -210,13 +246,27 @@ class Alarm(OILObject):
         else:
             return None
 
-
     def __str__(self):
         ret = super(Alarm, self).__str__()
         ret += "\n\t\tAction Params: " + str(self.action_params)
         if self.autostart_params:
             ret += "\n\t\tAutostart Params: " + str(self.autostart_params)
         return ret
+
+
+class TaskGroup(OILObject):
+
+    def __init__(self, name=""):
+        super(TaskGroup, self).__init__(name)
+        self.promises = dict()
+
+    def evaluate(self, oil):
+        super(TaskGroup, self).evaluate(oil)
+
+        ''' read out appmodes for autostart '''
+        for param in oil[1]:
+            if param[0] == "PROMISE":
+                self.promises[param[1].lower()] = True
 
 
 class Task(OILObject):
@@ -228,6 +278,7 @@ class Task(OILObject):
         self.ACTIVATION = 0
         self.PRIORITY = 0
         self.SCHEDULE = "NON"
+        self.TASKGROUP = None
         self.resources = dict()
 
     def evaluate(self, oil):
@@ -243,6 +294,7 @@ class Task(OILObject):
                             self.autostart_appmodes[appmode[1]] = appmode[1]
             if param[0] == "RESOURCE":
                 self.resources[param[1]] = param[1];
+
     @property
     def is_autostarted(self):
         return self.AUTOSTART
@@ -262,6 +314,13 @@ class Task(OILObject):
     @property
     def priority(self):
         return self.PRIORITY
+
+    @property
+    def taskgroup(self):
+        if not self.TASKGROUP:
+            return self.name
+        else:
+            return self.TASKGROUP
 
     def __str__(self):
         ret = super(Task, self).__str__()
@@ -298,6 +357,8 @@ class CPU:
         self.counters = dict()
         self.events = dict()
         self.isrs = dict()
+        self.checked_objects = dict()
+        self.task_groups = dict()
 
     def evaluate(self, oil):
         self.name = oil[1]
@@ -358,9 +419,12 @@ class CPU:
 
     def __str__(self):
         ret = "CPU " + self.name + "\n\t" + str(self.os)
-        for x in [obj.values() for obj in [self.tasks, self.appmodes, self.resources, self.counters, self.alarms, self.events, self.isrs]]:
-          for xi in x:
-            ret += "\n\t" + str(xi)
+        for x in [obj.values() for obj in
+                  [self.tasks, self.appmodes, self.resources,
+                   self.counters, self.alarms, self.events, self.isrs,
+                   self.checked_objects]]:
+            for xi in x:
+                ret += "\n\t" + str(xi)
 
         return ret
 
@@ -380,9 +444,10 @@ class OILSystemDescription:
     ob = Suppress("{")
     cb = Suppress("}")
 
-    oobject = Keyword("OS") ^ Keyword("TASK") ^ Keyword("COUNTER") ^ Keyword("ALARM") \
+    oobject = Keyword("OS") ^ Keyword("TASK") ^ Keyword("COUNTER") ^ Keyword("ALARM")  \
         ^ Keyword("RESOURCE") ^ Keyword("EVENT") ^ Keyword("ISR") ^ Keyword("MESSAGE") \
-        ^ Keyword("COM") ^ Keyword("NM") ^ Keyword("APPMODE") ^ Keyword("IPDU")
+        ^ Keyword("COM") ^ Keyword("NM") ^ Keyword("APPMODE") ^ Keyword("IPDU") \
+        ^ Keyword("CHECKEDOBJECT") ^ Keyword("TASKGROUP")
     object_name = Group(oobject + name)  # e.g., OS myOs, COUNTER mycounter
 
     attribute_name = name ^ oobject
@@ -423,6 +488,8 @@ class OILSystemDescription:
         alarms = dict()
         events = dict()
         isrs = dict()
+        checked_objects = dict()
+        groups = dict()
         #  Read out CPU
         for x in oil:
             if x[0] == "CPU":
@@ -448,15 +515,22 @@ class OILSystemDescription:
                 alarm = Alarm()
                 alarm.evaluate(x)
                 alarms[alarm.name] = alarm
-            elif x[0][0] == "EVENT" :
+            elif x[0][0] == "EVENT":
                 event = Event()
                 event.evaluate(x)
                 events[event.name] = event
-            elif x[0][0] == "ISR" :
+            elif x[0][0] == "ISR":
                 isr = ISR()
                 isr.evaluate(x)
                 isrs[isr.name] = isr
-
+            elif x[0][0] == "CHECKEDOBJECT":
+                obj = CheckedObject()
+                obj.evaluate(x)
+                checked_objects[obj.name] = obj
+            elif x[0][0] == "TASKGROUP":
+                group = TaskGroup()
+                group.evaluate(x)
+                groups[group.name] = group
 
         cpu.os = os
         cpu.tasks = tasks
@@ -466,10 +540,11 @@ class OILSystemDescription:
         cpu.alarms = alarms
         cpu.events = events
         cpu.isrs = isrs
+        cpu.checked_objects = checked_objects
+        cpu.task_groups = groups
 
         cpu.interconnect()
         return cpu
-
 
     def getOS(self):
         return self.refined.os
@@ -489,6 +564,12 @@ class OILSystemDescription:
     def getISRs(self):
         return self.refined.isrs.values()
 
+    def getCheckedObjects(self):
+        return self.refined.checked_objects.values()
+
+    def getTaskGroups(self):
+        return self.refined.task_groups.values()
+
 
     def __str__(self):
         return str(self.refined)
@@ -496,5 +577,3 @@ class OILSystemDescription:
 if __name__ == "__main__":
     oil = OILSystemDescription('test/example.oil')
     print(oil)
-
-

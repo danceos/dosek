@@ -1,0 +1,35 @@
+CPU TestSystem {
+
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+    TASK Handler11 {
+        SCHEDULE = NON;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        AUTOSTART = TRUE;
+    };
+
+    TASK Handler12 {
+        SCHEDULE = FULL;
+        PRIORITY = 3;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    TASK Handler13 {
+        SCHEDULE = FULL;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+
+};
+

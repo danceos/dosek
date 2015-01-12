@@ -12,17 +12,15 @@ def after_ConstructGlobalCFG(analysis):
     t.mark_syscalls_in_function(H4)
     t.mark_syscalls_in_function(H5)
 
-    assert len(t.self_loop_abbs(H3, E.system_level)) == 0
+    assert len(t.self_loop_abbs(H3, E.system_level)) == 1
     assert len(t.self_loop_abbs(H2, E.system_level)) == 1
 
-
-    t.activate([Idle, H2], # =>
+    t.activate([Idle, H2],  # =>
                H3)
 
-    t.reachability(H3, "ChainTask", [H2], # =>
+    t.reachability(H3, "ChainTask", [H2],  # =>
                    [H2])
-
-    t.reachability(H2, "TerminateTask", [], # =>
+    t.reachability(H2, "TerminateTask", [],  # =>
                    [H3, Idle])
 
     t.reachability(Idle, "Idle", [], # =>

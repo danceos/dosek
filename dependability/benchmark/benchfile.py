@@ -13,21 +13,21 @@ class CheckedObject:
         CheckedObject.typenumber += 1
 
     def expand_declaration(self):
-        return "DeclareCheckedObject(benchtype" + str(self.typenumber) + ", %s);\n" % self.name
+        return "DeclareCheckedObject(benchtype" + str(self.typenumber) \
+            + ", %s);\n" % self.name
 
     def expand_typedef(self):
-        return "typedef char benchtype" + str(self.typenumber) + "[" + str(self.size) + "];\n"
+        return "typedef char benchtype" + str(self.typenumber) \
+            + "[" + str(self.size) + "];\n"
 
     def expand_xml(self):
-        return '''  <CHECKEDOBJECT>
-    <name>''' + self.name + '''</name>
-    <TYPEDEF>
-      <HEADER>app/bcc1/depbench/benchtype.h</HEADER>
-      <TYPENAME>benchtype''' + str(self.typenumber) + '''</TYPENAME>
-    </TYPEDEF>
-  </CHECKEDOBJECT>
+        return '''    CHECKEDOBJECT {name} {{
+        HEADER = "app/bcc1/depbench/benchtype.h";
+        TYPEDEF = benchtype{typenumber};
+    }};
+'''.format(name=self.name,
+             typenumber=self.typenumber)
 
-'''
 
 class BusyWaiting:
     """Manages a busy waiting loop"""
@@ -46,11 +46,12 @@ class BusyWaiting:
     }
 ''' % str(self.duration)
 
+
 class Acquiration:
     """Manages an acquiration of an checkedObject"""
 
     def __init__(self, checkedObject, duration):
-        self.checkedObject = checkedObject 
+        self.checkedObject = checkedObject
         self.loop = BusyWaiting(duration)
 
     def dur(self):
@@ -58,7 +59,9 @@ class Acquiration:
 
     def expand(self):
         name = self.checkedObject.name
-        return "    AcquireCheckedObject(" + name + ");" + self.loop.expand() + "    ReleaseCheckedObject(" + name + ");\n"
+        return "    AcquireCheckedObject(" + name + ");" + self.loop.expand() \
+            + "    ReleaseCheckedObject(" + name + ");\n"
+
 
 class Benchfile:
     """Manages elements of an application file of a benchmark"""
@@ -80,9 +83,9 @@ class Benchfile:
     def expand_file(self):
         content = '''
 #include "os.h"
-#include "depsvc.h"
+#include "dependability/depsvc.h"
 #include "arch/generic/hardware_threads.h"
-#include "dependability_service.h"
+#include "dependability/dependability_service.h"
 #include "output.h"
 #include "benchtype.h"
 
@@ -132,33 +135,29 @@ PreIdleHook() {
         return content
 
     def expand_osekossystem(self):
-        content = '''<?xml version="1.0"?>
+        content = """CPU TestSystem {
 
-<oseksystem xmlns     = "http://www4.informatik.uni-erlangen.de/RTSC"
-            xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance">
-  <OS>
-    <name>BenchSystem</name>
-    <STATUS>STANDARD</STATUS>
-    <ERRORHOOK>FALSE</ERRORHOOK>
-    <STARTUPHOOK>TRUE</STARTUPHOOK>
-    <SHUTDOWNHOOK>FALSE</SHUTDOWNHOOK>
-    <PRETASKHOOK>FALSE</PRETASKHOOK>
-    <POSTTASKHOOK>FALSE</POSTTASKHOOK>
-  </OS>
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
 
-  <TASK>
-    <name>BenchTask</name>
-    <TYPE>BASIC</TYPE>
-    <SCHEDULE>FULL</SCHEDULE>
-    <PRIORITY>4</PRIORITY>
-    <ACTIVATION>1</ACTIVATION>
-    <AUTOSTART>TRUE</AUTOSTART>
-  </TASK>
-'''
+    TASK BenchTask {
+        TYPE = BASIC;
+        SCHEDULE = FULL;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        AUTOSTART = TRUE;
+    };
+"""
         for co in self.get_checkedObjects():
             content += co.expand_xml()
-        content += '''
-</oseksystem>'''
+
+        content += "\n};"
         return content
 
     def generate_bench_app(self):
@@ -173,50 +172,18 @@ PreIdleHook() {
         cmakelists.write('''DOSEK_BINARY (
   NAME bcc1_depbench
   depbench.cc
-  SYSTEM_XML system.xml
+  SYSTEM_DESC system.oil
   LIBS libdepsvc
 )''')
         cmakelists.close()
         depbench = open(approot + 'depbench.cc', 'w')
         depbench.write(self.expand_file())
         depbench.close()
-        systemxml = open(approot + 'system.xml', 'w')
-        systemxml.write('''<?xml version="1.0"?>
 
-<system xmlns     = "http://www4.informatik.uni-erlangen.de/RTSC"
-        xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance">
-
-  <name>DependabilitySystem</name>
-  <mappingtype>name</mappingtype>
-  <granule>ms</granule>
-  <resolution>1</resolution>
-  <systemtype>OSEKOS</systemtype>
-
-  <periodicevent>
-    <identifier>Event1</identifier>
-    <period>1000</period>
-    <phase>0</phase>
-    <jitter>0</jitter>
-  </periodicevent>
-
-  <task>
-    <event>Event1</event>
-    <subtask root="true">
-      <handler>BenchTask</handler>
-      <deadline>
-        <relative>true</relative>
-        <type>hard</type>
-        <deadline>200</deadline>
-      </deadline>
-    </subtask>
-  </task>
-
-  <specificdescription>osekossystem.xml</specificdescription>
-</system>''')
-        systemxml.close()
-        osekossystem = open(approot + 'osekossystem.xml', 'w')
+        osekossystem = open(approot + 'system.oil', 'w')
         osekossystem.write(self.expand_osekossystem())
         osekossystem.close()
+
         benchtype = open(approot + 'benchtype.h', 'w')
         benchtype.write(self.expand_type_header())
         benchtype.close()

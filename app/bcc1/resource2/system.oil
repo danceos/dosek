@@ -1,0 +1,84 @@
+
+CPU TestSystem {
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+        USERESSCHEDULER = TRUE;
+    };
+
+    TASK H1 {
+        SCHEDULE = FULL;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    TASK H2 {
+        SCHEDULE = FULL;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = R234;
+    };
+
+    TASK H3 {
+        SCHEDULE = FULL;
+        PRIORITY = 3;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = R234;
+        RESOURCE = R345;
+    };
+
+    TASK H4 {
+        SCHEDULE = FULL;
+        PRIORITY = 2;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = R234;
+        RESOURCE = R345;
+    };
+
+    TASK H5 {
+        SCHEDULE = FULL;
+        PRIORITY = 1;
+        ACTIVATION = 1;
+        AUTOSTART = TRUE {
+            APPMODE = OSDEFAULTAPPMODE;
+        };
+        RESOURCE = R345;
+    };
+
+    APPMODE OSDEFAULAPPMODE;
+
+    RESOURCE R234 {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    RESOURCE R345 {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    ALARM A1 {
+        COUNTER = C1;
+        ACTION = ACTIVATETASK {
+            TASK = H3;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 100;
+            CYCLETIME = 1000;
+        };
+    };
+
+    COUNTER C1 {
+        MAXALLOWEDVALUE = 50000;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+    };
+
+
+};

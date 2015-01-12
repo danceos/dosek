@@ -1,7 +1,5 @@
 
 set(PYTHON_MODULES_TEST
-  RTSCSystemDescription
-  RTSCAnalysis
 )
 
 foreach(module ${PYTHON_MODULES_TEST})

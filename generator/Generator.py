@@ -11,7 +11,6 @@ class Generator:
         self.name = name
         self.system_graph = system_graph
         self.stats = system_graph.stats
-        self.rtsc_analysis = system_graph.rtsc
         self.arch_rules = arch_rules
         self.os_rules = os_rules
         self.syscall_rules = syscall_rules

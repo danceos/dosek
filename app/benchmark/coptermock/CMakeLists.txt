@@ -1,6 +1,6 @@
 DOSEK_BINARY(
   NAME bench-coptermock
-  SYSTEM_DESC system.xml
+  SYSTEM_DESC system.oil
   FAIL
   dosek.cc
 )

@@ -96,4 +96,11 @@ CPU Josek_x86 {
 		DEVICE = 32;
 	};
 
+    CHECKEDOBJECT data {
+       TYPEDEF = complextype {
+          HEADER = "app/bcc1/depsvc/type.h";
+       };
+       CHECKFUNCTION = datacheck;
+    };
+
 } : "Das ist eine Beschreibung der CPU" ;

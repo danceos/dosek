@@ -1,6 +1,6 @@
 DOSEK_BINARY(
   NAME sysmodel_1alarm_a
-  SYSTEM_DESC a.xml
+  SYSTEM_DESC a.oil
   VERIFY verify_a.py
   LIBS libtest
   TEST_ISO
@@ -9,7 +9,7 @@ DOSEK_BINARY(
 
 DOSEK_BINARY(
   NAME sysmodel_1alarm_aa
-  SYSTEM_DESC aa.xml # OTHER XML!
+  SYSTEM_DESC aa.oil # OTHER XML!
   VERIFY verify_aa.py
   LIBS libtest
   TEST_ISO

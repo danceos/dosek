@@ -18,12 +18,14 @@ import sys
 import logging
 import optparse
 
+
 def split_lls_callback(option, opt, value, parser):
     x = value.split(',')
     y = getattr(parser.values, option.dest)
     if y != None:
         x = y + x
     setattr(parser.values, option.dest, x)
+
 
 def setup_logging(log_level : int):
     """ setup the logging module with the given log_level """
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     source_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, os.path.abspath(os.path.join(source_dir, "..")))
 
-    from generator import LLVMPYAnalysis, Generator, RTSCAnalysis, RTSCSystemDescription, OILSystemDescription
+    from generator import LLVMPYAnalysis, Generator, OILSystemDescription
     from generator.rules import *
     from generator.graph import *
     from generator.tools import panic, wrap_typecheck_functions
@@ -51,8 +53,6 @@ if __name__ == "__main__":
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("", "--system-desc",
                       metavar="SYSTEM_DESC", help="the system description file (.xml or .oil)")
-    parser.add_option("", "--rtsc-analyze-xml",
-                      metavar="RTSC_ANALYZE_XML", help="the RTSC Analyze file")
     parser.add_option("-p", "--prefix",
                       metavar="DIR", help="where to place the dosek source (prefix)")
     parser.add_option("-n", "--name",
@@ -98,8 +98,7 @@ if __name__ == "__main__":
 
     if options.system_desc:
         if options.system_desc.lower().endswith(".xml"):
-            system_description = RTSCSystemDescription.RTSCSystemDescription(options.system_desc)
-            graph.read_xml_system_description(system_description)
+            panic("RTSC XMLs no longer supported")
         elif options.system_desc.lower().endswith(".oil"):
             system_description = OILSystemDescription.OILSystemDescription(options.system_desc)
             graph.read_oil_system_description(system_description)
@@ -115,12 +114,7 @@ if __name__ == "__main__":
 
     systemanalysis = None
 
-    if options.rtsc_analyze_xml:
-      rtsc_analysis = RTSCAnalysis.RTSCAnalysis(options.rtsc_analyze_xml)
-      graph.read_rtsc_analysis(rtsc_analysis)
-      systemanalysis = rtsc_analysis
-
-    elif options.llfiles and len(options.llfiles) > 0:
+    if options.llfiles and len(options.llfiles) > 0:
         print("Analyzing via llvmpy. ", options.llfiles)
         mergedoutfile = open(options.mergedoutput, 'w')
         if not mergedoutfile:
@@ -134,7 +128,7 @@ if __name__ == "__main__":
         pass_manager.register_and_enqueue_analysis(ABBMergePass())
 
     else:
-        print("Error, choose an analysis variant. RTSC or LLVMPY")
+        print("No .ll files given")
         sys.exit(-1)
 
     graph.add_system_objects()

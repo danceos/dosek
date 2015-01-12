@@ -31,9 +31,9 @@ if __name__ == "__main__":
     print("Prepare")
     pcall("clean build directory", ["rm -r *"], sh = True, mf = True)
     pcall("create dummy application", [depgenroot + "runbench.py", str(repetitions), str(slots), str(objects)], sout = f)
-    pcall("create new build environment", [depgenroot + "/../../new_build_env.py", "--dependability_failure_logging=yes"], sout = dn, serr = dn)
+    pcall("create new build environment", [depgenroot + "/../../new_build_env.py", "--dependability_failure_logging=yes"])
     for i in range(0, runs):
         print("Run " + str(i) + ":")
         pcall("create application", [depgenroot + "runbench.py", str(repetitions), str(slots), str(objects)], sout = f)
-        pcall("build", ["make", "-j1", "bcc1_depbench"], sout = dn, serr = dn)
+        pcall("build", ["make", "-j1", "bcc1_depbench"])
         pcall("run", ["qemu-system-i386", "-no-reboot", "-nographic", "-smp", "2", "-kernel", "bcc1_depbench"], sout = f)

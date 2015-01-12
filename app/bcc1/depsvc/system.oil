@@ -1,0 +1,47 @@
+CPU TestSystem {
+
+    OS DependabilitySystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+    TASK CheckedTask {
+        SCHEDULE = FULL;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    ALARM PeriodicActivation {
+        COUNTER = PeriodicActivationCounter;
+        ACTION = ACTIVATETASK {
+            TASK = CheckedTask;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 100;
+            CYCLETIME = 1000;
+        };
+    };
+
+    COUNTER PeriodicActivationCounter {
+        MAXALLOWEDVALUE = 1000;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+    };
+
+    CHECKEDOBJECT area {
+       TYPEDEF = chararray;
+       HEADER = "app/bcc1/depsvc/type.h";
+    };
+
+    CHECKEDOBJECT data {
+       TYPEDEF = complextype;
+       HEADER = "app/bcc1/depsvc/type.h";
+       CHECKFUNCTION = datacheck;
+    };
+};
+

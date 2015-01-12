@@ -1,6 +1,6 @@
 DOSEK_BINARY(
   NAME bcc1_task2a
-  SYSTEM_DESC system.xml
+  SYSTEM_DESC system.oil
   VERIFY verify_a.py
   LIBS libtest
   TEST_ISO
@@ -9,7 +9,7 @@ DOSEK_BINARY(
 
 DOSEK_BINARY(
   NAME bcc1_task2b
-  SYSTEM_DESC system.xml
+  SYSTEM_DESC system.oil
   VERIFY verify_b.py
   LIBS libtest
   TEST_ISO
@@ -18,7 +18,7 @@ DOSEK_BINARY(
 
 DOSEK_BINARY(
   NAME bcc1_task2c
-  SYSTEM_DESC system.xml
+  SYSTEM_DESC system.oil
   VERIFY verify_a.py
   LIBS libtest
   TEST_ISO
