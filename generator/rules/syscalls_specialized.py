@@ -80,7 +80,7 @@ class SpecializedSystemCalls(FullSystemCalls):
         priorities = set([x.dynamic_priority for x in abb_info.abbs_after])
         # When task is non-preemptable, we have to set the system
         # priority to RES_SCHEDULER
-        if not task.preemptable:
+        if not task.conf.preemptable:
             priorities = [task.entry_abb.definite_after(E.function_level).dynamic_priority]
         if len(priorities) == 1:
             next_prio = unwrap_seq(priorities)
@@ -104,7 +104,7 @@ class SpecializedSystemCalls(FullSystemCalls):
 
 
     def Schedule(self, kernelspace, abb):
-        if abb.function.subtask.is_isr:
+        if abb.subtask.conf.is_isr:
             self.Comment(kernelspace, """OPTIMIZATION: Each ABB is either in an
                 ISR or not, therefore we can surely decide if we have to
                 reschedule in the AST or not""")
@@ -138,7 +138,7 @@ class SpecializedSystemCalls(FullSystemCalls):
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        irets = [x for x in self.system_graph.get_abbs()
+        irets = [x for x in self.system_graph.abbs
                  if x.isA(S.iret)]
 
         # Collect all tasks that may be ready, after an interrupt is processed
@@ -148,7 +148,7 @@ class SpecializedSystemCalls(FullSystemCalls):
             if not abb_info:
                 # iret belongs to the activate task of an soft-counter
                 continue
-            for subtask in self.system_graph.get_subtasks():
+            for subtask in self.system_graph.subtasks:
                 if abb_info.state_before.is_maybe_ready(subtask):
                     maybe_ready.add(subtask)
 

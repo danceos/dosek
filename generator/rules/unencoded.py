@@ -2,6 +2,8 @@ from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment, Function, Hook, DataObject
 from generator.graph.AtomicBasicBlock import S
+from generator.graph.Function import Function
+
 
 class UnencodedSystem(SimpleSystem):
     def __init__(self):
@@ -175,7 +177,7 @@ class TaskListTemplate(CodeTemplate):
         self.system_graph = self.generator.system_graph
         # Reference to the objects object of our rule system
         self.objects = self.rules.objects
-        self.idle = self.system_graph.find_function("Idle")
+        self.idle = self.system_graph.find(Function, "Idle")
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.rules.foreach_subtask
 
@@ -200,7 +202,7 @@ class TaskListTemplate(CodeTemplate):
         def do(subtask):
             return self.expand_snippet(args[0],
                                        name = subtask.name,
-                                       id = self.objects[subtask]["task_id"])
+                                       id = subtask.impl.task_id)
 
         return self.foreach_subtask(do)
 
@@ -212,7 +214,7 @@ class TaskListTemplate(CodeTemplate):
             do.i += 1
             return self.expand_snippet("head_update_max",
                                        task = subtask.name,
-                                       task_id  = self.objects[subtask]["task_id"],
+                                       task_id  = subtask.impl.task_id,
                                        i = str(do.i-1),
                                        ii = str(do.i)
                                        )
@@ -245,7 +247,7 @@ class SchedulerTemplate(CodeTemplate):
     def scheduler_prio(self, snippet, args):
 
         max_prio = 0
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             if not subtask.is_real_thread():
                 continue
             if(subtask.static_priority > max_prio):
@@ -257,7 +259,7 @@ class SchedulerTemplate(CodeTemplate):
         def do(subtask):
             return self.expand_snippet(args[0],
                                        task = subtask.name,
-                                       desc = self.objects[subtask]["task_descriptor"].name)
+                                       desc = subtask.impl.task_descriptor.name)
 
         return self.foreach_subtask(do)
 
@@ -266,7 +268,7 @@ class SchedulerTemplate(CodeTemplate):
     def reschedule_foreach_task(self, snippet, args):
         def do(subtask):
             return self.expand_snippet("reschedule_dispatch_task",
-                                       task = self.objects[subtask]["task_descriptor"].name
+                                       task = subtask.impl.task_descriptor.name
             )
 
         return self.foreach_subtask(do)
@@ -275,7 +277,7 @@ class SchedulerTemplate(CodeTemplate):
     def activate_task_foreach_task(self, snippet, args):
         def do(subtask):
             return self.expand_snippet("activate_task_task",
-                                       task = self.objects[subtask]["task_descriptor"].name,
+                                       task = subtask.impl.task_descriptor.name,
                                        )
 
         return self.foreach_subtask(do)

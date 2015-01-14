@@ -12,7 +12,7 @@ class FullSystemCalls(BaseRules):
 
     def task_desc(self, subtask):
         """Returns a string that generates the task id"""
-        task_desc = self.objects[subtask]["task_descriptor"].name
+        task_desc = subtask.impl.task_descriptor.name
         return task_desc
 
     def get_calling_task_desc(self, abb):
@@ -21,7 +21,7 @@ class FullSystemCalls(BaseRules):
     def StartOS(self, block):
         block.unused_parameter(0)
         highestTask = None
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             if not subtask.is_real_thread():
                 continue
             # Use Reset the stack pointer for all all tasks
@@ -29,18 +29,17 @@ class FullSystemCalls(BaseRules):
                                self.task_desc(subtask) + ".tcb.reset",
                                "void", [])
 
-            if subtask.autostart:
+            if subtask.conf.autostart:
                 self.call_function(block,
                                    "scheduler_.SetReadyFromSuspended_impl",
                                    "void", [self.task_desc(subtask)])
 
 
-            if subtask.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
+            if subtask.conf.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
         # Bootstrap: Do the initial syscall
         dispatch_func = Function("__OS_StartOS_dispatch", "void", ["int"], extern_c = True)
-        self.objects["__OS_StartOS_dispatch"] = dispatch_func
         self.generator.source_file.function_manager.add(dispatch_func)
         self.InitialSyscall(dispatch_func)
 
@@ -60,7 +59,7 @@ class FullSystemCalls(BaseRules):
 
     def kickoff(self, block, abb):
         block.attributes.append("inlinehint")
-        if not abb.function.subtask.is_isr:
+        if not abb.subtask.conf.is_isr:
             self.arch_rules.kickoff(block, abb)
 
     def TerminateTask(self, block, abb):
@@ -85,13 +84,12 @@ class FullSystemCalls(BaseRules):
     def SetRelAlarm(self, kernelspace, abb, arguments):
         arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
         arg2 = self.arch_rules.get_syscall_argument(kernelspace, 1)
-        alarm_id = abb.arguments[0]
-        alarm_object = self.objects["alarm"][alarm_id]
-        self.call_function(kernelspace, "%s.setRelativeTime" % alarm_object.name,
+        alarm = abb.arguments[0]
+        self.call_function(kernelspace, "%s.setRelativeTime" % alarm.impl.name,
                            "void", [arg1.name])
-        self.call_function(kernelspace, "%s.setCycleTime" % alarm_object.name,
+        self.call_function(kernelspace, "%s.setCycleTime" % alarm.impl.name,
                            "void", [arg2.name])
-        self.call_function(kernelspace, "%s.setArmed" % alarm_object.name,
+        self.call_function(kernelspace, "%s.setArmed" % alarm.impl.name,
                            "void", ["true"])
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call_function(kernelspace, "Dispatcher::ResumeToTask",
@@ -99,14 +97,13 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(abb)])
 
     def AdvanceCounter(self, kernelspace, abb):
-        counter_id = abb.arguments[0]
-        counter = self.objects["counter"][counter_id]
+        counter = abb.arguments[0]
 
         # Increase Counter and check the counter
-        kernelspace.add(Statement("%s.do_tick()" % counter.name))
+        kernelspace.add(Statement("%s.do_tick()" % counter.impl.name))
         for alarm in self.system_graph.alarms:
-            if alarm.counter == counter_id:
-                kernelspace.add(Statement("AlarmCheck%s()" % self.objects["alarm"][alarm.name].name))
+            if alarm.counter == counter:
+                kernelspace.add(Statement("AlarmCheck%s()" % alarm.impl.name))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call_function(kernelspace, "Dispatcher::ResumeToTask",
@@ -114,15 +111,14 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(abb)])
 
     def GetAlarm(self, userspace, kernelspace, abb):
-        alarm_id = abb.arguments[0]
-        alarm_object = self.objects["alarm"][alarm_id]
+        alarm = abb.arguments[0]
 
         return_variable = self.os_rules.get_syscall_return_variable("TickType")
 
         # Fill return variable
         kernelspace.add(Statement("%s.set(%s.getRemainingTicks())"%(
             return_variable.name,
-            alarm_object.name)))
+            alarm.impl.name)))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call_function(kernelspace, "Dispatcher::ResumeToTask",
@@ -139,9 +135,8 @@ class FullSystemCalls(BaseRules):
         )))
 
     def CancelAlarm(self, kernelspace, abb):
-        alarm_id = abb.arguments[0]
-        alarm_object = self.objects["alarm"][alarm_id]
-        self.call_function(kernelspace, "%s.setArmed" % alarm_object.name,
+        alarm = abb.arguments[0]
+        self.call_function(kernelspace, "%s.setArmed" % alarm.impl.name,
                            "void", ["false"])
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call_function(kernelspace, "Dispatcher::ResumeToTask",

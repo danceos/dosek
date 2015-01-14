@@ -1,6 +1,7 @@
 from generator.graph.AtomicBasicBlock import E,S
 from generator.graph.SystemStateFlow import SystemStateFlow
 from generator.graph.SymbolicSystemExecution import SymbolicSystemExecution
+from generator.graph.Resource import Resource
 
 
 global E
@@ -9,18 +10,17 @@ def get_functions(system, names):
     """A helper for verify scripts to find quickly a set of subtask handlers"""
     ret = []
     for x in names:
-        for name, func in system.functions.items():
-            if x == name or \
-               "OSEKOS_TASK_" + x == name or \
-               "OSEKOS_ISR_" + x == name:
+        for func in system.functions:
+            if x == func.function_name or \
+               "OSEKOS_TASK_" + x == func.function_name or \
+               "OSEKOS_ISR_" + x == func.function_name:
                 ret.append(func)
     return tuple(ret)
 
 def get_objects(system, names):
     ret = []
     for x in names:
-        if x in system.resources:
-            ret.append(system.resources[x])
+        ret.append(system.get(Resource, x))
     return ret
 
 class GlobalABBInfoToolbox:
@@ -29,7 +29,7 @@ class GlobalABBInfoToolbox:
         self.abb_info_provider = abb_info_provider
 
         self.checked_syscalls = set()
-        for syscall in self.system_graph.get_syscalls():
+        for syscall in self.system_graph.syscalls:
             if syscall.syscall_type.isRealSyscall() \
                and not syscall.isA(S.kickoff):
                 continue
@@ -45,12 +45,12 @@ class GlobalABBInfoToolbox:
 
     def mark_syscalls_in_function(self, function):
         """Mark all syscalls in functions as checked"""
-        for syscall in function.get_syscalls():
+        for syscall in function.syscalls:
             self.mark_syscall(syscall)
 
     def promise_all_syscalls_checked(self):
-        assert set(self.system_graph.get_syscalls()) == self.checked_syscalls,\
-            "missing %s"%(set(self.system_graph.get_syscalls()) ^ self.checked_syscalls)
+        assert set(self.system_graph.syscalls) == self.checked_syscalls,\
+            "missing %s"%(set(self.system_graph.syscalls) ^ self.checked_syscalls)
 
     def syscall(self, function, syscall_name, arguments):
         """Tests wheter a syscall exists and returns it"""
@@ -117,11 +117,11 @@ class RunningTaskToolbox(GlobalABBInfoToolbox):
         self.check_base_constraints()
 
     def check_base_constraints(self):
-        for syscall in self.system_graph.get_syscalls():
+        for syscall in self.system_graph.syscalls:
             # Some syscalls cannot reschedule
             if syscall.isA([S.GetResource, S.CancelAlarm, S.SetRelAlarm]):
                 self.reachability_bare(syscall, [syscall.function.subtask])
-        for abb in self.system_graph.get_abbs():
+        for abb in self.system_graph.abbs:
             abb_info = self.analysis.for_abb(abb)
             if not abb_info:
                 continue

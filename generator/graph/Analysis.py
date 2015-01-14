@@ -120,7 +120,7 @@ class EnsureComputationBlocks(Analysis):
         abb.add_cfg_edge(new, E.function_level)
 
     def do(self):
-        for syscall in self.system_graph.get_syscalls():
+        for syscall in self.system_graph.syscalls:
             if syscall.isA(S.Idle):
                 abb = self.system_graph.new_abb()
                 abb.syscall_type = S.computation
@@ -141,7 +141,7 @@ class EnsureComputationBlocks(Analysis):
                 self.add_before(syscall)
                 self.add_after(syscall)
 
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             if subtask.entry_abb.isA(S.kickoff):
                 subtask.entry_abb.arguments = [subtask]
                 continue
@@ -221,7 +221,7 @@ class MoveFunctionsToTask(Analysis):
 
     def do(self):
         subtask_analysis = self.get_analysis("CurrentRunningSubtask")
-        for abb in self.system_graph.get_abbs():
+        for abb in self.system_graph.abbs:
             subtask = subtask_analysis.for_abb(abb)
             # The function belongs to a single subtask. If it is a
             # normal function and not yet moved to a task, move it there.

@@ -2,6 +2,7 @@ from generator.rules.simple import SimpleArch
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
     Include, FunctionDeclaration, Comment, Function, DataObject, \
     DataObjectArray, Hook, Block, VariableDefinition, Statement
+from generator.graph.Subtask import Subtask
 
 class ARMArch(SimpleArch):
     def __init__(self):
@@ -21,26 +22,12 @@ class ARMArch(SimpleArch):
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
+        super(ARMArch, self).generate_dataobjects_task_stacks()
+
         stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "")
         stackptr_arr.add_static_initializer("&startup_sp")
-
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread and ISR subtasks
-            if not subtask.is_real_thread():
-                continue
-            stacksize = subtask.get_stack_size()
-            stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
-                                    extern_c = True)
-            self.generator.source_file.data_manager.add(stack)
-
-            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
-            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
-            stackptr_arr.add_static_initializer("&" + stackptr.name)
-
-            self.objects[subtask]["stack"] = stack
-            self.objects[subtask]["stackptr"] = stackptr
-            self.objects[subtask]["stacksize"] = stacksize
-
+        for subtask in self.system_graph.real_subtasks:
+            stackptr_arr.add_static_initializer("&" + subtask.impl.stackptr.name)
         self.generator.source_file.data_manager.add(stackptr_arr, namespace = ("arch",))
 
 
@@ -51,22 +38,22 @@ class ARMArch(SimpleArch):
         tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "")
         tcb_arr.add_static_initializer("0")
 
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
             initializer = "(&%s, %s, %s, %s)" % (
-                self.objects[subtask]["entry_function"].name,
-                self.objects[subtask]["stack"].name,
-                self.objects[subtask]["stackptr"].name,
-                self.objects[subtask]["stacksize"]
+                subtask.impl.entry_function.name,
+                subtask.impl.stack.name,
+                subtask.impl.stackptr.name,
+                subtask.impl.stacksize
             )
 
             desc = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
                               initializer)
             desc.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
-            self.objects[subtask].update({"tcb_descriptor": desc})
+            subtask.impl.tcb_descriptor = desc
             tcb_arr.add_static_initializer("&" + desc.name)
 
         self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
@@ -98,8 +85,8 @@ class ARMArch(SimpleArch):
     def generate_isr(self, isr):
         self.generator.source_file.includes.add(Include("machine.h"))
         self.generator.source_file.includes.add(Include("gic.h"))
-        isr_desc = self.generator.system_graph.get_subtask(isr.name)
-        irq_number = isr_desc.isr_device
+        isr_desc = self.generator.system_graph.find(Subtask, isr.name)
+        irq_number = isr_desc.conf.isr_device
         handler = FunctionDefinitionBlock('ISR', [str(irq_number)])
         self.generator.source_file.function_manager.add(handler)
 
@@ -118,11 +105,11 @@ class ARMArch(SimpleArch):
         prio = "IRQ_PRIO_LOCAL_TIMER"
 
         # Call give the IRQ a priority at startuo, and enable it
-        self.call_function(self.objects["StartOS"],
+        self.call_function(self.system_graph.impl.StartOS,
                            "arch::GIC::enable_irq",
                            "void", [str(irq_number)],
                            prepend = True)
-        self.call_function(self.objects["StartOS"],
+        self.call_function(self.system_graph.impl.StartOS,
                            "arch::GIC::set_irq_priority",
                            "void", [str(irq_number), prio],
                            prepend = True)
@@ -139,7 +126,7 @@ class ARMArch(SimpleArch):
 
         userspace.attributes.append("inlinehint")
 
-        if abb.function.subtask.is_isr:
+        if abb.subtask.conf.is_isr:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
 
             system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
@@ -218,15 +205,15 @@ class LinkerScriptTemplate(CodeTemplate):
     def task_code_regions(self, snippet, args):
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
-            ret += "_stext_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_stext_task%s = .;\n" % subtask.impl.task_id
             # Find all functions that belong to the function
-            for function in self.system_graph.functions.values():
+            for function in self.system_graph.functions:
                 if subtask == function.subtask:
                     ret += self.__select_statement(function.function_name, ["text", "rodata"])
-            for function in self.objects[subtask]["generated_functions"]:
+            for function in subtask.impl.generated_functions:
                 ret += self.__select_statement(function.function_name, ["text", "rodata"])
 
-            ret += "_etext_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_etext_task%s = .;\n" % subtask.impl.task_id
             ret += "\n"
             return ret
 
@@ -235,9 +222,9 @@ class LinkerScriptTemplate(CodeTemplate):
     def task_stacks(self, snippet, args):
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
-            ret += "_sstack_task%s = .;\n" % self.objects[subtask]["task_id"]
-            ret += self.__select_statement(self.objects[subtask]["stack"].name, ["data"])
-            ret += "_estack_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_sstack_task%s = .;\n" % subtask.impl.task_id
+            ret += self.__select_statement(subtask.impl.stack.name, ["data"])
+            ret += "_estack_task%s = .;\n" % subtask.impl.task_id
             ret += "\n"
             return ret
 
@@ -246,9 +233,9 @@ class LinkerScriptTemplate(CodeTemplate):
     def task_data(self, snippet, args):
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
-            ret += "_sdata_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_sdata_task%s = .;\n" % subtask.impl.task_id
             ret += self.__select_statement(subtask.name + "*", ["data"])
-            ret += "_edata_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_edata_task%s = .;\n" % subtask.impl.task_id
             ret += "\n"
             return ret
 

@@ -1,5 +1,6 @@
 from generator.graph.Analysis import Analysis
 from generator.graph.AtomicBasicBlock import E, S
+from generator.graph.Function import Function
 import logging
 
 class AddFunctionCalls(Analysis):
@@ -24,17 +25,17 @@ class AddFunctionCalls(Analysis):
         ## Mark all relevant functions
 
         # All subtasks are relevant
-        self.relevant_functions = set(self.system_graph.get_subtasks())
+        self.relevant_functions = set(self.system_graph.subtasks)
 
         # All functions that belong to tasks are relevant:
         for task in self.system_graph.tasks:
             self.relevant_functions.update(task.functions)
 
         for name in ("os_main", "StartOS"):
-            if name in self.system_graph.functions:
-                self.relevant_functions.add(self.system_graph.find_function(name))
+            if self.system_graph.find(Function, name):
+                self.relevant_functions.add(self.system_graph.get(Function, name))
 
-        for abb in self.system_graph.get_abbs():
+        for abb in self.system_graph.abbs:
             if not abb.function.has_syscall:
                 continue
 

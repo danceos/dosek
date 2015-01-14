@@ -48,6 +48,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// set new page directory
 	MMU::switch_task(id);
 
+
 	// push instruction pointer
 	void* ip;
 	uint32_t *sp = (uint32_t *) tcb->get_sp();

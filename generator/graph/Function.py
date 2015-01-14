@@ -25,7 +25,8 @@ class Function(GraphObject):
     def dump(self):
         return {"function_name": self.function_name }
 
-    def get_syscalls(self):
+    @property
+    def syscalls(self):
         return [x for x in self.abbs
                 if not x.isA(S.computation)]
 

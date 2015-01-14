@@ -15,8 +15,8 @@ class SystemCallSemantic:
         # In the StartOS node all tasks are suspended before,
         # and afterwards the idle loop and the autostarted
         # tasks are ready
-        for subtask in self.system_graph.get_subtasks():
-            if subtask.autostart:
+        for subtask in self.system_graph.subtasks:
+            if subtask.conf.autostart:
                 state.set_ready(subtask)
             else:
                 state.set_suspended(subtask)
@@ -67,10 +67,10 @@ class SystemCallSemantic:
         ret = [notrigger]
 
         # Or we trigger the counter
-        counter_id = block.arguments[0]
+        counter = block.arguments[0]
         sporadic_events = []
         for alarm in self.system_graph.alarms:
-            if not(isinstance(alarm , Alarm) and alarm.counter == counter_id):
+            if not(isinstance(alarm , Alarm) and alarm.counter == counter):
                 continue
 
             after = before.copy()
@@ -82,7 +82,7 @@ class SystemCallSemantic:
                 after.add_continuation(activated, activated.entry_abb)
             after.set_ready(activated)
             ret.append(after)
-        assert len(ret) > 1, "No Alarm for Soft-Counter defined (%s)"%counter_id
+        assert len(ret) > 1, "No Alarm for Soft-Counter defined (%s)" % counter
         return ret
 
     def do_Idle(self, block, before):
@@ -146,13 +146,13 @@ class SystemCallSemantic:
 
         # If the current task is not preemptable, we can just continue
         # on the local task graph or on ISR blocks
-        if current_running and not current_running.preemptable \
+        if current_running and not current_running.conf.preemptable \
            and state.is_surely_ready(current_running):
             task_conts = list(state.get_continuations(current_running))
             isr_conts  = []
-            if not current_running.is_isr:
+            if not current_running.conf.is_isr:
                 for subtask in state.get_subtasks():
-                    if subtask.is_isr and state.is_maybe_ready(subtask):
+                    if subtask.conf.is_isr and state.is_maybe_ready(subtask):
                         assert state.is_surely_ready(subtask)
                         isr_conts.append(subtask.entry_abb)
             if isr_conts:
@@ -234,7 +234,7 @@ class SystemCallSemantic:
             # only if the target is not an ISR2
             if not target.function.subtask or \
                (target.function.subtask != self.system_graph.idle_subtask \
-                and not target.function.subtask.is_isr):
+                and not target.function.subtask.conf.is_isr):
                 copy_state.set_continuation(self.system_graph.idle_subtask,
                                             self.system_graph.idle_subtask.entry_abb)
 
@@ -259,7 +259,7 @@ class SystemState(Node):
         self.states = []
         self.continuations = []
         self.call_stack = []
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             self.states.append(0)
             self.continuations.append(set())
             self.call_stack.append(None)
@@ -298,11 +298,11 @@ class SystemState(Node):
 
     def get_subtasks(self):
         """Sorted by priority"""
-        return sorted(self.system_graph.get_subtasks(),
+        return sorted(self.system_graph.subtasks,
                       key=lambda x: x.static_priority, reverse = True)
 
     def get_unordered_subtasks(self):
-        return self.system_graph.get_subtasks()
+        return self.system_graph.subtasks
 
     def get_task_states(self, subtask):
         return self.states[subtask]
@@ -390,11 +390,11 @@ class SystemState(Node):
 
         subtask_score = 0
         continuation_score = 0
-        count = float(len(self.get_unordered_subtasks()))
+        count = float(len(list(self.get_unordered_subtasks())))
 
         # Get the system relevant system abbs
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
-        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
 
         for subtask in self.get_unordered_subtasks():
             if not self.is_unsure_ready_state(subtask):
@@ -550,7 +550,7 @@ class PreciseSystemState(SystemState):
         self.states = []
         self.continuations = []
         self.call_stack = []
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             self.states.append(0)
             self.continuations.append(None)
             self.call_stack.append([])

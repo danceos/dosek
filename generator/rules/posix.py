@@ -1,6 +1,7 @@
 from generator.elements import Include, FunctionDeclaration, Comment, \
                                DataObject, Block, Hook, VariableDefinition
 
+from generator.graph.Subtask import Subtask
 from generator.rules.simple import SimpleArch
 
 
@@ -21,22 +22,22 @@ class PosixArch(SimpleArch):
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.includes.add(Include("tcb.h"))
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
             initializer = "(&%s, %s, %s, %s)" % (
-                self.objects[subtask]["entry_function"].name,
-                self.objects[subtask]["stack"].name,
-                self.objects[subtask]["stackptr"].name,
-                self.objects[subtask]["stacksize"]
+                subtask.impl.entry_function.name,
+                subtask.impl.stack.name,
+                subtask.impl.stackptr.name,
+                subtask.impl.stacksize,
             )
 
-            desc = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
+            tcb = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
                               initializer)
-            desc.allocation_prefix = "constexpr "
-            self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
-            self.objects[subtask].update({"tcb_descriptor": desc})
+            tcb.allocation_prefix = "constexpr "
+            self.generator.source_file.data_manager.add(tcb, namespace = ("arch",))
+            subtask.impl.tcb_descriptor = tcb
 
     def generate_isr_table(self, isrs):
         self.generator.source_file.includes.add(Include("machine.h"))
@@ -47,16 +48,16 @@ class PosixArch(SimpleArch):
         # Forward declaration for the user defined function
         self.generator.source_file.includes.add(Include("irq.h"))
 
-        isr_desc = self.generator.system_graph.get_subtask(isr.name)
+        isr_desc = self.generator.system_graph.get(Subtask, isr.name)
 
         forward = FunctionDeclaration(isr.function_name, "void", ["int"], extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
-        self.call_function(self.objects["StartOS"],
-                           "arch::irq.enable", "void", [str(isr_desc.isr_device)],
+        self.call_function(self.system_graph.impl.StartOS,
+                           "arch::irq.enable", "void", [str(isr_desc.conf.isr_device)],
                            prepend = True)
-        self.call_function(self.objects["StartOS"], 
-                           "arch::irq.set_handler", "void", [str(isr_desc.isr_device), isr.function_name],
+        self.call_function(self.system_graph.impl.StartOS,
+                           "arch::irq.set_handler", "void", [str(isr_desc.conf.isr_device), isr.function_name],
                            prepend = True)
 
     def generate_isr_table(self, isrs):
@@ -69,7 +70,7 @@ class PosixArch(SimpleArch):
            disable interrupts. In the interrupt handler they are already
            disabled.
         """
-        if abb.function.subtask.is_isr:
+        if abb.subtask.conf.is_isr:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
         else:
             self.call_function(userspace, "Machine::disable_interrupts", "void", [])
@@ -83,7 +84,7 @@ class PosixArch(SimpleArch):
         userspace.add(system)
         userspace.add(post_hook)
 
-        if abb.function.subtask.is_isr:
+        if abb.subtask.conf.is_isr:
             userspace.add(Comment("Called from ISR, no enable interrupts required!"))
         else:
             self.call_function(userspace, "Machine::enable_interrupts", "void", [])

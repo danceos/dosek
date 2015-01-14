@@ -1,4 +1,5 @@
 from generator.graph.Analysis import Analysis
+from generator.graph.Subtask  import Subtask
 
 class PrioritySpreadingPass(Analysis):
     """This pass reallocated the priorities in the way, that every
@@ -15,12 +16,12 @@ class PrioritySpreadingPass(Analysis):
 
     def do(self):
         # Get list of all subtasks
-        subtasks = self.system_graph.get_subtasks()
+        subtasks = list(self.system_graph.subtasks)
 
         # Resources and priorities take part in the priority protocol
-        participants = [[x.static_priority * 2, x] for x in subtasks]
-        for resource in self.system_graph.resources.values():
-            prio = 2*max([x.static_priority for x in resource.subtasks]) + 1
+        participants = [[x.conf.static_priority * 2, x] for x in subtasks]
+        for resource in self.system_graph.resources:
+            prio = 2*max([x.conf.static_priority for x in resource.subtasks]) + 1
             participants.append( [prio, resource] )
 
         # Sort by priority
@@ -31,8 +32,8 @@ class PrioritySpreadingPass(Analysis):
         prio = 0
         for p in participants:
             p[0] = prio
-            p[1].static_priority = prio
+            p[1].conf.static_priority = prio
             self.prio_to_participant[prio] = p[1]
             prio += 1
 
-        assert participants[0][1] == self.system_graph.get_subtask("Idle")
+        assert participants[0][1] == self.system_graph.get(Subtask, "Idle")

@@ -1,6 +1,8 @@
 from generator.rules.unencoded import UnencodedSystem, TaskListTemplate, \
     SchedulerTemplate
 from generator.elements import *
+from generator.graph.Resource import Resource
+from .implementations import *
 
 class SignatureGenerator:
     def __init__(self, number_of_tasks, start = 10000):
@@ -56,10 +58,12 @@ class EncodedSystem(UnencodedSystem):
         # The current_prio_sig has to be allocated before the tasklist
         # is instanciated. Otherwise a TAssert in tasklist.h fails
         self.sigs = self.generator.signature_generator
-        self.objects["Scheduler"] = {}
-        self.objects["Scheduler"]["scheduler_prio_sig"] = self.sigs.scheduler_prio
-        self.objects["Scheduler"]["current_prio_sig"] = self.sigs.current_prio
-        self.objects["Scheduler"]["current_task_sig"] = self.sigs.current_task
+
+        impl = EncodedSchedulerImpl()
+        self.system_graph.impl.scheduler = impl
+        impl.scheduler_prio_sig = self.sigs.scheduler_prio
+        impl.current_prio_sig = self.sigs.current_prio
+        impl.current_task_sig = self.sigs.current_task
 
         UnencodedSystem.generate_system_code(self)
 
@@ -70,24 +74,25 @@ class EncodedSystem(UnencodedSystem):
         block.add(Statement("%s.encode(%s)" % (var.name, argument[0])))
         return var
 
-    def generate_counter(self, counter_info):
+    def generate_counter(self, ctr):
         signature = self.generator.signature_generator.new()
         counter = DataObject("EncodedCounter<%d>" % signature,
-                             "OS_%s_counter" % (counter_info.name),
-                             "(%d, %d, %d)" % (counter_info.maxallowedvalue,
-                                               counter_info.ticksperbase,
-                                               counter_info.mincycle))
-        self.counter_signatures[counter.name] = signature
+                             "OS_%s_counter" % (ctr.name),
+                             "(%d, %d, %d)" % (ctr.conf.maxallowedvalue,
+                                               ctr.conf.ticksperbase,
+                                               ctr.conf.mincycle))
+        self.counter_signatures[ctr.conf.name] = signature
         return counter
 
-    def generate_alarm(self, alarm_info, counter, task):
+    def generate_alarm(self, alarm, counter, task):
         signature = self.generator.signature_generator.new()
-        alarm = DataObject("EncodedAlarm<%d, %d, &%s>" % (signature, self.counter_signatures[counter], counter),
-                           "OS_%s_alarm" %( alarm_info.name),
+        alarm = DataObject("EncodedAlarm<%d, %d, &%s>" % (signature, self.counter_signatures[counter.name],
+                                                          counter.impl.name),
+                           "OS_%s_alarm" %( alarm.conf.name),
                            "(%s, %s, %d, %d)" % (task,
-                                                     str(alarm_info.initial_armed).lower(),
-                                                     alarm_info.initial_reltime,
-                                                     alarm_info.initial_cycletime))
+                                                 str(alarm.conf.armed).lower(),
+                                                 alarm.conf.reltime,
+                                                 alarm.conf.cycletime))
         return alarm
 
     def get_syscall_return_variable(self, Type):
@@ -110,13 +115,10 @@ class EncodedTaskListTemplate(TaskListTemplate):
 
         self.__head_signature_vc = self.generator.signature_generator.new()
         # Generate signatures for each task for prio and id
-        for subtask in self.system_graph.get_subtasks():
-            # ISR do not need an signature
-            if subtask.is_isr:
-                continue
+        for subtask in self.system_graph.user_subtasks:
             sig = self.generator.signature_generator.new_task_id()
-            self.objects[subtask]["task_id_sig"] = sig
-            self.objects[subtask]["task_prio_sig"] = sig
+            subtask.impl.task_id_sig = sig
+            subtask.impl.task_prio_sig = sig
 
     def template_file(self):
         return "os/scheduler/tasklist.h.in"
@@ -131,7 +133,7 @@ class EncodedTaskListTemplate(TaskListTemplate):
             return self.expand_snippet("ready_flag",
                                        name = subtask.name,
                                        A = "A0",
-                                       B = self.objects[subtask]["task_prio_sig"]) + "\n"
+                                       B = subtask.impl.task_prio_sig) + "\n"
 
         return self.foreach_subtask(do)
 
@@ -139,15 +141,15 @@ class EncodedTaskListTemplate(TaskListTemplate):
         def do(subtask):
             return self.expand_snippet(args[0],
                                        name = subtask.name,
-                                       id = self.objects[subtask]["task_id"])
+                                       id = subtask.impl.task_id)
 
         return self.foreach_subtask(do)
 
     def idle_id_sig(self, snippet, args):
-        return str(self.objects[self.idle]["task_id_sig"])
+        return str(self.idle.impl.task_id_sig)
 
     def idle_prio_sig(self, snippet, args):
-        return str(self.objects[self.idle]["task_prio_sig"])
+        return str(self.idle.impl.task_prio_sig)
 
 
     # Implementation of head
@@ -169,8 +171,8 @@ class EncodedTaskListTemplate(TaskListTemplate):
                                        task = subtask.name,
                                        last_sig = last_sig,
                                        next_sig = next_sig,
-                                       task_id  = self.objects[subtask]["task_id"],
-                                       task_id_sig = self.objects[subtask]["task_id_sig"],
+                                       task_id  = subtask.impl.task_id,
+                                       task_id_sig = subtask.impl.task_id_sig,
                                        i = str(do.i-1),
                                        ii = str(do.i)
                                        )
@@ -198,14 +200,15 @@ class EncodedSchedulerTemplate(SchedulerTemplate):
         return str(self.generator.signature_generator.new())
 
     def current_task_sig(self, snippet, args):
-        return str(self.objects["Scheduler"]["current_task_sig"])
+        return str(self.system_graph.impl.scheduler.current_task_sig)
     def current_prio_sig(self, snippet, args):
-        return str(self.objects["Scheduler"]["current_prio_sig"])
+        return str(self.system_graph.impl.scheduler.current_prio_sig)
     def scheduler_prio_sig(self, snippet, args):
-        return str(self.objects["Scheduler"]["scheduler_prio_sig"])
+        return str(self.system_graph.impl.scheduler.scheduler_prio_sig)
 
     def scheduler_prio(self, snippet, args):
-        return str(self.system_graph.scheduler_priority())
+        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        return str(RES_SCHEDULER.conf.static_priority)
 
     # Reschedule
     def activate_task_foreach_task(self, snippet, args):

@@ -4,100 +4,149 @@ from generator.graph.Subtask import Subtask
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock, E, S
 from generator.graph.Function import Function
 from generator.graph.PassManager import PassManager
-from generator.graph.Sporadic import Alarm, ISR
+from generator.graph.Sporadic import Counter, Alarm, ISR
 from generator.graph.Resource import Resource
 from generator.graph.common import GraphObject
 from generator.statistics import Statistics
 from collections import namedtuple
 import functools
 
-
 class SystemGraph(GraphObject, PassManager):
     """A system graph makes up an whole system, including the to be
        produces system blocks"""
 
+    class MockSubtaskConfig:
+        def __init__(self):
+            self.static_priority = 0
+            self.is_isr = False
+            self.preemptable = True
+            self.autostart = True
+            self.basic_task = False
+            self.max_activations = 0
+
     def __init__(self):
         GraphObject.__init__(self, "SystemGraph", root=True)
         PassManager.__init__(self, self)
-        self.counters = {}
-        self.tasks = []
-        self.functions = {}
-        self.all_abbs = {}
         self.label = "SystemGraph"
+
+        # System Objects
+        self._counters = {}
+        self._tasks = {}
+        self._subtasks = {}
+        self._alarms = {}
+        self._isrs = {}
+        self._resources = {}
+        self._checkedObjects = {}
+
+        # Application Objects
+        self._functions = {}
+        self._abbs = {}
         self.max_abb_id = 0
+
         self.system = None
         self.llvmpy = None
-        self.alarms = []
-        self.isrs = []
-        self.resources = {}
-        self.checkedObjects = []
         self.stats = Statistics(self)
+        self.impl = None
+
+    # Accessors for System Objects
+    @property
+    def tasks(self):
+        return self._tasks.values()
+
+    @property
+    def subtasks(self):
+        return self._subtasks.values()
+
+    @property
+    def user_subtasks(self):
+        return [x for x in self.subtasks if x.is_user_thread()]
+
+    @property
+    def real_subtasks(self):
+        return [x for x in self.subtasks if x.is_real_thread()]
+
+    @property
+    def resources(self):
+        return self._resources.values()
+
+    @property
+    def alarms(self):
+        return self._alarms.values()
+
+    @property
+    def counters(self):
+        return self._counters.values()
+
+    @property
+    def isrs(self):
+        return self._isrs.values()
+
+    @property
+    def checkedObjects(self):
+        return self._checkedObjects.values()
+
+    @property
+    def functions(self):
+        return self._functions.values()
+
+    @property
+    def abbs(self):
+        return self._abbs.values()
+
+    @property
+    def syscalls(self):
+        return [x for x in self.abbs
+                if not x.isA(S.computation)]
+
+    def find(self, cls, name):
+        """Get System object by class and name. If system object does not
+           exist, this function will return None.
+
+        """
+        if issubclass(cls, Alarm):
+            return self._alarms.get(name)
+        if issubclass(cls, Counter):
+            return self._counters.get(name)
+        if issubclass(cls, Task):
+            return self._tasks.get(name)
+        if issubclass(cls, Resource):
+            return self._resources.get(name)
+        if issubclass(cls, ISR):
+            return self._isrs.get(name)
+
+        # Must be before Function, since Subtask inherits from Function
+        if issubclass(cls, Subtask):
+            return self._subtasks.get(name)
+
+        if issubclass(cls, Function):
+            return self._functions.get(name)
+
+        if issubclass(cls, AtomicBasicBlock):
+            return self._abbs.get(name)
+
+        assert False, "cls(%s) not supported by SystemGraph.find()" % cls
+
+    def get(self, cls, name):
+        """Lile .find, but raises an exception if object does not exists"""
+        x = self.find(cls, name)
+        assert x is not None, "System Object not found (%s, %s)" %\
+            (cls, name)
+        return x
 
     def graph_subobjects(self):
+        """Method used by GraphObject to draw the .dot files"""
         objects = []
         sub_objects = set()
         for task in self.tasks:
             objects.append(task)
             sub_objects.update(set(task.graph_subobjects()))
 
-        for function in self.functions.values():
+        for function in self.functions:
             if not self.passes["AddFunctionCalls"].is_relevant_function(function):
                 continue
             if function not in sub_objects:
                 objects.append(function)
         return objects
-
-    def find_function(self, name):
-        """
-
-        :rtype : generator.graph.Function
-        """
-        return self.functions.get(name, None)
-
-    def find_abb(self, abb_id):
-        return self.all_abbs[abb_id]
-
-    def remove_abb(self, abb_id):
-        del self.all_abbs[abb_id]
-
-    def get_abbs(self):
-        return self.all_abbs.values()
-
-    @functools.lru_cache(maxsize=None)
-    def get_subtasks(self):
-        subtasks = []
-        for x in self.tasks:
-            subtasks.extend(x.subtasks)
-        return sorted(subtasks, key=lambda t: t.name)
-
-    def get_subtask(self, name):
-        for x in self.tasks:
-            for subtask in x.subtasks:
-                if subtask.name == name:
-                    return subtask
-
-
-    def find_syscall(self, function, syscall_type, arguments, multiple=False):
-        abbs = []
-        for abb in function.abbs:
-            if abb.isA(syscall_type) \
-               and abb.arguments == arguments:
-                abbs.append(abb)
-        if multiple:
-            return abbs
-        assert len(abbs) == 1, "System call %s::%s(%s) is ambigious" %(function, type, arguments)
-        return abbs[0]
-
-    def get_syscalls(self):
-        return [x for x in self.get_abbs()
-                if not x.isA(S.computation)]
-
-    def get_checkedObjects(self):
-        return self.checkedObjects
-
-    def scheduler_priority(self):
-        """The scheduler priority is higher than the highest task"""
-        return max([x.static_priority for x in self.get_subtasks()]) + 1
 
     def read_oil_system_description(self, system):
         """Reads in the system description out of an OIL file and builds the
@@ -105,37 +154,30 @@ class SystemGraph(GraphObject, PassManager):
 
         """
         maxprio = 0  # Maximum task prio according to OIL file
-        tasks = {}
         for task_desc in system.getTasks():
             # Create or Get the Task (Group)
             task_group = task_desc.taskgroup
             taskname = task_desc.name
-            if task_group not in tasks:
+            if task_group not in self._tasks:
                 task = Task(self, task_group)
-                self.tasks.append(task)
-                tasks[task_group] = task
+                self._tasks[task_group] = task
                 self.stats.add_child(self, "task", task)
             else:
-                task = tasks[task_group]
+                task = self._tasks[task_group]
 
-            subtask = Subtask(self, taskname, "OSEKOS_TASK_" + taskname)
+            subtask = Subtask(self, taskname, "OSEKOS_TASK_" + taskname, task_desc)
+            self._subtasks[taskname] = subtask
             # Every subtask belongs to a task
             task.add_subtask(subtask)
             # Every subtask is also a function
-            self.functions[subtask.function_name] = subtask
+            self._functions[subtask.function_name] = subtask
             self.stats.add_child(task, "subtask", subtask)
-            assert task_desc.priority != 0, \
+            assert task_desc.static_priority != 0, \
                     "No user thread can have the priority 0, reserved for the idle thread"
-            subtask.set_static_priority(task_desc.priority)
 
-            if task_desc.priority > maxprio:
-                maxprio = task_desc.priority
+            if task_desc.static_priority > maxprio:
+                maxprio = task_desc.static_priority
 
-            subtask.set_preemptable(task_desc.preemptable)
-            subtask.set_basic_task(True)
-            subtask.set_max_activations(task_desc.max_activations)
-            subtask.set_autostart(task_desc.autostart)
-            subtask.set_is_isr(False)
             self.stats.add_data(subtask, "is_isr", False, scalar = True)
 
         #  ISR
@@ -143,18 +185,19 @@ class SystemGraph(GraphObject, PassManager):
         for isr_desc in system.getISRs():
             task_group = isr_desc.taskgroup
             taskname = isr_desc.name
-            if task_group not in tasks:
+            if task_group not in self._tasks:
                 task = Task(self, task_group)
-                self.tasks.append(task)
-                tasks[task_group] = task
+                self._tasks[task_group] = task
                 self.stats.add_child(self, "task", task)
             else:
-                task = tasks[task_group]
+                task = self._tasks[task_group]
 
             # Generate Subtask for ISR
-            subtask = Subtask(self, isr_desc.name, "OSEKOS_ISR_" + isr_desc.name)
+            subtask = Subtask(self, isr_desc.name, "OSEKOS_ISR_" + isr_desc.name,
+                              isr_desc)
+            self._subtasks[isr_desc.name] = subtask
             task.add_subtask(subtask)
-            self.functions[subtask.function_name] = subtask
+            self._functions[subtask.function_name] = subtask
             self.stats.add_child(task, "subtask", subtask)
 
             prio = isr_desc.PRIORITY
@@ -162,82 +205,74 @@ class SystemGraph(GraphObject, PassManager):
                 prio = isr_prio
                 isr_prio = isr_prio + 1 # increment isr prio
 
-            subtask.set_static_priority(prio)
-
-            # Assumption: Our subtasks are non-preemptable basic-tasks
-            subtask.set_preemptable(False)
-            subtask.set_basic_task(True)
-            subtask.set_max_activations(1)
-            subtask.set_autostart(False)
-            subtask.set_is_isr(True, isr_desc.device)
+            subtask.conf.static_priority = prio
             self.stats.add_data(subtask, "is_isr", True, scalar=True)
 
-            self.isrs.append(ISR(self, subtask))
+            self._isrs[isr_desc.name] = ISR(self, subtask)
 
-        # Now, all Task (Groups) are created, now we catch the task group configurations
+        # Now, after all Task (Groups) are created, now we catch the
+        # task group configurations.
         for taskgroup_desc in system.getTaskGroups():
-            task_group = tasks[taskgroup_desc.name]
+            task_group = self.get(Task, taskgroup_desc.name)
             task_group.promises.update(taskgroup_desc.promises)
 
-        #  Counters
-        Counter = namedtuple("Counter", ["name", "maxallowedvalue",
-                                         "ticksperbase", "mincycle",
-                                         "softcounter"])
-        for ctr in system.getCounters():
-            self.counters[ctr.name] = Counter(name = ctr.name,
-                                          maxallowedvalue = ctr.MAXALLOWEDVALUE,
-                                          ticksperbase = ctr.TICKSPERBASE,
-                                          mincycle = ctr.MINCYCLE,
-                                          softcounter = ctr.SOFTCOUNTER)
+        # Counters
+        for conf in system.getCounters():
+            self._counters[conf.name] = Counter(conf.name, conf)
 
-        #  Alarms
+        # Alarms
         for alarm in system.getAlarms():
             assert alarm.activated_task() != None, "Alarm does not activate any task! (maybe callback?)"
-            activated_subtask = self.functions["OSEKOS_TASK_" + alarm.activated_task()]
+            activated_subtask = self.get(Subtask, alarm.activated_task())
             belongs_to_task = activated_subtask.task
 
-            #  Generate an Alarm Handler SubTask
+            #  Generate an Alarm Handler SubTask. Use a Mock config here
             name = "OSEKOS_ALARM_HANDLER_" + alarm.name
-            subtask = Subtask(self, alarm.name, name)
-            subtask.set_static_priority(1<<31)
-            subtask.set_preemptable(False)
-            subtask.set_basic_task(True)
-            subtask.set_max_activations(1)
-            subtask.set_autostart(False)
-            subtask.set_is_isr(True)
+            conf = self.MockSubtaskConfig()
+            conf.is_isr = True
+            conf.static_priority = (1<<31)
+            conf.preemptable = False
+            conf.autostart = False
+            conf.isr_device = 0
+            subtask = Subtask(self, alarm.name, name, conf)
 
             #  And add it to the task where the activated task belongs to
             belongs_to_task.add_subtask(subtask)
-            self.functions[subtask.function_name] = subtask
+            self._functions[subtask.function_name] = subtask
+            self._subtasks[subtask.function_name] = subtask
 
-            self.alarms.append(Alarm(self, subtask, alarm, activated_subtask))
+            counter = self.get(Counter, alarm.counter)
+
+            self._alarms[alarm.name] = Alarm(self, subtask, alarm, counter, activated_subtask)
 
         #  Resources
         for res in system.getResources():
-            self.resources[res.name] = Resource(self, res.name, res.tasks)
+            subtasks = [self.get(Subtask, x) for x in res.tasks]
+            self._resources[res.name] = Resource(self, res.name, subtasks, res)
 
-        if not "RES_SCHEDULER" in self.resources:
+        if self.find(Resource, "RES_SCHEDULER") is None:
             sched = "RES_SCHEDULER"
-            subtasks = [x.name for x in self.get_subtasks()
-                        if not x.is_isr]
-            self.resources[sched] = Resource(self, sched, subtasks)
+            class ResourceConfig:
+                def __init__(self):
+                    self.static_priority = None
 
-        self.checkedObjects = system.getCheckedObjects()
+            subtasks = [x for x in self.subtasks if not x.conf.is_isr]
+            self._resources[sched] = Resource(self, sched, subtasks, ResourceConfig())
 
+        for obj in system.getCheckedObjects():
+            self._checkedObjects[obj.name] = obj
 
-
-    
     def read_llvmpy_analysis(self, llvmpy):
         self.llvmpy = llvmpy
         self.max_abb_id = 0
 
         # Gather functions
         for llvmfunc,llvmbbs in self.llvmpy.functions.items():
-            function = self.functions.get(llvmfunc.name)
+            function = self.find(Function, llvmfunc.name)
             if function == None:
                 # Not existing yet, just add it...
                 function = Function(llvmfunc.name)
-                self.functions[llvmfunc.name] = function
+                self._functions[llvmfunc.name] = function
 
             # Add llvm function object
             function.set_llvm_function(llvmfunc)
@@ -269,7 +304,7 @@ class SystemGraph(GraphObject, PassManager):
             self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)
 
         # Add all implicit intra function control flow graphs
-        for functionname, func in self.functions.items():
+        for func in self.functions:
             for abb in func.abbs:
                 exit_bb = abb.get_exit_bb()
                 if not exit_bb:
@@ -282,7 +317,7 @@ class SystemGraph(GraphObject, PassManager):
                     abb.add_cfg_edge(nextabb, E.function_level)
 
         # Find all return blocks for functions
-        for function in self.functions.values():
+        for function in self.functions:
             ret_abbs = []
             for abb in function.abbs:
                 if len(abb.get_outgoing_edges(E.function_level)) == 0:
@@ -299,7 +334,8 @@ class SystemGraph(GraphObject, PassManager):
                 function.set_exit_abb(abb)
             else:
                 function.set_exit_abb(ret_abbs[0])
-            if isinstance(function, Subtask) and function.is_isr:
+
+            if isinstance(function, Subtask) and function.conf.is_isr:
                 # All ISR function get an additional iret block
                 iret = self.new_abb()
                 function.add_atomic_basic_block(iret)
@@ -308,31 +344,42 @@ class SystemGraph(GraphObject, PassManager):
                 function.set_exit_abb(iret)
 
         # Gather all called Functions in the ABBs, this has to be done, after all ABBs are present
-        for abb in self.get_abbs():
+        for abb in self.abbs:
             called_funcs = set()
             # Visit all BBs and gather all called Functions
             for bb in abb.get_basic_blocks():
                 if bb.calls_function():
-                    callee = self.find_function(bb.calledFunc.name)
+                    callee = self.find(Function, bb.calledFunc.name)
                     if callee:
                         called_funcs.add(callee)
                         abb.called_functions.add(callee)
             # Populate function level set of called functions, needed in ABBMergePass
             abb.function.called_functions.update(called_funcs)
 
-
-    
-
     def new_abb(self, bbs=[]):
         self.max_abb_id += 1
         abb = AtomicBasicBlock(self, self.max_abb_id, bbs)
-        self.all_abbs[abb.get_id()] = abb
+        self._abbs[abb.get_id()] = abb
         return abb
+
+    def remove_abb(self, abb_id):
+        del self._abbs[abb_id]
+
+    def find_syscall(self, function, syscall_type, arguments, multiple=False):
+        abbs = []
+        for abb in function.abbs:
+            if abb.isA(syscall_type) \
+               and abb.arguments == arguments:
+                abbs.append(abb)
+        if multiple:
+            return abbs
+        assert len(abbs) == 1, "System call %s::%s(%s) is ambigious" %(function, type, arguments)
+        return abbs[0]
 
     def add_system_objects(self):
         def system_function(syscall_type):
             function = Function(syscall_type.name)
-            self.functions[syscall_type.name] = function
+            self._functions[syscall_type.name] = function
             abb = self.new_abb()
             function.add_atomic_basic_block(abb)
             function.set_entry_abb(abb)
@@ -342,18 +389,18 @@ class SystemGraph(GraphObject, PassManager):
         # Add Idle Task
         system_task = Task(self, "OSEK")
         self.system_task = system_task
-        self.tasks.append(system_task)
-        idle_subtask = Subtask(self, "Idle", "Idle")
-        self.functions["Idle"] = idle_subtask
+        self._tasks["OSEK"] = system_task
+
+        idle_subtask = Subtask(self, "Idle", "Idle", self.MockSubtaskConfig())
+
+        self._functions["Idle"] = idle_subtask
+        self._subtasks["Idle"] = idle_subtask
         self.idle_subtask = idle_subtask
-        idle_subtask.set_static_priority(0)
-        idle_subtask.set_preemptable(True)
         system_task.add_subtask(idle_subtask)
         # The idle systemcall
         abb = self.new_abb()
         idle_subtask.add_atomic_basic_block(abb)
         idle_subtask.set_entry_abb(abb)
-        idle_subtask.set_autostart(True)
         abb.make_it_a_syscall(S.Idle, [])
         # System Functions
         StartOS = system_function(S.StartOS)
@@ -365,6 +412,7 @@ class SystemGraph(GraphObject, PassManager):
 
     def who_has_prio(self, priority):
         # We Inherit PassManager!
+        # FIXME: Ugly hack
         assert self.passes["PrioritySpreadingPass"].valid
         return self.passes["PrioritySpreadingPass"].prio_to_participant[priority]
 
@@ -380,10 +428,8 @@ class SystemGraph(GraphObject, PassManager):
                 functions.add(subtask)
                 abbs.update(set(subtask.abbs))
 
-        assert functions.issubset(set(self.functions.values()))
-        for func in self.functions.values():
-            if func in functions:
-                continue
+        assert functions.issubset(set(self.functions))
+        for func in self.functions:
             abbs.update(set(func.abbs))
         for abb in abbs:
             abb.fsck()

@@ -22,15 +22,15 @@ import optparse
 def split_lls_callback(option, opt, value, parser):
     x = value.split(',')
     y = getattr(parser.values, option.dest)
-    if y != None:
+    if y is not None:
         x = y + x
     setattr(parser.values, option.dest, x)
 
 
-def setup_logging(log_level : int):
+def setup_logging(log_level):
     """ setup the logging module with the given log_level """
 
-    l = logging.INFO # default
+    l = logging.INFO  # default
     if log_level >= 1:
         l = logging.DEBUG
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     parser.add_option("-m", "--merged-bytecode", dest='mergedoutput',
                       metavar="DIR", help="output file of the merged system .ll files")
 
-
+    # Read additional flags from environment variable SGFLAGS
     if "SGFLAGS" in os.environ:
         sys.argv.extend(re.split("[ \t:;,]+", os.environ["SGFLAGS"]))
 
@@ -110,7 +110,6 @@ if __name__ == "__main__":
         print("No system description file passed")
         parser.print_help()
         sys.exit(-1)
-
 
     systemanalysis = None
 
@@ -146,7 +145,6 @@ if __name__ == "__main__":
     # Task-level: Enable/Disable IRQ control
     pass_manager.register_and_enqueue_analysis(InterruptControlAnalysis())
 
-
     # Task-Level: Dynamic Priority spreading pass
     pass_manager.register_analysis(PrioritySpreadingPass())
     pass_manager.register_and_enqueue_analysis(DynamicPriorityAnalysis())
@@ -163,10 +161,8 @@ if __name__ == "__main__":
 
     pass_manager.register_analysis(FiniteStateMachineBuilder())
 
-
     # Statistics modules
     pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
-
 
     if options.arch == "i386":
         arch_rules = X86Arch()
@@ -215,5 +211,3 @@ if __name__ == "__main__":
     generator.generate_into(options.prefix)
 
     graph.stats.save(options.prefix + "/stats.dict.py")
-
-

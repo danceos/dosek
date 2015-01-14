@@ -2,6 +2,7 @@ from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
+from generator.graph.Function import Function
 from generator.tools import stack, unwrap_seq, group_by, IntEnum
 
 @unique
@@ -88,7 +89,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         after_states = self.system_call_semantic.do_computation_with_callstack(block, before)
 
         # Handle sporadic events
-        for sporadic_event in self.system_graph.alarms + self.system_graph.isrs:
+        for sporadic_event in list(self.system_graph.alarms) + list(self.system_graph.isrs):
             if not sporadic_event.can_trigger(before):
                 continue
             after = sporadic_event.trigger(before)
@@ -139,7 +140,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Instantiate the big dict (State->State)
         self.states = {}
 
-        entry_abb = self.system_graph.functions["StartOS"].entry_abb
+        entry_abb = self.system_graph.get(Function, "StartOS").entry_abb
         before_StartOS = PreciseSystemState(self.system_graph)
         before_StartOS.current_abb = entry_abb
         for subtask in before_StartOS.get_unordered_subtasks():
@@ -214,7 +215,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Record the precision indicators for each abb
         # Count the number of ABBs in the system the analysis works on
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
-        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
         precisions = []
         for abb in abbs:
             if not abb.function.subtask or not abb.function.subtask.is_real_thread():
@@ -239,7 +240,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         def is_isr_state(state):
             if not state.current_abb.function.subtask:
                 return False
-            return state.current_abb.function.subtask.is_isr
+            return state.current_abb.function.subtask.conf.is_isr
         del_edges = []
         add_edges = []
         for app_level in [x for x in self.states if not is_isr_state(x)]:

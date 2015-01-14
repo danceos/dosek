@@ -2,6 +2,7 @@ from generator.rules.simple import SimpleArch
 from generator.elements import CodeTemplate, FunctionDefinitionBlock, \
     Include, FunctionDeclaration, Comment, Function, DataObject, \
     DataObjectArray, Hook, Block, VariableDefinition, Statement
+from generator.graph.Subtask import Subtask
 
 class X86Arch(SimpleArch):
     def __init__(self):
@@ -21,29 +22,13 @@ class X86Arch(SimpleArch):
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
+        super(X86Arch, self).generate_dataobjects_task_stacks()
+
         stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "")
         stackptr_arr.add_static_initializer("&startup_sp")
-
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread and ISR subtasks
-            if not subtask.is_real_thread():
-                continue
-            stacksize = subtask.get_stack_size()
-            stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
-                                    extern_c = True)
-            self.generator.source_file.data_manager.add(stack)
-
-            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
-            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
-            stackptr_arr.add_static_initializer("&" + stackptr.name)
-
-            self.objects[subtask]["stack"] = stack
-            self.objects[subtask]["stackptr"] = stackptr
-            self.objects[subtask]["stacksize"] = stacksize
-
+        for subtask in self.system_graph.real_subtasks:
+            stackptr_arr.add_static_initializer("&" + subtask.impl.stackptr.name)
         self.generator.source_file.data_manager.add(stackptr_arr, namespace = ("arch",))
-
-
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.includes.add(Include("tcb.h"))
@@ -51,22 +36,19 @@ class X86Arch(SimpleArch):
         tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "")
         tcb_arr.add_static_initializer("0")
 
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread
-            if not subtask.is_real_thread():
-                continue
+        for subtask in self.system_graph.real_subtasks:
             initializer = "(&%s, %s, %s, %s)" % (
-                self.objects[subtask]["entry_function"].name,
-                self.objects[subtask]["stack"].name,
-                self.objects[subtask]["stackptr"].name,
-                self.objects[subtask]["stacksize"]
+                subtask.impl.entry_function.name,
+                subtask.impl.stack.name,
+                subtask.impl.stackptr.name,
+                subtask.impl.stacksize
             )
 
             desc = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
                               initializer)
             desc.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
-            self.objects[subtask].update({"tcb_descriptor": desc})
+            subtask.impl.tcb_descriptor = desc
             tcb_arr.add_static_initializer("&" + desc.name)
 
         self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
@@ -77,8 +59,8 @@ class X86Arch(SimpleArch):
             self.generate_isr(isr)
 
     def generate_isr(self, isr):
-        isr_desc = self.generator.system_graph.get_subtask(isr.name)
-        handler = FunctionDefinitionBlock('ISR', [str(isr_desc.isr_device)])
+        isr_desc = self.generator.system_graph.get(Subtask, isr.name)
+        handler = FunctionDefinitionBlock('ISR', [str(isr_desc.conf.isr_device)])
         self.generator.source_file.function_manager.add(handler)
 
         # Forward declaration for the user defined function
@@ -101,7 +83,7 @@ class X86Arch(SimpleArch):
 
         userspace.attributes.append("inlinehint")
 
-        if abb.function.subtask.is_isr:
+        if abb.subtask.conf.is_isr:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
 
             system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
@@ -122,15 +104,11 @@ class X86Arch(SimpleArch):
         self.stats.add_data(abb, "generated-function", syscall.name)
         # The syscall function is called from the function that will
         # be inlined into the application
-        self.asm_marker(userspace, "syscall_start_%s" % userspace.name)
-
         syscall.add(pre_hook)
         self.call_function(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
         userspace.add(post_hook)
 
         self.call_function(userspace, "Machine::enable_interrupts", "void", [])
-
-        self.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         return self.KernelSpace(pre_hook, syscall, post_hook)
 
@@ -155,7 +133,7 @@ class LinkerScriptTemplate(CodeTemplate):
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.x86.foreach_subtask
 
-        assert len(self.system_graph.get_subtasks()) <= 16, "paging.h does not support more tasks atm"
+        assert len(list(self.system_graph.subtasks)) <= 16, "paging.h does not support more tasks atm"
 
     def __select_statement(self, symbol, sections, library="*"):
         """Returns a newline seperated string of linker selectiors, for the
@@ -168,15 +146,15 @@ class LinkerScriptTemplate(CodeTemplate):
     def task_code_regions(self, snippet, args):
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
-            ret += "_stext_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_stext_task%s = .;\n" % subtask.impl.task_id
             # Find all functions that belong to the function
-            for function in self.system_graph.functions.values():
+            for function in self.system_graph.functions:
                 if subtask == function.subtask:
                     ret += self.__select_statement(function.function_name, ["text", "rodata"])
-            for function in self.objects[subtask]["generated_functions"]:
+            for function in subtask.impl.generated_functions:
                 ret += self.__select_statement(function.function_name, ["text", "rodata"])
 
-            ret += "_etext_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_etext_task%s = .;\n" % subtask.impl.task_id
             ret += "\n"
             return ret
 
@@ -185,9 +163,9 @@ class LinkerScriptTemplate(CodeTemplate):
     def task_stacks(self, snippet, args):
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
-            ret += "_sstack_task%s = .;\n" % self.objects[subtask]["task_id"]
-            ret += self.__select_statement(self.objects[subtask]["stack"].name, ["data"])
-            ret += "_estack_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_sstack_task%s = .;\n" % subtask.impl.task_id
+            ret += self.__select_statement(subtask.impl.stack.name, ["data"])
+            ret += "_estack_task%s = .;\n" % subtask.impl.task_id
             ret += "\n"
             return ret
 
@@ -196,9 +174,9 @@ class LinkerScriptTemplate(CodeTemplate):
     def task_data(self, snippet, args):
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
-            ret += "_sdata_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_sdata_task%s = .;\n" % subtask.impl.task_id
             ret += self.__select_statement(subtask.name + "*", ["data"])
-            ret += "_edata_task%s = .;\n" % self.objects[subtask]["task_id"]
+            ret += "_edata_task%s = .;\n" % subtask.impl.task_id
             ret += "\n"
             return ret
 

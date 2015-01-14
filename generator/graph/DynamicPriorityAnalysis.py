@@ -1,5 +1,7 @@
 from generator.graph.Analysis import Analysis, FixpointIteration
 from generator.graph.AtomicBasicBlock import E, S
+from generator.graph.Resource import Resource
+from generator.graph.Function import Function
 from collections import namedtuple
 
 class DynamicPriorityAnalysis(Analysis):
@@ -52,13 +54,13 @@ class DynamicPriorityAnalysis(Analysis):
         # AtomicBasicBlock -> set([Resource])
         self.values = {}
         # All Atomic basic blocks have a start value
-        for resource in self.system_graph.resources.values():
+        for resource in self.system_graph.resources:
             self.values[resource] = {}
-            for abb in self.system_graph.get_abbs():
+            for abb in self.system_graph.abbs:
                 # The default is that we do not know anything
                 self.values[resource][abb] \
                     = self.StateVector(free = False, taken = False)
-            for subtask in self.system_graph.get_subtasks():
+            for subtask in self.system_graph.subtasks:
                 # At the entry point of a subtask every resource is free
                 self.values[resource][subtask.entry_abb] \
                     = self.StateVector(free = True, taken = False)
@@ -68,10 +70,10 @@ class DynamicPriorityAnalysis(Analysis):
                 start_basic_blocks.extend(successors)
 
             # After the System boots we also know that everything is fine
-            self.values[resource][self.system_graph.functions["StartOS"].entry_abb] \
+            self.values[resource][self.system_graph.get(Function, "StartOS").entry_abb] \
                 = self.StateVector(free = True, taken = False)
 
-        for resource in self.system_graph.resources.values():
+        for resource in self.system_graph.resources:
             self.__res = resource
             fixpoint = FixpointIteration(start_basic_blocks)
             fixpoint.do(self.block_functor)
@@ -83,32 +85,32 @@ class DynamicPriorityAnalysis(Analysis):
         # ...
         # if (X)
         #    ReleaseResource(A)
-        RES_SCHEDULER = self.system_graph.resources["RES_SCHEDULER"]
-        for abb in self.system_graph.get_abbs():
+        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        for abb in self.system_graph.abbs:
             if abb.function.subtask == None:
                 # Not reachable from a subtask
                 continue
             dynamic_priority = abb.function.subtask.static_priority
-            for resource in self.system_graph.resources.values():
+            for resource in self.system_graph.resources:
                 state = self.values[resource][abb]
                 assert not(state.free and state.taken), \
                     """The allocation state of resource have to be unambigious at every
                     point. Do not make GetResource conditional (Resource %s in function %s)""" %\
                         (resource, abb.function)
                 if state.taken:
-                    dynamic_priority = max(dynamic_priority, resource.static_priority)
+                    dynamic_priority = max(dynamic_priority, resource.conf.static_priority)
             # Blocks within a non-preemtable subtask cannot be
             # rescheduled (except for ISR2)
-            if not abb.function.subtask.preemptable and \
+            if not abb.function.subtask.conf.preemptable and \
                not abb.isA(S.kickoff):
-                dynamic_priority = RES_SCHEDULER.static_priority
+                dynamic_priority = RES_SCHEDULER.conf.static_priority
             # Each abb has a dynamic priority
             abb.dynamic_priority = dynamic_priority
 
         # Each systemcall has the priority of the preceeding block, if
         # there is no preceeding block (which is only true for
         # StartOS), the priority is the idle priority.
-        for syscall in self.system_graph.get_syscalls():
+        for syscall in self.system_graph.syscalls:
             precessors = syscall.get_incoming_nodes(E.task_level)
             if syscall.isA(S.kickoff):
                 syscall.dynamic_priority = syscall.function.subtask.static_priority

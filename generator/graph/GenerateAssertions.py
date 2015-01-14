@@ -61,7 +61,7 @@ class GenerateAssertionsPass(Analysis):
     def state_asserts(self, abb, state):
         ret = []
 
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             # Only for real tasks
             if not subtask.is_real_thread():
                 continue
@@ -122,7 +122,7 @@ class GenerateAssertionsPass(Analysis):
 
         # Empty lists to hold the assertions
         working_abbs = []
-        for abb in self.system_graph.get_syscalls():
+        for abb in self.system_graph.syscalls:
             self.assertions_before[abb] = []
             self.assertions_after[abb]  = []
 

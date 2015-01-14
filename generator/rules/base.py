@@ -15,7 +15,6 @@ class BaseRules:
     def set_generator(self, generator):
         self.generator = generator
         self.system_graph = generator.system_graph
-        self.objects = generator.objects
         self.arch_rules = generator.arch_rules
         self.os_rules   = generator.os_rules
         self.syscall_rules = generator.syscall_rules
@@ -31,12 +30,8 @@ class BaseRules:
         """Call func for every subtask, that is a real task and collect the
         results in a list."""
         ret = []
-        for subtask in self.system_graph.get_subtasks():
-            if not subtask in self.objects:
-                self.objects[subtask] = {}
-            # Ignore the Idle thread and ISR subtasks
-            if not subtask.is_real_thread():
-                continue
+        # Ignore the Idle thread and ISR subtasks
+        for subtask in self.system_graph.real_subtasks:
             ret += func(subtask)
         return ret
 

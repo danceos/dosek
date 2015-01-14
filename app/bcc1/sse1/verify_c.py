@@ -9,7 +9,7 @@ def after_SystemStateFlow(analysis):
 
     t = RunningTaskToolbox(analysis)
     # There are two terminate tasks in H1
-    for syscall in H4.get_syscalls():
+    for syscall in H4.syscalls:
         if not syscall.isA("ReleaseResource"):
             continue
         t.reachability_abbs(syscall,
@@ -36,7 +36,7 @@ def after_ConstructGlobalCFG(analysis):
         assert len(analysis.removed_edges) == 3
         # There are two terminate tasks in H1
         syscalls_found = [False, False]
-        for syscall in H4.get_syscalls():
+        for syscall in H4.syscalls:
             if not syscall.isA("ReleaseResource"):
                 continue
             # One ReleaseResource was executed with an ActivateTask

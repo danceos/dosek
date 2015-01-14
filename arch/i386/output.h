@@ -11,10 +11,10 @@
 #ifndef FAIL
 #if DEBUG
 
-// debugging: print kout+debug on CGA
-#include "cga.h"
-extern CGA kout;
-extern CGA debug;
+// debugging: print kout+debug on Serial
+#include "serial.h"
+extern Serial kout;
+extern Serial debug;
 
 #else // DEBUG
 

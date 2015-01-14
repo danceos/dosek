@@ -2,6 +2,7 @@ from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from generator.graph.Sporadic import SporadicEvent
+from generator.graph.Function import Function
 from generator.graph.GlobalAbbInfo import GlobalAbbInfo
 from generator.graph.SystemSemantic import *
 from generator.graph.AtomicBasicBlock import E
@@ -154,7 +155,7 @@ class SystemStateFlow(Analysis):
 
         self.install_sporadic_events()
 
-        entry_abb = self.system_graph.functions["StartOS"].entry_abb
+        entry_abb = self.system_graph.get(Function, "StartOS").entry_abb
         entry_state = SystemState(self.system_graph)
         entry_state.current_abb = entry_abb
         entry_state.freeze()
@@ -171,9 +172,9 @@ class SystemStateFlow(Analysis):
         for isr in self.sporadic_events:
             isr.fixup_before_states()
             if isinstance(isr.wrapped_event, Alarm):
-                counter = self.system_graph.counters[isr.wrapped_event.counter]
+                counter = isr.wrapped_event.counter
                 # Ignore softcounters
-                if counter.softcounter:
+                if counter.conf.softcounter:
                     continue
             for abb in isr.wrapped_event.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
@@ -188,7 +189,7 @@ class SystemStateFlow(Analysis):
         # Record the precision indicators for each abb
         # Count the number of ABBs in the system the analysis works on
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
-        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
         precisions = []
         for abb in abbs:
             # Only ABBs from Subtasks
@@ -253,7 +254,7 @@ class SSF_SporadicEvent(SporadicEvent):
 
         irq_entry_state = SystemState(self.system_graph)
         self.irq_exit_state = SystemState(self.system_graph)
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             irq_entry_state.set_suspended(subtask)
             irq_entry_state.set_continuation(subtask, subtask.entry_abb)
 
@@ -270,10 +271,7 @@ class SSF_SporadicEvent(SporadicEvent):
         self.surely_activated = []
         self.maybe_activated = []
         self.in_state = SystemState(self.system_graph)
-        for subtask in self.system_graph.get_subtasks():
-            # Only Real Tasks
-            if subtask.is_isr:
-                continue
+        for subtask in self.system_graph.user_subtasks:
             if self.irq_exit_state.is_surely_ready(subtask):
                 self.surely_activated.append(subtask)
             elif self.irq_exit_state.is_maybe_ready(subtask):

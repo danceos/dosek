@@ -33,16 +33,12 @@ class Task(GraphObject):
 
     def add_subtask(self, subtask):
         subtask.task = self
-        # Clear the LRU Cache
-        self.system_graph.get_subtasks.cache_clear()
         self.subtasks.append(subtask)
 
     def add_function(self, function):
         function.task = self
         self.functions.append(function)
-        if not function in list(self.system_graph.functions.values()):
-            self.system_graph.functions[function.function_name] = function
-
+        assert function in list(self.system_graph.functions)
 
     def dump(self):
         return self.event

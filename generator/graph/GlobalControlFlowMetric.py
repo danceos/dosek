@@ -12,7 +12,7 @@ class GlobalControlFlowMetric(Analysis):
     def do(self):
         current_task = self.get_analysis("CurrentRunningSubtask")
 
-        abbs = self.system_graph.get_abbs()
+        abbs = self.system_graph.abbs
         # All possible directed edges
         all_possible_neighbours_count = 0
         # All edges that go to higher priority blocks or the system blocks

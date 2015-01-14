@@ -77,7 +77,7 @@ class ConstructGlobalCFG(Analysis):
         edge_count_in_ssf = 0
         edge_count_in_sse = 0
 
-        for source_abb in self.system_graph.get_abbs():
+        for source_abb in self.system_graph.abbs:
             in_state_flow = set(self.edges_in_state_flow(source_abb))
             in_sse = set(self.edges_in_sse(source_abb))
             edge_count_in_sse += len(in_sse)
@@ -105,8 +105,8 @@ class ConstructGlobalCFG(Analysis):
             for target_abb in more_in_sse:
                 # Returns from or to interrupts are not part of the system_level flow
                 if source_abb.function.subtask and \
-                   (bool(source_abb.function.subtask.is_isr) \
-                    ^ bool(target_abb.function.subtask.is_isr)):
+                   (bool(source_abb.subtask.conf.is_isr) \
+                    ^ bool(target_abb.subtask.conf.is_isr)):
                     assert False, "Invalid application/ISR transition"
 
                 # There should not be more edges in the symbolic
@@ -126,7 +126,7 @@ class ConstructGlobalCFG(Analysis):
 
         # Count the number of ABBs in the system the analysis works on
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
-        abbs = [x for x in self.system_graph.get_abbs() if is_relevant(x.function)]
+        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
         self.stats.add_data(self, "abb-count", len(abbs), scalar = True)
 
         # Record Edge Count
@@ -174,7 +174,7 @@ class ConstructGlobalCFG(Analysis):
 
         # Record the number of subtasks that can be reached
         subtask_count = 0
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             if subtask.is_real_thread() and \
                len(subtask.entry_abb.get_incoming_edges(E.system_level)) > 0:
                 subtask_count += 1
@@ -182,7 +182,7 @@ class ConstructGlobalCFG(Analysis):
 
         # ISR Count
         self.stats.add_data(self, "isr-count",
-                            len(self.system_graph.isrs+self.system_graph.alarms), scalar = True)
+                            len(list(self.system_graph.isrs)+list(self.system_graph.alarms)), scalar = True)
 
         # Describe the removed edges
         self.stats.add_data(self, "removed-edges", []) # empty List

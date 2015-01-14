@@ -1,6 +1,9 @@
 from generator.elements import *
 from generator.elements.DataObjectManager import ExternalDataObject
 from generator.rules.base import BaseRules
+from generator.graph.Function import Function as GraphFunction
+from .implementations import *
+
 from collections import namedtuple
 
 class SimpleSystem(BaseRules):
@@ -41,64 +44,66 @@ class SimpleSystem(BaseRules):
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
         task_id = 1
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
             initializer = "(%d, %d, %s, arch::%s)" % (
                 task_id,
-                subtask.static_priority,
-                str(subtask.preemptable).lower(),
-                self.objects[subtask]["tcb_descriptor"].name
+                subtask.conf.static_priority,
+                str(subtask.conf.preemptable).lower(),
+                subtask.impl.tcb_descriptor.name
             )
 
-
-            task_id += 1
             desc = DataObject("const os::scheduler::Task", "OS_" + subtask.name + "_task",
                               initializer)
             desc.allocation_prefix = "constexpr "
+
             self.generator.source_file.data_manager.add(desc, namespace = ("os", "tasks"))
+            subtask.impl.task_descriptor = desc
+            subtask.impl.task_id = task_id
 
-            self.objects[subtask].update({"task_descriptor": desc, "task_id": task_id - 1})
+            task_id += 1
 
-    def generate_counter(self, counter_info):
+
+    def generate_counter(self, ctr):
         return DataObject("UnencodedCounter",
-                             "OS_%s_counter" % (counter_info.name),
-                             "(%d, %d, %d)" % (counter_info.maxallowedvalue,
-                                               counter_info.ticksperbase,
-                                               counter_info.mincycle))
+                             "OS_%s_counter" % (ctr.name),
+                             "(%d, %d, %d)" % (ctr.conf.maxallowedvalue,
+                                               ctr.conf.ticksperbase,
+                                               ctr.conf.mincycle))
 
-    def generate_alarm(self, alarm_info, counter, task):
-        return DataObject("UnencodedAlarm<&%s>" % counter,
-                           "OS_%s_alarm" %( alarm_info.name),
+    def generate_alarm(self, alarm, counter, task):
+        return DataObject("UnencodedAlarm<&%s>" % counter.impl.name,
+                           "OS_%s_alarm" %( alarm.conf.name),
                            "(%s, %s, %d, %d)" % (task,
-                                                     str(alarm_info.initial_armed).lower(),
-                                                     alarm_info.initial_reltime,
-                                                     alarm_info.initial_cycletime))
+                                                 str(alarm.conf.armed).lower(),
+                                                 alarm.conf.reltime,
+                                                 alarm.conf.cycletime))
 
     def generate_dataobjects_counters_and_alarms(self):
-        self.objects["counter"] = {}
-        self.objects["alarm"] = {}
-        for counter_info in self.generator.system_graph.counters.values():
-            assert counter_info.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
+        for ctr in self.generator.system_graph.counters:
+            assert ctr.conf.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 
-            counter = self.generate_counter(counter_info)
-            self.generator.source_file.data_manager.add(counter, namespace = ("os",))
-            self.objects["counter"][counter_info.name] = counter
+            impl = self.generate_counter(ctr)
 
-        for alarm_info in self.generator.system_graph.alarms:
-            counter = self.objects["counter"][alarm_info.counter].name
-            subtask = alarm_info.subtask
-            task = "os::tasks::" + self.objects[subtask]["task_descriptor"].name
-            alarm = self.generate_alarm(alarm_info, counter, task)
-            self.generator.source_file.data_manager.add(alarm, namespace = ("os",))
-            self.objects["alarm"][alarm_info.name] = alarm
+            # Add and save counter Implementation
+            self.generator.source_file.data_manager.add(impl, namespace = ("os",))
+            ctr.impl = impl
+
+        for alarm in self.generator.system_graph.alarms:
+            subtask = alarm.subtask
+            task = "os::tasks::" + subtask.impl.task_descriptor.name
+            impl = self.generate_alarm(alarm, alarm.counter, task)
+
+            # Add and save alarm implementation
+            self.generator.source_file.data_manager.add(impl, namespace = ("os",))
+            alarm.impl = impl
 
     def generate_system_code(self):
         self.generator.source_file.includes.add(Include("os/alarm.h"))
         alarms = AlarmTemplate(self)
         self.generator.source_file.declarations.append(alarms.expand())
-
 
     def generate_hooks(self):
         hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"])]
@@ -119,7 +124,7 @@ class SimpleSystem(BaseRules):
 
 
             user_defined = "__OS_HOOK_DEFINED_" + hook
-            if user_defined in self.system_graph.functions:
+            if self.system_graph.find(GraphFunction, user_defined):
                 # Generate actual call, only if user had defined the hook function
                 self.call_function(hook_function, user_defined, "void", hook_function.arguments_names())
 
@@ -132,13 +137,13 @@ class SimpleSystem(BaseRules):
 
 
     def generate_dataobjects_checkedObjects(self):
-        if len(self.system_graph.get_checkedObjects()) < 1:
+        if len(list(self.system_graph.checkedObjects)) < 1:
             return
         self.generator.source_file.includes.add(Include("dependability/dependability_service.h"))
         co_index = 0;
         initializator = "{\n"
         multiplexer_functions = []
-        for co in self.system_graph.get_checkedObjects():
+        for co in self.system_graph.checkedObjects:
             if co.header is not None:
                 self.generator.source_file.includes.add(Include(co.header))
             if co.typename is not None:
@@ -182,10 +187,8 @@ class SimpleArch(BaseRules):
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
-        for subtask in self.system_graph.get_subtasks():
-            # Ignore the Idle thread and ISR subtasks
-            if not subtask.is_real_thread():
-                continue
+        # Ignore the Idle thread and ISR subtasks
+        for subtask in self.system_graph.real_subtasks:
             stacksize = subtask.get_stack_size()
             stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
                                     extern_c = True)
@@ -194,20 +197,21 @@ class SimpleArch(BaseRules):
             stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
             self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
 
-            self.objects[subtask]["stack"] = stack
-            self.objects[subtask]["stackptr"] = stackptr
-            self.objects[subtask]["stacksize"] = stacksize
+
+            subtask.impl.stack = stack
+            subtask.impl.stackptr = stackptr
+            subtask.impl.stacksize = stacksize
 
 
     def generate_dataobjects_task_entries(self):
-        for subtask in self.system_graph.get_subtasks():
+        for subtask in self.system_graph.subtasks:
             # Ignore the Idle thread
             if not subtask.is_real_thread():
                 continue
             entry_function = FunctionDeclaration(subtask.function_name, "void", [],
                                                                  extern_c = True)
             self.generator.source_file.function_manager.add(entry_function)
-            self.objects[subtask]["entry_function"] = entry_function
+            subtask.impl.entry_function = entry_function
 
     KernelSpace = namedtuple("KernelSpace", ["pre_hook", "system", "post_hook"])
     def generate_kernelspace(self, userspace, abb, arguments):
@@ -245,30 +249,29 @@ class AlarmTemplate(CodeTemplate):
 
     def increase_counters(self, snippet, args):
         ret = []
-        for counter in self.system_graph.counters.values():
+        for counter in self.system_graph.counters:
             # Softcounters are ignored by the hardware interrupt
-            if counter.softcounter:
+            if counter.conf.softcounter:
                 continue
             ret += self.expand_snippet("increase_counter",
-                                       name = self.objects["counter"][counter.name].name)
+                                       name = counter.impl.name)
         return ret
 
 
     def check_alarms(self, snippet, args):
         ret = []
         for alarm in self.system_graph.alarms:
-            counter = self.system_graph.counters[alarm.counter]
-            if counter.softcounter:
+            if alarm.counter.conf.softcounter:
                 continue
-            ret += "    AlarmCheck%s();\n" % self.objects["alarm"][alarm.name].name
+            ret += "    AlarmCheck%s();\n" % alarm.impl.name
         return ret
 
     def generate_check_alarms(self, snippet, args):
         ret = []
         for alarm in self.system_graph.alarms:
             callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
-            has_callback  = (callback_name in self.system_graph.functions)
-            args = {"alarm":   self.objects["alarm"][alarm.name].name}
+            has_callback  = (self.system_graph.find(GraphFunction, callback_name) != None)
+            args = {"alarm": alarm.impl.name}
             ret += self.expand_snippet("if_alarm", **args) + "\n"
             # This alarm has an callback
             if has_callback:
@@ -281,5 +284,3 @@ class AlarmTemplate(CodeTemplate):
 
 
         return ret
-
-

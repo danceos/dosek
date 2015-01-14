@@ -1,11 +1,11 @@
 from generator.elements import *
-from generator.rules import SignatureGenerator
+from generator.graph.Function import Function as GraphFunction
+from .rules.implementations import *
+from .rules import SignatureGenerator
+
 import logging
 
-
-
 class Generator:
-
     """Base class of all generators"""
     def __init__(self, system_graph, name, arch_rules, os_rules, syscall_rules):
         self.name = name
@@ -17,20 +17,13 @@ class Generator:
         self.rules = []
         self.__used_variable_names = set()
         self.template_base = None
-        number_of_tasks = len([x for x in self.system_graph.get_subtasks()
-                               if not x.is_isr])
+        number_of_tasks = len(self.system_graph.user_subtasks)
+
         self.signature_generator = SignatureGenerator(number_of_tasks)
 
         self.file_prefix = None
         self.source_file = None
         self.source_files = dict()
-
-        self.objects = dict()
-        # Intialize dicts for all subtasks in the objects tree
-        for subtask in self.system_graph.get_subtasks():
-            if not subtask in self.objects:
-                self.objects[subtask] = {}
-                self.objects[subtask]["generated_functions"] = []
 
         os_rules.set_generator(self)
         arch_rules.set_generator(self)
@@ -80,10 +73,13 @@ class Generator:
         self.file_prefix = output_file_prefix
         self.source_file = SourceFile()
         self.source_files["dosek.cc"] = self.source_file
-        
 
         #include "os.h"
         self.source_file.includes.add(Include("os.h"))
+
+        self.system_graph.impl = SystemImpl()
+        for subtask in self.system_graph.subtasks:
+            subtask.impl = SubtaskImpl()
 
         # Generate system objects
         self.arch_rules.generate_dataobjects()
@@ -94,7 +90,7 @@ class Generator:
         self.os_rules.generate_system_code()
 
         # Only generate an os_main, if it does not exist
-        if not "os_main" in self.system_graph.functions:
+        if self.system_graph.find(GraphFunction, "os_main") is None:
             logging.info("Generating an os_main function calling StartOS")
             os_main = Function("os_main", "void", [], extern_c = True)
             os_main.add( FunctionCall("StartOS", ["0"]) )
@@ -102,18 +98,17 @@ class Generator:
 
         # Generate a StartOS function and delegate it to the OS rule set
         StartOS = Function("StartOS", "void", ["int"], extern_c = True)
-        self.objects["StartOS"] = StartOS
         self.syscall_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
+        self.system_graph.impl.StartOS = StartOS
 
         # Generate the interrupt scheduler
         ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c = True)
-        self.objects["ASTSchedule"] = ASTSchedule
         self.syscall_rules.ASTSchedule(ASTSchedule)
         self.source_file.function_manager.add(ASTSchedule)
 
         # find all syscalls
-        for syscall in self.system_graph.get_syscalls():
+        for syscall in self.system_graph.syscalls:
             if not syscall.syscall_type.isRealSyscall():
                 continue
             generated_function = syscall.generated_function_name()
@@ -129,8 +124,9 @@ class Generator:
                                 extern_c = True)
             self.stats.add_data(syscall, "generated-function", function.name)
 
-            assert abb.function.subtask != None, "The calling subtask must be set"
-            self.objects[abb.function.subtask]["generated_functions"].append(function)
+            assert abb.subtask != None, "The calling subtask must be set"
+            
+            abb.subtask.impl.generated_functions.append(function)
 
             syscall = SystemCall(syscall.syscall_type.name, abb, rettype, function.arguments())
             self.os_rules.systemcall(syscall, function)
@@ -142,8 +138,8 @@ class Generator:
 
         # Generate systemcalls
         isrs = []
-        for isr in self.system_graph.get_subtasks():
-            if isr.is_isr and isr.isr_device:
+        for isr in self.system_graph.subtasks:
+            if isr.conf.is_isr and isr.conf.isr_device:
                 isrs.append(isr)
         self.arch_rules.generate_isr_table(isrs)
 

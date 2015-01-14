@@ -2,6 +2,7 @@ from generator.graph.Analysis           import Analysis
 from generator.graph.common             import dfs, GraphObject, Edge, GraphObjectContainer
 from generator.tools                    import stack
 from generator.graph.AtomicBasicBlock   import E,S
+from generator.graph.Function           import Function
 import logging
 from functools import reduce
 
@@ -38,19 +39,19 @@ class DominanceAnalysis(Analysis, GraphObject):
         # Each node is mapped to the set of its dominators
         dom = {}
         start_nodes = set()
-        for abb in self.system_graph.get_abbs():
+        for abb in self.system_graph.abbs:
             # The start node dominates itself
             if len(abb.get_incoming_nodes(self.edge_levels)) == 0 and\
                 len(abb.get_outgoing_nodes(self.edge_levels)) > 0:
                 dom[abb] = set([abb])
                 start_nodes.add(abb)
             else:
-                dom[abb] = set(self.system_graph.get_abbs())
+                dom[abb] = set(self.system_graph.abbs)
 
         changes = True
         while changes:
             changes = False
-            for abb in self.system_graph.get_abbs():
+            for abb in self.system_graph.abbs:
                 if abb in start_nodes:
                     continue
                 dominators = [dom[x] for x in abb.get_incoming_nodes(self.edge_levels)]
@@ -79,11 +80,11 @@ class DominanceAnalysis(Analysis, GraphObject):
                 return ret
 
     def do(self):
-        start_node = self.system_graph.find_function("StartOS").entry_abb
+        start_node = self.system_graph.get(Function, "StartOS").entry_abb
         dom = self.find_dominators()
         self.immdom_tree = {start_node: None}
         add_function = self.system_graph.get_pass("AddFunctionCalls")
-        for abb in self.system_graph.get_abbs():
+        for abb in self.system_graph.abbs:
             if abb == start_node:
                 continue
             visited = set()

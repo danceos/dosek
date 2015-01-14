@@ -28,7 +28,7 @@ def after_SystemStateFlow(analysis):
 
     # Find the two ActivateTask(H1) calls
     ATs = []
-    for syscall in H4.get_syscalls():
+    for syscall in H4.syscalls:
         if syscall.isA("ActivateTask"):
             ATs.append(syscall)
     (ActivateTask, RES_ActivateTask) = list(sorted(ATs, key = lambda x: x.dynamic_priority))

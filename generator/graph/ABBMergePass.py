@@ -83,7 +83,7 @@ class ABBMergePass(Analysis):
     def __mark_relevant_functions(self, functions):
         '''A DFS to mark all function that do syscalls,
            or call other functions that doing syscall'''
-        self.__dfs(functions.values())
+        self.__dfs(list(functions))
             
 
     def __do_merge(self, entry_abb, exit_abb, inner_abbs = set()):
@@ -167,17 +167,17 @@ class ABBMergePass(Analysis):
         while anyChanges:
             anyChanges = False
             # copy original dict
-            for abb in list(self.system_graph.get_abbs()): # Iterate over list of abbs dict KeysView
+            for abb in list(self.system_graph.abbs): # Iterate over list of abbs dict KeysView
                 #if abb.has_single_successor(E.function_level):
                 #    successor = abb.definite_after(E.function_level)
                 for successor in abb.get_outgoing_nodes(E.function_level):
                     if successor and self.__can_be_merged(abb, successor):
-                        assert successor in self.system_graph.get_abbs()
+                        assert successor in self.system_graph.abbs
                         self.__do_merge(abb, successor)
                         anyChanges = True
 
         # done. do some statistics
-        self.merge_stats.after_linear_merge = len(self.system_graph.get_abbs())
+        self.merge_stats.after_linear_merge = len(self.system_graph.abbs)
 
     def __find_branches_to_merge(self, abb):
         successors = abb.get_outgoing_nodes(E.function_level)
@@ -235,14 +235,14 @@ class ABBMergePass(Analysis):
         anyChanges = True
         while anyChanges:
             anyChanges = False
-            for abb in list(self.system_graph.get_abbs()):
+            for abb in list(self.system_graph.abbs):
                 mc = self.__find_branches_to_merge(abb)
                 if mc and self.__can_be_merged(mc.entry_abb, mc.exit_abb, mc.inner_abbs):
                     self.__do_merge(mc.entry_abb, mc.exit_abb, mc.inner_abbs)
                     anyChanges = True
 
 
-        self.merge_stats.after_branch_merge = len(self.system_graph.get_abbs())
+        self.merge_stats.after_branch_merge = len(self.system_graph.abbs)
 
     def __find_loops_to_merge(self, abb):
         # |
@@ -272,25 +272,25 @@ class ABBMergePass(Analysis):
         anyChanges = True
         while anyChanges:
             anyChanges = False
-            for abb in list(self.system_graph.get_abbs()):
+            for abb in list(self.system_graph.abbs):
                 mc = self.__find_loops_to_merge(abb)
                 if mc and self.__can_be_merged(mc.entry_abb, mc.exit_abb, mc.inner_abbs):
                     self.__do_merge(mc.entry_abb, mc.exit_abb, mc.inner_abbs)
                     anyChanges = True
 
-        self.merge_stats.after_loop_merge = len(self.system_graph.get_abbs())
+        self.merge_stats.after_loop_merge = len(self.system_graph.abbs)
 
     def do(self):
 
         assert self.system_graph.llvmpy, 'The ABBMergePass only works on llvmpy analysed systems.'
-        self.merge_stats.initial_abb_count = len(self.system_graph.get_abbs())
+        self.merge_stats.initial_abb_count = len(self.system_graph.abbs)
 
         # First mark all Functions that do a syscall or invoke any sub function that does so
         self.__mark_relevant_functions(self.system_graph.functions)
 
         current_size = None
         while current_size != self.merge_stats.initial_abb_count:
-            current_size = len(self.system_graph.get_abbs())
+            current_size = len(self.system_graph.abbs)
             # linear merging:
             self.__merge_linear_abbs()
 
@@ -302,5 +302,5 @@ class ABBMergePass(Analysis):
 
             logging.info(self.merge_stats)
 
-            self.merge_stats.initial_abb_count = len(self.system_graph.get_abbs())
+            self.merge_stats.initial_abb_count = len(self.system_graph.abbs)
 

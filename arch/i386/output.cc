@@ -9,8 +9,8 @@
 
 #if DEBUG
 
-CGA kout;
-CGA debug;
+Serial kout(Serial::COM1);
+Serial debug(Serial::COM1);
 
 #else // DEBUG
 

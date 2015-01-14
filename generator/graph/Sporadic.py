@@ -1,3 +1,13 @@
+from collections import namedtuple
+from .SystemObject import SystemObject
+
+class Counter(SystemObject):
+    """SystemObject representing an counter. The .conf is an
+       OILObject(Counter) and the .impl is an DataObject.
+    """
+    def __init__(self, name, configuration):
+        super(Counter, self).__init__(name, configuration)
+
 class SporadicEvent:
     def __init__(self, system_graph, name, task, handler):
         self.system_graph = system_graph
@@ -8,7 +18,7 @@ class SporadicEvent:
 
     def can_trigger(self, state):
         # ISRs can only trigger, if we're not in an isr
-        if state.current_abb.function.subtask.is_isr: \
+        if state.current_abb.subtask.conf.is_isr: \
             return False
         # Cannot triggger in region with blocked interrupts
         if state.current_abb.interrupt_block_all \
@@ -50,24 +60,22 @@ class SporadicEvent:
             return False
         return True
 
-class Alarm(SporadicEvent):
-    def __init__(self, system_graph, alarm_handler, alarm_info, subtask):
+class Alarm(SporadicEvent, SystemObject):
+    def __init__(self, system_graph, alarm_handler, conf, counter, subtask):
         # A alarm belongs to the subtask it activates!
-        SporadicEvent.__init__(self, system_graph, alarm_info.name,
-                               subtask.task, alarm_handler)
+        SporadicEvent.__init__(self, system_graph, conf.name, subtask.task, alarm_handler)
+        SystemObject.__init__(self, conf.name, conf)
+
         # FIXME: when events are supported
-        assert alarm_info.event == None
+        assert self.conf.event == None
         # This syscall is carried by the alarm
         self.carried_syscall = None
         self.subtask = subtask
-        self.counter = alarm_info.counter
-        self.initial_armed = alarm_info.armed
-        self.initial_cycletime = alarm_info.cycletime
-        self.initial_reltime = alarm_info.reltime
+        self.counter = counter
 
     def can_trigger(self,state):
         # Soft Counters cannot be triggered from the interrupt
-        if self.system_graph.counters[self.counter].softcounter:
+        if self.counter.conf.softcounter:
             return False
         return SporadicEvent.can_trigger(self, state)
 
@@ -75,4 +83,3 @@ class ISR(SporadicEvent):
     def __init__(self, system_graph, isr_handler):
         SporadicEvent.__init__(self, system_graph, isr_handler.function_name,
                                isr_handler.task, isr_handler)
-

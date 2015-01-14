@@ -70,14 +70,14 @@ class CFGRegions(Analysis):
         self.enter_mask = {}
         self.leave_mask = {}
         self.check_mask = {}
-        for syscall in self.system_graph.get_syscalls():
+        for syscall in self.system_graph.syscalls:
             if not syscall.syscall_type.isRealSyscall():
                 continue
             self.check_mask[syscall] = []
             self.leave_mask[syscall] = []
 
             for region_id, region in list(self.regions.items()):
-                if syscall.function.subtask and syscall.function.subtask.is_isr:
+                if syscall.function.subtask and syscall.function.subtask.conf.is_isr:
                     # Syscalls in interrupts should not be instrumented!
                     continue
 
@@ -114,7 +114,7 @@ class CFGRegions(Analysis):
         # Generate enter/check and leave masks
         self.generate_bitmasks()
 
-        #for each in self.system_graph.get_syscalls():
+        #for each in self.system_graph.syscalls:
         #    if not each.syscall_type.isRealSyscall():
         #        continue
         #    print each
@@ -142,7 +142,7 @@ class CFGRegions(Analysis):
     def system_enter_hook(self, generator, abb, hook):
         """This function is called by the code generation, when the system
            enter hook should be filled"""
-        if abb.function.subtask.is_isr:
+        if abb.subtask.conf.is_isr:
             # Syscalls in interrupts should not be instrumented!
             return
 

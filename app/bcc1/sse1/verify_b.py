@@ -27,7 +27,7 @@ def after_SystemStateFlow(analysis):
 
 
     # There are two terminate tasks in H1
-    for syscall in H1.get_syscalls():
+    for syscall in H1.syscalls:
         if not syscall.isA("TerminateTask"):
             continue
         t.reachability_abbs(syscall,

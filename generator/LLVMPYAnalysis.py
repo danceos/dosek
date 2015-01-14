@@ -197,7 +197,7 @@ class LLVMPYAnalysis:
 
         arg = llvm.core.Constant.int(int_ty, 0)
         # Traverse list of subtasks from the systemdescription
-        for st in self.systemgraph.get_subtasks():
+        for st in self.systemgraph.subtasks:
             if st.is_real_thread(): # omit Alarmhandler. These are generated later.
                 # Get corresponding llvmpy function object
                 func = self.source_module.get_function_named(st.function_name)

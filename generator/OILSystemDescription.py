@@ -66,6 +66,7 @@ class Resource(OILObject):
     def __init__(self, name=""):
         super(Resource, self).__init__(name)
         self.RESOURCEPROPERTY = ""
+        self.static_priority = 0
         self.tasks = dict()
 
     def __str__(self):
@@ -75,43 +76,6 @@ class Resource(OILObject):
         return ret
 
 
-class ISR(OILObject):
-
-    def __init__(self, name=""):
-        super(ISR, self).__init__(name)
-        self.CATEGORY = ""
-        self.PRIORITY = -1
-        self.resources = dict()
-        self.messages = dict()
-        self.DEVICE = None
-        self.TASKGROUP = None
-
-    def get_device(self):
-        assert self.DEVICE, "No device number set for ISR '" + self.name + "'"
-        return self.DEVICE
-
-    @property
-    def taskgroup(self):
-        if not self.TASKGROUP:
-            return self.name
-        else:
-            return self.TASKGROUP
-
-    @property
-    def device(self):
-        return self.get_device()
-
-    def evaluate(self, oil):
-        super(ISR, self).evaluate(oil)
-        for param in oil[1]:
-            if param[0] == "RESOURCE":
-                self.resources[param[1]] = param[1]
-
-    def __str__(self):
-        ret = super(ISR, self).__str__()
-        if self.resources:
-            ret += "\n\t\tUses resource(s)" + str(self.resources)
-        return ret
 
 
 class CheckedObject(OILObject):
@@ -149,7 +113,23 @@ class Counter(OILObject):
         self.MAXALLOWEDVALUE = ""
         self.TICKSPERBASE = ""
         self.MINCYCLE = ""
-        self.SOFTCOUNTER = ""
+        self.SOFTCOUNTER = False
+
+    @property
+    def maxallowedvalue(self):
+        return self.MAXALLOWEDVALUE
+
+    @property
+    def ticksperbase(self):
+        return self.TICKSPERBASE
+
+    @property
+    def mincycle(self):
+        return self.MINCYCLE
+
+    @property
+    def softcounter(self):
+        return self.SOFTCOUNTER
 
 
 class Alarm(OILObject):
@@ -296,10 +276,6 @@ class Task(OILObject):
                 self.resources[param[1]] = param[1];
 
     @property
-    def is_autostarted(self):
-        return self.AUTOSTART
-
-    @property
     def preemptable(self):
         return self.SCHEDULE.upper() == "FULL"
 
@@ -312,8 +288,12 @@ class Task(OILObject):
         return self.AUTOSTART
 
     @property
-    def priority(self):
+    def static_priority(self):
         return self.PRIORITY
+
+    @static_priority.setter
+    def static_priority(self, value):
+        self.PRIORITY = value
 
     @property
     def taskgroup(self):
@@ -322,12 +302,68 @@ class Task(OILObject):
         else:
             return self.TASKGROUP
 
+    @property
+    def is_isr(self):
+        return False
+
+    @property
+    def basic_task(self):
+        return False
+
     def __str__(self):
         ret = super(Task, self).__str__()
         if self.AUTOSTART:
             ret += "\n\t\tAUTOSTART APPMODES: " + str(self.autostart_appmodes)
         if len(self.resources) > 0:
             ret += "\n\t\tRESOURCES: " + str(self.resources)
+        return ret
+
+
+class ISR(OILObject):
+
+    def __init__(self, name=""):
+        super(ISR, self).__init__(name)
+        self.CATEGORY = ""
+        self.PRIORITY = -1
+        self.resources = dict()
+        self.messages = dict()
+        self.DEVICE = None
+        self.TASKGROUP = None
+
+        # Assumption: Our subtasks are non-preemptable basic-tasks
+        self.preemptable = False
+        self.basic_task = True
+        self.max_activations = 1
+        self.autostart = False
+        self.static_priority = None
+        self.is_isr = True
+
+    def get_device(self):
+        assert self.DEVICE, "No device number set for ISR '" + self.name + "'"
+        return self.DEVICE
+
+    @property
+    def taskgroup(self):
+        if not self.TASKGROUP:
+            return self.name
+        else:
+            return self.TASKGROUP
+
+    @property
+    def isr_device(self):
+        return self.get_device()
+
+
+    def evaluate(self, oil):
+        super(ISR, self).evaluate(oil)
+        for param in oil[1]:
+            if param[0] == "RESOURCE":
+                self.resources[param[1]] = param[1]
+
+    def __str__(self):
+        ret = super(ISR, self).__str__()
+        if self.resources:
+            ret += "\n\t\tUses resource(s)" + str(self.resources)
         return ret
 
 
