@@ -1,5 +1,6 @@
 from generator.elements import *
 from generator.graph.Function import Function as GraphFunction
+from generator.graph.types import S
 from .rules.implementations import *
 from .rules import SignatureGenerator
 
@@ -30,42 +31,42 @@ class Generator:
         syscall_rules.set_generator(self)
 
     OSEK_CALLS = {
-        "kickoff" : ["void"],
-        "ActivateTask": ["StatusType", "TaskType"],
-        "ChainTask": ["StatusType", "TaskType"],
-        "TerminateTask": ["StatusType"],
-        "Schedule": None, # ["StatusType"],
-        "GetTaskID": None, # ["StatusType", "TaskRefType"],
-        "GetTaskState": None, # ["StatusType", "TaskType", "TaskStateRefType"],
+        S.kickoff : ["void"],
+        S.ActivateTask: ["StatusType", "TaskType"],
+        S.ChainTask: ["StatusType", "TaskType"],
+        S.TerminateTask: ["StatusType"],
+        #S.Schedule: None, # ["StatusType"],
+        #S.GetTaskID: None, # ["StatusType", "TaskRefType"],
+        #S.GetTaskState: None, # ["StatusType", "TaskType", "TaskStateRefType"],
+        
+        S.EnableAllInterrupts  : ["void"],
+        S.DisableAllInterrupts : ["void"],
+        S.ResumeAllInterrupts  : ["void"],
+        S.SuspendAllInterrupts : ["void"],
+        S.ResumeOSInterrupts   : ["void"],
+        S.SuspendOSInterrupts  : ["void"],
 
-        "EnableAllInterrupts"  : ["void"],
-        "DisableAllInterrupts" : ["void"],
-        "ResumeAllInterrupts"  : ["void"],
-        "SuspendAllInterrupts" : ["void"],
-        "ResumeOSInterrupts"   : ["void"],
-        "SuspendOSInterrupts"  : ["void"],
+        S.GetResource: ["StatusType", "ResourceType"],
+        S.ReleaseResource: ["StatusType", "ResourceType"],
 
-        "GetResource": ["StatusType", "ResourceType"],
-        "ReleaseResource": ["StatusType", "ResourceType"],
+        # S.SetEvent: None, # ["StatusType", "TaskType", "EventMaskType"],
+        # S.GetEvent: None, # ["StatusType", "TaskType", "EventMaskRefType"],
+        # S.ClearEvent: None, #["StatusType", "EventMaskType"],
+        # S.WaitEvent": None,
+        S.GetAlarm: ["StatusType", "AlarmType", "TickRefType"],
+        S.SetRelAlarm: ["StatusType", "AlarmType", "TickType", "TickType"],
+        S.CancelAlarm: ["StatusType", "AlarmType"],
+        #S.GetAlarmBase: None,
+        S.AdvanceCounter: ["StatusType", "AlarmType"],
+        #S.SendMessage: None,
+        #S.ReceiveMessage: None,
+        #S.SendDynamicMessage: None,
+        #S.ReceiveDynamicMessage: None,
+        #S.SendZeroMessage: None,
+        #S.ShutdownOS: ["void", "StatusType"],
 
-        "SetEvent": None, # ["StatusType", "TaskType", "EventMaskType"],
-        "GetEvent": None, # ["StatusType", "TaskType", "EventMaskRefType"],
-        "ClearEvent": None, #["StatusType", "EventMaskType"],
-        "WaitEvent": None,
-        "GetAlarm": ["StatusType", "AlarmType", "TickRefType"],
-        "SetRelAlarm": ["StatusType", "AlarmType", "TickType", "TickType"],
-        "CancelAlarm": ["StatusType", "AlarmType"],
-        "GetAlarmBase": None,
-        "AdvanceCounter": ["StatusType", "AlarmType"],
-        "SendMessage": None,
-        "ReceiveMessage": None,
-        "SendDynamicMessage": None,
-        "ReceiveDynamicMessage": None,
-        "SendZeroMessage": None,
-        "ShutdownOS": ["void", "StatusType"],
-
-        "AcquireCheckedObject": ["void", "dep::Checked_Object*"],
-        "ReleaseCheckedObject": ["void", "dep::Checked_Object*"] }
+        S.AcquireCheckedObject: ["void", "dep::Checked_Object*"],
+        S.ReleaseCheckedObject: ["void", "dep::Checked_Object*"] }
 
 
     def generate_into(self, output_file_prefix):
@@ -108,30 +109,29 @@ class Generator:
         self.source_file.function_manager.add(ASTSchedule)
 
         # find all syscalls
-        for syscall in self.system_graph.syscalls:
-            if not syscall.syscall_type.isRealSyscall():
-                continue
-            generated_function = syscall.generated_function_name()
-            rettype  = self.OSEK_CALLS[syscall.syscall_type.name][0]
-            argtypes = self.OSEK_CALLS[syscall.syscall_type.name][1:]
-            abb      = syscall
+        for abb in self.system_graph.real_syscalls:
+            assert abb.subtask != None, "The calling subtask must be set"
+
+            generated_function = abb.generated_function_name()
+            abb.impl = SyscallImplementation()
+            abb.impl.rettype  = self.OSEK_CALLS[abb.syscall_type][0]
+            abb.impl.argtypes = self.OSEK_CALLS[abb.syscall_type][1:]
 
             # Add function definition for the function that is
             # _called_ by the application (with __ABB suffix)
-            function = Function(generated_function,
-                                rettype,
-                                argtypes,
-                                extern_c = True)
-            self.stats.add_data(syscall, "generated-function", function.name)
+            userspace = Function(generated_function, abb.impl.rettype, abb.impl.argtypes,
+                                 extern_c = True)
+            self.stats.add_data(abb, "generated-function", userspace.name)
+            abb.impl.userspace = userspace
 
-            assert abb.subtask != None, "The calling subtask must be set"
-            
-            abb.subtask.impl.generated_functions.append(function)
+            # Add userspace function to the userspace
+            self.source_file.function_manager.add(userspace)
 
-            syscall = SystemCall(syscall.syscall_type.name, abb, rettype, function.arguments())
-            self.os_rules.systemcall(syscall, function)
+            # Register userspace function at the subtask, since it
+            # only callable from there
+            abb.subtask.impl.generated_functions.append(userspace)
 
-            self.source_file.function_manager.add(function)
+            self.os_rules.systemcall(abb)
 
         # Generate the hooks into the operating system
         self.os_rules.generate_hooks()

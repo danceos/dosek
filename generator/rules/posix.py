@@ -22,10 +22,7 @@ class PosixArch(SimpleArch):
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.includes.add(Include("tcb.h"))
-        for subtask in self.system_graph.subtasks:
-            # Ignore the Idle thread
-            if not subtask.is_real_thread():
-                continue
+        for subtask in self.system_graph.real_subtasks:
             initializer = "(&%s, %s, %s, %s)" % (
                 subtask.impl.entry_function.name,
                 subtask.impl.stack.name,

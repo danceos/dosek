@@ -28,3 +28,13 @@ class EncodedSchedulerImpl:
         self.scheduler_prio_sig = None
         self.current_prio_sig = None
         self.current_task_sig = None
+
+class SyscallImplementation:
+    def __init__(self):
+        self.userspace   = None
+        self.kernelspace = None
+        self.pre_hook    = None
+        self.post_hook   = None
+
+        self.rettype = None
+        self.argtyes = None

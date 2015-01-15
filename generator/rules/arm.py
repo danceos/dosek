@@ -167,7 +167,7 @@ class ARMArch(SimpleArch):
         var = VariableDefinition(argument[1], argument[0])
         return var
 
-    def kickoff(self, block, abb):
+    def kickoff(self, abb, block):
         self.call_function(block, "Machine::enable_interrupts",
                            "void", [])
         self.call_function(block, "Machine::switch_mode",

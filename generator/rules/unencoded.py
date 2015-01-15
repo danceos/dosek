@@ -1,7 +1,7 @@
 from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment, Function, Hook, DataObject
-from generator.graph.AtomicBasicBlock import S
+from generator.graph.AtomicBasicBlock import S, AtomicBasicBlock
 from generator.graph.Function import Function
 
 
@@ -34,120 +34,103 @@ class UnencodedSystem(SimpleSystem):
         block.add(Statement("%s = %s" % (var.name, argument[0])))
         return var
 
-    def systemcall(self, systemcall, userspace):
+    def __instantiate_kernelspace(self, abb):
+        """This function instantiates kernelspace and the hook in the correct
+           place for each system call."""
+        # No arguments, but a real kernelspace
+        if abb.isA([S.TerminateTask,
+                    S.ActivateTask,
+                    S.ChainTask,
+                    S.CancelAlarm,
+                    S.GetAlarm,
+                    S.GetResource,
+                    S.ReleaseResource,
+                    S.AdvanceCounter]):
+            # Theese are normal system calls with a general purpose kernelspace
+            x = self.arch_rules.generate_kernelspace(abb.impl.userspace, abb, [])
+            abb.impl.kernelspace = x.system
+            abb.impl.pre_hook    = x.pre_hook
+            abb.impl.post_hook   = x.post_hook
+        # Two arguments
+        elif abb.isA(S.SetRelAlarm):
+            args = abb.impl.userspace.arguments()
+            arg1 = self.convert_argument(abb.impl.userspace, args[1])
+            arg2 = self.convert_argument(abb.impl.userspace, args[2])
+            x = self.arch_rules. generate_kernelspace(abb.impl.userspace,
+                                                      abb, [arg1, arg2])
+            abb.impl.kernelspace = x.system
+            abb.impl.pre_hook    = x.pre_hook
+            abb.impl.post_hook   = x.post_hook
+        else:
+            abb.impl.pre_hook  = Hook("SystemEnterHook")
+            abb.impl.post_hook = Hook("SystemLeaveHook")
+            abb.impl.kernelspace = Hook("Kernelspace")
+
+            if abb.isA([S.EnableAllInterrupts,
+                        S.ResumeAllInterrupts,
+                        S.ResumeOSInterrupts,
+                        S.kickoff]):
+                # { /* SystemEnterHook */ }
+                # { /* SystemLeaveHook */ }
+                # { /* Kernel */ sti(); }
+                abb.impl.userspace.add(abb.impl.pre_hook)
+                abb.impl.userspace.add(abb.impl.post_hook)
+                abb.impl.userspace.add(abb.impl.kernelspace)
+
+            elif abb.isA([S.DisableAllInterrupts,
+                          S.SuspendAllInterrupts,
+                          S.SuspendOSInterrupts]):
+                # { /* Kernel */ cli(); }
+                # { /* SystemEnterHook */ }
+                # { /* SystemLeaveHook */ }
+                abb.impl.userspace.add(abb.impl.kernelspace)
+                abb.impl.userspace.add(abb.impl.pre_hook)
+                abb.impl.userspace.add(abb.impl.post_hook)
+            elif abb.isA([S.AcquireCheckedObject,
+                          S.ReleaseCheckedObject]):
+                # FIXME: Interrupt services
+                # { /* SystemEnterHook */ }
+                # { /* Kernel */ sti(); }
+                # { /* SystemLeaveHook */ }
+                abb.impl.userspace.add(abb.impl.pre_hook)
+                abb.impl.userspace.add(abb.impl.kernelspace)
+                abb.impl.userspace.add(abb.impl.post_hook)
+            else:
+                assert False
+
+    def systemcall(self, abb):
         """Generate systemcall into userspace"""
 
-        subtask = systemcall.abb.function.subtask
-        abb  = systemcall.abb
-        syscall_type = systemcall.abb.syscall_type
+        subtask = abb.subtask
+        syscall_type = abb.syscall_type
 
+        userspace   = abb.impl.userspace
         kernelspace = None
         pre_hook    = None
         post_hook   = None
 
         self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
 
-        if abb.isA([S.TerminateTask, S.ActivateTask, S.ChainTask,
-                    S.CancelAlarm, S.GetResource, S.ReleaseResource,
-                    S.AdvanceCounter]):
-            # Need a kernelspace
-            kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, [])
-            pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
+        self.__instantiate_kernelspace(abb)
 
-
-        if systemcall.function == "TerminateTask":
-            self.syscall_rules.TerminateTask(kernelspace.system, abb)
-
-        elif systemcall.function == "ActivateTask":
-            userspace.unused_parameter(0)
-            self.syscall_rules.ActivateTask(kernelspace.system, abb)
-
-        elif systemcall.function == "ChainTask":
-            userspace.unused_parameter(0)
-            self.syscall_rules.ChainTask(kernelspace.system, abb)
-
-        elif systemcall.function == "CancelAlarm":
-            userspace.unused_parameter(0)
-            self.syscall_rules.CancelAlarm(kernelspace.system, abb)
-
-        elif systemcall.function == "GetResource":
-            userspace.unused_parameter(0)
-            self.syscall_rules.GetResource(kernelspace.system, abb)
-
-        elif systemcall.function == "AdvanceCounter":
-            userspace.unused_parameter(0)
-            self.syscall_rules.AdvanceCounter(kernelspace.system, abb)
-
-        elif systemcall.function == "ReleaseResource":
-            userspace.unused_parameter(0)
-            self.syscall_rules.ReleaseResource(kernelspace.system, abb)
-
-        # kickoff a task
-        elif systemcall.function == "kickoff":
-            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
-            userspace.add(pre_hook)
-            userspace.add(post_hook)
-            self.syscall_rules.kickoff(userspace, abb)
-
-        # Interrupt Handling
-        elif systemcall.function in ("DisableAllInterrupts",
-                                     "SuspendAllInterrupts",
-                                     "SuspendOSInterrupts"):
-            self.syscall_rules.DisableAllInterrupts(userspace, abb)
-            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
-            userspace.add(pre_hook)
-            userspace.add(post_hook)
-
-        elif systemcall.function in ("EnableAllInterrupts",
-                                     "ResumeAllInterrupts",
-                                     "ResumeOSInterrupts"):
-            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
-            userspace.add(pre_hook)
-            userspace.add(post_hook)
-            self.syscall_rules.EnableAllInterrupts(userspace, abb)
-        # Alarms
-        elif systemcall.function == "GetAlarm":
-            userspace.unused_parameter(0)
-            kernelspace = self.arch_rules.\
-                          generate_kernelspace(userspace, abb, [])
-            pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
-
-            self.syscall_rules.GetAlarm(post_hook, kernelspace.system, abb)
-        elif systemcall.function == "SetRelAlarm":
-            userspace.unused_parameter(0)
-            arg1 = self.convert_argument(userspace, userspace.arguments()[1])
-            arg2 = self.convert_argument(userspace, userspace.arguments()[2])
-            kernelspace = self.arch_rules.\
-                          generate_kernelspace(userspace, abb, [arg1, arg2])
-            self.syscall_rules.SetRelAlarm(kernelspace.system, abb, [arg1, arg2])
-            pre_hook, post_hook = kernelspace.pre_hook, kernelspace.post_hook
-        # Dependability Service
-        elif systemcall.function == "AcquireCheckedObject":
-            userspace.unused_parameter(0)
-            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
-            userspace.add(pre_hook)
-            self.syscall_rules.AcquireCheckedObject(userspace, abb)
-            userspace.add(post_hook)
-
-        elif systemcall.function == "ReleaseCheckedObject":
-            userspace.unused_parameter(0)
-            pre_hook, post_hook = Hook("SystemEnterHook"), Hook("SystemLeaveHook")
-            userspace.add(pre_hook)
-            self.syscall_rules.ReleaseCheckedObject(userspace, abb)
-            userspace.add(post_hook)
-
+        # Dispatch to self.syscall_rules by syscall type name
+        if hasattr(self.syscall_rules, abb.syscall_type.name):
+            # Mark all Parameters as unused
+            for i in range(0, len(abb.impl.userspace.arguments())):
+                abb.impl.userspace.unused_parameter(0)
+            # Call Generator from syscall_rules
+            f = getattr(self.syscall_rules, abb.syscall_type.name)
+            f(abb, abb.impl.userspace, abb.impl.kernelspace)
         else:
-            assert False, "Not yet supported %s"% systemcall.function
+            assert False, "Not yet supported %s"% abb.syscall_type
 
         self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         # Fill up the hooks
-        if pre_hook:
-            self.system_enter_hook(abb, pre_hook)
-        if post_hook:
-            self.system_leave_hook(abb, post_hook)
+        self.system_enter_hook(abb, abb.impl.pre_hook)
+        self.system_leave_hook(abb, abb.impl.post_hook)
 
-        if systemcall.rettype != 'void':
+        if abb.impl.rettype != 'void':
             self.return_statement(userspace, "E_OK")
 
     def system_enter_hook(self, abb, hook):

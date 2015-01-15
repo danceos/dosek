@@ -34,7 +34,6 @@ class FullSystemCalls(BaseRules):
                                    "scheduler_.SetReadyFromSuspended_impl",
                                    "void", [self.task_desc(subtask)])
 
-
             if subtask.conf.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
                 highestTask = subtask
 
@@ -57,31 +56,31 @@ class FullSystemCalls(BaseRules):
         self.call_function(kernelspace, "scheduler_.Reschedule",
                            "void", [])
 
-    def kickoff(self, block, abb):
-        block.attributes.append("inlinehint")
-        if not abb.subtask.conf.is_isr:
-            self.arch_rules.kickoff(block, abb)
+    def kickoff(self, syscall, userspace, kernelspace):
+        userspace.attributes.append("inlinehint")
+        if not syscall.subtask.conf.is_isr:
+            self.arch_rules.kickoff(syscall, userspace)
 
-    def TerminateTask(self, block, abb):
-        self.call_function(block, "scheduler_.TerminateTask_impl",
+    def TerminateTask(self, syscall, userspace, kernelspace):
+        self.call_function(kernelspace, "scheduler_.TerminateTask_impl",
                            "void",
-                           [self.get_calling_task_desc(abb)])
+                           [self.get_calling_task_desc(syscall)])
 
-    def ActivateTask(self, block, abb):
-        self.call_function(block,
+    def ActivateTask(self, syscall, userspace, kernelspace):
+        self.call_function(kernelspace,
                            "scheduler_.ActivateTask_impl",
                            "void",
-                           [self.task_desc(abb.arguments[0])])
+                           [self.task_desc(syscall.arguments[0])])
 
-    def ChainTask(self, block, abb):
-        self.call_function(block,
+    def ChainTask(self, syscall, userspace, kernelspace):
+        self.call_function(kernelspace,
                            "scheduler_.ChainTask_impl",
                            "void",
-                           [self.get_calling_task_desc(abb),
-                            self.task_desc(abb.arguments[0])])
+                           [self.get_calling_task_desc(syscall),
+                            self.task_desc(syscall.arguments[0])])
 
 
-    def SetRelAlarm(self, kernelspace, abb, arguments):
+    def SetRelAlarm(self, abb, userspace, kernelspace):
         arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
         arg2 = self.arch_rules.get_syscall_argument(kernelspace, 1)
         alarm = abb.arguments[0]
@@ -96,7 +95,7 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb)])
 
-    def AdvanceCounter(self, kernelspace, abb):
+    def AdvanceCounter(self, abb, userspace, kernelspace):
         counter = abb.arguments[0]
 
         # Increase Counter and check the counter
@@ -110,7 +109,7 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb)])
 
-    def GetAlarm(self, userspace, kernelspace, abb):
+    def GetAlarm(self, abb, userspace, kernelspace):
         alarm = abb.arguments[0]
 
         return_variable = self.os_rules.get_syscall_return_variable("TickType")
@@ -134,7 +133,7 @@ class FullSystemCalls(BaseRules):
             return_variable.name
         )))
 
-    def CancelAlarm(self, kernelspace, abb):
+    def CancelAlarm(self, abb, userspace, kernelspace):
         alarm = abb.arguments[0]
         self.call_function(kernelspace, "%s.setArmed" % alarm.impl.name,
                            "void", ["false"])
@@ -143,7 +142,7 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb)])
 
-    def GetResource(self, kernelspace, abb):
+    def GetResource(self, abb, userspace, kernelspace):
         next_prio = abb.definite_after(E.task_level).dynamic_priority
         self.call_function(kernelspace,
                            "scheduler_.GetResource_impl",
@@ -156,7 +155,7 @@ class FullSystemCalls(BaseRules):
                            "void",
                            [self.get_calling_task_desc(abb)])
 
-    def ReleaseResource(self, kernelspace, abb):
+    def ReleaseResource(self, abb, userspace, kernelspace):
         next_prio = abb.definite_after(E.task_level).dynamic_priority
         self.call_function(kernelspace,
                            "scheduler_.ReleaseResource_impl",
@@ -187,23 +186,27 @@ class FullSystemCalls(BaseRules):
 
         self.arch_rules.enable_irq(block)
 
-    def DisableAllInterrupts(self, userspace, abb):
-        self.disable_irq(userspace, abb)
+    def DisableAllInterrupts(self, abb, userspace, kernelspace):
+        self.disable_irq(kernelspace, abb)
+    SuspendAllInterrupts = DisableAllInterrupts
+    SuspendOSInterrupts  = DisableAllInterrupts
 
-    def EnableAllInterrupts(self, userspace, abb):
-        self.enable_irq(userspace, abb)
+    def EnableAllInterrupts(self, abb, userspace, kernelspace):
+        self.enable_irq(kernelspace, abb)
+    ResumeAllInterrupts = EnableAllInterrupts
+    ResumeOSInterrupts  = EnableAllInterrupts
 
     # Dependability Service
-    def AcquireCheckedObject(self, block, abb):
+    def AcquireCheckedObject(self, abb, userspace, kernelspace):
         co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_Struct_"):] + "_CheckedObject_Index"
-        self.call_function(block,
+        self.call_function(kernelspace,
                            "acquire_CheckedObject",
                            "void",
                            [co_index])
 
-    def ReleaseCheckedObject(self, block, abb):
+    def ReleaseCheckedObject(self, abb, userspace, kernelspace):
         co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_Struct_"):] + "_CheckedObject_Index"
-        self.call_function(block,
+        self.call_function(kernelspace,
                            "release_CheckedObject",
                            "void",
                            [co_index])

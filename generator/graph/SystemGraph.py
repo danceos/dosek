@@ -98,6 +98,11 @@ class SystemGraph(GraphObject, PassManager):
         return [x for x in self.abbs
                 if not x.isA(S.computation)]
 
+    @property
+    def real_syscalls(self):
+        return [x for x in self.abbs
+                if not x.isA(S.computation) and x.syscall_type.isRealSyscall()]
+
     def find(self, cls, name):
         """Get System object by class and name. If system object does not
            exist, this function will return None.

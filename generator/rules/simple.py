@@ -14,20 +14,6 @@ class SimpleSystem(BaseRules):
     def return_statement(self, block, expression):
         block.add(Statement("return %s" % expression))
 
-    def object_COM(self, interface="COM1"):
-        """Returns a variable name to a serial output driver, which can be used for
-        debug printing"""
-        varname = self.generator.variable_name_for_singleton("Serial", interface)
-        serial = DataObject("Serial", varname, "Serial(Serial::%s)" % interface)
-        self.generator.source_file.data_manager.add(serial, namespace=("os", "data"))
-        self.generator.source_file.includes.add(Include("serial.h"))
-        return varname
-
-    def kout(self, block, *expressions):
-        """Generates a print statement to a serial console"""
-        com = self.object_COM()
-        block.add( Statement("%s << %s" % (com, " << ".join(expressions))))
-
     def systemcall(self, systemcall, function):
         """Generate systemcall into function"""
         raise NotImplementedError()
@@ -222,7 +208,7 @@ class SimpleArch(BaseRules):
         self.call_function(block, "asm_label", "void",
                            ['"%s"' % label])
 
-    def kickoff(self, block, abb):
+    def kickoff(self, abb, block):
         self.call_function(block, "Machine::enable_interrupts",
                            "void", [])
 

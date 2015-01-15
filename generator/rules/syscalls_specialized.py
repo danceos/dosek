@@ -164,7 +164,7 @@ class SpecializedSystemCalls(FullSystemCalls):
                                "Machine::unreachable",
                                "void", [])
 
-    def ActivateTask(self, kernelspace, abb):
+    def ActivateTask(self, abb, userspace, kernelspace):
         subtask = abb.arguments[0]
         abb_info = self.global_abb_info.for_abb(abb)
         if abb_info:
@@ -173,9 +173,9 @@ class SpecializedSystemCalls(FullSystemCalls):
         else:
             # If we have no information about this systemcall just
             # make a full-featured systemcall
-            FullSystemCalls.ActivateTask(self, kernelspace, abb)
+            FullSystemCalls.ActivateTask(self, abb, userspace, kernelspace)
 
-    def TerminateTask(self, kernelspace, abb):
+    def TerminateTask(self, abb, userspace, kernelspace):
         subtask = abb.function.subtask
         abb_info = self.global_abb_info.for_abb(abb)
         if abb_info:
@@ -184,9 +184,9 @@ class SpecializedSystemCalls(FullSystemCalls):
         else:
             # If we have no information about this systemcall just
             # make a full-featured systemcall
-            FullSystemCalls.TerminateTask(self, kernelspace, abb)
+            FullSystemCalls.TerminateTask(self, abb, userspace, kernelspace)
 
-    def ChainTask(self, kernelspace, abb):
+    def ChainTask(self, abb, userspace, kernelspace):
         from_task = abb.function.subtask
         to_task   = abb.arguments[0]
         abb_info = self.global_abb_info.for_abb(abb)
@@ -197,9 +197,9 @@ class SpecializedSystemCalls(FullSystemCalls):
         else:
             # If we have no information about this systemcall just
             # make a full-featured systemcall
-            FullSystemCalls.ChainTask(self, kernelspace, abb)
+            FullSystemCalls.ChainTask(self, abb, userspace, kernelspace)
 
-    def ReleaseResource(self, kernelspace, abb):
+    def ReleaseResource(self, abb, userspace, kernelspace):
         from_task = abb.function.subtask
         next_prio = abb.definite_after(E.task_level).dynamic_priority
 
@@ -213,5 +213,5 @@ class SpecializedSystemCalls(FullSystemCalls):
         else:
             # If we have no information about this systemcall just
             # make a full-featured systemcall
-            FullSystemCalls.ChainTask(self, kernelspace, abb)
+            FullSystemCalls.ReleaseResource(self, abb, userspace, kernelspace)
 
