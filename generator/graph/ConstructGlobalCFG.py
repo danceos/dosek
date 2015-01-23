@@ -2,7 +2,7 @@ from generator.graph.Analysis import Analysis
 from generator.graph.AtomicBasicBlock import E, S
 from generator.tools import panic, stack
 from generator.graph.common import Edge
-from generator.graph.SymbolicSystemExecution import StateTransition
+from generator.graph.SymbolicSystemExecution import StateTransition, SavedStateTransition
 import logging
 
 
@@ -56,7 +56,7 @@ class ConstructGlobalCFG(Analysis):
                 + source_abb.get_outgoing_nodes(E.state_flow_irq)
         return []
 
-    def edges_in_sse(self, source_abb):
+    def edges_in_sse(self, source_abb, edge_type = StateTransition):
         """Returns the system_level edges that were discoverd by the symbolic
         execution
 
@@ -66,7 +66,7 @@ class ConstructGlobalCFG(Analysis):
             if not source_abb in self.sse.states_by_abb:
                 return []
             for state in self.sse.states_by_abb[source_abb]:
-                for next_state in state.get_outgoing_nodes(StateTransition):
+                for next_state in state.get_outgoing_nodes(edge_type):
                     followup_abbs.add(next_state.current_abb)
             return followup_abbs
         return []
@@ -129,48 +129,106 @@ class ConstructGlobalCFG(Analysis):
         abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
         self.stats.add_data(self, "abb-count", len(abbs), scalar = True)
 
-        # Record Edge Count
-        self.stats.add_data(self, "sse-edges", edge_count_in_sse, scalar=True)
-        self.stats.add_data(self, "ssf-edges", edge_count_in_ssf, scalar=True)
+        # In Statistic section, we want to generate data for the
+        # following problem: How much better does the GCFG, which is
+        # context sensitive, compare to a graph that is not context
+        # sensitive? There are three different types of Graphs that we
+        # could construct easily:
+        #
+        #  a) Full: The graph that has no information about the application
+        #     structure. The control flow could jump from every from
+        #     every block to every other block.
+        #
+        #  b) structure: We have only the application structure, but no
+        #     information about the system's configuration.
+        #
+        #  c) OIL: We have the priorities of the tasks, we can only
+        #     jump "upwards". For this we can use the static or the
+        #     dynamic priorities.
+        # 
+        #  d) SSE: The edges the symbolic system executution has for the GCFG graph
+        #     (without the ISR cutting)
 
         # Record the number of (possible) from lower to higher priority subtask
-        static_edges = 0
-        dynamic_edges = 0
+        edges = {
+            "full": 0,
+            "structure": 0,
+            "oil-static": 0,
+            "sse-uncut": 0,
+            "ssf-uncut": 0,
+            "sse-cut":   edge_count_in_sse,
+            "ssf-cut":   edge_count_in_ssf,
+        }
 
-        for abb1 in abbs:
-            # Count only application blocks
-            if not abb1.subtask or not abb1.subtask.is_real_thread():
-                continue
-            for abb2 in abbs:
-                # Count only application blocks
-                if not abb2.subtask or not abb2.subtask.is_real_thread():
-                    continue
+        # How many sporadic sources exist in the system
+        isr_count = len(list(self.system_graph.isrs)+list(self.system_graph.alarms))
 
-                # We would a preemption edge from abb2 to abb1, if there is no natural edge.
-                # Edge from ABB2 -> ABB1
-                if abb1 in abb2.get_outgoing_nodes(E.task_level):
-                    static_edges += 1
-                    dynamic_edges += 1
-                    continue
+        # We have blocks that do not belong to a subtask (StartOS)
+        natural_blocks = [x for x in abbs if x.subtask]
 
-                # Preemption edges can only come from subtask to subtask
-                if abb1.subtask == abb2.subtask:
-                    continue
+        # how many computation blocks are there:
+        computation_blocks = [x for x in natural_blocks if x.isA(S.computation)]
+        kickoff_blocks     = [x for x in natural_blocks if x.isA(S.kickoff) and x.subtask.is_real_thread()]
 
-                assert abb1.dynamic_priority >= abb1.subtask.static_priority
-                assert abb2.dynamic_priority >= abb2.subtask.static_priority
+        for abb1 in natural_blocks:
+            # Full: every block can jump to every other block
+            edges["full"] += (len(natural_blocks) - 1)
 
-                if abb1.dynamic_priority > abb2.dynamic_priority:
-                    dynamic_edges += 1
+            # structure:
+            # - computation blocks:
+            #   - proceed to ICFG successor
+            #   - every ISR entry method
+            # - syscalls:
+            #   - every other computation block
+            #   - every kickoff
 
-                if abb1.subtask.static_priority > abb2.subtask.static_priority:
-                    static_edges += 1
+            if abb1.isA(S.computation):
+                edges["structure"] += len(abb1.get_outgoing_nodes(E.task_level))
+                edges["structure"] += isr_count
+            else: # Syscall
+                edges["structure"] += len(computation_blocks)
+                edges["structure"] += len(kickoff_blocks)
 
+            # oil-static:
+            # - computation blocks:
+            #   - proceed to ICFG successor
+            #   - every ISR entry method
+            # - syscalls:
+            #   - every other computation block (with higher priority)
+            #   - every kickoff  (with higher priority)
+            if abb1.isA(S.computation):
+                edges["oil-static"] += len(abb1.get_outgoing_nodes(E.task_level))
+                edges["oil-static"] += isr_count
+            else: # Syscall
+                edges["oil-static"] += len([x for x in computation_blocks
+                                           if x.subtask.static_priority > abb1.subtask.static_priority])
+                edges["oil-static"] += len([x for x in computation_blocks
+                                           if x.subtask.static_priority > abb1.subtask.static_priority])
 
-        assert dynamic_edges <= static_edges, "Number of dynamic edges should always be smaller than the number of static edges"
-        self.stats.add_data(self, "inference-edges-static", static_edges, scalar = True)
-        self.stats.add_data(self, "inference-edges-dynamic", dynamic_edges, scalar = True)
+            # ssf-uncut
+            # - computation blocks:
+            #   - proceed to ICFG successor
+            #   - every ISR entry method
+            # - iret blocks:
+            #   - Return to every computation block
+            # - syscalls:
+            #   - every other computation block
+            #   - every kickoff
 
+            if self.state_flow:
+                if abb1.isA(S.computation):
+                    # Interrupt activation
+                    edges["ssf-uncut"] += self.state_flow.isr_activation_for_abb[abb1]
+                # GCFG Edges (irq and non-irq)
+                edges["ssf-uncut"] += len(self.edges_in_state_flow(abb1))
+
+            if self.sse:
+                # SSE-uncut
+                edges["sse-uncut"] += len(self.edges_in_sse(abb1, SavedStateTransition))
+
+        # Record Edge Count
+        for k, v in edges.items():
+            self.stats.add_data(self, "edge-count:%s" % k, v, scalar=True)
 
         # Record the number of subtasks that can be reached
         subtask_count = 0
@@ -181,8 +239,7 @@ class ConstructGlobalCFG(Analysis):
         self.system_graph.stats.add_data(self, "subtask-count", subtask_count, scalar = True)
 
         # ISR Count
-        self.stats.add_data(self, "isr-count",
-                            len(list(self.system_graph.isrs)+list(self.system_graph.alarms)), scalar = True)
+        self.stats.add_data(self, "isr-count", isr_count, scalar = True)
 
         # Describe the removed edges
         self.stats.add_data(self, "removed-edges", []) # empty List

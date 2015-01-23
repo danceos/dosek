@@ -95,6 +95,10 @@ class dOSEKDetector:
             if symbol.name == "irq_resume":
                 self.syscall_end.add(start)
 
+            # When the scheduler is not inline, it will appear as a single function
+            if ("Reschedule" in symbol.name and "Scheduler" in symbol.name):
+                self.syscall_endurance.update(range(start, end))
+
             # Systemcall markers
             if symbol.name.startswith(".asm_label.syscall_start"):
                 # Find end marker

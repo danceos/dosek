@@ -212,6 +212,23 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                                          scalar = True)
         logging.info(" + %d system states copied", SystemState.copy_count - old_copy_count)
 
+        # Record the number of State->State transitions
+        state_transition_cut = 0
+        state_transition_uncut = 0
+        for state in self.states:
+            state_transition_uncut += len(state.get_outgoing_nodes(SavedStateTransition))
+            state_transition_cut   += len(state.get_outgoing_nodes(StateTransition))
+
+        self.system_graph.stats.add_data(self, "state-transitions:sse-uncut",
+                                         state_transition_uncut,
+                                         scalar = True)
+        self.system_graph.stats.add_data(self, "state-transitions:sse-cut",
+                                         state_transition_uncut,
+                                         scalar = True)
+
+        logging.info(" + %d/%d system transitions", state_transition_uncut,
+                     state_transition_cut)
+
         # Record the precision indicators for each abb
         # Count the number of ABBs in the system the analysis works on
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function

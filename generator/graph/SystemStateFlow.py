@@ -1,3 +1,4 @@
+from collections import defaultdict
 from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph.DynamicPriorityAnalysis import DynamicPriorityAnalysis
@@ -29,6 +30,8 @@ class SystemStateFlow(Analysis):
         self.edge_states = None
         self.system_call_semantic = None
         self.fixpoint = None
+        # This variable stores how many interrupt sources can trigger for an ABB
+        self.isr_activation_for_abb = defaultdict(lambda: 0)
 
     def requires(self):
         # We require all possible system edges to be contructed
@@ -91,11 +94,14 @@ class SystemStateFlow(Analysis):
         after_states = self.system_call_semantic.do_computation(block, before)
 
         # Handle sporadic events
+        events = 0
         for sporadic_event in self.sporadic_events:
             if not sporadic_event.can_trigger(before):
                 continue
             after = sporadic_event.trigger(before)
             after_states.append(after)
+            events += 1
+        self.isr_activation_for_abb[block] = events
 
         return after_states
 

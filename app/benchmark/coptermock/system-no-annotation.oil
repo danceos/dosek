@@ -1,0 +1,163 @@
+CPU CopterMock {
+
+    OS Coptermock {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+	TASKGROUP SignalGatherGroup {
+	};
+
+    TASK SignalGatherInitiateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 24;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = SPIBus;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK SignalGatherFinishedTask {
+        SCHEDULE = FULL;
+        PRIORITY = 25;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = SPIBus;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK SignalGatherTimeoutTask {
+        SCHEDULE = FULL;
+        PRIORITY = 23;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = SPIBus;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK SignalProcessingActuateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 22;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK SignalProcessingAttitudeTask {
+        SCHEDULE = FULL;
+        PRIORITY = 21;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    /* Actuate Tasks */
+	TASKGROUP FlightControlGroup {
+	};
+
+    TASK FlightControlTask {
+        SCHEDULE = NON;
+        PRIORITY = 11;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = FlightControlGroup;
+    };
+
+    TASK FlightControlAttitudeTask {
+        SCHEDULE = FULL;
+        PRIORITY = 12;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = FlightControlGroup;
+    };
+
+    TASK FlightControlActuateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 13;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = FlightControlGroup;
+    };
+
+    TASK MavlinkSendTask {
+        SCHEDULE = FULL;
+        PRIORITY = 10;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = FlightControlGroup;
+    };
+
+    /* Watchdog Task */
+	TASKGROUP WatchdogGroup {
+	};
+    TASK CopterControlWatchdogTask {
+        SCHEDULE = NON;
+        PRIORITY = 1;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = WatchdogGroup;
+    };
+
+    /* Remote Control Task */
+	TASKGROUP MavlinkReceiveGroup {
+	};
+
+    TASK CopterControlTask {
+        SCHEDULE = FULL;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = MavlinkReceiveGroup;
+    };
+    ISR MavlinkRecvHandler {
+        CATEGORY = 2;
+        PRIORITY = 100;
+        DEVICE = 37;
+		TASKGROUP = MavlinkReceiveGroup;
+    };
+
+    RESOURCE SPIBus {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    ALARM SignalGatherAlarm {
+        COUNTER = C1;
+        ACTION = ACTIVATETASK {
+            TASK = SignalGatherInitiateTask;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 30;
+        };
+    };
+
+    ALARM FlightControlAlarm {
+        COUNTER = C1;
+        ACTION = ACTIVATETASK {
+            TASK = FlightControlTask;
+        };
+        AUTOSTART = TRUE {
+            ALARMTIME = 10;
+            CYCLETIME = 90;
+        };
+    };
+
+    ALARM CopterControlWatchdogAlarm {
+        COUNTER = C1;
+        ACTION = ACTIVATETASK {
+            TASK = CopterControlWatchdogTask;
+        };
+    };
+
+    COUNTER C1 {
+        MAXALLOWEDVALUE = 50000;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+    };
+
+};
+
