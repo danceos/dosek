@@ -138,6 +138,8 @@ class PassManager:
             front.analyze()
             time_delta = time.time() - time_before
             logging.info(" + %.2f seconds", time_delta)
+            if hasattr(front, "statistics"):
+                front.statistics()
 
             # Save statistic in stats tree under the analysis
             self.stats.add_data(front, "run-time", time_delta, scalar=True)

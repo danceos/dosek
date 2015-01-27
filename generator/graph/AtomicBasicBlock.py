@@ -30,6 +30,10 @@ class AtomicBasicBlock(Node):
         self.called_functions = set()
         self.basic_blocks = llvmbbs
 
+        # How many sporadic events can fire from here. This field will
+        # be filled by SSE and SSF.
+        self.sporadic_trigger_count = None
+
         # entry_bb and exit_bb are not used anymore after read_llvmpy_analysis
         self.entry_bb =  None
         self.exit_bb  = None

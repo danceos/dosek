@@ -89,11 +89,14 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         after_states = self.system_call_semantic.do_computation_with_callstack(block, before)
 
         # Handle sporadic events
+        events = 0
         for sporadic_event in list(self.system_graph.alarms) + list(self.system_graph.isrs):
             if not sporadic_event.can_trigger(before):
                 continue
             after = sporadic_event.trigger(before)
             after_states.append(after)
+            events += 1
+        block.sporadic_trigger_count = events
 
         return after_states
 
@@ -198,55 +201,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         # Set analysis to valid, since only statistics follow from here.
         self.states = set(self.states.keys())
+        self.copied_states = SystemState.copy_count - old_copy_count
         self.valid = True
-
-        ################################################################
-        # Statistics
-        ################################################################
-
-        # Record the number of copied system states
-        self.system_graph.stats.add_data(self, "system-states", len(self.states),
-                                         scalar = True)
-        self.system_graph.stats.add_data(self, "copied-system-states",
-                                         SystemState.copy_count - old_copy_count,
-                                         scalar = True)
-        logging.info(" + %d system states copied", SystemState.copy_count - old_copy_count)
-
-        # Record the number of State->State transitions
-        state_transition_cut = 0
-        state_transition_uncut = 0
-        for state in self.states:
-            state_transition_uncut += len(state.get_outgoing_nodes(SavedStateTransition))
-            state_transition_cut   += len(state.get_outgoing_nodes(StateTransition))
-
-        self.system_graph.stats.add_data(self, "state-transitions:sse-uncut",
-                                         state_transition_uncut,
-                                         scalar = True)
-        self.system_graph.stats.add_data(self, "state-transitions:sse-cut",
-                                         state_transition_uncut,
-                                         scalar = True)
-
-        logging.info(" + %d/%d system transitions", state_transition_uncut,
-                     state_transition_cut)
-
-        # Record the precision indicators for each abb
-        # Count the number of ABBs in the system the analysis works on
-        is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
-        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
-        precisions = []
-        for abb in abbs:
-            if not abb.function.subtask or not abb.function.subtask.is_real_thread():
-                continue
-            x = self.for_abb(abb)
-            if x:
-                precision = x.state_before.precision()
-                if not abb.isA(S.StartOS):
-                    self.stats.add_data(abb, "sse-precision", precision, scalar=True)
-                precisions.append(precision)
-            else:
-                # State will not be visited, this is for sure
-                precisions.append(1.0)
-        self.stats.add_data(self, "precision", precisions, scalar = True)
 
     def transform_isr_transitions(self):
         # Special casing of sporadic events What happens here: In
@@ -284,6 +240,54 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             x = source.remove_cfg_edge(target, StateTransition)
         for source, target in add_edges:
             source.add_cfg_edge(target, StateTransition)
+
+    def statistics(self):
+        ################################################################
+        # Statistics
+        ################################################################
+        # Record the number of copied system states
+        self.system_graph.stats.add_data(self, "system-states", len(self.states),
+                                         scalar = True)
+        self.system_graph.stats.add_data(self, "copied-system-states",
+                                         self.copied_states,
+                                         scalar = True)
+        logging.info(" + %d system states copied", self.copied_states)
+
+        # Record the number of State->State transitions
+        state_transition_cut = 0
+        state_transition_uncut = 0
+        for state in self.states:
+            state_transition_uncut += len(state.get_outgoing_nodes(SavedStateTransition))
+            state_transition_cut   += len(state.get_outgoing_nodes(StateTransition))
+
+        self.system_graph.stats.add_data(self, "state-transitions:sse-uncut",
+                                         state_transition_uncut,
+                                         scalar = True)
+        self.system_graph.stats.add_data(self, "state-transitions:sse-cut",
+                                         state_transition_uncut,
+                                         scalar = True)
+
+        logging.info(" + %d/%d system transitions", state_transition_uncut,
+                     state_transition_cut)
+
+        # Record the precision indicators for each abb
+        # Count the number of ABBs in the system the analysis works on
+        is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
+        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
+        precisions = []
+        for abb in abbs:
+            if not abb.function.subtask or not abb.function.subtask.is_real_thread():
+                continue
+            x = self.for_abb(abb)
+            if x:
+                precision = x.state_before.precision()
+                if not abb.isA(S.StartOS):
+                    self.stats.add_data(abb, "sse-precision", precision, scalar=True)
+                precisions.append(precision)
+            else:
+                # State will not be visited, this is for sure
+                precisions.append(1.0)
+        self.stats.add_data(self, "precision", precisions, scalar = True)
 
     def fsck(self):
         state_ids = set([id(X) for X in self.states])

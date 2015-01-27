@@ -118,16 +118,20 @@ class ConstructGlobalCFG(Analysis):
                     # If no state_flow analysis is done we use the
                     # edges build by symbolic execution
                     source_abb.add_cfg_edge(target_abb, E.system_level)
+
+        self.edge_count_in_ssf = edge_count_in_ssf
+        self.edge_count_in_sse = edge_count_in_sse
+
         logging.info(" + removed %d edges", len(self.removed_edges))
 
+
+    def statistics(self):
         ################################################################
         # Statistics
         ################################################################
 
         # Count the number of ABBs in the system the analysis works on
         is_relevant = self.system_graph.passes["AddFunctionCalls"].is_relevant_function
-        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
-        self.stats.add_data(self, "abb-count", len(abbs), scalar = True)
 
         # In Statistic section, we want to generate data for the
         # following problem: How much better does the GCFG, which is
@@ -137,15 +141,16 @@ class ConstructGlobalCFG(Analysis):
         #
         #  a) Full: The graph that has no information about the application
         #     structure. The control flow could jump from every from
-        #     every block to every other block.
+        #     every block to every other block (including itself).
         #
         #  b) structure: We have only the application structure, but no
         #     information about the system's configuration.
         #
         #  c) OIL: We have the priorities of the tasks, we can only
         #     jump "upwards". For this we can use the static or the
-        #     dynamic priorities.
-        # 
+        #     dynamic priorities. Task-Group annotations are also
+        #     handled here.
+        #
         #  d) SSE: The edges the symbolic system executution has for the GCFG graph
         #     (without the ISR cutting)
 
@@ -156,15 +161,21 @@ class ConstructGlobalCFG(Analysis):
             "oil-static": 0,
             "sse-uncut": 0,
             "ssf-uncut": 0,
-            "sse-cut":   edge_count_in_sse,
-            "ssf-cut":   edge_count_in_ssf,
+            "sse-cut":   self.edge_count_in_sse,
+            "ssf-cut":   self.edge_count_in_ssf,
         }
+
+        abbs = [x for x in self.system_graph.abbs if is_relevant(x.function)]
+
 
         # How many sporadic sources exist in the system
         isr_count = len(list(self.system_graph.isrs)+list(self.system_graph.alarms))
 
         # We have blocks that do not belong to a subtask (StartOS)
-        natural_blocks = [x for x in abbs if x.subtask]
+        # and we have blocks that are unreachable
+        natural_blocks = [x for x in abbs if x.subtask \
+                          and x.get_incoming_edges(E.system_level)]
+        self.stats.add_data(self, "abb-count", len(natural_blocks), scalar = True)
 
         # how many computation blocks are there:
         computation_blocks = [x for x in natural_blocks if x.isA(S.computation)]
@@ -172,7 +183,7 @@ class ConstructGlobalCFG(Analysis):
 
         for abb1 in natural_blocks:
             # Full: every block can jump to every other block
-            edges["full"] += (len(natural_blocks) - 1)
+            edges["full"] += (len(natural_blocks))
 
             # structure:
             # - computation blocks:
@@ -192,19 +203,22 @@ class ConstructGlobalCFG(Analysis):
             # oil-static:
             # - computation blocks:
             #   - proceed to ICFG successor
-            #   - every ISR entry method
-            # - syscalls:
+            #   - activatable IRQs
+            # - terminating system calls:
+            #   - Computation and kickoff blocks of all other tasks
+            # - non-terminating system calls
             #   - every other computation block (with higher priority)
             #   - every kickoff  (with higher priority)
             if abb1.isA(S.computation):
                 edges["oil-static"] += len(abb1.get_outgoing_nodes(E.task_level))
-                edges["oil-static"] += isr_count
-            else: # Syscall
-                edges["oil-static"] += len([x for x in computation_blocks
-                                           if x.subtask.static_priority > abb1.subtask.static_priority])
-                edges["oil-static"] += len([x for x in computation_blocks
-                                           if x.subtask.static_priority > abb1.subtask.static_priority])
-
+                edges["oil-static"] += abb1.sporadic_trigger_count
+            elif abb1.syscall_type.doesTerminateTask(): # Terminating syscall
+                edges["oil-static"] += len([x for x in computation_blocks + kickoff_blocks
+                                            if x.subtask.static_priority != abb1.subtask.static_priority])
+            else:
+                edges["oil-static"] += len(abb1.get_outgoing_nodes(E.task_level))
+                edges["oil-static"] += len([x for x in computation_blocks + kickoff_blocks
+                                            if x.subtask.static_priority > abb1.subtask.static_priority])
             # ssf-uncut
             # - computation blocks:
             #   - proceed to ICFG successor
@@ -218,7 +232,7 @@ class ConstructGlobalCFG(Analysis):
             if self.state_flow:
                 if abb1.isA(S.computation):
                     # Interrupt activation
-                    edges["ssf-uncut"] += self.state_flow.isr_activation_for_abb[abb1]
+                    edges["ssf-uncut"] += abb1.sporadic_trigger_count
                 # GCFG Edges (irq and non-irq)
                 edges["ssf-uncut"] += len(self.edges_in_state_flow(abb1))
 
@@ -227,6 +241,7 @@ class ConstructGlobalCFG(Analysis):
                 edges["sse-uncut"] += len(self.edges_in_sse(abb1, SavedStateTransition))
 
         # Record Edge Count
+        print(edges)
         for k, v in edges.items():
             self.stats.add_data(self, "edge-count:%s" % k, v, scalar=True)
 

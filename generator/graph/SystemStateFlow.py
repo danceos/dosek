@@ -101,7 +101,7 @@ class SystemStateFlow(Analysis):
             after = sporadic_event.trigger(before)
             after_states.append(after)
             events += 1
-        self.isr_activation_for_abb[block] = events
+        block.sporadic_trigger_count = events
 
         return after_states
 
