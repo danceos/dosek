@@ -85,6 +85,51 @@ class SystemCallSemantic:
         assert len(ret) > 1, "No Alarm for Soft-Counter defined (%s)" % counter
         return ret
 
+    def do_WaitEvent(self, block, before):
+        event_list = block.arguments[0]
+        calling_task = block.subtask
+        ret = []
+        if before.maybe_waiting(calling_task, event_list):
+            after = before.copy()
+            after.set_waiting(calling_task)
+            after.set_continuation(calling_task, block)
+            ret.append(after)
+
+        if before.maybe_not_waiting(calling_task, event_list):
+            after = before.copy_if_needed()
+            after.set_ready(calling_task)
+            cont = block.definite_after(E.task_level)
+            after.set_continuation(calling_task, cont)
+            ret.append(after)
+
+        return ret
+
+    def do_SetEvent(self, block, before):
+        event_list = block.arguments[0]
+        calling_task = block.subtask
+        unblocked_task = event_list[0].task
+
+        after = before.copy_if_needed()
+        after.set_events(unblocked_task, event_list)
+
+        # We've done our system call, continue at successor
+        cont = block.definite_after(E.task_level)
+        after.set_continuation(calling_task, cont)
+
+        waiting_block = after.get_continuations(unblocked_task)
+        assert len(waiting_block) == 1
+        # Reperform the WaitEvent system call
+        return self.do_WaitEvent(list(waiting_block)[0], after)
+
+    def do_ClearEvent(self, block, before):
+        event_list = block.arguments[0]
+        calling_task = block.subtask
+
+        after = before.copy_if_needed()
+        after.clear_events(calling_task, event_list)
+
+        return [after]
+
     def do_Idle(self, block, before):
         after = before.copy_if_needed()
         # EnsureComputationBlocks ensures that after the Idle() function
@@ -93,6 +138,17 @@ class SystemCallSemantic:
         after.set_continuation(self.running_task.for_abb(block),
                                cont)
         return [after]
+
+    def do_kickoff(self, block, before):
+        """Called on kickoff(); does clear the event list and is nearly a computation block"""
+        ret = before.copy_if_needed()
+        calling_task = block.subtask
+
+        # Clear Events on kickoff
+        ret.clear_events(calling_task, calling_task.events)
+
+        # Rest is a normal computation block
+        return self.do_computation(block, ret)
 
     def do_computation(self, block, before):
         next_blocks = block.get_outgoing_nodes(E.task_level)
@@ -248,6 +304,7 @@ class SystemCallSemantic:
 class SystemState(Node):
     READY = 1
     SUSPENDED = 2
+    WAITING = 4
 
     # Static field that counts the system states that were created
     copy_count = 0
@@ -282,7 +339,6 @@ class SystemState(Node):
             # Only used by SymbolicSystemExecution
             if not self.call_stack[subtask.subtask_id] is None:
                 state.call_stack[subtask.subtask_id] = stack(self.call_stack[subtask.subtask_id])
-        #assert self == state, repr(self) + " "  + repr(state)
         return state
 
     def copy_if_needed(self, multiple=None):
@@ -314,6 +370,10 @@ class SystemState(Node):
     def set_ready(self, subtask):
         assert not self.frozen
         self.states[subtask.subtask_id] = self.READY
+
+    def set_waiting(self, subtask):
+        assert not self.frozen
+        self.states[subtask.subtask_id] = self.WAITING
 
     def set_unsure(self, subtask):
         assert not self.frozen
@@ -461,8 +521,24 @@ class SystemState(Node):
             ret.append("RDY")
         if state & self.SUSPENDED:
             ret.append("SPD")
+        if state & self.WAITING:
+            ret.append("WAI")
 
         return "|".join(ret)
+
+    def format_events(self, subtask):
+        ret = []
+        for event in subtask.events:
+            SET = self.is_event_set(subtask, event)
+            CLEARED = self.is_event_cleared(subtask, event)
+            if SET and CLEARED:
+                ret.append("%s:*" % event.conf.name)
+            elif SET:
+                ret.append("%s:1" % event.conf.name)
+            else:
+                assert CLEARED
+                ret.append("%s:0" % event.conf.name)
+        return " ".join(ret)
 
     def __repr__(self):
         if self.current_abb:
@@ -471,11 +547,12 @@ class SystemState(Node):
             ret = "<SystemState: -->\n"
 
         for subtask in self.get_subtasks():
-            ret += "  %02x%02x %s: %s in %s \n" %(
+            ret += "  %02x%02x %s: %s in %s [%s]\n" %(
                 id(self.states[subtask.subtask_id]) % 256,
                 id(self.continuations[subtask.subtask_id]) % 256,
                 subtask, self.format_state(self.states[subtask.subtask_id]),
-                self.continuations[subtask.subtask_id])
+                self.continuations[subtask.subtask_id],
+                self.format_events(subtask))
         ret += "</SystemState>\n"
         return ret
 
@@ -549,11 +626,14 @@ class PreciseSystemState(SystemState):
         self.frozen = False
         self.states = []
         self.continuations = []
+        self.events = []
+        self.events_cleared = []
         self.call_stack = []
         for subtask in self.system_graph.subtasks:
             self.states.append(0)
             self.continuations.append(None)
             self.call_stack.append([])
+            self.events.append(0) # A bit mask
         self.current_abb = None
         self.__hash = None
 
@@ -568,6 +648,7 @@ class PreciseSystemState(SystemState):
         state.current_abb = self.current_abb
         state.states = list(self.states)
         state.continuations = list(self.continuations)
+        state.events = list(self.events)
 
         for subtask_id in range(0, len(self.states)):
             state.call_stack[subtask_id] = stack(self.call_stack[subtask_id])
@@ -607,6 +688,40 @@ class PreciseSystemState(SystemState):
         assert not self.frozen
         assert not self.call_stack[subtask.subtask_id] is None
         return self.call_stack[subtask.subtask_id]
+
+    # Events
+    def __event_mask(self, event_list):
+        """Generate a event mask"""
+        x = 0
+        for event in event_list:
+            x |= event.event_mask
+        return x
+
+    def set_events(self, subtask, event_list):
+        mask = self.__event_mask(event_list)
+        self.events[subtask.subtask_id] |= mask
+
+    def clear_events(self, subtask, event_list):
+        mask = self.__event_mask(event_list)
+        self.events[subtask.subtask_id] &= ~mask
+
+    def maybe_waiting(self, subtask, event_list):
+        """Returns True, if the task may block be waiting at this point"""
+        mask = self.__event_mask(event_list)
+        if (self.events[subtask.subtask_id] & mask) == 0:
+            return True
+        return False
+
+    def maybe_not_waiting(self, subtask, event_list):
+        """Returns True, if the task may be continue without blocking"""
+        # In the precise system state, this is the exact opposite
+        return not self.maybe_waiting(subtask, event_list)
+
+    def is_event_set(self, subtask, event):
+        return (self.events[subtask.subtask_id] & event.event_mask) != 0
+
+    def is_event_cleared(self, subtask, event):
+        return (self.events[subtask.subtask_id] & event.event_mask) == 0
 
     ## Continuation accesors
     def was_surely_not_kickoffed(self, subtask):

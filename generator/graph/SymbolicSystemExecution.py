@@ -117,7 +117,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.TerminateTask   : scc.do_TerminateTask,
                             S.ChainTask       : scc.do_ChainTask,
                             S.computation     : self.do_computation_with_sporadic_events,
-                            S.kickoff         : scc.do_computation, # NO ISRS
+                            S.kickoff         : scc.do_kickoff, # NO ISRS
                             S.SetRelAlarm     : scc.do_computation, # ignore
                             S.CancelAlarm     : scc.do_computation, # ignore
                             S.GetAlarm        : scc.do_computation, # ignore
@@ -135,8 +135,10 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             # Dependability Service
                             S.AcquireCheckedObject : scc.do_computation,
                             S.ReleaseCheckedObject : scc.do_computation,
-
-
+                            # Event Support
+                            S.WaitEvent            : scc.do_WaitEvent,
+                            S.SetEvent             : scc.do_SetEvent,
+                            S.ClearEvent           : scc.do_ClearEvent,
                             S.Idle            : scc.do_Idle,
                             S.iret            : scc.do_TerminateTask}
 

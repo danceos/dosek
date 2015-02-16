@@ -195,8 +195,9 @@ class SystemGraph(GraphObject, PassManager):
                 assert event.MASK == "AUTO", "We only support EVENT:MASK = AUTO"
                 event.used = True
                 E = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
-                subtask.events[event.name] = E
+                subtask._events[event.name] = E
                 event_id += 1
+                assert event_id < 32, "No more than 32 Events per Subtask"
 
         # Events: Assert that every event was used at least once
         for event in system.getEvents():
@@ -391,7 +392,7 @@ class SystemGraph(GraphObject, PassManager):
         abbs = []
         for abb in function.abbs:
             if abb.isA(syscall_type) \
-               and abb.arguments == arguments:
+               and (arguments == None or abb.arguments == arguments):
                 abbs.append(abb)
         if multiple:
             return abbs

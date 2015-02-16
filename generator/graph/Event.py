@@ -9,6 +9,8 @@ class Event(SystemObject):
         self.name = name
         self.task = task
         self.event_id = event_id
+        self.event_mask = (1 << event_id)
+
 
     def __repr__(self):
         return "<Event %s task:%s>" %(self.name, self.task)

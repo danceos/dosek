@@ -250,9 +250,9 @@ class MoveFunctionsToTask(Analysis):
                 for idx, event in enumerate(events):
                     assert event.startswith("OSEKOS_EVENT_")
                     event = event[len("OSEKOS_EVENT_"):]
-                    assert event in subtask.events, "Subtask %s does not own Event %s" %(subtask, event)
-                    events[idx] = subtask.events[event]
-                abb.arguments = events
+                    assert event in subtask._events, "Subtask %s does not own Event %s" %(subtask, event)
+                    events[idx] = subtask._events[event]
+                abb.arguments = [events]
 
 
 

@@ -58,6 +58,11 @@ class GlobalABBInfoToolbox:
         assert syscall, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
         return syscall
 
+    def syscalls(self, function, syscall_name, arguments = None):
+        syscalls = self.system_graph.find_syscall(function, syscall_name, arguments, multiple = True)
+        assert syscalls, "%s:%s(%s) not found" %(function.function_name, syscall_name, arguments)
+        return syscalls
+
     def reachability(self, function, syscall_name, arguments, possible_subtasks):
         """Check to which subtasks a certain syscall can dispatch. Syscall is
         marked as visited"""
