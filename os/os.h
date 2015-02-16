@@ -139,8 +139,9 @@ typedef TickType * TickRefType;
 #define ReleaseResource(x)				\
   OSEKOS_ReleaseResource(&OSEKOS_RESOURCE_Struct_##x)
 
-#define DeclareEvent(x)				\
-  extern EventMaskType x
+#define DeclareEvent(x)							\
+	extern const EventMaskType OSEKOS_EVENT_ ## x;			\
+    static const EventMaskType &x = OSEKOS_EVENT_ ## x
 
 #define SetEvent(task,event)						\
   OSEKOS_SetEvent(&OSEKOS_TASK_Struct_##task,event)

@@ -6,6 +6,7 @@ from generator.graph.Function import Function
 from generator.graph.PassManager import PassManager
 from generator.graph.Sporadic import Counter, Alarm, ISR
 from generator.graph.Resource import Resource
+from generator.graph.Event import Event
 from generator.graph.common import GraphObject
 from generator.statistics import Statistics
 from collections import namedtuple
@@ -37,6 +38,7 @@ class SystemGraph(GraphObject, PassManager):
         self._isrs = {}
         self._resources = {}
         self._checkedObjects = {}
+        self._events = {}
 
         # Application Objects
         self._functions = {}
@@ -184,6 +186,21 @@ class SystemGraph(GraphObject, PassManager):
                 maxprio = task_desc.static_priority
 
             self.stats.add_data(subtask, "is_isr", False, scalar = True)
+
+            # We use event_ids that are only unique for a single
+            # subtask.
+            event_id = 0
+            # Instantiate events for the current task
+            for event in task_desc.events.values():
+                assert event.MASK == "AUTO", "We only support EVENT:MASK = AUTO"
+                event.used = True
+                E = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
+                subtask.events[event.name] = E
+                event_id += 1
+
+        # Events: Assert that every event was used at least once
+        for event in system.getEvents():
+            assert hasattr(event, "used") and event.used, "Event %s was not used" % event.name
 
         #  ISR
         isr_prio = maxprio + 1  # ISR get priorities above maximum task prio

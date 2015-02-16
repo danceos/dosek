@@ -34,24 +34,45 @@ class BB(Node):
             successors.append(succ)
         return successors
 
+    def __extract_event_operand(self, argument):
+        if argument.opcode == llvm.core.OPCODE_LOAD:
+            x = argument.operands[0].name
+            return [x]
+        elif argument.opcode == llvm.core.OPCODE_OR:
+            arg0 = self.__extract_event_operand(argument.operands[0])
+            arg1 = self.__extract_event_operand(argument.operands[1])
+            return arg0 + arg1
+        assert False, "We cannot extract the Event Mask statically"
+
     def __find_syscall(self):
         """ Extract System Call if present in this basic block """
         for inst in self.instructions:
             if type(inst) == llvm.core.CallOrInvokeInstruction:
                 calledfunc = inst.called_function
                 if calledfunc:
-                   self.syscall = S.fromString(calledfunc.name) # Store type
-                   self.calledFunc = calledfunc # save called LLVMpy function object
-                   self.callInst = inst # save calling LLVMpy instruction
-                   if self.is_syscall():
-                       for op in inst.operands[0:-1]:
-                           opstring = op.name
-                           if len(opstring) == 0:
-                               opstring = '0'
-                           self.syscallarguments.append(opstring)
-                   """ Attention: Here we stop at the first found call!
-                       This is ok, as we split up every call into a single BB """
-                   return
+                    self.syscall = S.fromString(calledfunc.name) # Store type
+                    self.calledFunc = calledfunc # save called LLVMpy function object
+                    self.callInst = inst # save calling LLVMpy instruction
+                    if self.is_syscall():
+                        # Copy the List
+                        args = list(inst.operands[0:-1])
+                        # Extract the Event arguments
+                        if self.syscall in (S.WaitEvent, S.ClearEvent, S.GetEvent):
+                            args[0] = self.__extract_event_operand(args[0])
+                        if self.syscall in (S.SetEvent,):
+                            args[1] = self.__extract_event_operand(args[1])
+
+                        for op in args:
+                            if hasattr(op, "name"):
+                                opstring = op.name
+                                if len(opstring) == 0:
+                                    opstring = '0'
+                                self.syscallarguments.append(opstring)
+                            else:
+                                self.syscallarguments.append(op)
+                    """ Attention: Here we stop at the first found call!
+                    This is ok, as we split up every call into a single BB """
+                    return
 
     def rename_syscall(self, abb, source_module):
         """ Rename syscall to a unique name, appending ABB#.

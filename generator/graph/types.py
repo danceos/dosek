@@ -71,6 +71,11 @@ class SyscallType(IntEnum):
     AcquireCheckedObject = 35
     ReleaseCheckedObject = 36
 
+    SetEvent = 37
+    ClearEvent = 38
+    WaitEvent = 39
+    GetEvent = 40
+
     def isRealSyscall(self):
         return self.value >= SyscallType.kickoff
 

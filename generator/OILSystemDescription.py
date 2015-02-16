@@ -103,7 +103,7 @@ class Event(OILObject):
 
     def __init__(self, name=""):
         super(Event, self).__init__(name)
-        self.MASK = ""
+        self.MASK = "AUTO"
 
 
 class Counter(OILObject):
@@ -260,6 +260,7 @@ class Task(OILObject):
         self.SCHEDULE = "NON"
         self.TASKGROUP = None
         self.resources = dict()
+        self.events = dict()
 
     def evaluate(self, oil):
         super(Task, self).evaluate(oil)
@@ -274,6 +275,8 @@ class Task(OILObject):
                             self.autostart_appmodes[appmode[1]] = appmode[1]
             if param[0] == "RESOURCE":
                 self.resources[param[1]] = param[1];
+            if param[0] == "EVENT":
+                self.events[param[1]] = param[1];
 
     @property
     def preemptable(self):
@@ -408,6 +411,13 @@ class CPU:
                 new_taskresources[tres] = self.resources[tres]
                 self.resources[tres].tasks[task.name] = task
             task.resources = new_taskresources
+
+            #  Interconnect events
+            new_taskevents = dict()
+            for tres in task.events:
+                assert tres in self.events, "Event '" + tres + "' used by Task '" + task.name + "' not found"
+                new_taskevents[tres] = self.events[tres]
+            task.events = new_taskevents
 
             #  Interconnect appmodes
             new_appmodes = dict()
@@ -605,6 +615,9 @@ class OILSystemDescription:
 
     def getTaskGroups(self):
         return self.refined.task_groups.values()
+
+    def getEvents(self):
+        return self.refined.events.values()
 
 
     def __str__(self):

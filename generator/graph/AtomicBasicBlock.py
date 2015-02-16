@@ -87,6 +87,7 @@ class AtomicBasicBlock(Node):
         # Mark the parent function accordingly
         self.function.has_syscall = True
         args = []
+        # ATTENTION!: The Event Masks are extracted in the MoveToSubtask Pass!
         # Make the string arguments references to system objects
         for x in arguments:
             if type(x) == str:

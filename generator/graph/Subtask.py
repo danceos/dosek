@@ -14,6 +14,7 @@ class Subtask(Function, SystemObject):
         self.name = name
         self.task = None
         self.subtask = self
+        self.events = {}
 
     def is_user_thread(self):
         """Returns True for user threads"""

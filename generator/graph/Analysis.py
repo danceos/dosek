@@ -236,6 +236,24 @@ class MoveFunctionsToTask(Analysis):
             else:
                 assert abb.isA(S.computation) or abb.isA(S.StartOS)
 
+        # Find the Event mappings. At this point we have enough
+        # information about the calling subtask, to rewrite the *Event
+        # arguments to the actual system calls.
+        for abb in self.system_graph.abbs:
+            if abb.isA([S.WaitEvent, S.ClearEvent, S.GetEvent, S.SetEvent]):
+                if abb.isA(S.SetEvent):
+                    subtask = abb.arguments[0]
+                    events = abb.arguments[1]
+                else:
+                    events = abb.arguments[0]
+                    subtask = abb.subtask
+                for idx, event in enumerate(events):
+                    assert event.startswith("OSEKOS_EVENT_")
+                    event = event[len("OSEKOS_EVENT_"):]
+                    assert event in subtask.events, "Subtask %s does not own Event %s" %(subtask, event)
+                    events[idx] = subtask.events[event]
+                abb.arguments = events
+
 
 
 
