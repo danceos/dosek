@@ -88,6 +88,10 @@ class SystemGraph(GraphObject, PassManager):
         return self._checkedObjects.values()
 
     @property
+    def events(self):
+        return self._events.values()
+
+    @property
     def functions(self):
         return self._functions.values()
 
@@ -196,6 +200,7 @@ class SystemGraph(GraphObject, PassManager):
                 event.used = True
                 E = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
                 subtask._events[event.name] = E
+                self._events[E.name] = E
                 event_id += 1
                 assert event_id < 32, "No more than 32 Events per Subtask"
 

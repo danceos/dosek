@@ -29,6 +29,11 @@ class ConstructGlobalCFG(Analysis):
         self.sse        = self.system_graph.get_pass("SymbolicSystemExecution",
                                                only_enqueued = True)
 
+        # If we have events, we cannot use the state flow
+        # analysis. Therefore we enforce the SSE to be run!
+        if self.system_graph.events:
+            self.state_flow = None
+
         # Default is SSE
         if not self.sse and not self.state_flow:
             self.sse = self.system_graph.enqueue_analysis("SymbolicSystemExecution")

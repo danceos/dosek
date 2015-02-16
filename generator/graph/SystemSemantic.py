@@ -398,6 +398,12 @@ class SystemState(Node):
     def is_unsure_ready_state(self, subtask):
         return bin(self.states[subtask.subtask_id]).count("1") > 1
 
+    # Events
+    def clear_events(self, subtask, event_list):
+        """Only a dummy implementation, called by the system state flow
+           analysis, which does not support events."""
+        pass
+
     ## Continuations
     def get_continuations(self, subtask):
         if type(subtask) == int:

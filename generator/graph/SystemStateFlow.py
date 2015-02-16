@@ -150,6 +150,12 @@ class SystemStateFlow(Analysis):
 
 
     def do(self):
+        # If there are any events, we cannot use the state flow analysis
+        for subtask in self.system_graph.subtasks:
+            if len(subtask.events) > 0:
+                logging.warn("Skipped State-Flow Analysis, since Events are present")
+                return 
+        
         old_copy_count = SystemState.copy_count
 
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
