@@ -241,7 +241,6 @@ class ConstructGlobalCFG(Analysis):
                 edges["sse-uncut"] += len(self.edges_in_sse(abb1, SavedStateTransition))
 
         # Record Edge Count
-        print(edges)
         for k, v in edges.items():
             self.stats.add_data(self, "edge-count:%s" % k, v, scalar=True)
 

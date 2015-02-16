@@ -32,8 +32,10 @@ class SystemCallSemantic:
         after.set_continuation(self.running_task.for_abb(block),
                                cont)
         activated = block.arguments[0]
-        if not after.is_surely_ready(block.arguments[0]):
+        if not after.is_surely_ready(activated):
             after.add_continuation(activated, activated.entry_abb)
+            # Clear the events
+            after.clear_events(activated, activated.events)
         after.set_ready(activated)
         return [after]
 
@@ -55,6 +57,8 @@ class SystemCallSemantic:
         activated = block.arguments[0]
         if not after.is_surely_ready(block.arguments[0]):
             after.add_continuation(activated, activated.entry_abb)
+            # Clear the events
+            after.clear_events(activated, activated.events)
         after.set_ready(activated)
         return [after]
 
@@ -80,6 +84,8 @@ class SystemCallSemantic:
             activated = alarm.subtask
             if not after.is_surely_ready(activated):
                 after.add_continuation(activated, activated.entry_abb)
+                # Clear the events
+                after.clear_events(activated, activated.events)
             after.set_ready(activated)
             ret.append(after)
         assert len(ret) > 1, "No Alarm for Soft-Counter defined (%s)" % counter
@@ -118,8 +124,12 @@ class SystemCallSemantic:
 
         waiting_block = after.get_continuations(unblocked_task)
         assert len(waiting_block) == 1
-        # Reperform the WaitEvent system call
-        return self.do_WaitEvent(list(waiting_block)[0], after)
+        waiting_block = list(waiting_block)[0]
+        if waiting_block.isA(S.WaitEvent):
+            # Reperform the WaitEvent system call
+            return self.do_WaitEvent(waiting_block, after)
+        else:
+            return [after]
 
     def do_ClearEvent(self, block, before):
         event_list = block.arguments[0]
@@ -127,6 +137,9 @@ class SystemCallSemantic:
 
         after = before.copy_if_needed()
         after.clear_events(calling_task, event_list)
+
+        cont = block.definite_after(E.task_level)
+        after.set_continuation(calling_task, cont)
 
         return [after]
 
@@ -138,17 +151,6 @@ class SystemCallSemantic:
         after.set_continuation(self.running_task.for_abb(block),
                                cont)
         return [after]
-
-    def do_kickoff(self, block, before):
-        """Called on kickoff(); does clear the event list and is nearly a computation block"""
-        ret = before.copy_if_needed()
-        calling_task = block.subtask
-
-        # Clear Events on kickoff
-        ret.clear_events(calling_task, calling_task.events)
-
-        # Rest is a normal computation block
-        return self.do_computation(block, ret)
 
     def do_computation(self, block, before):
         next_blocks = block.get_outgoing_nodes(E.task_level)
