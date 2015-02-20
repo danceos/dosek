@@ -1,0 +1,47 @@
+// Define a Snippet without argument
+{{{snippet:Snippet 1:|ABC}}}
+ABC={{{generate:Snippet 1}}}
+ABC={{{!Snippet 1}}}
+
+
+// Snippet with arguments
+{{{#Snippet 2:a,xyz|%(a)s:%(xyz)s}}}
+23:42={{{!Snippet 2:23,42}}}
+
+// Recursive Snippet
+{{{#Snippet Recursive|{{{!Snippet 1}}}}}}
+ABC={{{!Snippet Recursive}}}
+
+// Recursive Snippet with arguments
+{{{#Snippet Recursive Args:A,B|\
+	{{{!Snippet 2:%(B)s,%(A)s}}}\
+}}}
+999:000={{{!Snippet Recursive Args:000,999}}}
+
+// Recursive Snippet with Defines
+{{{#With Define:A|\
+   {{{#XXX:Y,Z|%%(Y)s -- %%(Z)s}}}\
+   {{{!XXX:23,%(A)s}}}\
+}}}
+23 -- Hallo={{{!With Define:Hallo}}}
+
+
+// With Simple Indirection
+XYZ={{{!indirection_A}}}
+
+// With nested indirection
+{{{#indirection_A1|\
+   :{{{!indirection_A}}}\
+}}}
+:XYZ={{{!indirection_A1}}}
+
+// Indirection to get
+23={{{!get:foobar}}}
+33={{{!get:the_calling}}}
+33={{{!get:this.this.the_calling}}}
+
+// Anonymous Snippet
+
+ -> 0 -> 1 -> 2={{{!counter:0,3| -> %(i)s}}}
+
+
