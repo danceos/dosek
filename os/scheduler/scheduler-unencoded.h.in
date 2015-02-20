@@ -17,7 +17,7 @@ struct Scheduler {
     noinline void Reschedule(void);
 
     forceinline void SetReady_impl(const Task &task) {
-		tlist.insert(task.id, task.prio);
+		tlist.activate(task.id, task.prio);
     }
 
 
@@ -69,8 +69,23 @@ struct Scheduler {
     forceinline void ReleaseResource_impl(const Task &current_task, const int new_prio) {
 		SetPriority(current_task, new_prio);
 		SetSystemPriority(new_prio);
-        Schedule_impl();
-    }
+		Schedule_impl();
+	}
+
+	forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
+		tlist.set_events(other_task.id, event_mask);
+		Schedule_impl();
+	}
+
+	forceinline void WaitEvent_impl(const Task &current_task, const int event_mask) {
+		tlist.wait_events(current_task.id, event_mask);
+		Schedule_impl();
+	}
+
+	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
+		tlist.clear_events(current_task.id, event_mask);
+	}
+
 
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
@@ -109,16 +124,16 @@ void Scheduler::Reschedule() {
 	}
 
 	// dispatch or enter idle
-	// TODO: generated signature
-	{{{snippet:reschedule_dispatch_task:task,desc|if(current_task == %(desc)s.id) {
-					if (%(desc)s.preemptable == false) {
-						// promote non-preemptable task to RES_SCHEDULER
-						tlist.promote(%(desc)s.id, scheduler_prio);
-						current_prio = scheduler_prio;
-					}
-					Dispatcher::Dispatch(%(desc)s);
-				} else }}}
-	{{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(current_task == TaskList::idle_id) {
+{{{!foreach_subtask|
+   if(current_task == {{{!subtask_id}}}) {
+{{{!if_not_preemptable|
+        // promote non-preemptable task to RES_SCHEDULER
+        tlist.set({{{!subtask_id}}}, scheduler_prio);
+        current_prio = scheduler_prio;
+}}}\
+        Dispatcher::Dispatch({{{!subtask_desc}}});
+	} else \
+}}} if(current_task == TaskList::idle_id) {
 		Dispatcher::idle();
 	} else {
 		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);

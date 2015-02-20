@@ -2,6 +2,7 @@ from generator.tools import stack, unwrap_seq, panic
 from generator.graph.AtomicBasicBlock import E, S
 from generator.graph.Sporadic import Alarm
 from generator.graph.Subtask import Subtask
+from generator.graph.Event import Event
 from generator.graph.common import Node, Edge, EdgeType, NodeType
 
 
@@ -698,24 +699,17 @@ class PreciseSystemState(SystemState):
         return self.call_stack[subtask.subtask_id]
 
     # Events
-    def __event_mask(self, event_list):
-        """Generate a event mask"""
-        x = 0
-        for event in event_list:
-            x |= event.event_mask
-        return x
-
     def set_events(self, subtask, event_list):
-        mask = self.__event_mask(event_list)
+        mask = Event.combine_event_masks(event_list)
         self.events[subtask.subtask_id] |= mask
 
     def clear_events(self, subtask, event_list):
-        mask = self.__event_mask(event_list)
+        mask = Event.combine_event_masks(event_list)
         self.events[subtask.subtask_id] &= ~mask
 
     def maybe_waiting(self, subtask, event_list):
         """Returns True, if the task may block be waiting at this point"""
-        mask = self.__event_mask(event_list)
+        mask = Event.combine_event_masks(event_list)
         if (self.events[subtask.subtask_id] & mask) == 0:
             return True
         return False

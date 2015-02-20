@@ -11,6 +11,14 @@ class Event(SystemObject):
         self.event_id = event_id
         self.event_mask = (1 << event_id)
 
-
     def __repr__(self):
         return "<Event %s task:%s>" %(self.name, self.task)
+
+    @staticmethod
+    def combine_event_masks(event_list):
+        """Generate a event mask"""
+        x = 0
+        for event in event_list:
+            x |= event.event_mask
+        return x
+

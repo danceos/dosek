@@ -45,7 +45,10 @@ class UnencodedSystem(SimpleSystem):
                     S.GetAlarm,
                     S.GetResource,
                     S.ReleaseResource,
-                    S.AdvanceCounter]):
+                    S.AdvanceCounter,
+                    S.SetEvent,
+                    S.ClearEvent,
+                    S.WaitEvent]):
             # Theese are normal system calls with a general purpose kernelspace
             x = self.arch_rules.generate_kernelspace(abb.impl.userspace, abb, [])
             abb.impl.kernelspace = x.system
@@ -161,33 +164,27 @@ class TaskListTemplate(CodeTemplate):
         # Reference to the objects object of our rule system
         self.objects = self.rules.objects
         self.idle = self.system_graph.find(Function, "Idle")
-        # Link the foreach_subtask method from the rules
-        self.foreach_subtask = self.rules.foreach_subtask
 
     def template_file(self):
         return "os/scheduler/tasklist-unencoded.h.in"
 
-    def ready_flag_variables(self, snippet, args):
+    def subtask(self, snippet, args):
+        return self._subtask.name
+
+    def subtask_id(self, snippet, args):
+        return str(self._subtask.impl.task_id)
+
+    def foreach_subtask(self, snippet, args):
+        body = args[0]
         def do(subtask):
-            # Intantiate the correct macros
-            return self.expand_snippet("ready_flag",
-                                       name = subtask.name) + "\n"
+            self._subtask = subtask
+            return self.expand_snippet(body)
+        return self.rules.foreach_subtask(do)
 
-        return self.foreach_subtask(do)
-
-    def ready_flag_constructor(self, snippet, args):
-        def do(subtask):
-            return self.expand_snippet("ready_flag_init", name = subtask.name)
-
-        return self.foreach_subtask(do)
-
-    def task_set_call(self, snippet, args):
-        def do(subtask):
-            return self.expand_snippet(args[0],
-                                       name = subtask.name,
-                                       id = subtask.impl.task_id)
-
-        return self.foreach_subtask(do)
+    def if_events(self, snippet, args):
+        if len(self._subtask.events) > 0:
+            return self.expand_snippet(args[0])
+        return ""
 
     # Implementation of head
     def head_update_max_cascade(self, snippet, args):
@@ -203,7 +200,7 @@ class TaskListTemplate(CodeTemplate):
                                        )
         # This is a ugly hack to fix python binding madness
         do.i = 0
-        ret = self.foreach_subtask(do)
+        ret = self.rules.foreach_subtask(do)
 
         # Update current prio for idle task
         ret += self.expand_snippet("head_update_idle_prio",
@@ -221,11 +218,26 @@ class SchedulerTemplate(CodeTemplate):
         # Reference to the objects object of our rule system
         self.objects = self.rules.objects
 
-        # Link the foreach_subtask method from the rules
-        self.foreach_subtask = self.rules.foreach_subtask
-
     def template_file(self):
         return "os/scheduler/scheduler-unencoded.h.in"
+
+    def subtask_desc(self, snippet, args):
+        return self._subtask.impl.task_descriptor.name
+
+    def subtask_id(self, snippet, args):
+        return str(self._subtask.impl.task_id)
+
+    def foreach_subtask(self, snippet, args):
+        body = args[0]
+        def do(subtask):
+            self._subtask = subtask
+            return self.expand_snippet(body)
+        return self.rules.foreach_subtask(do)
+
+    def if_not_preemptable(self, snippet, args):
+        if not self._subtask.conf.preemptable:
+            return self.expand_snippet(args[0])
+        return ""
 
     def scheduler_prio(self, snippet, args):
 
@@ -237,31 +249,3 @@ class SchedulerTemplate(CodeTemplate):
                 max_prio = subtask.static_priority
 
         return str(max_prio+1)
-
-    def foreach_subtask_snippet(self, snippet, args):
-        def do(subtask):
-            return self.expand_snippet(args[0],
-                                       task = subtask.name,
-                                       desc = subtask.impl.task_descriptor.name)
-
-        return self.foreach_subtask(do)
-
-
-    # Reschedule
-    def reschedule_foreach_task(self, snippet, args):
-        def do(subtask):
-            return self.expand_snippet("reschedule_dispatch_task",
-                                       task = subtask.impl.task_descriptor.name
-            )
-
-        return self.foreach_subtask(do)
-
-    # Reschedule
-    def activate_task_foreach_task(self, snippet, args):
-        def do(subtask):
-            return self.expand_snippet("activate_task_task",
-                                       task = subtask.impl.task_descriptor.name,
-                                       )
-
-        return self.foreach_subtask(do)
-

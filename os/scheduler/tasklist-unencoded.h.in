@@ -1,7 +1,6 @@
 // ****************************************************************
 // TaskList Implementation
 // ****************************************************************
-
 namespace os { namespace scheduler {
 
 // only needed for Tasklist constructor comma placement
@@ -11,23 +10,35 @@ class UnencodedTaskListStatic {};
 struct TaskList : public UnencodedTaskListStatic {
     typedef uint8_t id_t;
     typedef uint8_t prio_t;
+	typedef uint32_t event_mask_t;
 
-    // encoded task priorities
-    {{{snippet:ready_flag:name,A,B|prio_t %(name)s;}}}
-    {{{generate:ready_flag_variables}}}
+{{{!foreach_subtask|
+	prio_t {{{!subtask}}};
+    {{{!if_events|\
+    event_mask_t {{{!subtask}}}_events_waiting;
+	event_mask_t {{{!subtask}}}_events_set;
+    }}}
+}}}
 
     // idle task id/priority
-    static constexpr id_t idle_id = 0;
+    static constexpr id_t idle_id     = 0;
     static constexpr prio_t idle_prio = 0;
 
-    {{{snippet:ready_flag_init:name|, %(name)s(0)}}}
-    TaskList() : UnencodedTaskListStatic() {{{generate:ready_flag_constructor}}} {}
+    TaskList() : UnencodedTaskListStatic()
+    {{{!foreach_subtask|
+        , {{{!subtask}}}(0)\
+        {{{!if_events|\
+           , {{{!subtask}}}_events_waiting(0), {{{!subtask}}}_events_set(0)\
+        }}}
+	}}}
+    { /* empty constructor */ }
 
     forceinline uint32_t isReady(const prio_t id) {
-	{{{snippet:task_get_entry:name|if(id == %(id)s) {
-	return %(name)s;
-} else }}}
-		{{{generate:task_set_call:task_get_entry}}}{
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+            return {{{!subtask}}};
+        } else \
+}}}     {
 			assert(false);
 			return false;
 		}
@@ -35,10 +46,11 @@ struct TaskList : public UnencodedTaskListStatic {
 
     /** Set priority of task id to prio **/
     forceinline void set(const prio_t id, const prio_t prio) {
-{{{snippet:task_set_entry:name|if(id == %(id)s) {
-    %(name)s = prio;
-} else }}}
-         {{{generate:task_set_call:task_set_entry}}}{
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}} = prio;
+        } else \
+}}}      {
              assert(false);
          }
     }
@@ -46,12 +58,18 @@ struct TaskList : public UnencodedTaskListStatic {
 
 
     /** Set priority of task id to prio **/
-    forceinline void increasePrio(const prio_t id, const prio_t prio) {
-		{{{snippet:task_increasePrio_entry:name|if(id == %(id)s) {
-	if (%(name)s < prio)
-		%(name)s = prio;
-} else }}}
-		{{{generate:task_set_call:task_increasePrio_entry}}}{
+    forceinline void activate(const prio_t id, const prio_t prio) {
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+			if ({{{!subtask}}} < prio) {
+				{{{!subtask}}} = prio;
+				{{{!if_events|
+				{{{!subtask}}}_events_waiting = 0;
+                {{{!subtask}}}_events_set = 0;\
+                }}}
+			}
+        } else \
+}}}     {
 			assert(false);
 		}
     }
@@ -61,36 +79,76 @@ struct TaskList : public UnencodedTaskListStatic {
         id = idle_id;
         prio = idle_prio;
 
-{{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
-
-		if(%(task)s > prio) {
-            prio = %(task)s;
-            id = %(task_id)s;
+{{{!foreach_subtask|
+        if({{{!subtask}}} > prio {{{!if_events|\
+         && (({{{!subtask}}}_events_waiting == 0) || ({{{!subtask}}}_events_waiting & {{{!subtask}}}_events_set) != 0)\
+        }}}) {
+            prio = {{{!subtask}}};
+            id = {{{!subtask_id}}};
         }
 }}}
-{{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
-}}}
-        {{{generate:head_update_max_cascade}}}
     }
 
-    forceinline void insert(const id_t& id, const prio_t& prio) {
-        increasePrio(id, prio);
+    /** Wait for a specific event mask **/
+    forceinline void wait_events(const prio_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+   {{{!if_events|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_events_waiting = mask;
+        } else \
+   }}}\
+}}}     {
+			assert(false);
+		}
+    }
+
+    /** Set Events **/
+    forceinline void set_events(const prio_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+   {{{!if_events|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_events_set |= mask;
+        } else \
+   }}}\
+}}}     {
+			assert(false);
+		}
+    }
+
+    /** Set Events **/
+    forceinline void clear_events(const prio_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+   {{{!if_events|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_events_waiting &= ~mask;
+           {{{!subtask}}}_events_set &= ~mask;
+        } else \
+   }}}\
+}}}     {
+			assert(false);
+		}
     }
 
     forceinline void remove(const id_t& id) {
         set(id, 0);
     }
-
-    forceinline void promote(const id_t& id, const prio_t& newprio) {
-        set(id, newprio);
-    }
 };
 
 /** Equality operator (used for TMR) [enc=0] **/
 bool operator==(const TaskList& lhs, const TaskList& rhs) {
-		{{{snippet:eq_operator_snippet:name|if(lhs.%(name)s != rhs.%(name)s) return false;
+{{{!foreach_subtask|
+     if(lhs.{{{!subtask}}} != rhs.{{{!subtask}}}) return false;
+{{{!if_events|
+     if(lhs.{{{!subtask}}}_events_waiting != rhs.{{{!subtask}}}_events_waiting) return false;
+     if(lhs.{{{!subtask}}}_events_set != rhs.{{{!subtask}}}_events_set) return false;
+}}}\
 }}}
-		{{{generate:task_set_call:eq_operator_snippet}}}
         return true;
 }
 

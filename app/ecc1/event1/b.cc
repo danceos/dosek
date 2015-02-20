@@ -47,7 +47,7 @@ TASK(H2) {
 	SetEvent(H1, E1);
 	test_trace('*');
 	counter ++;
-	if (counter > 2) {
+	if (counter >= 2) {
 		/* The testcase has finished, check the output */
 		test_trace_assert("1[&]}*1[&]}*");
 		test_finish();

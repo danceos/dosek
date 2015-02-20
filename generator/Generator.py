@@ -49,10 +49,11 @@ class Generator:
         S.GetResource: ["StatusType", "ResourceType"],
         S.ReleaseResource: ["StatusType", "ResourceType"],
 
-        # S.SetEvent: None, # ["StatusType", "TaskType", "EventMaskType"],
+        S.SetEvent: ["StatusType", "TaskType", "EventMaskType"],
         # S.GetEvent: None, # ["StatusType", "TaskType", "EventMaskRefType"],
-        # S.ClearEvent: None, #["StatusType", "EventMaskType"],
-        # S.WaitEvent": None,
+        S.ClearEvent: ["StatusType", "EventMaskType"],
+        S.WaitEvent: ["StatusType", "EventMaskType"],
+
         S.GetAlarm: ["StatusType", "AlarmType", "TickRefType"],
         S.SetRelAlarm: ["StatusType", "AlarmType", "TickType", "TickType"],
         S.CancelAlarm: ["StatusType", "AlarmType"],

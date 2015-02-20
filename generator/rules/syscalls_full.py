@@ -1,5 +1,6 @@
 from generator.rules.base import BaseRules
 from generator.graph.AtomicBasicBlock import E
+from generator.graph.Event import Event
 from generator.elements import Statement, Comment, Function, VariableDefinition, Block
 from generator.graph.GenerateAssertions import AssertionType
 from generator.tools import panic
@@ -79,6 +80,35 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(syscall),
                             self.task_desc(syscall.arguments[0])])
 
+
+    def WaitEvent(self, syscall, userspace, kernelspace):
+        self.call_function(kernelspace,
+                           "scheduler_.WaitEvent_impl",
+                           "void",
+                           [self.get_calling_task_desc(syscall),
+                            str(Event.combine_event_masks(syscall.arguments[0]))
+                           ])
+
+    def ClearEvent(self, syscall, userspace, kernelspace):
+        self.call_function(kernelspace,
+                           "scheduler_.ClearEvent_impl",
+                           "void",
+                           [self.get_calling_task_desc(syscall),
+                            str(Event.combine_event_masks(syscall.arguments[0]))
+                           ])
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(syscall)])
+
+    def SetEvent(self, syscall, userspace, kernelspace):
+        subtask = syscall.arguments[0][0].task
+        self.call_function(kernelspace,
+                           "scheduler_.SetEvent_impl",
+                           "void",
+                           [self.task_desc(subtask),
+                            str(Event.combine_event_masks(syscall.arguments[0]))
+                           ])
 
     def SetRelAlarm(self, abb, userspace, kernelspace):
         arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
