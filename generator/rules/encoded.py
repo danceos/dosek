@@ -120,30 +120,19 @@ class EncodedTaskListTemplate(TaskListTemplate):
             subtask.impl.task_id_sig = sig
             subtask.impl.task_prio_sig = sig
 
+        if "RETRYSCHED" in self.generator.conf:
+            self.snippets['head_fail'] = self.snippets['head_fail_retry']
+        else:
+            self.snippets['head_fail'] = self.snippets['head_fail_fail']
+
     def template_file(self):
         return "os/scheduler/tasklist.h.in"
 
-    def arbitrary_new_signature(self, snippet, args):
-        return str(self.generator.signature_generator.new())
+    def subtask_prio_sig(self, snippet, args):
+        return str(self._subtask.impl.task_prio_sig)
 
-
-    def ready_flag_variables(self, snippet, args):
-        def do(subtask):
-            # Intantiate the correct macros
-            return self.expand_snippet("ready_flag",
-                                       name = subtask.name,
-                                       A = "A0",
-                                       B = subtask.impl.task_prio_sig) + "\n"
-
-        return self.foreach_subtask(do)
-
-    def task_set_call(self, snippet, args):
-        def do(subtask):
-            return self.expand_snippet(args[0],
-                                       name = subtask.name,
-                                       id = subtask.impl.task_id)
-
-        return self.foreach_subtask(do)
+    def subtask_id_sig(self, snippet, args):
+        return str(self._subtask.impl.task_id_sig)
 
     def idle_id_sig(self, snippet, args):
         return str(self.idle.impl.task_id_sig)
@@ -151,45 +140,51 @@ class EncodedTaskListTemplate(TaskListTemplate):
     def idle_prio_sig(self, snippet, args):
         return str(self.idle.impl.task_prio_sig)
 
+    # events
+    def foreach_event(self, snippet, args):
+        body = args[0]
+        ret = ""
+        for event in self._subtask.events:
+            self._event = event
+            ret += self.expand_snippet(body)
+        return ret
 
-    # Implementation of head
-    def head_signature_vc(self, snippet, args):
-        """Returns the current chaining signature, used in
-        TaskList::head. This initialised in __init__ and updated in
-        head_update_max_cascade."""
-        return str(self.__head_signature_vc)
+    def event(self, snippet, args):
+        return self._event.name
+
+    def event_mask(self, snippet, args):
+        return str(self._event.event_mask)
+
+    def event_list(self, snippet, args):
+        return ", ".join([x.name for x in self._subtask.events])
+
+    # head()
+    def if_comp_idx_gt_zero(self, snippet, args):
+        if self.comp_idx > 0:
+            return self.expand_snippet(args[0])
+        return ""
+
+    def if_comp_idx_eq_zero(self, snippet, args):
+        if self.comp_idx == 0:
+            return self.expand_snippet(args[0])
+        return ""
 
     def head_update_max_cascade(self, snippet, args):
         """Generate the update max cascade for tasklist::head"""
+        self.comp_idx = 0
         def do(subtask):
+            self._subtask = subtask
             # Generate a new signature for this cascade step
-            last_sig = 3 #self.__head_signature_vc
-            next_sig = 3  #self.generator.signature_generator.new() % 71
-            self.__head_signature_vc = next_sig
-            do.i += 1
-            return self.expand_snippet("head_update_max",
-                                       task = subtask.name,
-                                       last_sig = last_sig,
-                                       next_sig = next_sig,
-                                       task_id  = subtask.impl.task_id,
-                                       task_id_sig = subtask.impl.task_id_sig,
-                                       i = str(do.i-1),
-                                       ii = str(do.i)
-                                       )
-        # This is a ugly hack to fix python binding madness
-        do.i = 0
-        ret = self.foreach_subtask(do)
-
-        # Update current prio for idle task
-        last_sig = self.__head_signature_vc
-        self.__head_signature_vc = 3
-        ret += self.expand_snippet("head_update_idle_prio",
-                                   last_sig = last_sig,
-                                   next_sig = self.__head_signature_vc,
-                                   i = str(do.i), ii = str(do.i + 1))
+            x = self.expand_snippet("head_update_max")
+            self.comp_idx += 1
+            return x
+        ret = self.rules.foreach_subtask(do)
 
         return ret
 
+    def prio_offset(self, snippet, args):
+        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        return str(RES_SCHEDULER.conf.static_priority + 1)
 
 
 class EncodedSchedulerTemplate(SchedulerTemplate):
@@ -203,24 +198,7 @@ class EncodedSchedulerTemplate(SchedulerTemplate):
         return str(self.system_graph.impl.scheduler.current_task_sig)
     def current_prio_sig(self, snippet, args):
         return str(self.system_graph.impl.scheduler.current_prio_sig)
+
     def scheduler_prio_sig(self, snippet, args):
         return str(self.system_graph.impl.scheduler.scheduler_prio_sig)
-
-    def scheduler_prio(self, snippet, args):
-        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
-        return str(RES_SCHEDULER.conf.static_priority)
-
-    # Reschedule
-    def activate_task_foreach_task(self, snippet, args):
-        def do(subtask):
-            id_sig = self.generator.signature_generator.lessthan(self.objects[subtask]["task_prio_sig"])
-            prio_sig = self.generator.signature_generator.lessthan(self.objects[subtask]["task_prio_sig"])
-            return self.expand_snippet("activate_task_task",
-                                       task = self.objects[subtask]["task_descriptor"].name,
-                                       id_sig = str(id_sig),
-                                       prio_sig = str(prio_sig),
-                                       task_prio_sig = self.objects[subtask]["task_prio_sig"],
-                                       )
-
-        return self.foreach_subtask(do)
 

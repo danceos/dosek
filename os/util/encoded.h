@@ -40,6 +40,8 @@ static const A_t superAs[5] = {58659, 59665, 63157, 63859, 63877};
 // the one A we use for now
 static const A_t A0 = 58659;
 
+#define MOD(a, b) (a) % (b)
+
 class Encoded
 {
 public:

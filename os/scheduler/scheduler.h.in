@@ -15,7 +15,7 @@ struct Scheduler  {
     Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
     Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
 
-    static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{generate:scheduler_prio}}});
+    static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{!scheduler_prio}}});
 
     noinline void Reschedule(void);
 
@@ -32,7 +32,7 @@ struct Scheduler  {
     }
 
 	void forceinline SetReady_impl(const Task &task) {
-		tlist.insert(task.id, EC(2, task.prio));
+		tlist.activate(task.id, EC(2, task.prio));
 
         state_replicator_.update();
 	}
@@ -44,7 +44,7 @@ struct Scheduler  {
 		if (t.preemptable == false) {
 			// restore non-preemptable task to original priority
 			// this is required for the optimization in Reschedule()
-			current_prio = t.enc_prio<{{{generate:arbitrary_new_signature}}}>();
+			current_prio = t.enc_prio<1>();
 		}
 
         state_replicator_.update();
@@ -87,6 +87,9 @@ struct Scheduler  {
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
 		SetPriority(task, task.prio);
 
+		// Clear all Events
+		tlist.clear_events(task.id, ~0);
+
         state_replicator_.update();
     }
 
@@ -107,6 +110,19 @@ struct Scheduler  {
 		current_prio = new_prio_encoded;
 	}
 
+	forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
+		tlist.set_events(other_task.id, event_mask);
+		Schedule_impl();
+	}
+
+	forceinline void WaitEvent_impl(const Task &current_task, const int event_mask) {
+		tlist.wait_events(current_task.id, event_mask);
+		Schedule_impl();
+	}
+
+	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
+		tlist.clear_events(current_task.id, event_mask);
+	}
 
 	forceinline void SetPriority(const Task &task, const int new_prio) {
 		auto new_prio_encoded = EC(2, new_prio);
@@ -148,15 +164,16 @@ void Scheduler::Reschedule(void) {
 
 	// dispatch or enter idle
 	// TODO: generated signature
-{{{snippet:reschedule_dispatch_task:task,desc|if(current_task == %(desc)s.enc_id<1>()) {
-    if (%(desc)s.preemptable == false) {
+{{{!foreach_subtask|
+   if (current_task == {{{!subtask_id}}}) {
+{{{!if_not_preemptable|
         // promote non-preemptable task to RES_SCHEDULER
-        tlist.promote(%(desc)s.id, scheduler_prio);
+        tlist.set({{{!subtask_id}}}, scheduler_prio);
         current_prio = scheduler_prio;
-    }
-    Dispatcher::Dispatch(%(desc)s);
-} else }}}
-        {{{generate:foreach_subtask_snippet:reschedule_dispatch_task}}}if(current_task == TaskList::idle_id) {
+}}}
+        Dispatcher::Dispatch({{{!subtask_desc}}});
+	} else \
+}}} if(current_task == TaskList::idle_id) {
             Dispatcher::idle();
         } else {
 			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);

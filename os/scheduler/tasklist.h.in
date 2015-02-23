@@ -2,32 +2,45 @@
 // TaskList Implementation
 // ****************************************************************
 
+#include "os/scheduler/events-encoded.h"
+
 namespace os { namespace scheduler {
 
-/* Simpler array based task queue */
 struct TaskList : public TaskListStatic {
     typedef uint8_t id_t;
+	typedef uint32_t event_mask_t;
 
 	// encoded task priorities
-	{{{snippet:ready_flag:name,A,B|Encoded_Static<%(A)s, %(B)s> %(name)s;}}}
-	{{{generate:ready_flag_variables}}}
-
+{{{!foreach_subtask|
+	Encoded_Static<A0, {{{!subtask_prio_sig}}}> {{{!subtask}}};
+    {{{!foreach_event|\
+        Event<3, 7, {{{!prio_offset}}}> {{{!event}}};
+    }}}
+}}}
+	
 	// idle task id/priority
-	static constexpr auto idle_id   = EC({{{generate:idle_id_sig}}}, 0);
-	static constexpr auto idle_prio = EC({{{generate:idle_prio_sig}}}, 0);
+    static constexpr auto prio_offset = EC(1, {{{!prio_offset}}});
+	static constexpr auto idle_id   = EC({{{!idle_id_sig}}}, 0);
+	static constexpr auto idle_prio = EC({{{!idle_prio_sig}}}, {{{!prio_offset}}});
 
-	{{{snippet:ready_flag_init:name|, %(name)s(0)}}}
-	TaskList() : TaskListStatic(){{{generate:ready_flag_constructor}}} {}
+	TaskList() : TaskListStatic()
+    {{{!foreach_subtask|
+        , {{{!subtask}}}({{{!prio_offset}}})\
+        {{{!foreach_event|\
+           , {{{!event}}}()\
+        }}}
+	}}}
+    { /* empty constructor */ }
 
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
 	forceinline value_coded_t isReady(const id_t id) {
-		{{{snippet:task_get_entry:name|if(id == %(id)s) {
-			return ((uint32_t)%(name)s.getCodedValue())
-				^ ((uint32_t)EC(decltype(%(name)s)::B, 0).getCodedValue());
-} else }}}
-
-		{{{generate:task_set_call:task_get_entry}}}{
+{{{!foreach_subtask|
+            if(id == {{{!subtask_id}}}) {
+			    return ({{{!subtask}}}.vc) ^ (EC({{{!subtask_prio_sig}}}, prio_offset).vc);
+            } else\
+}}}
+		{
 			assert(false);
 			return 0;
 		}
@@ -37,12 +50,12 @@ struct TaskList : public TaskListStatic {
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
 	template<typename S>
 	forceinline value_coded_t set(const id_t id, const S prio) {
-{{{snippet:task_set_entry:name|if(id == %(id)s) {
-	%(name)s = prio;
-	return (%(name)s - prio).getCodedValue();
-} else }}}
-
-		 {{{generate:task_set_call:task_set_entry}}}{
+{{{!foreach_subtask|
+        if(id == {{{!subtask_id}}}) {
+	          {{{!subtask}}} = prio + prio_offset;
+	          return ({{{!subtask}}} - prio).getCodedValue();
+        } else \
+}}} {
 			 assert(false);
 			 return 0;
 		 }
@@ -51,19 +64,25 @@ struct TaskList : public TaskListStatic {
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
 	template<typename S>
-	forceinline value_coded_t increasePrio(const id_t id, const S newprio) {
-		{{{snippet:task_increasePrio_entry:name|if(id == %(id)s) {
-	%(name)s.vc += 10;
-	updateMax<10, 11>(%(name)s, newprio);
-	%(name)s.vc -= 11;
-	value_coded_t ret = (%(name)s - newprio).getCodedValue();
-	if ((ret %% A0) != (decltype(%(name)s)::B - decltype(newprio)::B)) {
-		CALL_HOOK(FaultDetectedHook, ANBdetected, 0, 0);
-	}
-	return ret;
-} else }}}
-
-		{{{generate:task_set_call:task_increasePrio_entry}}}{
+	forceinline value_coded_t activate(const id_t id, const S newprio) {
+{{{!foreach_subtask|
+        if(id == {{{!subtask_id}}}) {
+              auto old_prio = {{{!subtask}}};
+              if (((old_prio - prio_offset).vc / A0) == 0) {
+{{{!foreach_event|
+                  {{{!event}}}.clear();
+}}}
+              }
+	          {{{!subtask}}}.vc += 10;
+	          updateMax<10, 11>({{{!subtask}}}, newprio + prio_offset);
+	          {{{!subtask}}}.vc -= 11;
+	          value_coded_t ret = ({{{!subtask}}} - newprio).getCodedValue();
+	          if (MOD(ret, A0) != (decltype({{{!subtask}}})::B - decltype(newprio)::B)) {
+		         CALL_HOOK(FaultDetectedHook, ANBdetected, 0, 0);
+	          }
+	          return ret;
+        } else \
+}}} {
 			assert(false);
 			return 0;
 		}
@@ -74,49 +93,51 @@ struct TaskList : public TaskListStatic {
 		B_t sigId = id.getB();
 		B_t sigPrio = prio.getB();
 
-		bool first = true;
-
-{{{snippet:head_update_max:task,last_sig,next_sig,task_id_sig,i,ii|
-if(first) {
-	first=false;
-	sigId += %(next_sig)s;
-	sigPrio += %(next_sig)s;
-	id.vc = Encoded::encode(%(task_id)s, A0, sigId, 0);
-	prio.vc = %(task)s.vc + (sigPrio - %(task)s.getB());
-} else {
-	// %(task)s >= prio?
-	updateMax(sigPrio, sigId, %(next_sig)s, &prio, %(task)s, &id, EC(%(task_id_sig)s, %(task_id)s));
-
-	if ((prio.vc + id.vc) %% A0 != (sigPrio + sigId)) {
-#ifdef RETRYSCHED
-        return 42;
-#else
-		CALL_HOOK(FaultDetectedHook, ANBdetected, prio.vc, id.vc);
-#endif
-	}
-
-	/* Recode if sigID got too big */
-	if (sigId > A0 / 2) {
-		id.vc = id.vc - sigId + 3;
-		sigId = 3;
-	}
-}
+{{{#head_fail_fail:arg0, arg1|\
+    CALL_HOOK(FaultDetectedHook, ANBdetected, %(arg0)s, %(arg1)s);\
 }}}
-{{{snippet:head_update_idle_prio:last_sig,next_sig,i,ii|
-if(first) {
-	first=false;
-	id=idle_id;
-	prio=idle_prio;
-} else {
-	// restore idle_id if idle_id >= prio
-	updateMax(sigPrio, sigId, %(next_sig)s, &prio, idle_prio, &id, idle_id);
-
-	// last comparison, needs no assert
-}
+{{{#head_fail_retry:arg0, arg1|\
+    return 42;
 }}}
-		{{{generate:head_update_max_cascade}}}
 
-		pseudo_static_assert(!first, "no task possible");
+{{{#head_update_max|\
+    {{{!if_comp_idx_eq_zero|
+        sigId += 3;
+        sigPrio += 3;
+        auto {{{!subtask}}}_delta = Event<>::must_wait_p({{{!event_list}}});
+        auto {{{!subtask}}}_prio = {{{!subtask}}} - {{{!subtask}}}_delta;
+        // kout << "{{{!subtask}}} " << {{{!subtask}}}.vc / A0  << " " << ({{{!subtask}}}_delta.vc / A0) << endl;
+        id.vc = Encoded::encode({{{!subtask_id}}}, A0, sigId, 0);
+        prio.vc = {{{!subtask}}}_prio.vc + (sigPrio - {{{!subtask}}}_prio.getB());
+    }}}\
+    {{{!if_comp_idx_gt_zero|
+      	// {{{!subtask}}} >= prio?
+        auto {{{!subtask}}}_delta = Event<>::must_wait_p({{{!event_list}}});
+        auto {{{!subtask}}}_prio = {{{!subtask}}} - {{{!subtask}}}_delta;
+        // kout << "{{{!subtask}}} " << {{{!subtask}}}.vc / A0  << " " << ({{{!subtask}}}_delta.vc / A0) << endl;
+        updateMax(sigPrio, sigId, 3, &prio, {{{!subtask}}}_prio, &id, EC({{{!subtask_id_sig}}}, {{{!subtask_id}}}));
+    	if (MOD((prio.vc + id.vc), A0) != (sigPrio + sigId)) {
+            {{{!head_fail:prio.vc,id.vc}}}
+    	}
+    
+    	/* Recode if sigID got too big */
+    	if (sigId > A0 / 2) {
+    		id.vc = id.vc - sigId + 3;
+    		sigId = 3;
+    	}
+    }}}\
+}}}
+{{{generate:head_update_max_cascade}}}
+
+{{{!if_comp_idx_eq_zero|
+        id=idle_id;
+        prio=idle_prio;
+}}}
+{{{!if_comp_idx_gt_zero|
+    	// restore idle_id if idle_id >= prio
+    	updateMax(sigPrio, sigId, 3, &prio, idle_prio, &id, idle_id);
+        // last comparison, needs no assert
+}}}
 
 		pseudo_static_assert(sigId > 0, "constant sigId not optimized away completely");
 		pseudo_static_assert(sigPrio > 0, "constant sigPrio not optimized away completely");
@@ -124,13 +145,10 @@ if(first) {
 		id.vc -= (sigId - id.getB());
 		prio.vc -= (sigPrio - prio.getB());
 
+        // Undo prio offset
+        prio =  prio - prio_offset;
+
 		return 0;
-	}
-
-	template<typename NewPrio>
-		forceinline value_coded_t insert(const id_t id, const NewPrio &newprio) {
-
-		return increasePrio(id, newprio);
 	}
 
 	forceinline value_coded_t remove(const id_t id) {
@@ -138,46 +156,61 @@ if(first) {
 		return set(id, EC(3, 0));
 	}
 
-	template<typename S>
-	forceinline value_coded_t promote(const id_t id, const S& newprio) {
-		return set(id, newprio);
-	}
-
-	void dump() {
-		{{{snippet:dump_entry:name|debug << "%(name)s: " << %(name)s.decode() << endl;
+    /** Wait for a specific event mask **/
+    forceinline void wait_events(const id_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+{{{!foreach_event|
+            if (mask & {{{!event_mask}}}) {{{!event}}}.wait();
+            else {{{!event}}}.unwait();
 }}}
-		{{{generate:task_set_call:dump_entry}}}
-	}
-	/* unused by scheduler
-	template<typename T, typename S>
-	forceinline value_coded_t dequeue(T& id, S& prio) {
-		static value_coded_t sig1;
-
-		sig1 = head(id, prio);
-
-		value_coded_t sig2;
-		if(prio != idle_prio) {
-			sig2 = remove(id);
-			// IDEA: set id.vc += sig2 + X; ?
-		} else {
-			// IDEA: set id.vc = sig2 + X; ?
-			// The 42 here is choosen by fair dice roll
-			sig2 = 42;
+        } else \
+}}}     {
+			assert(false);
 		}
+    }
 
-		// TODO: more control flow checks?
+    /** Set Events **/
+    forceinline void set_events(const id_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+{{{!foreach_event|
+            if (mask & {{{!event_mask}}}) {{{!event}}}.set();
+}}}
+        } else \
+}}}       {
+			assert(false);
+		}
+    }
 
-		return sig1+sig2;
-	}
-	*/
+    /** Set Events **/
+    forceinline void clear_events(const id_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+{{{!foreach_event|
+            if (mask & {{{!event_mask}}}) {{{!event}}}.clear();
+}}}
+        } else \
+}}}
+        {
+			assert(false);
+		}
+    }
+
 };
 
 /** Equality operator (used for TMR) [enc=1] **/
 bool operator==(const TaskList& lhs, const TaskList& rhs) {
-		{{{snippet:eq_operator_snippet:name|if(lhs.%(name)s.vc != rhs.%(name)s.vc) return false;
+{{{!foreach_subtask|
+    if(lhs.{{{!subtask}}}.vc != rhs.{{{!subtask}}}.vc) return false;
 }}}
-		{{{generate:task_set_call:eq_operator_snippet}}}
-        return true;
+    return true;
 }
 
 bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs); }
@@ -185,6 +218,8 @@ bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs)
 
 constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;
 constexpr Encoded_Static<A0, {{{generate:idle_prio_sig}}}> TaskList::idle_prio;
+constexpr Encoded_Static<A0, 1> TaskList::prio_offset;
+
 
 }; // scheduler
 }; // os

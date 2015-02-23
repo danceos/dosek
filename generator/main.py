@@ -75,6 +75,9 @@ if __name__ == "__main__":
     parser.add_option('-f', '--add-pass', dest='additional_passes', default = [],
                       action="append",
                       help="additional passes (can also be given by setting SGFLAGS)")
+    parser.add_option('-D', '', dest='code_options', default = [],
+                      action="append",
+                      help="additional options passed to the generator")
     parser.add_option('-s', '--source-bytecode', dest='llfiles',
                       action="callback", type='string', callback=split_lls_callback,
                       help="Analyze .ll files. (Comma separated list of files)")
@@ -203,9 +206,11 @@ if __name__ == "__main__":
 
     pass_manager.analyze("%s/gen_" % (options.prefix))
 
-    generator = Generator.Generator(graph, options.name, arch_rules,
+    generator = Generator.Generator(graph, options.name,
+                                    arch_rules,
                                     os_rules,
-                                    syscall_rules)
+                                    syscall_rules,
+                                    options.code_options)
 
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)

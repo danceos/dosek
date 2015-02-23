@@ -130,7 +130,7 @@ class CodeTemplate:
                 ret = "".join(ret)
             return ret
 
-        assert snippet, "snippet:'%s' not found" % name
+        assert snippet, "snippet:'%s' not found (%s)" % (name, args)
         return self.expand_snippet(snippet, **dict(list(zip(snippet.args, args))))
 
     def __format(self, text, prefix_length):
@@ -153,7 +153,7 @@ class CodeTemplate:
                 return self.expand(n_stream, list(), n_snippets)
             return formatted
         except:
-            raise TypeError("Instanciation of %s failed" %snippet.name)
+            raise TypeError("Instanciation of %s failed (%s)" %(snippet.name, kwargs))
 
     def get(self, snippet, args):
         path = args[0].split(".")

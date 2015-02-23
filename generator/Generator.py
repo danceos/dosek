@@ -8,7 +8,7 @@ import logging
 
 class Generator:
     """Base class of all generators"""
-    def __init__(self, system_graph, name, arch_rules, os_rules, syscall_rules):
+    def __init__(self, system_graph, name, arch_rules, os_rules, syscall_rules, conf):
         self.name = name
         self.system_graph = system_graph
         self.stats = system_graph.stats
@@ -18,6 +18,7 @@ class Generator:
         self.rules = []
         self.__used_variable_names = set()
         self.template_base = None
+        self.conf = conf
         number_of_tasks = len(self.system_graph.user_subtasks)
 
         self.signature_generator = SignatureGenerator(number_of_tasks)

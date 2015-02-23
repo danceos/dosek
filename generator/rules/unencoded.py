@@ -2,6 +2,8 @@ from generator.rules.simple import SimpleSystem, AlarmTemplate
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment, Function, Hook, DataObject
 from generator.graph.AtomicBasicBlock import S, AtomicBasicBlock
+from generator.graph.Resource import Resource
+from generator.graph.Subtask import Subtask
 from generator.graph.Function import Function
 
 
@@ -186,30 +188,6 @@ class TaskListTemplate(CodeTemplate):
             return self.expand_snippet(args[0])
         return ""
 
-    # Implementation of head
-    def head_update_max_cascade(self, snippet, args):
-        """Generate the update max cascade for tasklist::head"""
-        def do(subtask):
-            # Generate a new signature for this cascade step
-            do.i += 1
-            return self.expand_snippet("head_update_max",
-                                       task = subtask.name,
-                                       task_id  = subtask.impl.task_id,
-                                       i = str(do.i-1),
-                                       ii = str(do.i)
-                                       )
-        # This is a ugly hack to fix python binding madness
-        do.i = 0
-        ret = self.rules.foreach_subtask(do)
-
-        # Update current prio for idle task
-        ret += self.expand_snippet("head_update_idle_prio",
-                                   i = str(do.i), ii = str(do.i + 1))
-
-        return ret
-
-
-
 class SchedulerTemplate(CodeTemplate):
     def __init__(self, rules):
         CodeTemplate.__init__(self, rules.generator, self.template_file())
@@ -240,12 +218,6 @@ class SchedulerTemplate(CodeTemplate):
         return ""
 
     def scheduler_prio(self, snippet, args):
+        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        return str(RES_SCHEDULER.conf.static_priority)
 
-        max_prio = 0
-        for subtask in self.system_graph.subtasks:
-            if not subtask.is_real_thread():
-                continue
-            if(subtask.static_priority > max_prio):
-                max_prio = subtask.static_priority
-
-        return str(max_prio+1)
