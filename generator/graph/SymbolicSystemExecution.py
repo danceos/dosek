@@ -68,6 +68,10 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Do not allow self loops
         #if source_state == target_state:
         #    return
+        if (sum([1 for x in target_state.continuations
+                 if x == None])) == 2:
+            print (source_state, target_state)
+            assert False
         if target_state in self.states:
             real_instance = self.states[target_state]
             source_state.add_cfg_edge(real_instance, StateTransition)
@@ -99,10 +103,6 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         block.sporadic_trigger_count = events
 
         return after_states
-
-
-
-
 
     def do(self):
         old_copy_count = SystemState.copy_count

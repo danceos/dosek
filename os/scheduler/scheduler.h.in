@@ -41,11 +41,6 @@ struct Scheduler  {
 		t.tcb.reset();
 
 		tlist.remove(t.id);
-		if (t.preemptable == false) {
-			// restore non-preemptable task to original priority
-			// this is required for the optimization in Reschedule()
-			current_prio = t.enc_prio<1>();
-		}
 
         state_replicator_.update();
 	}
@@ -140,23 +135,18 @@ void Scheduler::Reschedule(void) {
 #ifdef RETRYSCHED
     const auto current_prio_orig = current_prio;
     const auto current_task_orig = current_task;
-	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
-	if (current_prio != scheduler_prio) {
-		// set current (=next) task from task list
-		if (tlist.head(current_task, current_prio) != 0) { // retry
-            current_task = current_task_orig;
-            current_prio = current_prio_orig;
-            if (tlist.head(current_task, current_prio) != 0) {
-                CALL_HOOK(FaultDetectedHook, RETRY_ERRORdetected, 0, 0);
-            }
-        }
+
+	// set current (=next) task from task list
+	if (tlist.head(current_task, current_prio) != 0) { // retry
+		current_task = current_task_orig;
+		current_prio = current_prio_orig;
+		if (tlist.head(current_task, current_prio) != 0) {
+			CALL_HOOK(FaultDetectedHook, RETRY_ERRORdetected, 0, 0);
+		}
 	}
 #else
-	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
-	if (current_prio != scheduler_prio) {
-		// set current (=next) task from task list
-		tlist.head(current_task, current_prio);
-	}
+	// set current (=next) task from task list
+	tlist.head(current_task, current_prio);
 #endif
 
 	current_task.check();

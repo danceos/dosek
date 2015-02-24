@@ -114,7 +114,7 @@ struct TaskList : public TaskListStatic {
       	// {{{!subtask}}} >= prio?
         auto {{{!subtask}}}_delta = Event<>::must_wait_p({{{!event_list}}});
         auto {{{!subtask}}}_prio = {{{!subtask}}} - {{{!subtask}}}_delta;
-        // kout << "{{{!subtask}}} " << {{{!subtask}}}.vc / A0  << " " << ({{{!subtask}}}_delta.vc / A0) << endl;
+        //         kout << "{{{!subtask}}} " << {{{!subtask}}}.vc / A0  << " " << ({{{!subtask}}}_delta.vc / A0) << endl;
         updateMax(sigPrio, sigId, 3, &prio, {{{!subtask}}}_prio, &id, EC({{{!subtask_id_sig}}}, {{{!subtask_id}}}));
     	if (MOD((prio.vc + id.vc), A0) != (sigPrio + sigId)) {
             {{{!head_fail:prio.vc,id.vc}}}
@@ -166,6 +166,11 @@ struct TaskList : public TaskListStatic {
             if (mask & {{{!event_mask}}}) {{{!event}}}.wait();
             else {{{!event}}}.unwait();
 }}}
+{{{!if_not_preemptable|
+            // Release the RES_SCHEDULER resource
+            {{{!subtask}}} = prio_offset + {{{!subtask_desc}}}.enc_prio<1>();
+}}}
+
         } else \
 }}}     {
 			assert(false);

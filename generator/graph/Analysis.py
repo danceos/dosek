@@ -3,6 +3,7 @@ import sys
 from generator.graph.common import *
 from generator.graph.AtomicBasicBlock import E, S
 from collections import defaultdict
+from .Event import Event
 import copy
 
 class Analysis:
@@ -248,10 +249,11 @@ class MoveFunctionsToTask(Analysis):
                     events = abb.arguments[0]
                     subtask = abb.subtask
                 for idx, event in enumerate(events):
-                    assert event.startswith("OSEKOS_EVENT_")
-                    event = event[len("OSEKOS_EVENT_"):]
-                    assert event in subtask._events, "Subtask %s does not own Event %s" %(subtask, event)
-                    events[idx] = subtask._events[event]
+                    if not isinstance(event, Event):
+                        assert event.startswith("OSEKOS_EVENT_")
+                        event = event[len("OSEKOS_EVENT_"):]
+                        events[idx] = subtask._events[event]
+                    assert events[idx] in subtask.events, "Subtask %s does not own Event %s" %(subtask, event)
                 abb.arguments = [events]
 
 

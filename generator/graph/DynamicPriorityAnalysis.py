@@ -112,7 +112,7 @@ class DynamicPriorityAnalysis(Analysis):
         # StartOS), the priority is the idle priority.
         for syscall in self.system_graph.syscalls:
             precessors = syscall.get_incoming_nodes(E.task_level)
-            if syscall.isA(S.kickoff):
+            if syscall.isA(S.kickoff) or syscall.isA(S.WaitEvent):
                 syscall.dynamic_priority = syscall.function.subtask.static_priority
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority

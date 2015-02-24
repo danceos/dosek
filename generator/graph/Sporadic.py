@@ -61,16 +61,13 @@ class SporadicEvent:
         return True
 
 class Alarm(SporadicEvent, SystemObject):
-    def __init__(self, system_graph, alarm_handler, conf, counter, subtask):
+    def __init__(self, system_graph, alarm_handler, counter, conf):
         # A alarm belongs to the subtask it activates!
-        SporadicEvent.__init__(self, system_graph, conf.name, subtask.task, alarm_handler)
+        SporadicEvent.__init__(self, system_graph, conf.name, conf.subtask.task, alarm_handler)
         SystemObject.__init__(self, conf.name, conf)
 
-        # FIXME: when events are supported
-        assert self.conf.event == None
         # This syscall is carried by the alarm
         self.carried_syscall = None
-        self.subtask = subtask
         self.counter = counter
 
     def can_trigger(self,state):

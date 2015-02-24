@@ -82,7 +82,8 @@ class SystemCallSemantic:
             cont = block.definite_after(E.task_level)
             after.set_continuation(self.running_task.for_abb(block),
                                    cont)
-            activated = alarm.subtask
+            activated = alarm.conf.subtask
+            assert alarm.conf.event is None
             if not after.is_surely_ready(activated):
                 after.add_continuation(activated, activated.entry_abb)
                 # Clear the events
@@ -103,7 +104,7 @@ class SystemCallSemantic:
             ret.append(after)
 
         if before.maybe_not_waiting(calling_task, event_list):
-            after = before.copy_if_needed()
+            after = before.copy()
             after.set_ready(calling_task)
             cont = block.definite_after(E.task_level)
             after.set_continuation(calling_task, cont)
@@ -119,18 +120,21 @@ class SystemCallSemantic:
         after = before.copy_if_needed()
         after.set_events(unblocked_task, event_list)
 
+        waiting_block = after.get_continuations(unblocked_task)
+        assert(len(waiting_block) == 1)
+        waiting_block = list(waiting_block)[0]
+        if waiting_block.isA(S.WaitEvent):
+            # Recheck the blocking state
+            block_list = waiting_block.arguments[0]
+            # Check if the unblocked task is still blocking
+            if after.maybe_not_waiting(unblocked_task, block_list):
+                after.set_ready(unblocked_task)
+
         # We've done our system call, continue at successor
         cont = block.definite_after(E.task_level)
         after.set_continuation(calling_task, cont)
 
-        waiting_block = after.get_continuations(unblocked_task)
-        assert len(waiting_block) == 1
-        waiting_block = list(waiting_block)[0]
-        if waiting_block.isA(S.WaitEvent):
-            # Reperform the WaitEvent system call
-            return self.do_WaitEvent(waiting_block, after)
-        else:
-            return [after]
+        return [after]
 
     def do_ClearEvent(self, block, before):
         event_list = block.arguments[0]
@@ -296,6 +300,18 @@ class SystemCallSemantic:
                 and not target.function.subtask.conf.is_isr):
                 copy_state.set_continuation(self.system_graph.idle_subtask,
                                             self.system_graph.idle_subtask.entry_abb)
+
+            # If the new state will resume to a WaitEvent, we redo the
+            # wait event to succeed to the next block. We do this only, if we resume from another subtask
+            if copy_state.current_abb.isA(S.WaitEvent) and source.subtask != target.subtask:
+                wait_event = copy_state.current_abb
+                calling_task = wait_event.subtask
+                event_list = wait_event.arguments[0]
+                if copy_state.maybe_not_waiting(calling_task, event_list):
+                    assert copy_state.is_surely_ready(calling_task)
+                    cont = wait_event.definite_after(E.task_level)
+                    copy_state.current_abb = cont
+                    target = cont
 
             # Mark the new state as frozen!
             copy_state.frozen = True
@@ -790,6 +806,8 @@ class PreciseSystemState(SystemState):
         ret ^= hash(self.current_abb)
         for state in self.states:
             ret ^= hash(state)
+        for event in self.events:
+            ret ^= hash(event)
         for conts in self.continuations:
             ret ^= hash(conts)
         for call_stack in self.call_stack:
@@ -810,6 +828,9 @@ class PreciseSystemState(SystemState):
         for subtask_id in range(0, len(self.states)):
             # The subtask states have to equal
             if not self.states[subtask_id] == other.states[subtask_id]:
+                return False
+            # The event masks must be equal
+            if not self.events[subtask_id] == other.events[subtask_id]:
                 return False
             # The possible continuations have to be equal
             if not self.continuations[subtask_id] == other.continuations[subtask_id]:
@@ -837,6 +858,7 @@ class PreciseSystemState(SystemState):
             assert len(conts) <= 1
             if len(conts) == 1:
                 ret[subtask.name] += " " + str(unwrap_seq(conts))
+            ret[subtask.name] += " " +  self.format_events(subtask)
 
         return ret
 

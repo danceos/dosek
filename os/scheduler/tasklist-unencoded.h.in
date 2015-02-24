@@ -97,6 +97,12 @@ struct TaskList : public UnencodedTaskListStatic {
    {{{!if_events|\
         if (id == {{{!subtask_id}}}) {
            {{{!subtask}}}_events_waiting = mask;
+   {{{!if_not_preemptable|
+           // We're non-preemptable, therefore we must drop our priority, before calling blocking
+           if (({{{!subtask}}}_events_waiting & {{{!subtask}}}_events_set) == 0) {
+              {{{!subtask}}} = {{{!subtask_desc}}}.prio;
+           }
+   }}}
         } else \
    }}}\
 }}}     {

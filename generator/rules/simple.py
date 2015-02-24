@@ -78,7 +78,7 @@ class SimpleSystem(BaseRules):
             ctr.impl = impl
 
         for alarm in self.generator.system_graph.alarms:
-            subtask = alarm.subtask
+            subtask = alarm.conf.subtask
             task = "os::tasks::" + subtask.impl.task_descriptor.name
             impl = self.generate_alarm(alarm, alarm.counter, task)
 
@@ -265,7 +265,13 @@ class AlarmTemplate(CodeTemplate):
                 decl = FunctionDeclaration(callback_name, "void", [], extern_c = True)
                 self.generator.source_file.function_manager.add(decl)
                 ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
-            ret += "        " + alarm.carried_syscall.generated_function_name() + "(0);\n"
+            # SetEvent needs two arguments
+            if alarm.conf.event:
+                arglist = "(0, 0)"
+            else:
+                arglist = "(0)"
+
+            ret += "        " + alarm.carried_syscall.generated_function_name() + arglist + ";\n"
             ret += self.expand_snippet("endif_alarm", **args) + "\n"
 
 

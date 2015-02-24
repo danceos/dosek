@@ -250,9 +250,10 @@ class SystemGraph(GraphObject, PassManager):
 
         # Alarms
         for alarm in system.getAlarms():
-            assert alarm.activated_task() != None, "Alarm does not activate any task! (maybe callback?)"
-            activated_subtask = self.get(Subtask, alarm.activated_task())
-            belongs_to_task = activated_subtask.task
+            alarm.subtask = self.get(Subtask, alarm.subtask)
+            assert alarm.subtask != None, "Alarm does not activate any task! (maybe callback?)"
+            alarm.event = alarm.subtask.find(Event, alarm.event)
+
 
             #  Generate an Alarm Handler SubTask. Use a Mock config here
             name = "OSEKOS_ALARM_HANDLER_" + alarm.name
@@ -265,13 +266,16 @@ class SystemGraph(GraphObject, PassManager):
             subtask = Subtask(self, alarm.name, name, conf)
 
             #  And add it to the task where the activated task belongs to
+            belongs_to_task = alarm.subtask.task
             belongs_to_task.add_subtask(subtask)
+
+            # Register Subtask
             self._functions[subtask.function_name] = subtask
             self._subtasks[subtask.function_name] = subtask
 
             counter = self.get(Counter, alarm.counter)
 
-            self._alarms[alarm.name] = Alarm(self, subtask, alarm, counter, activated_subtask)
+            self._alarms[alarm.name] = Alarm(self, subtask, counter, alarm)
 
         #  Resources
         for res in system.getResources():
@@ -322,11 +326,14 @@ class SystemGraph(GraphObject, PassManager):
 
         # Generate an ActivateTask for every alarm
         for alarm in self.alarms:
-            activate_task = self.new_abb()
-            alarm.handler.add_atomic_basic_block(activate_task)
-            alarm.handler.set_entry_abb(activate_task)
-            activate_task.make_it_a_syscall(S.ActivateTask, [alarm.subtask])
-            alarm.carried_syscall = activate_task
+            inner_syscall = self.new_abb()
+            alarm.handler.add_atomic_basic_block(inner_syscall)
+            alarm.handler.set_entry_abb(inner_syscall)
+            if alarm.conf.event:
+                inner_syscall.make_it_a_syscall(S.SetEvent, [alarm.conf.subtask, [alarm.conf.event]])
+            else:
+                inner_syscall.make_it_a_syscall(S.ActivateTask, [alarm.conf.subtask])
+            alarm.carried_syscall = inner_syscall
 
             # Statistic generation
             self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)

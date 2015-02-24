@@ -36,11 +36,6 @@ struct Scheduler {
         t.tcb.reset();
 
         tlist.remove(t.id);
-        if (t.preemptable == false) {
-            // restore non-preemptable task to original priority
-            // this is required for the optimization in Reschedule()
-            current_prio = t.prio;
-        }
     }
 
     forceinline void ActivateTask_impl(const Task &task) {
@@ -117,11 +112,7 @@ struct Scheduler {
 };
 
 void Scheduler::Reschedule() {
-	// OPTIMIZATION: do not reschedule if RES_SCHEDULER is taken
-	if (current_prio != scheduler_prio) {
-		// set current (=next) task from task list
-		tlist.head(current_task, current_prio);
-	}
+	tlist.head(current_task, current_prio);
 
 	// dispatch or enter idle
 {{{!foreach_subtask|

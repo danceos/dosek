@@ -1,5 +1,6 @@
 from generator.graph.Function import Function
 from generator.graph.SystemObject import SystemObject
+from generator.graph.Event import Event
 
 
 class Subtask(Function, SystemObject):
@@ -15,6 +16,10 @@ class Subtask(Function, SystemObject):
         self.task = None
         self.subtask = self
         self._events = {}
+
+    def find(self, cls, name):
+        if issubclass(cls, Event):
+            return self._events.get(name)
 
     @property
     def events(self):

@@ -201,10 +201,6 @@ class Alarm(OILObject):
         return self.COUNTER.name
 
     @property
-    def event(self):
-        return None
-
-    @property
     def armed(self):
         return self.AUTOSTART
 
@@ -220,11 +216,33 @@ class Alarm(OILObject):
             return self.autostart_params.ALARMTIME
         return 0
 
-    def activated_task(self):
+    @property
+    def subtask(self):
         if self.action_params.TASK:
-            return self.action_params.TASK.name
+            if isinstance(self.action_params.TASK, Task):
+                return self.action_params.TASK.name
+            return self.action_params.TASK
         else:
             return None
+
+    @subtask.setter
+    def subtask(self, value):
+        self.action_params.TASK = value
+
+
+    @property
+    def event(self):
+        if hasattr(self.action_params, "EVENT") and self.action_params.EVENT:
+            if isinstance(self.action_params.EVENT, Event):
+                return self.action_params.EVENT.name
+            return self.action_params.EVENT
+        else:
+            return None
+
+    @event.setter
+    def event(self, value):
+        self.action_params.EVENT = value
+
 
     def __str__(self):
         ret = super(Alarm, self).__str__()

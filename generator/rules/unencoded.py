@@ -176,6 +176,10 @@ class TaskListTemplate(CodeTemplate):
     def subtask_id(self, snippet, args):
         return str(self._subtask.impl.task_id)
 
+    def subtask_desc(self, snippet, args):
+        return self._subtask.impl.task_descriptor.name
+
+
     def foreach_subtask(self, snippet, args):
         body = args[0]
         def do(subtask):
@@ -187,6 +191,12 @@ class TaskListTemplate(CodeTemplate):
         if len(self._subtask.events) > 0:
             return self.expand_snippet(args[0])
         return ""
+
+    def if_not_preemptable(self, snippet, args):
+        if not self._subtask.conf.preemptable:
+            return self.expand_snippet(args[0])
+        return ""
+
 
 class SchedulerTemplate(CodeTemplate):
     def __init__(self, rules):
