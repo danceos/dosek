@@ -15,7 +15,6 @@ struct Scheduler  {
     Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
     Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
 
-    static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{!scheduler_prio}}});
 
     noinline void Reschedule(void);
 
@@ -92,8 +91,8 @@ struct Scheduler  {
 	forceinline void SetCurrentTask(const Task &task) {
 		if (task.preemptable == false) {
 			// promote non-preemptable task to RES_SCHEDULER
-			tlist.set(task.id, scheduler_prio);
-			current_prio = scheduler_prio;
+			tlist.set(task.id, tlist.scheduler_prio);
+			current_prio = tlist.scheduler_prio;
 		}
 		current_task = task.enc_id<1>();
 
@@ -158,8 +157,8 @@ void Scheduler::Reschedule(void) {
    if (current_task == {{{!subtask_id}}}) {
 {{{!if_not_preemptable|
         // promote non-preemptable task to RES_SCHEDULER
-        tlist.set({{{!subtask_id}}}, scheduler_prio);
-        current_prio = scheduler_prio;
+        tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
+        current_prio = tlist.scheduler_prio;
 }}}
         Dispatcher::Dispatch({{{!subtask_desc}}});
 	} else \
@@ -170,7 +169,6 @@ void Scheduler::Reschedule(void) {
         }
     }
 
-constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> Scheduler::scheduler_prio;
 Scheduler scheduler_;
 
 #ifdef dOSEK_STATE_REPLICATOR

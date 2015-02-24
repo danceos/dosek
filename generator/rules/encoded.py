@@ -140,6 +140,13 @@ class EncodedTaskListTemplate(TaskListTemplate):
     def idle_prio_sig(self, snippet, args):
         return str(self.idle.impl.task_prio_sig)
 
+    def scheduler_prio(self, snippet, args):
+        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        return str(RES_SCHEDULER.conf.static_priority)
+
+    def scheduler_prio_sig(self, snippet, args):
+        return str(self.system_graph.impl.scheduler.scheduler_prio_sig)
+
     # events
     def foreach_event(self, snippet, args):
         body = args[0]
@@ -198,7 +205,4 @@ class EncodedSchedulerTemplate(SchedulerTemplate):
         return str(self.system_graph.impl.scheduler.current_task_sig)
     def current_prio_sig(self, snippet, args):
         return str(self.system_graph.impl.scheduler.current_prio_sig)
-
-    def scheduler_prio_sig(self, snippet, args):
-        return str(self.system_graph.impl.scheduler.scheduler_prio_sig)
 

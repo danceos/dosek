@@ -10,6 +10,8 @@ struct TaskList : public TaskListStatic {
     typedef uint8_t id_t;
 	typedef uint32_t event_mask_t;
 
+
+
 	// encoded task priorities
 {{{!foreach_subtask|
 	Encoded_Static<A0, {{{!subtask_prio_sig}}}> {{{!subtask}}};
@@ -19,9 +21,11 @@ struct TaskList : public TaskListStatic {
 }}}
 	
 	// idle task id/priority
-    static constexpr auto prio_offset = EC(1, {{{!prio_offset}}});
+    static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{!scheduler_prio}}});
 	static constexpr auto idle_id   = EC({{{!idle_id_sig}}}, 0);
 	static constexpr auto idle_prio = EC({{{!idle_prio_sig}}}, {{{!prio_offset}}});
+    static constexpr auto prio_offset = {{{!prio_offset}}};
+
 
 	TaskList() : TaskListStatic()
     {{{!foreach_subtask|
@@ -52,7 +56,7 @@ struct TaskList : public TaskListStatic {
 	forceinline value_coded_t set(const id_t id, const S prio) {
 {{{!foreach_subtask|
         if(id == {{{!subtask_id}}}) {
-	          {{{!subtask}}} = prio + prio_offset;
+	          {{{!subtask}}} = prio + EC(1, prio_offset);
 	          return ({{{!subtask}}} - prio).getCodedValue();
         } else \
 }}} {
@@ -68,13 +72,13 @@ struct TaskList : public TaskListStatic {
 {{{!foreach_subtask|
         if(id == {{{!subtask_id}}}) {
               auto old_prio = {{{!subtask}}};
-              if (((old_prio - prio_offset).vc / A0) == 0) {
+              if (((old_prio - EC(1, prio_offset)).vc / A0) == 0) {
 {{{!foreach_event|
                   {{{!event}}}.clear();
 }}}
               }
 	          {{{!subtask}}}.vc += 10;
-	          updateMax<10, 11>({{{!subtask}}}, newprio + prio_offset);
+	          updateMax<10, 11>({{{!subtask}}}, newprio + EC(1, prio_offset));
 	          {{{!subtask}}}.vc -= 11;
 	          value_coded_t ret = ({{{!subtask}}} - newprio).getCodedValue();
 	          if (MOD(ret, A0) != (decltype({{{!subtask}}})::B - decltype(newprio)::B)) {
@@ -146,7 +150,7 @@ struct TaskList : public TaskListStatic {
 		prio.vc -= (sigPrio - prio.getB());
 
         // Undo prio offset
-        prio =  prio - prio_offset;
+        prio =  prio - EC(1, prio_offset);
 
 		return 0;
 	}
@@ -167,8 +171,36 @@ struct TaskList : public TaskListStatic {
             else {{{!event}}}.unwait();
 }}}
 {{{!if_not_preemptable|
-            // Release the RES_SCHEDULER resource
-            {{{!subtask}}} = prio_offset + {{{!subtask_desc}}}.enc_prio<1>();
+            // Release the RES_SCHEDULER resource, if we have to block.
+            // For this we compute the blocking term, and invert it, with - 
+            auto blocking_term = EC(4, prio_offset) - Event<1>::must_wait_p({{{!event_list}}});
+            // blocking_term = (BLOCK, 0) :: (No blocking condition, blocking condition)
+
+            // We calculate a priority, that is higher than the static priority of the waiting task. It
+            // is exactly that amout higher, BLOCK is higher than RES_SCHEDULER
+            constexpr auto S_prio_ = EC(1, {{{!subtask_desc}}}.prio + {{{!prio_offset}}} - {{{!scheduler_prio}}});
+            // S_prio_ = (S', S')
+
+            // We do an update max with S_prio_
+            blocking_term.vc += 10;
+            updateMax<10, 11>(blocking_term, S_prio_);
+            blocking_term.vc -= 11;
+            // Check the update Max
+            value_coded_t ret = (blocking_term - S_prio_).vc;
+	        if (MOD(ret, A0) != (decltype(blocking_term)::B - decltype(S_prio_)::B)) {
+               CALL_HOOK(FaultDetectedHook, ANBdetected, 0, 0);
+	        }
+            // blocking_term = (BLOCK, S')
+
+            // Remove the delta between BLOCK and RES_SCHEDULER
+            constexpr auto delta = EC(1, {{{!prio_offset}}} - {{{!scheduler_prio}}});
+            auto newprio = blocking_term - delta;
+            // newprio = (RES_SCHEDULER, Static Priority of Task)
+
+            newprio.check();
+
+            // Set with priority offset
+            {{{!subtask}}} = EC(1, prio_offset) + newprio;
 }}}
 
         } else \
@@ -223,7 +255,8 @@ bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs)
 
 constexpr Encoded_Static<A0, {{{generate:idle_id_sig}}}> TaskList::idle_id;
 constexpr Encoded_Static<A0, {{{generate:idle_prio_sig}}}> TaskList::idle_prio;
-constexpr Encoded_Static<A0, 1> TaskList::prio_offset;
+constexpr Encoded_Static<A0, {{{generate:scheduler_prio_sig}}}> TaskList::scheduler_prio;
+constexpr decltype(TaskList::prio_offset) TaskList::prio_offset;
 
 
 }; // scheduler

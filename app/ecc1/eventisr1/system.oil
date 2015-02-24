@@ -23,6 +23,7 @@ CPU TestSystem {
         PRIORITY = 3;
         ACTIVATION = 1;
         AUTOSTART = FALSE;
+        EVENT = E2;
     };
 
     TASK H3 {

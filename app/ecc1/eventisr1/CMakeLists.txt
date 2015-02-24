@@ -44,3 +44,12 @@ DOSEK_BINARY(
   e.cc
 )
 
+DOSEK_BINARY(
+  NAME ecc1_eventisr1f
+  SYSTEM_DESC system.oil
+  #VERIFY verify_e.py
+  LIBS libtest
+  TEST_ISO
+  f.cc
+)
+
