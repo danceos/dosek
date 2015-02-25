@@ -224,7 +224,7 @@ struct TaskList : public TaskListStatic {
 		}
     }
 
-    /** Set Events **/
+    /** Clear Events **/
     forceinline void clear_events(const id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
@@ -236,7 +236,6 @@ struct TaskList : public TaskListStatic {
         } else \
 }}}
         {
-			assert(false);
 		}
     }
 

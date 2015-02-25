@@ -125,7 +125,7 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-    /** Set Events **/
+    /** Clear Events **/
     forceinline void clear_events(const prio_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
@@ -137,7 +137,6 @@ struct TaskList : public UnencodedTaskListStatic {
         } else \
    }}}\
 }}}     {
-			assert(false);
 		}
     }
 

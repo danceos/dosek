@@ -85,6 +85,8 @@ struct Scheduler {
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
 		SetPriority(task, task.prio);
+		// Clear all Events
+		tlist.clear_events(task.id, ~0);
     }
 
 	// Low level interface to the task list
