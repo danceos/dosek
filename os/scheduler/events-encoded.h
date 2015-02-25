@@ -51,6 +51,10 @@ public:
 		event_set = EC(B1, High);
 	}
 
+	bool get() {
+		return (event_set.vc == EC(B1, High).vc);
+	}
+
 	void wait() {
 		event_waiting = EC(B0, High);
 	}

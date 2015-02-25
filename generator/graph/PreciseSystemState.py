@@ -14,10 +14,12 @@ class PreciseSystemState(SystemState):
 
         size = len(self.system_graph.subtasks)
 
-        self.continuations = [None] * size
+        delattr(self, "events_cleared")
+        delattr(self, "events_set")
+
         self.events = [0] * size
-        self.call_stack = [None] * size
         for i in range(0, size):
+            self.continuations[i] = None
             self.call_stack[i] = list()
 
         self.__hash = None
@@ -79,6 +81,11 @@ class PreciseSystemState(SystemState):
         return self.call_stack[subtask.subtask_id]
 
     # Events
+    def get_events(self, subtask):
+        """Return a tuple (None, set)"""
+        events = self.events[subtask.subtask_id]
+        return (subtask.event_mask_valid ^ events, events)
+
     def set_events(self, subtask, event_list):
         mask = Event.combine_event_masks(event_list)
         self.events[subtask.subtask_id] |= mask

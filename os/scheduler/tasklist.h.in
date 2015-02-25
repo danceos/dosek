@@ -239,6 +239,23 @@ struct TaskList : public TaskListStatic {
 		}
     }
 
+    /** Get Events **/
+    forceinline event_mask_t get_events(const id_t id) {
+        (void) id;
+        event_mask_t ret = 0;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+{{{!foreach_event|
+            if ({{{!event}}}.get()) ret |= {{{!event_mask}}};
+}}}
+        } else \
+}}}       {
+          }
+       return ret;
+    }
+
+
+
 };
 
 /** Equality operator (used for TMR) [enc=1] **/

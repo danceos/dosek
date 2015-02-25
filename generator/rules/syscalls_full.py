@@ -246,11 +246,18 @@ class FullSystemCalls(BaseRules):
         should_equal_zero = []
         should_unequal_zero = []
         for a in assertions:
-            (equal_zero, cond) = self.__do_assertion(a)
-            if equal_zero:
-                should_equal_zero.append(cond)
+            x = self.__do_assertion(a)
+            if type(x[0]) == bool:
+                assertions = [x]
             else:
-                should_unequal_zero.append(cond)
+                (assertions, prepare) = x
+                block.add(prepare)
+
+            for equal_zero, cond in assertions:
+                if equal_zero:
+                    should_equal_zero.append(cond)
+                else:
+                    should_unequal_zero.append(cond)
 
         call_hook = Statement("CALL_HOOK(FaultDetectedHook, STATE_ASSERTdetected, __LINE__, 0)")
         if should_equal_zero:
@@ -265,6 +272,7 @@ class FullSystemCalls(BaseRules):
 
     def __do_assertion(self, assertion):
         task = assertion.get_arguments()[0]
+
         if assertion.isA(AssertionType.TaskIsSuspended):
             cond = "scheduler_.isReady(%s)" % self.task_desc(task)
             return (True, cond)
@@ -277,5 +285,28 @@ class FullSystemCalls(BaseRules):
         elif assertion.isA(AssertionType.TaskWasNotKickoffed):
             cond =  "%s.tcb.is_running()" % self.task_desc(task)
             return (True, cond)
+        elif assertion.isA(AssertionType.EventsCheck):
+            event_cleared = assertion.get_arguments()[1]
+            event_set = assertion.get_arguments()[2]
+            var = "event_mask_%s" % task.name
+            prepare = Statement("uint32_t {var} = scheduler_.GetEvent_impl({task}); kout << \"{task}\"<< {var} << endl".format(
+                task = self.task_desc(task), var = var))
+            conds = []
+            if event_cleared:
+                # Mask Should equal to zero
+                mask = Event.combine_event_masks(event_cleared)
+                conds.append((True, "({var} & {mask})".format(var=var, mask=mask)))
+            if event_set:
+                # Mask Should equal to zero
+                mask = Event.combine_event_masks(event_set)
+                conds.append((True, "(({var} & {mask}) ^ {mask})".format(var=var, mask=mask)))
+
+            return (conds, prepare)
+        elif assertion.isA(AssertionType.EventsCleared):
+            cond =  "(scheduler_.GetEvent_impt({task}) & {mask}) == 0".format(
+                task = self.task_desc(event_list[0].subtask),
+                mask = Event.combine_event_masks(event_list)
+                )
+            return (True, cond)
         else:
-            panic("Unsupported assert type %s in %s", assertion, block)
+            panic("Unsupported assert type %s", assertion)

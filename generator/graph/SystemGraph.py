@@ -200,6 +200,7 @@ class SystemGraph(GraphObject, PassManager):
                 event.used = True
                 E = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
                 subtask._events[event.name] = E
+                subtask.event_mask_valid |= E.event_mask
                 self._events[E.name] = E
                 event_id += 1
                 assert event_id < 32, "No more than 32 Events per Subtask"

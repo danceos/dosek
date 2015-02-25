@@ -81,7 +81,9 @@ struct Scheduler {
 		tlist.clear_events(current_task.id, event_mask);
 	}
 
-
+	forceinline uint32_t GetEvent_impl(const Task &current_task) {
+		return tlist.get_events(current_task.id);
+	}
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
 		SetPriority(task, task.prio);

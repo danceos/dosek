@@ -143,6 +143,21 @@ struct TaskList : public UnencodedTaskListStatic {
     forceinline void remove(const id_t& id) {
         set(id, 0);
     }
+
+    /** Get Events **/
+    forceinline event_mask_t get_events(const id_t id) {
+        (void) id;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+{{{!if_events|
+            return {{{!subtask}}}_events_set;
+}}}
+        } else \
+}}}       {
+          }
+          return 0;
+    }
+
 };
 
 /** Equality operator (used for TMR) [enc=0] **/

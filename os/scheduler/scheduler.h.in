@@ -117,6 +117,9 @@ struct Scheduler  {
 	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
 		tlist.clear_events(current_task.id, event_mask);
 	}
+	forceinline uint32_t GetEvent_impl(const Task &current_task) {
+		return tlist.get_events(current_task.id);
+	}
 
 	forceinline void SetPriority(const Task &task, const int new_prio) {
 		auto new_prio_encoded = EC(2, new_prio);

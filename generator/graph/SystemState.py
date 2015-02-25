@@ -20,13 +20,18 @@ class SystemState(Node):
         Node.__init__(self, Edge, "", color="green")
         self.system_graph = system_graph
         self.frozen = False
-        self.states = []
-        self.continuations = []
-        self.call_stack = []
-        for subtask in self.system_graph.subtasks:
-            self.states.append(0)
-            self.continuations.append(set())
-            self.call_stack.append(None)
+
+        size = len(self.system_graph.subtasks)
+
+        self.states = [0] * size
+        self.continuations = [None] * size
+        self.events_cleared = [0] * size
+        self.events_set = [0] * size
+        self.call_stack = [None] * size
+
+        for i  in range(0, size):
+            self.continuations[i] = set()
+
         self.current_abb = None
         self.__hash = None
 
@@ -108,6 +113,17 @@ class SystemState(Node):
         """Only a dummy implementation, called by the system state flow
            analysis, which does not support events."""
         pass
+
+    def get_events(self, subtask):
+        """Returns two bitmasks: (Event is cleared, Event is set)"""
+        return (self.events_cleared[subtask.subtask_id],
+                self.events_set[subtask.subtask_id])
+
+    def is_event_set(self, subtask, event):
+        return (self.events_set[subtask.subtask_id] & event.event_mask) != 0
+
+    def is_event_cleared(self, subtask, event):
+        return (self.events_cleared[subtask.subtask_id] & event.event_mask) != 0
 
     ## Continuations
     def get_continuations(self, subtask):
@@ -204,9 +220,13 @@ class SystemState(Node):
             "%s != %s" %(self.current_abb.path(), other.current_abb.path())
         self.current_abb = other.current_abb
         changed = False
-        for subtask_id in range(0, Subtask.subtask_id_counter):
+
+        for subtask in self.system_graph.subtasks:
+            subtask_id = subtask.subtask_id
+
             old_state = self.states[subtask_id]
             continuations_count = len(self.continuations[subtask_id])
+
             self.states[subtask_id] |= other.states[subtask_id]
             self.continuations[subtask_id] |= other.get_continuations(subtask_id)
             # Check whether one set has changed
@@ -217,6 +237,14 @@ class SystemState(Node):
 
             # We cannot merge call stacks!
             self.call_stack[subtask_id] = None
+
+            # Merge Event masks
+            # FIXME: Events do not influence the changed flag correctly
+            (events_cleared, events_set) = other.get_events(subtask)
+            self.events_cleared[subtask_id] |= events_cleared
+            self.events_set[subtask_id] |= events_set
+
+
         return changed
 
     @staticmethod

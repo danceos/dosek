@@ -9,6 +9,8 @@ class AssertionType(Enum):
     TaskWasKickoffed = 2
     TaskWasNotKickoffed = 3
 
+    EventsCheck = 4
+
 
 class Assertion:
     def __init__(self, _type, _arguments, prio = 0):
@@ -85,6 +87,20 @@ class GenerateAssertionsPass(Analysis):
                 if state.was_surely_kickoffed(subtask):
                     ret.append(Assertion(AssertionType.TaskWasKickoffed, [subtask],
                                          prio = prio * 1.5))
+            # For each event this task can receive, we can derive an assertions
+            events_set = []
+            events_cleared = []
+            for event in subtask.events:
+                SET = state.is_event_set(subtask, event)
+                CLEARED = state.is_event_cleared(subtask, event)
+                assert SET or CLEARED
+
+                if SET == 0 and CLEARED == 1:
+                    events_cleared.append(event)
+                if SET == 1 and CLEARED == 0:
+                    events_set.append(event)
+            if events_set or events_cleared:
+                ret.append(Assertion(AssertionType.EventsCheck, [subtask, events_cleared, events_set]))
         return ret
 
     def state_assertions_before(self, abb):

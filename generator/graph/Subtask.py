@@ -16,6 +16,8 @@ class Subtask(Function, SystemObject):
         self.task = None
         self.subtask = self
         self._events = {}
+        # A mask that is the combination of all event masks
+        self.event_mask_valid = 0
 
     def find(self, cls, name):
         if issubclass(cls, Event):
