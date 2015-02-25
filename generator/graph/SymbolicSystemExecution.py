@@ -148,8 +148,6 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         entry_abb = self.system_graph.get(Function, "StartOS").entry_abb
         before_StartOS = PreciseSystemState(self.system_graph)
         before_StartOS.current_abb = entry_abb
-        for subtask in before_StartOS.get_unordered_subtasks():
-            before_StartOS.call_stack[subtask.subtask_id] = stack()
         before_StartOS.frozen = True
 
         # The working stack consists of possible state edges. If the
