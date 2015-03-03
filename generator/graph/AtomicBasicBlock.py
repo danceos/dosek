@@ -91,17 +91,17 @@ class AtomicBasicBlock(Node):
         # Make the string arguments references to system objects
         for x in arguments:
             if type(x) == str:
-                if x.startswith("OSEKOS_TASK_Struct_"):
-                    handler_name = x[len("OSEKOS_TASK_Struct_"):]
+                if x.startswith("OSEKOS_TASK_"):
+                    handler_name = x[len("OSEKOS_TASK_"):]
                     x = self.system_graph.get(Subtask, handler_name)
-                elif x.startswith("OSEKOS_COUNTER_Struct_"):
-                    name = x[len("OSEKOS_COUNTER_Struct_"):]
+                elif x.startswith("OSEKOS_COUNTER_"):
+                    name = x[len("OSEKOS_COUNTER_"):]
                     x = self.system_graph.get(Counter, name)
-                elif x.startswith("OSEKOS_RESOURCE_Struct_"):
-                    res_name = x[len("OSEKOS_RESOURCE_Struct_"):]
+                elif x.startswith("OSEKOS_RESOURCE_"):
+                    res_name = x[len("OSEKOS_RESOURCE_"):]
                     x = self.system_graph.get(Resource, res_name)
-                elif x.startswith("OSEKOS_ALARM_Struct_"):
-                    alarm_name = x[len("OSEKOS_ALARM_Struct_"):]
+                elif x.startswith("OSEKOS_ALARM_"):
+                    alarm_name = x[len("OSEKOS_ALARM_"):]
                     x = self.system_graph.get(Alarm, alarm_name)
             args.append(x)
         self.arguments = args

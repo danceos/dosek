@@ -27,6 +27,20 @@ class SimpleSystem(BaseRules):
         # Give the passes the chance to generate dataobjects
         self.callback_in_valid_passes("generate_dataobjects")
 
+    def generate_dataobjects_global_keso_ids(self):
+        for subtask in self.system_graph.real_subtasks:
+            # add: const TaskType subtaskname_id = OS_subtask.name_task.id;
+            iddesc = DataObject("const TaskType", "OSEKOS_TASK_" + subtask.conf.name,
+                                static_initializer = str(subtask.impl.task_id),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+        for alarm in self.system_graph.alarms:
+            iddesc = DataObject("const AlarmType", "OSEKOS_ALARM_" + alarm.conf.name,
+                                static_initializer = str(alarm.impl.alarm_id),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
         task_id = 1
@@ -126,6 +140,8 @@ class SimpleSystem(BaseRules):
         if len(list(self.system_graph.checkedObjects)) < 1:
             return
         self.generator.source_file.includes.add(Include("dependability/dependability_service.h"))
+        self.generator.source_file.includes.add(Include("dependability/depsvc.h"))
+
         co_index = 0;
         initializator = "{\n"
         multiplexer_functions = []

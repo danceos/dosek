@@ -12,7 +12,7 @@ def get_functions(system, names):
     for x in names:
         for func in system.functions:
             if x == func.function_name or \
-               "OSEKOS_TASK_" + x == func.function_name or \
+               "OSEKOS_TASK_FUNC_" + x == func.function_name or \
                "OSEKOS_ISR_" + x == func.function_name:
                 ret.append(func)
     return tuple(ret)

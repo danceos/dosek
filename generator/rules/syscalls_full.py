@@ -47,6 +47,12 @@ class FullSystemCalls(BaseRules):
                            [dispatch_func.function_name])
         self.call_function(block, "Machine::unreachable", "void", [])
 
+    def ShutdownOS(self, block):
+        block.unused_parameter(0)
+
+        block.add(Statement('kout << "ShutdownOS " << endl'))
+        block.add(Statement('ShutdownMachine()'))
+
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
         self.call_function(kernelspace, "scheduler_.Reschedule",
@@ -102,6 +108,8 @@ class FullSystemCalls(BaseRules):
                            [self.get_calling_task_desc(syscall)])
 
     def SetEvent(self, syscall, userspace, kernelspace):
+        userspace.unused_parameter(1)
+
         subtask = syscall.arguments[0][0].task
         self.call_function(kernelspace,
                            "scheduler_.SetEvent_impl",
@@ -228,14 +236,14 @@ class FullSystemCalls(BaseRules):
 
     # Dependability Service
     def AcquireCheckedObject(self, abb, userspace, kernelspace):
-        co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_Struct_"):] + "_CheckedObject_Index"
+        co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_"):] + "_CheckedObject_Index"
         self.call_function(kernelspace,
                            "acquire_CheckedObject",
                            "void",
                            [co_index])
 
     def ReleaseCheckedObject(self, abb, userspace, kernelspace):
-        co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_Struct_"):] + "_CheckedObject_Index"
+        co_index = "OS_" + abb.arguments[0][len("OSEKOS_CHECKEDOBJECT_"):] + "_CheckedObject_Index"
         self.call_function(kernelspace,
                            "release_CheckedObject",
                            "void",

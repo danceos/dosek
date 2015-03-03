@@ -67,8 +67,8 @@ class Generator:
         #S.SendZeroMessage: None,
         #S.ShutdownOS: ["void", "StatusType"],
 
-        S.AcquireCheckedObject: ["void", "dep::Checked_Object*"],
-        S.ReleaseCheckedObject: ["void", "dep::Checked_Object*"] }
+        S.AcquireCheckedObject: ["void", "CheckedObjectType"],
+        S.ReleaseCheckedObject: ["void", "CheckedObjectType"] }
 
 
     def generate_into(self, output_file_prefix):
@@ -104,6 +104,12 @@ class Generator:
         self.syscall_rules.StartOS(StartOS)
         self.source_file.function_manager.add(StartOS)
         self.system_graph.impl.StartOS = StartOS
+
+        # Generate a ShutdownOS function
+        ShutdownOS = Function("OSEKOS_ShutdownOS", "void", ["StatusType"], extern_c = True)
+        self.syscall_rules.ShutdownOS(ShutdownOS)
+        self.source_file.function_manager.add(ShutdownOS)
+
 
         # Generate the interrupt scheduler
         ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c = True)

@@ -55,26 +55,14 @@ EXTERN_C_DECL void StartOS(int);
  *                                                                            *
  ******************************************************************************/
 
-struct TASKStruct {
-};
+typedef uint32_t TaskType;
+typedef uint32_t* TaskRefType;
 
-typedef struct TASKStruct* TaskType;
+typedef uint32_t ResourceType;
 
-struct RESOURCEStruct {
-};
-
-typedef struct RESOURCEStruct* ResourceType;
-
-struct EVENTStruct {
-};
-
-typedef struct EVENTStruct* EVENT;
 typedef unsigned long EventMaskType;
 
-struct ALARMStruct {
-};
-
-typedef struct ALARMStruct* AlarmType;
+typedef uint32_t AlarmType;
 
 typedef struct {
   unsigned long maxallowedvalue;
@@ -84,15 +72,9 @@ typedef struct {
 
 typedef AlarmBaseType* AlarmBaseRefType;
 
-struct COUNTERStruct {
-};
+typedef uint32_t CounterType;
 
-typedef struct COUNTERStruct* CounterType;
-
-struct MESSAGEStruct {
-};
-
-typedef struct MESSAGEStruct* MessageIdentifier;
+typedef uint32_t MessageIdentifier;
 
 typedef uint16_t TickType;
 typedef TickType * TickRefType;
@@ -103,26 +85,27 @@ typedef TickType * TickRefType;
  * Macro Definitions                                                          *
  *                                                                            *
  ******************************************************************************/
-
+#define dosek_unused __attribute__((unused))
 
 #define ISR2(taskname) \
 	__attribute__((always_inline)) __attribute__((used)) \
     EXTERN_C_DECL void OSEKOS_ISR_##taskname(void)
 
 #define DeclareTask(x)				\
-  struct TASKStruct OSEKOS_TASK_Struct_##x
+	extern const TaskType OSEKOS_TASK_ ## x;		\
+    static dosek_unused const TaskType &x = OSEKOS_TASK_ ## x;	\
 
 /**
  * @satisfies{13,2,5}
  */
 #define TASK(taskname) \
-	noinline EXTERN_C_DECL void OSEKOS_TASK_##taskname(void)
+	noinline EXTERN_C_DECL void OSEKOS_TASK_FUNC_##taskname(void)
 
 #define ActivateTask(x)				\
-  OSEKOS_ActivateTask(&OSEKOS_TASK_Struct_##x)
+  OSEKOS_ActivateTask(OSEKOS_TASK_##x)
 
 #define ChainTask(x)				\
-  OSEKOS_ChainTask(&OSEKOS_TASK_Struct_##x)
+	OSEKOS_ChainTask(OSEKOS_TASK_##x)
 
 #define TerminateTask()				\
   OSEKOS_TerminateTask()
@@ -131,23 +114,24 @@ typedef TickType * TickRefType;
   OSEKOS_Schedule()
 
 #define DeclareResource(x)				\
-  struct RESOURCEStruct OSEKOS_RESOURCE_Struct_##x
+	extern const ResourceType OSEKOS_RESOURCE_ ## x;		\
+    static dosek_unused const ResourceType &x = OSEKOS_RESOURCE_ ## x;
 
 #define GetResource(x)					\
-  OSEKOS_GetResource(&OSEKOS_RESOURCE_Struct_##x)
+  OSEKOS_GetResource(OSEKOS_RESOURCE_##x)
 
 #define ReleaseResource(x)				\
-  OSEKOS_ReleaseResource(&OSEKOS_RESOURCE_Struct_##x)
+  OSEKOS_ReleaseResource(OSEKOS_RESOURCE_##x)
 
 #define DeclareEvent(x)							\
 	extern const EventMaskType OSEKOS_EVENT_ ## x;			\
-    static const EventMaskType &x = OSEKOS_EVENT_ ## x
+    static dosek_unused const EventMaskType &x = OSEKOS_EVENT_ ## x
 
 #define SetEvent(task,event)						\
-  OSEKOS_SetEvent(&OSEKOS_TASK_Struct_##task,event)
+  OSEKOS_SetEvent(OSEKOS_TASK_##task,event)
 
 #define GetEvent(task,event)						\
-  OSEKOS_GetEvent(&OSEKOS_TASK_Struct_##task,event)
+  OSEKOS_GetEvent(OSEKOS_TASK_##task,event)
 
 #define ClearEvent(event)				\
   OSEKOS_ClearEvent(event)
@@ -156,55 +140,57 @@ typedef TickType * TickRefType;
   OSEKOS_WaitEvent(event)
 
 #define DeclareAlarm(x)				\
-  struct ALARMStruct OSEKOS_ALARM_Struct_##x
+	extern const AlarmType OSEKOS_ALARM_ ## x;		\
+    static dosek_unused const AlarmType &x = OSEKOS_ALARM_ ## x;
 
 #define ALARMCALLBACK(x)				\
   EXTERN_C_DECL void OSEKOS_ALARMCB_##x()
 
 #define GetAlarm(x,tick)				\
-  OSEKOS_GetAlarm(&OSEKOS_ALARM_Struct_##x,tick)
+  OSEKOS_GetAlarm(OSEKOS_ALARM_##x,tick)
 
 #define SetRelAlarm(x,inc,period)				\
-  OSEKOS_SetRelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
+  OSEKOS_SetRelAlarm(OSEKOS_ALARM_##x,inc,period)
 
 #define SetAbsAlarm(x,inc,period)				\
-  OSEKOS_SetRelAlarm(&OSEKOS_ALARM_Struct_##x,inc,period)
+  OSEKOS_SetRelAlarm(OSEKOS_ALARM_##x,inc,period)
 
 #define CancelAlarm(x)						\
-  OSEKOS_CancelAlarm(&OSEKOS_ALARM_Struct_##x)
+  OSEKOS_CancelAlarm(OSEKOS_ALARM_##x)
 
 #define GetAlarmBase(x,b)				\
-  OSEKOS_GetAlarmBase(&OSEKOS_ALARM_Struct_##x,b)
+  OSEKOS_GetAlarmBase(OSEKOS_ALARM_##x,b)
 
 #define DeclareCounter(x)			\
-  struct COUNTERStruct OSEKOS_COUNTER_Struct_##x
+	extern const CounterType OSEKOS_COUNTER_ ## x;		\
+    static dosek_unused const CounterType &x = OSEKOS_COUNTER_ ## x;
 
 #define AdvanceCounter(x)			\
-  OSEKOS_AdvanceCounter(&OSEKOS_COUNTER_Struct_##x)
+  OSEKOS_AdvanceCounter(OSEKOS_COUNTER_##x)
 
 #define IncrementCounter(x)			\
-  OSEKOS_AdvanceCounter(&OSEKOS_COUNTER_Struct_##x)
+  OSEKOS_AdvanceCounter(OSEKOS_COUNTER_##x)
 
 #define GetCounter(x)								\
-	OSEKOS_GetCounter(&OSEKOS_COUNTER_Struct_##x)
+	OSEKOS_GetCounter(OSEKOS_COUNTER_##x)
 
-#define DeclareMessage(x)				\
-  struct MESSAGEStruct OSEKOS_MESSAGE_Struct_##x
+// #define DeclareMessage(x)						\
+// struct MESSAGEStruct OSEKOS_MESSAGE_##x
 
-#define SendMessage(MSG,DATA)				\
-  OSEKOS_SendMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA)
-
-#define ReceiveMessage(MSG,DATA)				\
-  OSEKOS_ReceiveMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA)
-
-#define SendDynamicMessage(MSG,DATA,LENGTH)				\
-  OSEKOS_SendDynamicMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA,LENGTH)
-
-#define ReceiveDynamicMessage(MSG,DATA,LENGTH)				\
-  OSEKOS_ReceiveDynamicMessage(&OSEKOS_MESSAGE_Struct_##MSG,DATA,LENGTH)
-
-#define SendZeroMessage(MSG)				\
-  OSEKOS_SendZeroMessage(&OSEKOS_MESSAGE_Struct_##MSG)
+// #define SendMessage(MSG,DATA)				\
+//   OSEKOS_SendMessage(OSEKOS_MESSAGE_##MSG,DATA)
+// 
+// #define ReceiveMessage(MSG,DATA)				\
+//   OSEKOS_ReceiveMessage(OSEKOS_MESSAGE_##MSG,DATA)
+// 
+// #define SendDynamicMessage(MSG,DATA,LENGTH)				\
+//   OSEKOS_SendDynamicMessage(OSEKOS_MESSAGE_##MSG,DATA,LENGTH)
+// 
+// #define ReceiveDynamicMessage(MSG,DATA,LENGTH)				\
+//   OSEKOS_ReceiveDynamicMessage(OSEKOS_MESSAGE_##MSG,DATA,LENGTH)
+// 
+// #define SendZeroMessage(MSG)				\
+//   OSEKOS_SendZeroMessage(OSEKOS_MESSAGE_##MSG)
 
 #define ShutdownOS(STATUS)			\
   OSEKOS_ShutdownOS(STATUS)
@@ -251,12 +237,12 @@ extern StatusType OSEKOS_ActivateTask(TaskType t);
  * \brief Terminate the calling TASK and immediately activate another TASK
  * \param t The TASK to be activated
  **/
-extern StatusType OSEKOS_ChainTask(TaskType t);
+extern __attribute__((noreturn)) StatusType OSEKOS_ChainTask(TaskType t);
 
 /**
  * \brief Terminate the current TASK
  **/
-extern StatusType OSEKOS_TerminateTask();
+extern __attribute__((noreturn)) StatusType OSEKOS_TerminateTask();
 
 extern StatusType OSEKOS_Schedule();
 

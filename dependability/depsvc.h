@@ -1,23 +1,20 @@
 #ifndef _COREDOS_OS_DEPSVC_H_
 #define _COREDOS_OS_DEPSVC_H_
 
-struct CHECKEDOBJECTStruct {
-};
+typedef uint32_t CheckedObjectType;
 
-typedef CHECKEDOBJECTStruct* CheckedObjectType;
-
-extern "C" void OSEKOS_AcquireCheckedObject(struct CHECKEDOBJECTStruct *);
-extern "C" void OSEKOS_ReleaseCheckedObject(struct CHECKEDOBJECTStruct *);
+extern "C" void OSEKOS_AcquireCheckedObject(CheckedObjectType object);
+extern "C" void OSEKOS_ReleaseCheckedObject(CheckedObjectType object);
 
 #define DeclareCheckedObject(c_type, name)                       \
   c_type name;                                                   \
-  struct CHECKEDOBJECTStruct OSEKOS_CHECKEDOBJECT_Struct_##name;
+  extern const uint32_t OSEKOS_CHECKEDOBJECT_##name;
 
 #define AcquireCheckedObject(name)                                  \
-  OSEKOS_AcquireCheckedObject(&OSEKOS_CHECKEDOBJECT_Struct_##name); \
+  OSEKOS_AcquireCheckedObject(OSEKOS_CHECKEDOBJECT_##name); \
 
 #define ReleaseCheckedObject(name)                                  \
-  OSEKOS_ReleaseCheckedObject(&OSEKOS_CHECKEDOBJECT_Struct_##name); \
+  OSEKOS_ReleaseCheckedObject(OSEKOS_CHECKEDOBJECT_##name); \
 
 namespace dep {
 	/**

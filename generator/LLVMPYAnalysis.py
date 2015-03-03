@@ -44,6 +44,14 @@ class BB(Node):
             return arg0 + arg1
         assert False, "We cannot extract the Event Mask statically"
 
+    def __extract_system_object_operand(self, argument):
+        if type(argument) in (list, tuple, str):
+            return argument
+        if hasattr(argument, "opcode") and argument.opcode == llvm.core.OPCODE_LOAD:
+            x = argument.operands[0].name
+            return x
+        return None
+
     def __find_syscall(self):
         """ Extract System Call if present in this basic block """
         for inst in self.instructions:
@@ -63,13 +71,9 @@ class BB(Node):
                             args[1] = self.__extract_event_operand(args[1])
 
                         for op in args:
-                            if hasattr(op, "name"):
-                                opstring = op.name
-                                if len(opstring) == 0:
-                                    opstring = '0'
-                                self.syscallarguments.append(opstring)
-                            else:
-                                self.syscallarguments.append(op)
+                            opstring = self.__extract_system_object_operand(op)
+                            self.syscallarguments.append(opstring)
+
                     """ Attention: Here we stop at the first found call!
                     This is ok, as we split up every call into a single BB """
                     return

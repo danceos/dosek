@@ -176,7 +176,7 @@ class SystemGraph(GraphObject, PassManager):
             else:
                 task = self._tasks[task_group]
 
-            subtask = Subtask(self, taskname, "OSEKOS_TASK_" + taskname, task_desc)
+            subtask = Subtask(self, taskname, "OSEKOS_TASK_FUNC_" + taskname, task_desc)
             self._subtasks[taskname] = subtask
             # Every subtask belongs to a task
             task.add_subtask(subtask)
