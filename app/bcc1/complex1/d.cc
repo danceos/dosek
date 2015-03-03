@@ -52,7 +52,7 @@ ALARMCALLBACK(A1) {
 	test_trace('>');
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	cycle_count++;
 

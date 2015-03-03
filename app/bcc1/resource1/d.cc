@@ -59,7 +59,7 @@ TASK(H5) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("5<><>1T{}{}{}2X");
 	test_finish();

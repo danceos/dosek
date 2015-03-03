@@ -46,7 +46,7 @@ ISR2(ISR1) {
 
 
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	cycle_count++;
 

@@ -52,7 +52,7 @@ TASK(H3) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("1{[.}{](.}{)");
 	test_finish();

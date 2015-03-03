@@ -61,6 +61,6 @@ TASK(CheckedTask) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	dep::release_all_CheckedObjects();
 }

@@ -47,7 +47,7 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("ab3c2");
 	test_finish();

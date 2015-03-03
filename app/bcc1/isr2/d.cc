@@ -40,7 +40,7 @@ ISR2(ISR1) {
 	test_trace('!');
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	static int cycle_count;
 	cycle_count++;

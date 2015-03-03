@@ -148,6 +148,6 @@ TASK(CopterControlWatchdogTask) {
 }
 
 
-PreIdleHook() {
+void PreIdleHook() {
 	kout << "I" << round << endl;
 }

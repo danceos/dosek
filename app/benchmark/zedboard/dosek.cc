@@ -179,7 +179,7 @@ DeclareResource(RES_SCHEDULER);
 
 #include "dosek-tasks.cc"
 
-FaultDetectedHook() {
+void FaultDetectedHook() {
 	kout << "FFFFFF [[[[[[ DET DET DET ]]]]]]" << endl;
 	kout << "FL DET ";
 	switch (type) {

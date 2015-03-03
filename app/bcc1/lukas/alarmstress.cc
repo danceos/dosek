@@ -13,7 +13,6 @@ DeclareTask(Task2);
 DeclareTask(Task3);
 DeclareTask(Task4);
 DeclareCounter(C1);
-DeclareAlarm(A0);
 
 void os_main() {
     test_main();

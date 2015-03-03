@@ -58,5 +58,5 @@ ISR2(ISR1) {
 	SetEvent(H3, E2);
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 }

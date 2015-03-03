@@ -44,7 +44,7 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	test_trace_assert("abc32");
 	test_finish();
 	ShutdownMachine();

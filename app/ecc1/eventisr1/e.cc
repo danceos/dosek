@@ -56,7 +56,7 @@ ISR2(ISR1) {
 	SetEvent(H3, E2);
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("13.:{!}>");
 	test_finish();

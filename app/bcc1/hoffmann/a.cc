@@ -82,6 +82,6 @@ TASK(Handler13) {
 
 /****** EOT Task 13 ******/
 
-PreIdleHook() {
+void PreIdleHook() {
 	ShutdownMachine();
 }

@@ -19,7 +19,7 @@ EXTERN_C_DECL void __OS_HOOK_PreIdleHook(void);
 EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PreIdleHook(void);
 
 #define PreIdleHook() \
-	void __OS_HOOK_DEFINED_PreIdleHook(void)
+	__OS_HOOK_DEFINED_PreIdleHook(void)
 
 
 
@@ -42,7 +42,7 @@ EXTERN_C_DECL void __OS_HOOK_FaultDetectedHook(DetectedFault_t, uint32_t, uint32
 EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_FaultDetectedHook(DetectedFault_t, uint32_t, uint32_t);
 
 #define FaultDetectedHook() \
-	void __OS_HOOK_DEFINED_FaultDetectedHook(DetectedFault_t type, uint32_t arg1, uint32_t arg2)
+	__OS_HOOK_DEFINED_FaultDetectedHook(DetectedFault_t type, uint32_t arg1, uint32_t arg2)
 
 
 #define CALL_HOOK(NAME, ...) __OS_HOOK_ ## NAME (__VA_ARGS__)

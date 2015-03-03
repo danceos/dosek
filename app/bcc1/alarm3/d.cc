@@ -60,7 +60,7 @@ TASK(H5) {
 }
 
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
     test_trace_assert("5{<>}3x");
     test_finish();

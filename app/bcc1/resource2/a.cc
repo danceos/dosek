@@ -53,7 +53,7 @@ TASK(H5) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_start_check();
 	test_trace_assert((char *)"5..3*");

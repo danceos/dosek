@@ -37,7 +37,7 @@ TASK(H5) {
 	ChainTask(H4);
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("54+4");
 	test_finish();

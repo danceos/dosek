@@ -60,6 +60,6 @@ TASK(H3) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 
 }

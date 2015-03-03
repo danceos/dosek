@@ -43,7 +43,7 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	test_finish();
 	ShutdownMachine();
 }

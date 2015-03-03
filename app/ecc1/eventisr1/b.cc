@@ -50,5 +50,5 @@ ISR2(ISR1) {
 	test_trace('!');
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 }

@@ -51,7 +51,7 @@ TASK(H5) {
 	TerminateTask();
 }
 
-PreIdleHook() {
+void PreIdleHook() {
 	/* The testcase has finished, check the output */
 	test_trace_assert("5<21>34.");
 	test_finish();
