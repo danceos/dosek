@@ -26,7 +26,7 @@ class SystemGraph(GraphObject, PassManager):
             self.basic_task = False
             self.max_activations = 0
 
-    def __init__(self):
+    def __init__(self, configuration):
         GraphObject.__init__(self, "SystemGraph", root=True)
         PassManager.__init__(self, self)
         self.label = "SystemGraph"
@@ -49,6 +49,7 @@ class SystemGraph(GraphObject, PassManager):
         self.system = None
         self.llvmpy = None
         self.stats = Statistics(self)
+        self.conf = configuration
         self.impl = None
 
     # Accessors for System Objects
@@ -327,6 +328,16 @@ class SystemGraph(GraphObject, PassManager):
               # and set entry abb
               if bb.llvmbb is llvmfunc.entry_basic_block:
                   function.set_entry_abb(abb)
+
+              # type If the flag dOSEK_IGNORE_INTERRUPT_SYSCALLS
+              # is set, we make all interrupt control system
+              # calls to computation blocks.
+              if "dOSEK_IGNORE_INTERRUPT_SYSCALLS" in self.system_graph.conf:
+                  if bb.syscall in [S.DisableAllInterrupts, S.EnableAllInterrupts,
+                                      S.SuspendOSInterrupts, S.ResumeOSInterrupts,
+                                      S.SuspendAllInterrupts, S.ResumeAllInterrupts]:
+                      bb.syscall = S.computation
+
 
               # make it a syscall and add arguments
               if bb.is_syscall():

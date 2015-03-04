@@ -97,7 +97,7 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     setup_logging(options.verbose)
-    graph = SystemGraph()
+    graph = SystemGraph(options.code_options)
     pass_manager = graph
     pass_manager.read_verify_script(options.verify)
 
