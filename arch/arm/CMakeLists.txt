@@ -50,6 +50,7 @@ set(SRCS
 	syscall.cc
 	reschedule-ast.cc
     machine.cc
+    memutil.cc
 )
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/platforms/${PLATFORM_DIR}/startup.S)

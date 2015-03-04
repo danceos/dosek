@@ -56,6 +56,7 @@ set(SRCS
 	syscall.cc
 	reschedule-ast.cc
     machine.cc
+    memutil.cc
 )
 
 # Create arch library
