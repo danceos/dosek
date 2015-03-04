@@ -19,16 +19,18 @@ TASK(H2) {
 	TerminateTask();
 }
 
-volatile unsigned long long counter = 0;
 #ifndef FAIL
-const unsigned long long max_count = 100000000;
+const unsigned long long max_count = 200000000;
 #else
 const unsigned long long max_count = 1;
 #endif
+volatile unsigned long long counter = max_count + 1;
+
+char irq_marker = 'x';
 
 TASK(H3) {
-	test_trace('3');
-    counter = max_count + 1;
+	irq_marker = '3';
+	counter = max_count + 1;
 	TerminateTask();
 }
 
@@ -41,13 +43,17 @@ TASK(H5) {
 	test_trace('5');
     test_trace('[');
     for (counter = 0; counter < max_count; counter++) {}
+	test_trace(irq_marker);
 	test_trace(']');
+
     DisableAllInterrupts();
 	test_trace('{');
     for (counter = 0; counter < max_count; counter++) {}
 	test_trace('}');
+	irq_marker = 'y';
     EnableAllInterrupts();
     for (counter = 0; counter < max_count; counter++) {}
+	test_trace(irq_marker);
 	test_trace('x');
 	TerminateTask();
 }
