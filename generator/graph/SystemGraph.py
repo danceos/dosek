@@ -184,7 +184,9 @@ class SystemGraph(GraphObject, PassManager):
             # Every subtask is also a function
             self._functions[subtask.function_name] = subtask
             self.stats.add_child(task, "subtask", subtask)
-            assert task_desc.static_priority != 0, \
+            # Shift all priorities by +1
+            task_desc.static_priority += 1
+            assert task_desc.static_priority >= 1, \
                     "No user thread can have the priority 0, reserved for the idle thread"
 
             if task_desc.static_priority > maxprio:

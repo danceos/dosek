@@ -223,7 +223,7 @@ class MoveFunctionsToTask(Analysis):
     def do(self):
         subtask_analysis = self.get_analysis("CurrentRunningSubtask")
         for abb in self.system_graph.abbs:
-            subtask = subtask_analysis.for_abb(abb)
+            subtask = subtask_analysis.for_abb(abb) or abb.subtask
             # The function belongs to a single subtask. If it is a
             # normal function and not yet moved to a task, move it there.
             if abb.function.task == None \
@@ -249,10 +249,18 @@ class MoveFunctionsToTask(Analysis):
                     events = abb.arguments[0]
                     subtask = abb.subtask
                 for idx, event in enumerate(events):
-                    if not isinstance(event, Event):
+                    if isinstance(event, str):
                         assert event.startswith("OSEKOS_EVENT_")
                         event = event[len("OSEKOS_EVENT_"):]
                         events[idx] = subtask._events[event]
+                    elif isinstance(event, int):
+                        found = None
+                        for E in subtask.events:
+                            if E.event_mask == event:
+                                found = E
+                                break
+                        assert found != None, "Could not find Event with 0x%x mask" % event
+                        events[idx] = found
                     assert events[idx] in subtask.events, "Subtask %s does not own Event %s" %(subtask, event)
                 abb.arguments = [events]
 

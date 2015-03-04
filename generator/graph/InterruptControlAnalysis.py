@@ -81,8 +81,7 @@ class InterruptControlAnalysis(Analysis):
                 for n in states_incoming:
                     if not n == first:
                         panic("""At %s the interrupt blocking level is
-                        ambigious for the All Interrupts level. This is
-                        forbidden by the OSEK spec (%s != %s)""" % \
+                        ambigious for the interrupts level. (%s != %s)""" % \
                               (abb.path(), first, n))
             All, OS = self.values[abb]
             if not abb.isA(S.computation):

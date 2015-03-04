@@ -35,7 +35,10 @@ class BB(Node):
         return successors
 
     def __extract_event_operand(self, argument):
-        if argument.opcode == llvm.core.OPCODE_LOAD:
+        if hasattr(argument, "z_ext_value"):
+            # If an integer is given
+            return [argument.z_ext_value]
+        elif argument.opcode == llvm.core.OPCODE_LOAD:
             x = argument.operands[0].name
             return [x]
         elif argument.opcode == llvm.core.OPCODE_OR:
