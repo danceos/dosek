@@ -95,12 +95,7 @@ public:
 	 * Will trigger interrupt if this is actually executed.
 	 */
 	static noinline void unreachable(void) {
-        debug.setcolor(Color::WHITE, Color::RED);
-		arch::irq.disable_interrupts();
-        kout << ("ERROR: We reached unreachable code!\n");
-		abort();
-		while(1) {};
-        exit(EXIT_FAILURE);
+	        exit(EXIT_FAILURE);
 		__builtin_unreachable(); // allow compiler optimization
 	}
 

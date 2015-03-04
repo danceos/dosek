@@ -3,6 +3,7 @@
 
 #include "os/util/inline.h"
 #include <stdint.h>
+#include "os/osek_types.h"
 
 /**
  * @file
@@ -50,6 +51,15 @@ EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PostTaskHook(void);
 
 #define PostTaskHook() \
 	__OS_HOOK_DEFINED_PostTaskHook(void)
+
+/**
+ * \brief Called on ShutdownOS
+ */
+EXTERN_C_DECL void __OS_HOOK_ShutdownHook(StatusType);
+EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_ShutdownHook(StatusType);
+
+#define ShutdownHook(status)							\
+	__OS_HOOK_DEFINED_ShutdownHook(status)
 
 
 typedef enum DetectedFault_t {

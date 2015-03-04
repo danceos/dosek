@@ -53,8 +53,11 @@ class FullSystemCalls(BaseRules):
     def ShutdownOS(self, block):
         block.unused_parameter(0)
 
-        block.add(Statement('kout << "ShutdownOS " << endl'))
+        self.call_function(block, "CALL_HOOK", "void", ["ShutdownHook", block.arguments_names()[0]])
+
         block.add(Statement('ShutdownMachine()'))
+        self.call_function(block, "Machine::unreachable", "void", [])
+
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)

@@ -117,7 +117,8 @@ class SimpleSystem(BaseRules):
 
     def generate_hooks(self):
         hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"]),
-                 ("StartupHook", []), ("PreTaskHook", []), ("PostTaskHook", [])]
+                 ("StartupHook", []), ("PreTaskHook", []), ("PostTaskHook", []),
+                 ("ShutdownHook", ["StatusType"])]
         for hook,args in hooks:
             hook_function = Function("__OS_HOOK_" + hook, "void", args)
             self.generator.source_file.function_manager.add(hook_function)
