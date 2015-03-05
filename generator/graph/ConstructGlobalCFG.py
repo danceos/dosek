@@ -4,6 +4,7 @@ from generator.tools import panic, stack
 from generator.graph.common import Edge
 from generator.graph.SymbolicSystemExecution import StateTransition, SavedStateTransition
 import logging
+import hashlib
 
 
 class ConstructGlobalCFG(Analysis):
@@ -21,6 +22,7 @@ class ConstructGlobalCFG(Analysis):
         self.removed_edges = None
         self.state_flow    = None
         self.sse           = None
+        self.__hash_edges  = []
 
     def requires(self):
         # We require all passes that are enqueued
@@ -77,6 +79,10 @@ class ConstructGlobalCFG(Analysis):
         return []
 
 
+    def __add_gcfg_edge(self, src, dst):
+        self.__hash_edges.append(str(src.syscall_type) + str(dst.syscall_type))
+        src.add_cfg_edge(dst, E.system_level)
+
     def do(self):
         self.removed_edges = []
         edge_count_in_ssf = 0
@@ -90,7 +96,7 @@ class ConstructGlobalCFG(Analysis):
 
             # Edges found by both analyses are always good
             for target_abb in in_state_flow & in_sse:
-                source_abb.add_cfg_edge(target_abb, E.system_level)
+                self.__add_gcfg_edge(source_abb, target_abb)
 
             more_in_state_flow = in_state_flow - in_sse
             more_in_sse = in_sse - in_state_flow
@@ -105,7 +111,7 @@ class ConstructGlobalCFG(Analysis):
                 else:
                     # If no symbolic analysis is done we use the
                     # edges build by symbolic execution
-                    source_abb.add_cfg_edge(target_abb, E.system_level)
+                    self.__add_gcfg_edge(source_abb, target_abb)
 
             for target_abb in more_in_sse:
                 # Returns from or to interrupts are not part of the system_level flow
@@ -122,10 +128,16 @@ class ConstructGlobalCFG(Analysis):
                 else:
                     # If no state_flow analysis is done we use the
                     # edges build by symbolic execution
-                    source_abb.add_cfg_edge(target_abb, E.system_level)
+                    self.__add_gcfg_edge(source_abb, target_abb)
 
         self.edge_count_in_ssf = edge_count_in_ssf
         self.edge_count_in_sse = edge_count_in_sse
+
+        # GCFG checksum
+        chksum = hashlib.md5()
+        for x in sorted(self.__hash_edges):
+            chksum.update(x.encode("ascii"))
+        logging.debug("gcfg hash: %s", chksum.hexdigest())
 
         logging.info(" + removed %d edges", len(self.removed_edges))
 
@@ -246,7 +258,8 @@ class ConstructGlobalCFG(Analysis):
                 edges["sse-uncut"] += len(self.edges_in_sse(abb1, SavedStateTransition))
 
         # Record Edge Count
-        for k, v in edges.items():
+        for k, v in sorted(edges.items(), key = lambda x: x[0]):
+            logging.debug("%s edge-count: %d", k, v)
             self.stats.add_data(self, "edge-count:%s" % k, v, scalar=True)
 
         # Record the number of subtasks that can be reached
