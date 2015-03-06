@@ -372,6 +372,13 @@ class SystemGraph(GraphObject, PassManager):
                 for bb in nextbbs:
                     nextabb = bb.get_parent_ABB()
                     abb.add_cfg_edge(nextabb, E.function_level)
+            # Remove Dangling Blocks that have no incoming blocks
+            # edges, but aren't the entry block. It seems llvm does
+            # generate such blocks.
+            for abb in func.abbs:
+                if len(abb.get_incoming_nodes(E.function_level)) == 0 \
+                   and abb != func.entry_abb:
+                    func.remove_abb(abb)
 
         # Find all return blocks for functions
         for function in self.functions:

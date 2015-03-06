@@ -125,3 +125,8 @@ sys.excepthook = myexcepthook
 def bitwidth(self, A):
     """Number of bits needed to encode this number"""
     return int(math.ceil(math.log(A, 2)))
+
+def one(seq):
+    print(seq)
+    assert len(seq) == 1
+    return list(seq)[0]

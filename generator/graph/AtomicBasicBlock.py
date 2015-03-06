@@ -132,7 +132,8 @@ class AtomicBasicBlock(Node):
 
         ret = {"id": repr(self),
                "prio": str(self.dynamic_priority),
-               "task": task}
+               "task": task,
+               "relevant": len(self.relevant_callees) > 0}
 
         if self.arguments:
             ret["arguments"] = str(self.arguments)

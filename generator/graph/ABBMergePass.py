@@ -1,8 +1,8 @@
 import logging
 from generator.graph.Analysis import Analysis, FixpointIteration
 from generator.graph.AtomicBasicBlock import E, S
-
-from generator.tools import panic
+from .DominanceAnalysis import DominanceAnalysis
+from generator.tools import panic, stack
 from collections import namedtuple
 
 class ABBMergePass(Analysis):
@@ -14,6 +14,7 @@ class ABBMergePass(Analysis):
             self.after_linear_merge = 0
             self.after_branch_merge = 0
             self.after_loop_merge  = 0
+            self.after_dominance_merge = 0
 
         def __str__(self):
             s = "Linear merge: %d / %d" % (self.initial_abb_count - self.after_linear_merge, self.initial_abb_count)
@@ -21,7 +22,7 @@ class ABBMergePass(Analysis):
             s += " | Loop merge: %d / %d " % (self.after_branch_merge - self.after_loop_merge, self.after_branch_merge)
 
             return s
-        
+
     def __init__(self):
         Analysis.__init__(self)
         self.merge_stats = self.MergeStatistics()
@@ -38,13 +39,13 @@ class ABBMergePass(Analysis):
             self.item = item
             self.visit_state = 0
             self.dfsG = dfsG
-            
+
         def was_visited(self):
             return self.visit_state != 0
 
         def get_successors(self):
             return [ self.dfsG[x] for x in self.item.called_functions ]
-        
+
         def __str__(self):
             return str("Item: %s | visit: %d" % (self.item, self.visit_state))
 
@@ -56,7 +57,7 @@ class ABBMergePass(Analysis):
         dc.visit_state += 1 # Visited
 
         if dc.item.has_syscall:
-            return True 
+            return True
         # Go further, for each call in the function
         for succ in dc.get_successors():
             # Recursively check is any successor makes a syscall
@@ -84,7 +85,7 @@ class ABBMergePass(Analysis):
         '''A DFS to mark all function that do syscalls,
            or call other functions that doing syscall'''
         self.__dfs(list(functions))
-            
+
 
     def __do_merge(self, entry_abb, exit_abb, inner_abbs = set()):
         #print('Trying to merge:', inner_abbs, exit_abb, 'into', entry_abb)
@@ -280,6 +281,58 @@ class ABBMergePass(Analysis):
 
         self.merge_stats.after_loop_merge = len(self.system_graph.abbs)
 
+    def find_region(self, start, end):
+        region = set([start, end])
+        ws = stack([start])
+        while ws:
+            cur = ws.pop()
+            region.add(cur)
+            for node in cur.get_outgoing_nodes(E.function_level):
+                if not node in region:
+                    ws.push(node)
+        return region
+
+    def __merge_dominance(self):
+        for func in self.system_graph.functions:
+            # Filter some functions
+            if not func.is_system_relevant:
+                continue
+            if len(func.abbs) < 3 or func.exit_abb == None:
+                continue
+
+            # Forward analysis
+            dom = DominanceAnalysis(forward = True, edge_levels = E.function_level)
+            dom.do(nodes=func.abbs,
+                   is_entry=lambda x: x == func.entry_abb)
+
+            # Backward analysis
+            post_dom = DominanceAnalysis(forward = False,
+                                         edge_levels = E.function_level)
+            post_dom.do(nodes=func.abbs,
+                   is_entry=lambda x: x == func.exit_abb)
+
+            removed = set()
+
+            for abb in func.abbs:
+                if abb in removed:
+                    continue
+                start = dom.immdom_tree[abb]
+                end   = post_dom.immdom_tree[abb]
+                if start and end and start != end:
+                    region = self.find_region(start, end)
+                    inner = region - set([start, end])
+                    # Was there already some subset removed?
+                    if start in removed or end in removed:
+                        continue
+                    inner = inner - removed
+                    if self.__can_be_merged(start, end, inner):
+                        self.__do_merge(start, end, inner)
+                        # Mark as removed
+                        removed.add(end)
+                        removed.update(inner)
+
+        self.merge_stats.after_dominance_merge = len(self.system_graph.abbs)
+
     def do(self):
 
         assert self.system_graph.llvmpy, 'The ABBMergePass only works on llvmpy analysed systems.'
@@ -288,9 +341,16 @@ class ABBMergePass(Analysis):
         # First mark all Functions that do a syscall or invoke any sub function that does so
         self.__mark_relevant_functions(self.system_graph.functions)
 
+        # Merge with dominance information.
+        self.__merge_dominance()
+        logging.info("Dominance Merge: %d/%d" %(self.merge_stats.initial_abb_count - self.merge_stats.after_dominance_merge,
+                                                self.merge_stats.after_dominance_merge))
+
+        self.merge_stats.initial_abb_count = len(self.system_graph.abbs)
         current_size = None
         while current_size != self.merge_stats.initial_abb_count:
             current_size = len(self.system_graph.abbs)
+
             # linear merging:
             self.__merge_linear_abbs()
 
@@ -303,4 +363,4 @@ class ABBMergePass(Analysis):
             logging.info(self.merge_stats)
 
             self.merge_stats.initial_abb_count = len(self.system_graph.abbs)
-
+            first = False

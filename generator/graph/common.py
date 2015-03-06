@@ -83,6 +83,7 @@ class Node(GraphObject):
         self.outgoing_edges = []
         self.incoming_edges = []
         self.edge_factory   = edge_factory
+        self.aux = None
 
     current_edge_filter = None
     @classmethod
@@ -127,6 +128,12 @@ class Node(GraphObject):
     def get_incoming_nodes(self, level):
         self.check_edge_filter(level)
         return [x.source for x in self.incoming_edges if x.isA(level)]
+
+    def get_neighbours(self, level):
+        self.check_edge_filter(level)
+        pred = set([x.source for x in self.incoming_edges if x.isA(level)])
+        succ = set([x.target for x in self.outgoing_edges if x.isA(level)])
+        return (pred | succ) - set([self])
 
     def has_edge_to(self, abb, level):
         """Returns the edge of level to an specific abb"""
@@ -181,6 +188,7 @@ class Edge:
         self.label = label
         self.color = color
         self.level = level
+        self.aux = None
 
     def dump_as_dot(self):
         ret = ""

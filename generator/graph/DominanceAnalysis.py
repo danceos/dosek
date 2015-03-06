@@ -13,21 +13,13 @@ class DominanceAnalysis(Analysis, GraphObject):
     """
     pass_alias = "dom-tree-system"
 
-    def __init__(self, edge_levels = [E.system_level]):
+    def __init__(self, forward=True, edge_levels = [E.system_level]):
         Analysis.__init__(self)
         GraphObject.__init__(self, "DominatorTree for [%s]" % repr(edge_levels), root=True)
         self.edge_levels = edge_levels
 
-        self.blocks = None
-        self.semi = None
-        self.idom = None
-        self.ancestor = None
-        self.parents = None
-        self.buckets = None
-        self.dfs_count = None
-        self.dfs_block_to_number = None
-
         self.immdom_tree = None
+        self.forward = forward
 
     def requires(self):
         return ["ConstructGlobalCFG"]
@@ -35,31 +27,42 @@ class DominanceAnalysis(Analysis, GraphObject):
     def get_edge_filter(self):
         return self.edge_levels
 
+    def incoming(self, node):
+        if self.forward:
+            return node.get_incoming_nodes(self.edge_levels)
+        else:
+            return node.get_outgoing_nodes(self.edge_levels)
+
+    def outgoing(self, node):
+        if self.forward:
+            return node.get_outgoing_nodes(self.edge_levels)
+        else:
+            return node.get_incoming_nodes(self.edge_levels)
+
     def find_dominators(self):
         # Each node is mapped to the set of its dominators
         dom = {}
         start_nodes = set()
-        for abb in self.system_graph.abbs:
+        for abb in self.nodes:
             # The start node dominates itself
-            if len(abb.get_incoming_nodes(self.edge_levels)) == 0 and\
-                len(abb.get_outgoing_nodes(self.edge_levels)) > 0:
+            if len(self.incoming(abb)) == 0 and\
+                len(self.outgoing(abb)) > 0:
                 dom[abb] = set([abb])
                 start_nodes.add(abb)
-            elif len(abb.get_incoming_nodes(self.edge_levels)) == 0 \
-                 and len(abb.get_outgoing_nodes(self.edge_levels)) == 0:
+            elif len(self.incoming(abb)) == 0 and len(self.outgoing(abb)) == 0:
                 pass
             else:
-                dom[abb] = set(self.system_graph.abbs)
+                dom[abb] = set(self.nodes)
 
         changes = True
         while changes:
             changes = False
-            for abb in self.system_graph.abbs:
+            for abb in self.nodes:
                 if abb in start_nodes:
                     continue
                 if not abb in dom:
                     continue
-                dominators = [dom[x] for x in abb.get_incoming_nodes(self.edge_levels)]
+                dominators = [dom[x] for x in self.incoming(abb)]
                 if dominators:
                     intersection = reduce(lambda x, y: x & y, dominators)
                 else:
@@ -75,12 +78,12 @@ class DominanceAnalysis(Analysis, GraphObject):
         visited.add(cur)
         # Is one of the direct predecessors a dominator?
         # -> Return it
-        for pred in cur.get_incoming_nodes(self.edge_levels):
+        for pred in self.incoming(cur):
             if pred in dominators:
                 return pred
 
         # Otherwise: Depth-first search!
-        for pred in cur.get_incoming_nodes(self.edge_levels):
+        for pred in self.incoming(cur):
             if pred in visited:
                 continue
             ret = self.find_imdom(abb, dominators, visited, pred)
@@ -91,9 +94,15 @@ class DominanceAnalysis(Analysis, GraphObject):
         # On this path we found a loop
         return None
 
-    def do(self):
+    def do(self, nodes=None, is_entry = lambda x: x.isA(S.StartOS)):
+        if nodes:
+            self.nodes = nodes
+        else:
+            self.nodes = self.system_graph.abbs
+
         start_nodes, dom = self.find_dominators()
-        StartOS = [x for x in start_nodes if x.isA(S.StartOS)][0]
+
+        StartOS = [x for x in start_nodes if is_entry(x)][0]
         assert StartOS
         self.immdom_tree = dict()
         for x in start_nodes:
@@ -102,9 +111,8 @@ class DominanceAnalysis(Analysis, GraphObject):
             else:
                 self.immdom_tree[x] = StartOS
 
-        add_function = self.system_graph.get_pass("AddFunctionCalls")
-        for abb in self.system_graph.abbs:
-            if abb in start_nodes or (not abb in dom):
+        for abb in dom:
+            if abb in start_nodes:
                 continue
             visited = set()
             dominators = dom[abb] - set([abb])

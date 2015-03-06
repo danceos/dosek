@@ -45,6 +45,10 @@ class Function(GraphObject):
         assert(abb in self.abbs)
         self.exit_abb = abb
 
+    @property
+    def is_system_relevant(self):
+        return self.has_syscall
+
     def remove_abb(self, abb):
         # Remove ABB from list of atomic basic blocks
         self.abbs = [x for x in self.abbs if x != abb]
