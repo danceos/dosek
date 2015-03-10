@@ -1,0 +1,38 @@
+
+namespace os {
+namespace fsm {
+
+class SchedulerFSM : public SimpleFSM {
+ public:
+    enum {
+        IDLE = 0,
+		NO_DISPATCH = 255
+	};
+    SchedulerFSM(SimpleFSM::internal_state_t state) : SimpleFSM(state) {}
+
+	void dispatch(SimpleFSM::task_t task_id) {
+{{{!foreach_subtask|\
+		if (task_id == {{{!subtask_id}}}) {
+            // kout << "to Task: {{{!subtask_desc}}}" << endl;
+			arch::Dispatcher::Dispatch({{{!subtask_desc}}});
+		} else \
+}}} if (task_id == NO_DISPATCH) {
+		/* Do nothing */
+	} else if (task_id == 0) {
+	 		arch::Dispatcher::idle();
+		} else {
+			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+		}
+	}
+
+	void iret(SimpleFSM::task_t task_id) {
+		if (task_id != NO_DISPATCH && task_id != IDLE) {
+           dispatch(task_id);
+	    }
+	}
+};
+
+SchedulerFSM fsm_engine({{{!get:fsm.initial_state}}});
+
+}
+}

@@ -94,9 +94,14 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
         # Handle sporadic events
         events = 0
-        for sporadic_event in list(self.system_graph.alarms) + list(self.system_graph.isrs):
+        sporadic_events = list(self.system_graph.isrs)
+        if self.system_graph.AlarmHandlerSubtask:
+            sporadic_events.append(self.system_graph.AlarmHandlerSubtask)
+
+        for sporadic_event in sporadic_events:
             if not sporadic_event.can_trigger(before):
                 continue
+
             after = sporadic_event.trigger(before)
             after_states.append(after)
             events += 1
@@ -139,6 +144,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.WaitEvent            : scc.do_WaitEvent,
                             S.SetEvent             : scc.do_SetEvent,
                             S.ClearEvent           : scc.do_ClearEvent,
+                            # Alarm handler support
+                            S.CheckAlarm      : scc.do_CheckAlarm,
                             S.Idle            : scc.do_Idle,
                             S.iret            : scc.do_TerminateTask}
 
@@ -292,9 +299,12 @@ class SymbolicSystemExecution(Analysis, GraphObject):
     def fsck(self):
         state_ids = set([id(X) for X in self.states])
         for sse_state in self.states:
+            followup_states = set()
             for X in sse_state.get_incoming_nodes(SavedStateTransition):
                 assert id(X) in state_ids, X
             for X in sse_state.get_outgoing_nodes(SavedStateTransition):
+                assert not id(X) in followup_states
+                followup_states.add(id(X))
                 assert id(X) in state_ids, X
 
     def for_abb(self, abb):

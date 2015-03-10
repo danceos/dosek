@@ -100,7 +100,10 @@ class ARMArch(SimpleArch):
         self.generator.source_file.function_manager.add(forward)
 
         # Call the user defined function
+        kickoff, iret = isr.entry_abb, isr.exit_abb
+        self.call_function(handler, kickoff.generated_function_name(), "void", [])
         self.call_function(handler, isr.function_name, "void", [])
+        self.call_function(handler, iret.generated_function_name(), "void", [])
 
         prio = "IRQ_PRIO_LOCAL_TIMER"
 

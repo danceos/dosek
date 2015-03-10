@@ -44,6 +44,7 @@ class SimpleSystem(BaseRules):
 
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
+        self.system_graph.idle_subtask.impl.task_id = 0
         task_id = 1
         for subtask in self.system_graph.subtasks:
             # Ignore the Idle thread
@@ -103,7 +104,7 @@ class SimpleSystem(BaseRules):
             alarm.impl.alarm_id = alarm_id
             alarm_id += 1
 
-            impl = self.generate_alarm(alarm, alarm.counter, task)
+            impl = self.generate_alarm(alarm, alarm.conf.counter, task)
 
             # Add and save alarm implementation
             self.generator.source_file.data_manager.add(impl, namespace = ("os",))
@@ -111,9 +112,7 @@ class SimpleSystem(BaseRules):
             alarm.impl.alarm_desc = impl
 
     def generate_system_code(self):
-        self.generator.source_file.includes.add(Include("os/alarm.h"))
-        alarms = AlarmTemplate(self)
-        self.generator.source_file.declarations.append(alarms.expand())
+        pass
 
     def generate_hooks(self):
         hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"]),
@@ -251,58 +250,3 @@ class SimpleArch(BaseRules):
         self.call_function(block,
                            "Machine::disable_interrupts",
                            "void", [])
-
-class AlarmTemplate(CodeTemplate):
-    def __init__(self, rules):
-        CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
-        self.rules = rules
-        self.system_graph = self.generator.system_graph
-        # Reference to the objects object of our rule system
-        self.objects = self.rules.objects
-
-        # Link the foreach_subtask method from the rules
-        self.foreach_subtask = self.rules.foreach_subtask
-
-    def increase_counters(self, snippet, args):
-        ret = []
-        for counter in self.system_graph.counters:
-            # Softcounters are ignored by the hardware interrupt
-            if counter.conf.softcounter:
-                continue
-            ret += self.expand_snippet("increase_counter",
-                                       name = counter.impl.name)
-        return ret
-
-
-    def check_alarms(self, snippet, args):
-        ret = []
-        for alarm in self.system_graph.alarms:
-            if alarm.counter.conf.softcounter:
-                continue
-            ret += "    AlarmCheck%s();\n" % alarm.impl.name
-        return ret
-
-    def generate_check_alarms(self, snippet, args):
-        ret = []
-        for alarm in self.system_graph.alarms:
-            callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
-            has_callback  = (self.system_graph.find(GraphFunction, callback_name) != None)
-            args = {"alarm": alarm.impl.name}
-            ret += self.expand_snippet("if_alarm", **args) + "\n"
-            # This alarm has an callback
-            if has_callback:
-                # Add a Declaration
-                decl = FunctionDeclaration(callback_name, "void", [], extern_c = True)
-                self.generator.source_file.function_manager.add(decl)
-                ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
-            # SetEvent needs two arguments
-            if alarm.conf.event:
-                arglist = "(0, 0)"
-            else:
-                arglist = "(0)"
-
-            ret += "        " + alarm.carried_syscall.generated_function_name() + arglist + ";\n"
-            ret += self.expand_snippet("endif_alarm", **args) + "\n"
-
-
-        return ret

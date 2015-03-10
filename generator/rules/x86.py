@@ -68,7 +68,10 @@ class X86Arch(SimpleArch):
         self.generator.source_file.function_manager.add(forward)
 
         # Call the user defined function
+        kickoff, iret = isr.entry_abb, isr.exit_abb
+        self.call_function(handler, kickoff.generated_function_name(), "void", [])
         self.call_function(handler, isr.function_name, "void", [])
+        self.call_function(handler, iret.generated_function_name(), "void", [])
 
         # Call the end of interrupt function
         self.call_function(handler, "LAPIC::send_eoi", "void", [])

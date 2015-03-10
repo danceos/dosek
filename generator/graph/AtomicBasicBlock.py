@@ -8,11 +8,14 @@ from generator.graph.Subtask import Subtask
 
 
 class AtomicBasicBlock(Node):
+    abb_id_counter = 1
     current_edge_filter = None
 
-    def __init__(self, system_graph, abb_id, llvmbbs = []):
-        Node.__init__(self, ControlFlowEdge, "ABB%d" %(abb_id), color="red")
-        self.abb_id = abb_id
+    def __init__(self, system_graph, llvmbbs = []):
+        Node.__init__(self, ControlFlowEdge, "ABB%d" %(AtomicBasicBlock.abb_id_counter), color="red")
+        self.abb_id = AtomicBasicBlock.abb_id_counter
+        AtomicBasicBlock.abb_id_counter += 1
+        
         self.system_graph = system_graph
         self.function = None
 
@@ -32,7 +35,7 @@ class AtomicBasicBlock(Node):
 
         # How many sporadic events can fire from here. This field will
         # be filled by SSE and SSF.
-        self.sporadic_trigger_count = None
+        self.sporadic_trigger_count = 0
 
         # entry_bb and exit_bb are not used anymore after read_llvmpy_analysis
         self.entry_bb =  None
@@ -85,7 +88,8 @@ class AtomicBasicBlock(Node):
         assert isinstance(syscall_type, SyscallType)
         self.syscall_type = syscall_type
         # Mark the parent function accordingly
-        self.function.has_syscall = True
+        if self.function:
+            self.function.has_syscall = True
         args = []
         # ATTENTION!: The Event Masks are extracted in the MoveToSubtask Pass!
         # Make the string arguments references to system objects

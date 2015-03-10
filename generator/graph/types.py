@@ -47,7 +47,8 @@ class SyscallType(IntEnum):
     # This are artificial ABBs
     StartOS = 2
     Idle = 3
-    iret = 4
+    CheckAlarm = 4
+    iret = 5
 
     # real system calls
     kickoff = 19
@@ -78,6 +79,10 @@ class SyscallType(IntEnum):
 
     def isRealSyscall(self):
         return self.value >= SyscallType.kickoff
+
+    def isImplementedSyscall(self):
+        return self.isRealSyscall() or self.value == SyscallType.iret
+
 
     def doesKickoffTask(self):
         if self == SyscallType.kickoff:

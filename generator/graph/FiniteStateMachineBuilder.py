@@ -2,11 +2,57 @@ from generator.graph.common import *
 from generator.graph.Analysis import *
 from generator.graph import SymbolicSystemExecution, SavedStateTransition
 from generator.tools import pairwise
-
+from types import SimpleNamespace
 from collections import namedtuple, defaultdict
 
 Transition = namedtuple("Transition", ["source", "target", "action"])
-Event     = namedtuple("Event", ["name", "transitions"])
+
+class Transition:
+    def __init__(self, source, target, action):
+        self.event = None
+        self.source = source
+        self.target = target
+        self.action = action
+
+        self.impl = SimpleNamespace()
+
+    def __repr__(self):
+        return "<Transition(%s) %d -> %d: %s>" %(self.event.name, self.source, self.target, self.action)
+
+
+class Event:
+    def __init__(self, name, transitions):
+        self.name = name
+        self.transitions = transitions
+        for t in transitions:
+            t.event = self
+
+        self.impl = SimpleNamespace()
+
+    def __repr__(self):
+        return "<Event(%s) %d transitions>" %(self.name, len(self.transitions))
+
+class FiniteStateMachine:
+    def __init__(self):
+        self.initial_state = None
+
+        # Set of Integers
+        self.states = set()
+
+        # List of Event
+        self.events = []
+
+        # Mapping to SystemState
+        self.mapping = {}
+
+        self.impl = SimpleNamespace()
+
+
+    def add_event(self, event):
+        self.events.append(event)
+        for transition in event.transitions:
+            self.states.add(transition.source)
+            self.states.add(transition.target)
 
 class FiniteStateMachineBuilder(Analysis, GraphObject):
     """This pass does construct a finite state machine from the results of
@@ -36,7 +82,7 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
     def graph_subobjects(self):
         if len(self.sse.states) > 500:
             return []
-        return self.representant_states.keys()
+        return self.fsm.states
 
     class SimpleEdge:
         def __init__(self, source, target, label='',
@@ -56,7 +102,7 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
 
     def graph_edges(self):
         ret = []
-        for P in self.fsm:
+        for P in self.fsm.events:
             for T in P.transitions:
                 ret.append(self.SimpleEdge(source = T.source,
                                            target = T.target,
@@ -64,36 +110,46 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
         return ret
 
 
-    def find_equivalence_class(self, ret_sse_state, sse_states, syscall_states, syscall_ret_states):
-        """This function finds the equivalence class for a given return state
-        of a system call."""
-        # Find the equvalence class for this syscall return state
-        ret_state = id(ret_sse_state)
-        ec = set([ret_state])
+    def find_equivalence_class(self, state, sse_states, syscall_states):
+        """This function finds the equivalence class for a given system state."""
+        #def path(x):
+        #    if type(x) == set:
+        #        return [path(y) for y in x]
+        #    return sse_states[x].current_abb
+        # print("Find EC for ", path(state))
+        ec = set([state])
         changed = True
         while changed:
+            # print(path(ec))
             changed = False
             new_ec = set(ec)
             # Add all successors, if it is not a syscall
+            for member in ec:
+                for X in sse_states[member].get_incoming_nodes(SavedStateTransition):
+                    if not id(X) in syscall_states:
+                        new_ec.add(id(X))
+            # print(path(new_ec))
+            # For all nodes that are not syscall return, go back
             for member in (ec - syscall_states):
                 for X in sse_states[member].get_outgoing_nodes(SavedStateTransition):
-                    new_ec.add(id(X))
-            # For all nodes that are not syscall return, go back
-            for member in (ec - syscall_ret_states):
-                for X in sse_states[member].get_incoming_nodes(SavedStateTransition):
                     new_ec.add(id(X))
             if new_ec != ec:
                 ec = new_ec
                 changed = True
+        #print("Done: ", path(ec))
+        #print()
         return ec
 
     def do(self):
         self.sse = self.system_graph.get_pass("SymbolicSystemExecution")
 
+        def isSyscall(state):
+            return not state.current_abb.isA([S.computation, S.CheckAlarm])
+
         # First we enumerate all possible system states, add them to
         # sets which are system call states and return states of
         # system call states.
-        i = 0
+        i = 1
         syscall_states  = set() # States with a syscall current_abb
         syscall_ret_states  = set() # States that have a syscall predecessor
         sse_states = {} # id(sse_state) => sse_state
@@ -104,32 +160,31 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
             sse_states[state] = sse_state # For back-mapping
             states[state] = i
             i += 1
-            if not sse_state.current_abb.isA(S.computation):
-                # A system call block!
+            # A system call block!
+            if isSyscall(sse_state):
                 syscall_states.add(state)
-                ret_state = id(sse_state.definite_after(SavedStateTransition))
-                syscall_ret_states.add(ret_state)
 
         # For each system call ret block, we find those states that
         # are equivalent to the return state
-        for ret_state in syscall_ret_states:
+        remapped = set()
+        for state in syscall_states:
+            if state in remapped:
+                continue
             # Get the actual SSE state
-            ret_sse_state = sse_states[ret_state]
-            ec = self.find_equivalence_class(ret_sse_state,
-                                             sse_states,
-                                             syscall_states,
-                                             syscall_ret_states)
+            ec = self.find_equivalence_class(state, sse_states, syscall_states)
             # For the whole equivalence class, only one state number is used
             for member in ec:
-                states[member] = states[ret_state]
+                states[member] = states[state]
+
+            remapped.update(ec)
 
         # Collect transitions per syscall ABB
         transitions_by_abb = defaultdict(list)
         transition_count = 0
-        self.representant_states = {}
+        map_to_SystemState = {}
         for sse_state in self.sse.states:
             # Only system call sites
-            if sse_state.current_abb.isA(S.computation):
+            if not isSyscall(sse_state):
                 continue
             abb = sse_state.current_abb
             next_sse_state = sse_state.definite_after(SavedStateTransition)
@@ -141,14 +196,20 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
             transition = Transition(source = istate, target = ostate, action = action)
             transition_count += 1
             transitions_by_abb[abb].append(transition)
-            self.representant_states[istate] = sse_state
-
+            map_to_SystemState[istate] = sse_state
 
         # Construct the Event/Transition Model
-        self.fsm = []
+        self.states = set()
+        self.fsm = FiniteStateMachine()
         for abb, transitions in transitions_by_abb.items():
+            if abb.isA(S.StartOS):
+                assert len(transitions) == 1, transitions
+                self.fsm.initial_state = transitions[0].source
             event = Event(name = abb, transitions = transitions)
-            self.fsm.append(event)
+            self.fsm.add_event(event)
+        self.fsm.mapping = map_to_SystemState
+        #for x, s in sorted(self.fsm.mapping.items(), key = lambda x: x[0]):
+        #    print (x, s)
 
         logging.info("  FSM: %d state; %d transisitons" ,
                      len(set(states.values())),

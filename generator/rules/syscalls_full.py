@@ -1,15 +1,32 @@
 from generator.rules.base import BaseRules
-from generator.graph.AtomicBasicBlock import E
+from generator.graph.AtomicBasicBlock import E,S
 from generator.graph.Event import Event
-from generator.elements import Statement, Comment, Function, VariableDefinition, Block
+from generator.elements import Statement, Comment, Function, VariableDefinition, Block, Include, \
+    CodeTemplate, FunctionDeclaration
 from generator.graph.GenerateAssertions import AssertionType
+from generator.graph.Function import Function as GraphFunction
 from generator.tools import panic
-
 
 
 class FullSystemCalls(BaseRules):
     def __init__(self):
         BaseRules.__init__(self)
+
+        self.alarms = AlarmTemplate
+
+    def generate_system_code(self):
+        # Use the tasklist and scheduler that is given by the kind of OS (encoded, unencoded)
+        self.generator.source_file.includes.add(Include("os/scheduler/tasklist.h"))
+        self.generator.source_file.declarations.append(self.os_rules.task_list(self).expand())
+
+        self.generator.source_file.includes.add(Include("os/scheduler/scheduler.h"))
+        self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
+        self.generator.source_file.declarations.append(self.os_rules.scheduler(self).expand())
+
+        self.generator.source_file.includes.add(Include("os/alarm.h"))
+        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
+        self.generator.source_file.declarations.append(self.alarms(self).expand())
+
 
     def task_desc(self, subtask):
         """Returns a string that generates the task id"""
@@ -73,6 +90,9 @@ class FullSystemCalls(BaseRules):
         userspace.attributes.append("inlinehint")
         if not syscall.subtask.conf.is_isr:
             self.arch_rules.kickoff(syscall, userspace)
+
+    def iret(self, syscall, userspace, kernelspace):
+        pass
 
     def TerminateTask(self, syscall, userspace, kernelspace):
         self.call_function(kernelspace, "scheduler_.TerminateTask_impl",
@@ -145,7 +165,7 @@ class FullSystemCalls(BaseRules):
         # Increase Counter and check the counter
         kernelspace.add(Statement("%s.do_tick()" % counter.impl.name))
         for alarm in self.system_graph.alarms:
-            if alarm.counter == counter:
+            if alarm.conf.counter == counter:
                 kernelspace.add(Statement("AlarmCheck%s()" % alarm.impl.name))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
@@ -324,3 +344,78 @@ class FullSystemCalls(BaseRules):
             return (True, cond)
         else:
             panic("Unsupported assert type %s", assertion)
+
+class AlarmTemplate(CodeTemplate):
+    def __init__(self, rules):
+        CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
+        self.rules = rules
+        self.system_graph = self.generator.system_graph
+        # Reference to the objects object of our rule system
+        self.objects = self.rules.objects
+
+        # Link the foreach_subtask method from the rules
+        self.foreach_subtask = self.rules.foreach_subtask
+
+    def increase_counters(self, snippet, args):
+        ret = []
+        for counter in self.system_graph.counters:
+            # Softcounters are ignored by the hardware interrupt
+            if counter.conf.softcounter:
+                continue
+            ret += self.expand_snippet("increase_counter",
+                                       name = counter.impl.name)
+        return ret
+
+
+    def check_alarms(self, snippet, args):
+        if not self.system_graph.AlarmHandlerSubtask:
+            return []
+        ret = []
+        # The AlarmHandlerSubtask carries a _sorted_ list of alarms
+        kickoff    = self.system_graph.AlarmHandlerSubtask.entry_abb
+        iret    = self.system_graph.AlarmHandlerSubtask.exit_abb
+
+        ret += ["        " + kickoff.generated_function_name() + "();\n"]
+        for alarm in self.system_graph.AlarmHandlerSubtask.alarms:
+            ret += ["    AlarmCheck%s();\n" % alarm.impl.name]
+        ret += ["        " + iret.generated_function_name() + "();\n"]
+        return ret
+
+    def __generate_softcounter_event(self, alarm):
+        abb = alarm.carried_syscall
+        userspace, kernelspace = Block(), Block()
+        if abb.isA(S.ActivateTask):
+            self.rules.syscall_rules.ActivateTask(abb, userspace, kernelspace)
+        else:
+            self.rules.syscall_rules.SetEvent(abb, userspace, kernelspace)
+
+        return "".join(kernelspace.expand(None))
+
+    def generate_check_alarms(self, snippet, args):
+        ret = []
+        for alarm in self.system_graph.alarms:
+            callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
+            has_callback  = (self.system_graph.find(GraphFunction, callback_name) != None)
+            args = {"alarm": alarm.impl.name}
+            ret += self.expand_snippet("if_alarm", **args) + "\n"
+            # This alarm has an callback
+            if has_callback:
+                # Add a Declaration
+                decl = FunctionDeclaration(callback_name, "void", [], extern_c = True)
+                self.generator.source_file.function_manager.add(decl)
+                ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
+
+            if alarm.conf.counter.conf.softcounter:
+                ret += self.__generate_softcounter_event(alarm)
+            else:
+                carried = alarm.carried_syscall
+                # SetEvent needs two arguments
+                if alarm.conf.event:
+                    arglist = "(0, 0)"
+                else:
+                    arglist = "(0)"
+                ret += "        " + carried.generated_function_name() + arglist + ";\n"
+            ret += self.expand_snippet("endif_alarm", **args) + "\n"
+
+
+        return ret

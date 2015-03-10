@@ -33,6 +33,8 @@ class Generator:
 
     OSEK_CALLS = {
         S.kickoff : ["void"],
+        S.iret : ["void"],
+
         S.ActivateTask: ["StatusType", "TaskType"],
         S.ChainTask: ["StatusType", "TaskType"],
         S.TerminateTask: ["StatusType"],
@@ -91,6 +93,7 @@ class Generator:
         # Generate all necessary code elements for the system (except
         # the concrete calls from the application
         self.os_rules.generate_system_code()
+        self.syscall_rules.generate_system_code()
 
         # Only generate an os_main, if it does not exist
         if self.system_graph.find(GraphFunction, "os_main") is None:
@@ -117,7 +120,7 @@ class Generator:
         self.source_file.function_manager.add(ASTSchedule)
 
         # find all syscalls
-        for abb in self.system_graph.real_syscalls:
+        for abb in self.system_graph.implemented_syscalls:
             assert abb.subtask != None, "The calling subtask must be set"
 
             generated_function = abb.generated_function_name()

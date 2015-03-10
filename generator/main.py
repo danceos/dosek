@@ -71,9 +71,16 @@ if __name__ == "__main__":
     parser.add_option('', '--unencoded', dest='unencoded', default = None,
                       help="generate unencoded system",
                       action="store_true")
-    parser.add_option('', '--specialize-systemcalls', dest='specialize_systemcalls', default = None,
-                      action="store_true",
+
+    parser.add_option('', '--specialize-systemcalls', dest='systemcalls',
+                      action="store_const", const = "specialized",
                       help="generate specialized systemcalls")
+
+    parser.add_option('', '--system-calls', dest='systemcalls', default = "full",
+                      action="store",
+                      help="What kind of system call implementation is desired?")
+
+    
     parser.add_option('-f', '--add-pass', dest='additional_passes', default = [],
                       action="append",
                       help="additional passes (can also be given by setting SGFLAGS)")
@@ -98,6 +105,7 @@ if __name__ == "__main__":
 
     setup_logging(options.verbose)
     graph = SystemGraph(options.code_options)
+    graph.add_system_objects()
     pass_manager = graph
     pass_manager.read_verify_script(options.verify)
 
@@ -135,7 +143,6 @@ if __name__ == "__main__":
         print("No .ll files given")
         sys.exit(-1)
 
-    graph.add_system_objects()
 
     # Ensure that each system call is surrounded by computation blocks
     pass_manager.register_analysis(EnsureComputationBlocks())
@@ -183,7 +190,9 @@ if __name__ == "__main__":
     else:
         os_rules = EncodedSystem()
 
-    if options.specialize_systemcalls:
+    assert options.systemcalls in ("full", "specialized", "fsm")
+        
+    if options.systemcalls == "specialized":
         # Only when we want to specialize the system calls, run the
         # System-Level analyses
         pass_manager.enqueue_analysis("SymbolicSystemExecution")
@@ -194,6 +203,9 @@ if __name__ == "__main__":
         logging.info("Global control flow information is provided by %s",
                      global_abb_information.name())
         syscall_rules = SpecializedSystemCalls(global_abb_information)
+    elif options.systemcalls == "fsm":
+        pass_manager.enqueue_analysis("fsm")
+        syscall_rules = FSMSystemCalls()
     else:
         syscall_rules = FullSystemCalls()
 

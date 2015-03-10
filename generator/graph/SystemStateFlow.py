@@ -21,8 +21,6 @@ class SystemStateFlow(Analysis):
     def __init__(self):
         Analysis.__init__(self)
         self.sporadic_events = []
-        self.isrs = []
-        self.alarms = []
         # A member for the RunningTask analysis
         self.running_task = None
         # States for the fixpoint iteration
@@ -79,16 +77,15 @@ class SystemStateFlow(Analysis):
 
     def install_sporadic_events(self):
         # Install the alarm handlers
-        for alarm in self.system_graph.alarms:
-            wrapped_alarm = SSF_SporadicEvent(alarm, self.system_call_semantic)
+        if self.system_graph.AlarmHandlerSubtask:
+            wrapped_alarm = SSF_SporadicEvent(self.system_graph.AlarmHandlerSubtask,
+                                              self.system_call_semantic)
             self.sporadic_events.append(wrapped_alarm)
-            self.alarms.append(wrapped_alarm)
 
         # Install the ISR handlers
         for isr in self.system_graph.isrs:
             wrapped_isr = SSF_SporadicEvent(isr, self.system_call_semantic)
             self.sporadic_events.append(wrapped_isr)
-            self.isrs.append(wrapped_isr)
 
     def do_computation_with_sporadic_events(self, block, before):
         after_states = self.system_call_semantic.do_computation(block, before)
@@ -319,6 +316,7 @@ class SSF_SporadicEvent(SporadicEvent):
              S.computation: self.system_call_semantic.do_computation,
              S.kickoff: self.system_call_semantic.do_computation,
              S.Idle: self.system_call_semantic.do_Idle,
+             S.CheckAlarm      : self.system_call_semantic.do_CheckAlarm,
              S.iret: self.do_iret})
         # Schedule depending on the possible output states
         for after in after_states:

@@ -77,7 +77,7 @@ class SystemCallSemantic:
         counter = block.arguments[0]
         sporadic_events = []
         for alarm in self.system_graph.alarms:
-            if not(isinstance(alarm , Alarm) and alarm.counter == counter):
+            if not(isinstance(alarm , Alarm) and alarm.conf.counter == counter):
                 continue
 
             after = before.copy()
@@ -150,6 +150,24 @@ class SystemCallSemantic:
 
         return [after]
 
+    def do_CheckAlarm(self, block, before):
+        chain_item = None
+        alarm_object = block.arguments[0]
+        outgoing = block.get_outgoing_nodes(E.task_level)
+        if outgoing[0] == alarm_object.carried_syscall:
+            action_syscall, chain_item = outgoing
+        else:
+            assert outgoing[1] == alarm_object.carried_syscall
+            chain_item, action_syscall = outgoing
+
+        ret = [before.copy()]
+        ret[0].set_continuation(block.subtask, chain_item)
+        if alarm_object.can_trigger(before):
+            ret.append(before.copy())
+            ret[1].set_continuation(block.subtask, action_syscall)
+
+        return ret
+
     def do_Idle(self, block, before):
         after = before.copy_if_needed()
         # EnsureComputationBlocks ensures that after the Idle() function
@@ -161,7 +179,7 @@ class SystemCallSemantic:
 
     def do_computation(self, block, before):
         next_blocks = block.get_outgoing_nodes(E.task_level)
-        ret = before.copy_if_needed(len(next_blocks))
+        ret = [before.copy() for _ in range(0, len(next_blocks))]
         calling_task = self.running_task.for_abb(block)
         for i in range(0, len(next_blocks)):
             ret[i].set_continuation(calling_task, next_blocks[i])
@@ -278,6 +296,12 @@ class SystemCallSemantic:
             copy_state.set_ready(target.function.subtask)
             # The currently running subtask has no saved continuations
             copy_state.set_continuations(target.function.subtask, [])
+
+            # Idle subtask: reset to entry_abb, if we dispatch to
+            # another subtask (user subtask
+            idle = self.system_graph.idle_subtask
+            if target.function.subtask != idle and not target.function.subtask.conf.is_isr:
+                copy_state.set_continuation(idle, idle.entry_abb)
 
             not_taken = set(possible_blocks[:i])
             # We can wipe out all continuations that are not taken, if

@@ -1,6 +1,7 @@
 import logging
 from generator.graph.Analysis import Analysis, FixpointIteration
 from generator.graph.AtomicBasicBlock import E, S
+from generator.graph.Function import Function
 from .DominanceAnalysis import DominanceAnalysis
 from generator.tools import panic, stack
 from collections import namedtuple
@@ -84,8 +85,10 @@ class ABBMergePass(Analysis):
     def __mark_relevant_functions(self, functions):
         '''A DFS to mark all function that do syscalls,
            or call other functions that doing syscall'''
+        StartOS = self.system_graph.get(Function, "StartOS")
+        StartOS.has_syscall = False
         self.__dfs(list(functions))
-
+        StartOS.has_syscall = True
 
     def __do_merge(self, entry_abb, exit_abb, inner_abbs = set()):
         #print('Trying to merge:', inner_abbs, exit_abb, 'into', entry_abb)
@@ -297,7 +300,7 @@ class ABBMergePass(Analysis):
             # Filter some functions
             if not func.is_system_relevant:
                 continue
-            if len(func.abbs) < 3 or func.exit_abb == None:
+            if len(func.abbs) <= 3 or func.exit_abb == None:
                 continue
 
             # Forward analysis

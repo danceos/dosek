@@ -47,7 +47,7 @@ class OILObject:
                 setattr(self, param[0], param[1])
 
     def __str__(self):
-        ret = self.__class__.__name__ + " : " + self.name
+        ret = self.__class__.__name__ + " : " + str(self.name)
         for k, v in vars(self).items():
             if k.isupper():  # if it it a uppercase OIL Keyword
                 # lowercase members are special sets or lists
@@ -163,6 +163,7 @@ class Alarm(OILObject):
 
     def __init__(self, name=""):
         super(Alarm, self).__init__(name)
+        self.__counter = None
         self.COUNTER = ""
         self.ACTION = ""
         self.action_params = None
@@ -198,7 +199,13 @@ class Alarm(OILObject):
 
     @property
     def counter(self):
+        if self.__counter:
+            return self.__counter
         return self.COUNTER.name
+
+    @counter.setter
+    def counter(self, value):
+        self.__counter = value
 
     @property
     def armed(self):

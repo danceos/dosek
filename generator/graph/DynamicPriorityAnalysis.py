@@ -116,6 +116,8 @@ class DynamicPriorityAnalysis(Analysis):
                 syscall.dynamic_priority = syscall.function.subtask.static_priority
             elif len(precessors) == 1:
                 syscall.dynamic_priority = precessors[0].dynamic_priority
+            elif syscall.subtask and syscall.subtask.name == "AlarmHandler":
+                syscall.dynamic_priority = syscall.subtask.static_priority
             else:
                 assert syscall.isA(S.StartOS), \
                     "Weird Systemcall %s, Check EnsureComputationBlocks for bugs!"\

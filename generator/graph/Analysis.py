@@ -122,14 +122,10 @@ class EnsureComputationBlocks(Analysis):
 
     def do(self):
         for syscall in self.system_graph.syscalls:
+            if syscall.subtask and syscall.subtask.conf.is_isr:
+                continue
             if syscall.isA(S.Idle):
-                abb = self.system_graph.new_abb()
-                abb.syscall_type = S.computation
-                syscall.function.add_atomic_basic_block(abb)
-                abb.add_cfg_edge(syscall, E.function_level)
-                syscall.add_cfg_edge(abb, E.function_level)
-                # Do start the idle loop with an computation node
-                abb.function.entry_abb = abb
+                pass
             elif not syscall.syscall_type.isRealSyscall():
                 continue
             elif syscall.syscall_type.doesKickoffTask():

@@ -1,5 +1,5 @@
 from generator.elements import Include, FunctionDeclaration, Comment, \
-                               DataObject, Block, Hook, VariableDefinition
+                               DataObject, Block, Hook, VariableDefinition, Function
 
 from generator.graph.Subtask import Subtask
 from generator.rules.simple import SimpleArch
@@ -47,14 +47,25 @@ class PosixArch(SimpleArch):
 
         isr_desc = self.generator.system_graph.get(Subtask, isr.name)
 
-        forward = FunctionDeclaration(isr.function_name, "void", ["int"], extern_c=True)
+        handler = Function(isr_desc.function_name + "_wrapper", "void", ["int"])
+        self.generator.source_file.function_manager.add(handler)
+
+        # Call kickoff, user defined function, and iret system call
+        kickoff, iret = isr.entry_abb, isr.exit_abb
+        self.call_function(handler, kickoff.generated_function_name(), "void", [])
+        self.call_function(handler, isr.function_name, "void", [])
+        self.call_function(handler, iret.generated_function_name(), "void", [])
+
+
+        forward = FunctionDeclaration(isr.function_name, "void", [], extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
         self.call_function(self.system_graph.impl.StartOS,
                            "arch::irq.enable", "void", [str(isr_desc.conf.isr_device)],
                            prepend = True)
         self.call_function(self.system_graph.impl.StartOS,
-                           "arch::irq.set_handler", "void", [str(isr_desc.conf.isr_device), isr.function_name],
+                           "arch::irq.set_handler", "void", [str(isr_desc.conf.isr_device),
+                                                             handler.function_name],
                            prepend = True)
 
     def generate_isr_table(self, isrs):

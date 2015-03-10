@@ -1,3 +1,5 @@
+if("${GENERATOR_ARGS}" MATCHES "--system-calls fsm")
+else()
 DOSEK_BINARY(
   NAME bcc1_counter1a
   SYSTEM_DESC system.oil
@@ -5,3 +7,4 @@ DOSEK_BINARY(
   TEST_ISO
   a.cc
 )
+endif()

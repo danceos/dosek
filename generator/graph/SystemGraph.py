@@ -4,7 +4,7 @@ from generator.graph.Subtask import Subtask
 from generator.graph.AtomicBasicBlock import AtomicBasicBlock, E, S
 from generator.graph.Function import Function
 from generator.graph.PassManager import PassManager
-from generator.graph.Sporadic import Counter, Alarm, ISR
+from generator.graph.Sporadic import Counter, Alarm, ISR, AlarmSubtask
 from generator.graph.Resource import Resource
 from generator.graph.Event import Event
 from generator.graph.common import GraphObject
@@ -44,7 +44,6 @@ class SystemGraph(GraphObject, PassManager):
         # Application Objects
         self._functions = {}
         self._abbs = {}
-        self.max_abb_id = 0
 
         self.system = None
         self.llvmpy = None
@@ -110,6 +109,13 @@ class SystemGraph(GraphObject, PassManager):
     def real_syscalls(self):
         return [x for x in self.abbs
                 if not x.isA(S.computation) and x.syscall_type.isRealSyscall()]
+
+    @property
+    def implemented_syscalls(self):
+        within_app =  [x for x in self.abbs
+                       if not x.isA(S.computation) and x.syscall_type.isImplementedSyscall()]
+        return within_app
+
 
     def find(self, cls, name):
         """Get System object by class and name. If system object does not
@@ -201,18 +207,18 @@ class SystemGraph(GraphObject, PassManager):
             # Instantiate events for the current task
             for event in task_desc.events.values():
                 event.used = True
-                E = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
+                Ev = Event(self, "%s__%s"% (subtask.name, event.name), subtask, event_id, event)
                 if event.MASK != "AUTO":
                     try:
-                        E.event_mask = int(event.MASK)
-                    except ValueError as E:
-                        panic("Event Mask not readable: %s", str(E))
-                    assert len([x for x in bin(E.event_mask) if x == "1"]) == 1, "Exactly one bit must be set in event_mask %s" % E
+                        Ev.event_mask = int(event.MASK)
+                    except ValueError as Ex:
+                        panic("Event Mask not readable: %s", str(Ex))
+                    assert len([x for x in bin(Ev.event_mask) if x == "1"]) == 1, "Exactly one bit must be set in event_mask %s" % E
 
 
-                subtask._events[event.name] = E
-                subtask.event_mask_valid |= E.event_mask
-                self._events[E.name] = E
+                subtask._events[event.name] = Ev
+                subtask.event_mask_valid |= Ev.event_mask
+                self._events[Ev.name] = Ev
                 event_id += 1
                 assert event_id < 32, "No more than 32 Events per Subtask"
 
@@ -260,34 +266,77 @@ class SystemGraph(GraphObject, PassManager):
         for conf in system.getCounters():
             self._counters[conf.name] = Counter(conf.name, conf)
 
+
         # Alarms
-        for alarm in system.getAlarms():
-            alarm.subtask = self.get(Subtask, alarm.subtask)
-            assert alarm.subtask != None, "Alarm does not activate any task! (maybe callback?)"
-            alarm.event = alarm.subtask.find(Event, alarm.event)
+        hardware_alarms = []
+        for conf in system.getAlarms():
+            conf.subtask = self.get(Subtask, conf.subtask)
+            assert conf.subtask != None, "Alarm does not activate any task! (maybe callback?)"
+            conf.event = conf.subtask.find(Event, conf.event)
+            conf.counter = self.get(Counter, conf.counter)
 
+            alarm_object = Alarm(self, conf)
 
-            #  Generate an Alarm Handler SubTask. Use a Mock config here
-            name = "OSEKOS_ALARM_HANDLER_" + alarm.name
-            conf = self.MockSubtaskConfig()
-            conf.is_isr = True
-            conf.static_priority = (1<<31)
-            conf.preemptable = False
-            conf.autostart = False
-            conf.isr_device = 0
-            subtask = Subtask(self, alarm.name, name, conf)
+            # Every hardware alarm carries a system call
+            if conf.counter.conf.softcounter:
+                # For softcounters we use an unregistered ABB
+                inner_syscall = AtomicBasicBlock(self.system_graph)
+                self.stats.add_child(self, "ABB", inner_syscall)
+            else:
+                inner_syscall = self.new_abb()
+            if conf.event:
+                inner_syscall.make_it_a_syscall(S.SetEvent, [conf.subtask, [conf.event]])
+            else:
+                inner_syscall.make_it_a_syscall(S.ActivateTask, [conf.subtask])
+            alarm_object.carried_syscall = inner_syscall
 
-            #  And add it to the task where the activated task belongs to
-            belongs_to_task = alarm.subtask.task
-            belongs_to_task.add_subtask(subtask)
+            # Add it to the list of all alarms, and to the list of hardware alarms
+            self._alarms[alarm_object.name] = alarm_object
+            if not conf.counter.conf.softcounter:
+                hardware_alarms.append(alarm_object)
+
+        if len(hardware_alarms) > 0:
+            # Generate Alarm Checker subtask
+            subtask = AlarmSubtask(self)
+
+            # And add it to the system task
+            self.system_task.add_subtask(subtask)
+            self.stats.add_child(task, "subtask", subtask)
 
             # Register Subtask
             self._functions[subtask.function_name] = subtask
-            self._subtasks[subtask.function_name] = subtask
+            self._subtasks[subtask.name] = subtask
 
-            counter = self.get(Counter, alarm.counter)
+            pred_cc = None
+            pred_syscall = None
+            for alarm_object in sorted(hardware_alarms, key = lambda a: a.conf.subtask.static_priority):
+                subtask.alarms.append(alarm_object)
 
-            self._alarms[alarm.name] = Alarm(self, subtask, counter, alarm)
+                # Chain to last CheckCounter
+                cc = self.new_abb()
+                subtask.add_atomic_basic_block(cc)
+                cc.make_it_a_syscall(S.CheckAlarm, [alarm_object])
+                if pred_cc:
+                    pred_cc.add_cfg_edge(cc, E.function_level)
+                    pred_syscall.add_cfg_edge(cc, E.function_level)
+                else:
+                    subtask.set_entry_abb(cc)
+
+                subtask.add_atomic_basic_block(alarm_object.carried_syscall)
+                cc.add_cfg_edge(alarm_object.carried_syscall, E.function_level)
+                pred_cc, pred_syscall = cc, alarm_object.carried_syscall
+
+            iret = self.new_abb()
+            subtask.add_atomic_basic_block(iret)
+            iret.make_it_a_syscall(S.iret, [subtask])
+            subtask.set_exit_abb(iret)
+            pred_cc.add_cfg_edge(iret, E.function_level)
+            pred_syscall.add_cfg_edge(iret, E.function_level)
+
+            self.AlarmHandlerSubtask = subtask
+        else:
+            # No hardware alarms
+            self.AlarmHandlerSubtask = None
 
         #  Resources
         for res in system.getResources():
@@ -308,7 +357,6 @@ class SystemGraph(GraphObject, PassManager):
 
     def read_llvmpy_analysis(self, llvmpy):
         self.llvmpy = llvmpy
-        self.max_abb_id = 0
 
         # Gather functions
         for llvmfunc,llvmbbs in self.llvmpy.functions.items():
@@ -344,21 +392,6 @@ class SystemGraph(GraphObject, PassManager):
                   abb.make_it_a_syscall(bb.get_syscall(), bb.get_syscall_arguments())
                   # Rename syscall in llvm IR, appending ABB id
                   bb.rename_syscall(abb, llvmpy.get_source())
-
-
-        # Generate an ActivateTask for every alarm
-        for alarm in self.alarms:
-            inner_syscall = self.new_abb()
-            alarm.handler.add_atomic_basic_block(inner_syscall)
-            alarm.handler.set_entry_abb(inner_syscall)
-            if alarm.conf.event:
-                inner_syscall.make_it_a_syscall(S.SetEvent, [alarm.conf.subtask, [alarm.conf.event]])
-            else:
-                inner_syscall.make_it_a_syscall(S.ActivateTask, [alarm.conf.subtask])
-            alarm.carried_syscall = inner_syscall
-
-            # Statistic generation
-            self.stats.add_child(alarm.handler.task, "subtask", alarm.handler)
 
         # Add all implicit intra function control flow graphs
         for func in self.functions:
@@ -400,12 +433,13 @@ class SystemGraph(GraphObject, PassManager):
                 function.set_exit_abb(ret_abbs[0])
 
             if isinstance(function, Subtask) and function.conf.is_isr:
-                # All ISR function get an additional iret block
-                iret = self.new_abb()
-                function.add_atomic_basic_block(iret)
-                iret.make_it_a_syscall(S.iret, [function])
-                function.exit_abb.add_cfg_edge(iret, E.function_level)
-                function.set_exit_abb(iret)
+                if not function.exit_abb or not function.exit_abb.isA(S.iret):
+                    # All ISR function get an additional iret block
+                    iret = self.new_abb()
+                    function.add_atomic_basic_block(iret)
+                    iret.make_it_a_syscall(S.iret, [function])
+                    function.exit_abb.add_cfg_edge(iret, E.function_level)
+                    function.set_exit_abb(iret)
 
         # Gather all called Functions in the ABBs, this has to be done, after all ABBs are present
         for abb in self.abbs:
@@ -421,8 +455,7 @@ class SystemGraph(GraphObject, PassManager):
             abb.function.called_functions.update(called_funcs)
 
     def new_abb(self, bbs=[]):
-        self.max_abb_id += 1
-        abb = AtomicBasicBlock(self, self.max_abb_id, bbs)
+        abb = AtomicBasicBlock(self, bbs)
         self._abbs[abb.get_id()] = abb
         return abb
 
@@ -461,11 +494,18 @@ class SystemGraph(GraphObject, PassManager):
         self._subtasks["Idle"] = idle_subtask
         self.idle_subtask = idle_subtask
         system_task.add_subtask(idle_subtask)
+
         # The idle systemcall
-        abb = self.new_abb()
-        idle_subtask.add_atomic_basic_block(abb)
-        idle_subtask.set_entry_abb(abb)
-        abb.make_it_a_syscall(S.Idle, [])
+        abb_computation = self.new_abb()
+        idle_subtask.add_atomic_basic_block(abb_computation)
+        idle_subtask.set_entry_abb(abb_computation)
+        abb_idle = self.new_abb()
+        idle_subtask.add_atomic_basic_block(abb_idle)
+        abb_idle.make_it_a_syscall(S.Idle, [])
+        # Edges
+        abb_idle.add_cfg_edge(abb_computation, E.function_level)
+        abb_computation.add_cfg_edge(abb_idle, E.function_level)
+
         # System Functions
         StartOS = system_function(S.StartOS)
         system_task.add_function(StartOS)

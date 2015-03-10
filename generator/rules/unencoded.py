@@ -1,4 +1,4 @@
-from generator.rules.simple import SimpleSystem, AlarmTemplate
+from generator.rules.simple import SimpleSystem
 from generator.elements import CodeTemplate, Include, VariableDefinition, \
     Block, Statement, Comment, Function, Hook, DataObject
 from generator.graph.AtomicBasicBlock import S, AtomicBasicBlock
@@ -10,25 +10,13 @@ from generator.graph.Function import Function
 class UnencodedSystem(SimpleSystem):
     def __init__(self):
         SimpleSystem.__init__(self)
+        # These template slots are used by the system call layer
         self.task_list = TaskListTemplate
         self.scheduler = SchedulerTemplate
-        self.alarms = AlarmTemplate
         self.return_variables = {}
 
     def sigs(self, count):
         return ""
-
-    def generate_system_code(self):
-        self.generator.source_file.includes.add(Include("os/scheduler/tasklist.h"))
-        self.generator.source_file.declarations.append(self.task_list(self).expand())
-
-        self.generator.source_file.includes.add(Include("os/scheduler/scheduler.h"))
-        self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
-        self.generator.source_file.declarations.append(self.scheduler(self).expand())
-
-        self.generator.source_file.includes.add(Include("os/alarm.h"))
-        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
-        self.generator.source_file.declarations.append(self.alarms(self).expand())
 
     def convert_argument(self, block, argument):
         var = VariableDefinition.new(self.generator, argument[1])
@@ -74,7 +62,9 @@ class UnencodedSystem(SimpleSystem):
             if abb.isA([S.EnableAllInterrupts,
                         S.ResumeAllInterrupts,
                         S.ResumeOSInterrupts,
-                        S.kickoff]):
+                        S.kickoff,
+                        S.iret,
+            ]):
                 # { /* SystemEnterHook */ }
                 # { /* SystemLeaveHook */ }
                 # { /* Kernel */ sti(); }
@@ -101,12 +91,11 @@ class UnencodedSystem(SimpleSystem):
                 abb.impl.userspace.add(abb.impl.kernelspace)
                 abb.impl.userspace.add(abb.impl.post_hook)
             else:
-                assert False
+                assert False, abb
 
     def systemcall(self, abb):
         """Generate systemcall into userspace"""
 
-        subtask = abb.subtask
         syscall_type = abb.syscall_type
 
         userspace   = abb.impl.userspace

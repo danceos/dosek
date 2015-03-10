@@ -7,6 +7,9 @@ FILE(GLOB_RECURSE KESO_SOURCES
   "keso_gc_coffebreak/*.cpp")
 
 if(NOT dOSEK_MPU_PROTECTION)
+if("${GENERATOR_ARGS}" MATCHES "--system-calls fsm")
+else()
+
 
 DOSEK_BINARY(
   NAME keso_gc_coffebreak
@@ -18,6 +21,7 @@ DOSEK_BINARY(
      shutdown.cc
 )
 
+endif()
 endif()
 
 
