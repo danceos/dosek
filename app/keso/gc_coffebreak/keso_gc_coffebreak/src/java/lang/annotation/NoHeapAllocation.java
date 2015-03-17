@@ -27,7 +27,7 @@ import static java.lang.annotation.ElementType.METHOD;
  * Marks a method as not allowed to perform heap allocations.
  * Used in the compiler to enforce stack allocation when necessary.
  */
-@Target(METHOD)
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(CLASS)
 public @interface NoHeapAllocation {
 }

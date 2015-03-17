@@ -43,6 +43,17 @@ public final class Marshal {
     }
 
     /**
+     * Wrapper to print a format string containing integers. Ignores all format codes but "%d/x/o" silently. Is aware
+     * of the length of the varargs array and ignores superfluous "%d" formats.
+     * @param message the format string containing "%d/x/o" for integers
+     * @param varargs array of integers
+     */
+    @NoHeapAllocation
+    public static void printf(String message, int... varargs) {
+        // weavelet
+    }
+
+    /**
      * Wrapper for KESO_THROW_ERROR to terminate the system in case of an error.
      * @param message message string to print
      */

@@ -32,7 +32,7 @@ CPU gc_coffebreak {
 	ALARM alarm1 {
 		COUNTER = counter1;
 		AUTOSTART = TRUE {
-			ALARMTIME = 1;
+			ALARMTIME = 10;
 			APPMODE = OSDEFAULTAPPMODE;
 			CYCLETIME = 100;
 		};

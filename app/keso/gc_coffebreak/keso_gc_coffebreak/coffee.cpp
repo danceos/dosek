@@ -672,7 +672,7 @@ static signed int keso_gc_need(void);
  * collection garbage on the heap of one domain at
  * each run.
  */
- 
+
 int keso_coffee_main(keso_umachineword_t did) {
 
 	SET_DDESC(did);
