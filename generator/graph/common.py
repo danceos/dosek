@@ -14,7 +14,7 @@ class GraphObject:
         self.__color = color
 
     def graph_dot_id(self):
-        return "cluster"+self.__class__.__name__ + "_%x"%(abs(hash(self))% (1 << 24))
+        return "cluster"+self.__class__.__name__ + "_%x"%(id(self))
 
     def graph_subobjects(self):
         return []
