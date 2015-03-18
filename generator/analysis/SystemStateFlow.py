@@ -1,7 +1,6 @@
 from collections import defaultdict
 from .common import *
 from .Analysis import *
-from .DynamicPriorityAnalysis import DynamicPriorityAnalysis
 from .Sporadic import SporadicEvent
 from .Function import Function
 from .GlobalAbbInfo import GlobalAbbInfo
@@ -33,7 +32,7 @@ class SystemStateFlow(Analysis):
 
     def requires(self):
         # We require all possible system edges to be contructed
-        return [DynamicPriorityAnalysis.name(), "InterruptControlAnalysis"]
+        return ["DynamicPriorityAnalysis", "InterruptControlAnalysis"]
 
     def get_edge_filter(self):
         return set([E.task_level, E.state_flow, E.state_flow_irq])

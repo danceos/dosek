@@ -11,11 +11,7 @@ class AddFunctionCalls(Analysis):
         self.relevant_functions = None
 
     def requires(self):
-        ret = ["EnsureComputationBlocks"]
-        merge = self.system_graph.get_pass("ABBMergePass",
-                                           only_enqueued = True)
-        if merge:
-            ret.append("ABBMergePass")
+        ret = ["EnsureComputationBlocks", "ABBMergePass"]
         return ret
 
     def get_edge_filter(self):

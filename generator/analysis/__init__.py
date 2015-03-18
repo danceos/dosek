@@ -6,6 +6,8 @@ assert __name__ == 'generator.analysis'
 
 from .AddFunctionCalls import AddFunctionCalls
 from .Analysis import *
+from .OILReadPass import OILReadPass
+from .LLVMPYAnalysis import LLVMPYAnalysis
 from .AtomicBasicBlock import AtomicBasicBlock
 from .ABBMergePass import ABBMergePass
 from .ConstructGlobalCFG import ConstructGlobalCFG

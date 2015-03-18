@@ -43,7 +43,7 @@ if __name__ == "__main__":
     source_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, os.path.abspath(os.path.join(source_dir, "..")))
 
-    from generator import LLVMPYAnalysis, Generator, OILSystemDescription
+    from generator import Generator
     from generator.analysis import *
     from generator.transform import *
     from generator.coder import *
@@ -114,8 +114,8 @@ if __name__ == "__main__":
         if options.system_desc.lower().endswith(".xml"):
             panic("RTSC XMLs no longer supported")
         elif options.system_desc.lower().endswith(".oil"):
-            system_description = OILSystemDescription.OILSystemDescription(options.system_desc)
-            graph.read_oil_system_description(system_description)
+            read_oil = OILReadPass(options.system_desc)
+            pass_manager.register_analysis(read_oil)
         else:
             print("No valid system description file")
             parser.print_help()
@@ -125,20 +125,13 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(-1)
 
-    systemanalysis = None
-
     if options.llfiles and len(options.llfiles) > 0:
-        print("Analyzing via llvmpy. ", options.llfiles)
         mergedoutfile = open(options.mergedoutput, 'w')
         if not mergedoutfile:
-                print("Cannot open", options.mergedoutput, "for writing")
-                sys.exit(1)
-        llvmpy_analysis = LLVMPYAnalysis.LLVMPYAnalysis(options.llfiles, mergedoutfile, graph)
-
-        graph.read_llvmpy_analysis(llvmpy_analysis)
-        llvmpy_analysis.writeout_merged_source()
-        systemanalysis = llvmpy_analysis
-        pass_manager.register_and_enqueue_analysis(ABBMergePass())
+            print("Cannot open", options.mergedoutput, "for writing")
+            sys.exit(1)
+        llvmpy_analysis = LLVMPYAnalysis(options.llfiles, mergedoutfile)
+        pass_manager.register_analysis(llvmpy_analysis)
 
     else:
         print("No .ll files given")
@@ -148,6 +141,9 @@ if __name__ == "__main__":
     # Ensure that each system call is surrounded by computation blocks
     pass_manager.register_analysis(EnsureComputationBlocks())
 
+    # Find function relevant system calls and merge blocks
+    pass_manager.register_analysis(ABBMergePass())
+
     # Constructing the task_level control flow graph
     pass_manager.register_analysis(AddFunctionCalls())
 
@@ -156,11 +152,11 @@ if __name__ == "__main__":
     pass_manager.register_analysis(MoveFunctionsToTask())
 
     # Task-level: Enable/Disable IRQ control
-    pass_manager.register_and_enqueue_analysis(InterruptControlAnalysis())
+    pass_manager.register_analysis(InterruptControlAnalysis())
 
     # Task-Level: Dynamic Priority spreading pass
     pass_manager.register_analysis(PrioritySpreadingPass())
-    pass_manager.register_and_enqueue_analysis(DynamicPriorityAnalysis())
+    pass_manager.register_analysis(DynamicPriorityAnalysis())
 
     # System-Level: Analysis
     pass_manager.register_analysis(SystemStateFlow())
@@ -208,6 +204,8 @@ if __name__ == "__main__":
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls()
     else:
+        pass_manager.enqueue_analysis("DynamicPriorityAnalysis")
+        pass_manager.enqueue_analysis("InterruptControlAnalysis")
         syscall_rules = FullSystemCalls()
 
     # From command line

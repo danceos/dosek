@@ -337,8 +337,6 @@ class ABBMergePass(Analysis):
         self.merge_stats.after_dominance_merge = len(self.system_graph.abbs)
 
     def do(self):
-
-        assert self.system_graph.llvmpy, 'The ABBMergePass only works on llvmpy analysed systems.'
         self.merge_stats.initial_abb_count = len(self.system_graph.abbs)
 
         # First mark all Functions that do a syscall or invoke any sub function that does so

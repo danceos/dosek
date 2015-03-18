@@ -12,7 +12,7 @@ class PrioritySpreadingPass(Analysis):
         self.prio_to_participant = {}
 
     def requires(self):
-        return []
+        return ["read-oil"]
 
     def do(self):
         # Get list of all subtasks

@@ -6,6 +6,11 @@ from pyparsing import (Word, alphanums, alphas, hexnums,
                        nums, Optional, Keyword, QuotedString, Suppress,
                        Group, Forward, ZeroOrMore, cStyleComment, restOfLine)
 
+
+################################################################
+# Parser comes afterwards
+################################################################
+
 """ This is an example oil description:
 CPU Josek_x86 {
         OS JOSEK {
@@ -33,6 +38,7 @@ CPU Josek_x86 {
 
 };
 """
+
 
 
 class OILObject:
@@ -545,7 +551,6 @@ class OILSystemDescription:
 
     def __init__(self, oilfile):
         self.oil = self.oil_def.parseFile(oilfile)
-        print("evaluating: " + oilfile)
         self.refined = self.refine(self.oil)
 
     def refine(self, oil):

@@ -20,7 +20,9 @@ class Function(GraphObject):
         return self.abbs
 
     def graph_edges(self):
-        return [Edge(self, self.entry_abb, 'entry')]
+        if self.entry_abb:
+            return [Edge(self, self.entry_abb, 'entry')]
+        return []
 
     def dump(self):
         return {"function_name": self.function_name }

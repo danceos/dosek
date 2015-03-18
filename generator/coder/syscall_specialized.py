@@ -7,7 +7,7 @@ from generator.analysis.SystemSemantic import SystemState
 
 class SpecializedSystemCalls(FullSystemCalls):
     def __init__(self, global_abb_info):
-        super(SpecializedSystemCalls).__init__(self)
+        super(SpecializedSystemCalls, self).__init__()
         self.global_abb_info = global_abb_info
 
     def Comment(self, kernelspace, comment, *args):

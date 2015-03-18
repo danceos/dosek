@@ -97,16 +97,12 @@ class PassManager:
     def analyze(self, basefilename):
         self.basefilename = basefilename
         verifiers_called = set()
-        pass_number = 0
+        pass_number = 1
 
         # Dump graph as dot output
         with open("%s_00_passes.dot" % (basefilename), "w+") as fd:
             fd.write(self.pass_graph().dump_as_dot())
 
-        # Dump graph as dot output
-        with open("%s_%02d_original.dot" %(basefilename, pass_number), "w+") as fd:
-            fd.write(self.system_graph.dump_as_dot())
-            pass_number += 1
 
         while len(self.analysis_pipe) > 0:
             front = self.analysis_pipe[0]

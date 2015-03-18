@@ -74,6 +74,10 @@ class EnsureComputationBlocks(Analysis):
     def get_edge_filter(self):
         return set([E.function_level])
 
+    def requires(self):
+        # We need the system to be read in
+        return ["llvmpy"]
+
     def add_before(self, abb):
         necessary = False
         if len (abb.get_incoming_nodes(E.function_level)) > 1:
