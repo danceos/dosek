@@ -1,8 +1,8 @@
-from generator.elements import *
-from generator.graph.Function import Function as GraphFunction
-from generator.graph.types import S
-from .rules.implementations import *
-from .rules import SignatureGenerator
+from .coder.elements import *
+from .analysis.Function import Function as GraphFunction
+from .analysis.types import S
+from .coder.implementations import *
+from .coder import SignatureGenerator
 
 import logging
 

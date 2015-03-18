@@ -1,6 +1,6 @@
 
 set(PYTHON_MODULES_TEST
-    elements/template
+    coder/elements/template
 )
 
 foreach(module ${PYTHON_MODULES_TEST})

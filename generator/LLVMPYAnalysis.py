@@ -4,8 +4,8 @@ import sys
 from functools import reduce
 from llvmpy import api
 from collections import defaultdict, namedtuple
-from generator.graph.AtomicBasicBlock import S, E, ControlFlowEdge
-from generator.graph.common import Node, Edge, EdgeType, NodeType
+from generator.analysis.AtomicBasicBlock import S, E, ControlFlowEdge
+from generator.analysis.common import Node, Edge, EdgeType, NodeType
 
 
 

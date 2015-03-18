@@ -1,4 +1,4 @@
-from generator.graph.verifier_tools import *
+from generator.analysis.verifier_tools import *
 
 def computation_blocks(analysis, function):
     provider = analysis.global_abb_information_provider()

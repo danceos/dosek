@@ -44,8 +44,9 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(source_dir, "..")))
 
     from generator import LLVMPYAnalysis, Generator, OILSystemDescription
-    from generator.rules import *
-    from generator.graph import *
+    from generator.analysis import *
+    from generator.transform import *
+    from generator.coder import *
     from generator.tools import panic, wrap_typecheck_functions
 
     # Install the typechecking
@@ -186,12 +187,12 @@ if __name__ == "__main__":
         panic("Unknown --arch=%s", options.arch)
 
     if options.unencoded:
-        os_rules = UnencodedSystem()
+        os_rules = UnencodedOS()
     else:
-        os_rules = EncodedSystem()
+        os_rules = EncodedOS()
 
     assert options.systemcalls in ("full", "specialized", "fsm")
-        
+
     if options.systemcalls == "specialized":
         # Only when we want to specialize the system calls, run the
         # System-Level analyses

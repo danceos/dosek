@@ -1,4 +1,4 @@
-from generator.graph.verifier_tools import *
+from generator.analysis.verifier_tools import *
 
 def after_SystemStateFlow(analysis):
     # Find all three systemcall handlers
