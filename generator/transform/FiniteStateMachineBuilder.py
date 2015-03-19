@@ -5,8 +5,6 @@ from types import SimpleNamespace
 from collections import namedtuple, defaultdict
 from .sage_finite_state_machine import Transducer, full_group_by, Automaton
 
-Transition = namedtuple("Transition", ["source", "target", "action"])
-
 class Transition:
     def __init__(self, source, target, action):
         self._event = None
@@ -45,23 +43,19 @@ class FiniteStateMachine:
     def __init__(self):
         self.initial_state = None
 
-        # Set of Integers
-        self.states = set()
-
         # List of Event
         self.events = []
 
-        # Mapping to SystemState
-        self.mapping = {}
+        # Indirection tables
+        self.state_mapping  = {}
+        self.event_mapping  = {}
+        self.action_mapping = {}
 
         self.impl = SimpleNamespace()
 
-
-    def add_event(self, event):
-        self.events.append(event)
-        for transition in event.transitions:
-            self.states.add(transition.source)
-            self.states.add(transition.target)
+    @property
+    def states(self):
+        return self.state_mapping.keys()
 
     @property
     def transitions(self):
@@ -69,207 +63,142 @@ class FiniteStateMachine:
             for t in ev.transitions:
                 yield t
 
+    def add_event(self, event):
+        self.events.append(event)
+        if not event.name in self.event_mapping:
+            self.event_mapping[event.name] = event.name
+        for transition in event.transitions:
+            if not transition.source in self.state_mapping:
+                self.state_mapping[transition.source] = transition.source
+            if not transition.target in self.state_mapping:
+                self.state_mapping[transition.target] = transition.target
+            if not transition.action in self.action_mapping:
+                self.action_mapping[transition.action] = transition.action
+
+    def __rename_events(self, from_to_map):
+        new_mapping = {}
+        for event in self.events:
+            new = from_to_map[event.name]
+            new_mapping[new] = self.event_mapping[event.name]
+            event.name = new
+        self.event_mapping = new_mapping
+
+    def __rename_actions(self, from_to_map):
+        new_mapping = {}
+        for t in self.transitions:
+            new = from_to_map[t.action]
+            new_mapping[new] = self.action_mapping[t.action]
+            t.action = new
+        self.action_mapping = new_mapping
+
+    def __rename_states(self, from_to_map):
+        self.initial_state = from_to_map[self.initial_state]
+        new_mapping = {}
+        for t in self.transitions:
+            new = from_to_map[t.source]
+            new_mapping[new] = self.state_mapping[t.source]
+            t.source = new
+
+            new = from_to_map[t.target]
+            new_mapping[new] = self.state_mapping[t.target]
+            t.target = new
+        self.state_mapping = new_mapping
+
+    def rename(self, events = None, states = None, actions = None):
+        class count_rename:
+            def __init__(self):
+                self.__i = 0
+            def __call__(self, _):
+                x = self.__i
+                self.__i += 1
+                return x
+
+        if type(events) == bool and events:
+            events = count_rename()
+        if type(states) == bool and states:
+            states = count_rename()
+        if type(actions) == bool and actions:
+            actions = count_rename()
+
+        if events:
+            from_to_map = {}
+            for event in self.events:
+                from_to_map[event.name] = events(event.name)
+            self.__rename_events(from_to_map)
+
+        if states:
+            from_to_map = {}
+            for t in self.transitions:
+                if not t.source in from_to_map:
+                    from_to_map[t.source] = states(t.source)
+                if not t.target in from_to_map:
+                    from_to_map[t.target] = states(t.target)
+            self.__rename_states(from_to_map)
+
+        if actions:
+            from_to_map = {}
+            for t in self.transitions:
+                if not t.action in from_to_map:
+                    from_to_map[t.action] = actions(t.action)
+            self.__rename_actions(from_to_map)
+
+
+
     def to_sage_fsm(self):
-        event_map = {}
-        action_map = {}
         actions = []
+        # What is task at that point
         output_map = {}
         for t in self.transitions:
-            event_map[str(t.event)] = t.event
-            action_map[str(t.action)] = t.action
-            act = None
-            if t.action:
-                act = str(t.action)
-            assert not act in output_map or output_map[t.target] == act
-            output_map[t.target] = act
-            actions.append((t.source, t.target, str(t.event), act))
+            actions.append((t.source, t.target, t.event, t.action))
+            output_map[t.target] = t.action
         m = Transducer(actions, initial_states = [self.initial_state])
 
         for state in m.states():
             if state.label() in output_map:
                 state.word_out = [output_map[state.label()]]
-        return m, event_map, action_map
+        return m
 
     @staticmethod
-    def from_sage_fsm(sage, event_map, action_map, old_mapping):
+    def from_sage_fsm(old_fsm, sage):
         events = {}
-        states = {}
-        state_to_state = {}
-        mapping = {}
-
-        def trans_state(state_group):
-            state_group = state_group.label()
-
-            if state_group in state_to_state:
-                return state_to_state[state_group]
-            else:
-                one_of = sorted(state_group)[0].label()
-                assert one_of in old_mapping
-                # Get a new label through the size of the array
-                new_label = len(state_to_state)
-                mapping[new_label] = old_mapping[one_of]
-                state_to_state[state_group] = new_label
-                return new_label
-
         for transition in sage.transitions():
-            abb = event_map[transition.word_in[0]]
+            abb = transition.word_in[0]
             if not abb in events:
                 events[abb] = Event(abb, [])
             event = events[abb]
 
-            from_state = trans_state(transition.from_state)
-            to_state = trans_state(transition.to_state)
-            action = action_map[transition.word_out[0]]
+            from_state = transition.from_state.label()[0].label()
+            to_state = transition.to_state.label()[0].label()
+            action = transition.word_out[0]
             event.add_transition(Transition(from_state, to_state, action))
 
         # Assemble a finite state machine
         ret = FiniteStateMachine()
         for event in events.values():
             ret.add_event(event)
-        ret.mapping = mapping
-        ret.initial_state = trans_state(sage.initial_states()[0])
-        return ret
-
-    @staticmethod
-    def __equivalence_classes(fsm):
-        """Find equivalence classes for the sage fsm. Two states are in the
-        same equivalence class, if they produce the same dispatch
-        sequence.
-
-        We start with the 0-equivalence:
-          Two states are equal if they have the same running subtask (word_out == current_subtask)
-
-        Furthermore, we split the equivalence classes, according to their:
-          `What are possible next equivalence classes'-key
-
-        This was adapted from `sage_finite_state_machine.equivalence_classes`
-
-        """
-        # initialize with 0-equivalence
-        classes_previous = []
-        key_0 = lambda state: state.word_out
-        states_grouped = full_group_by(fsm.states(), key=key_0)
-        classes_current = [equivalence_class for
-                           (key,equivalence_class) in states_grouped]
-
-        while len(classes_current) != len(classes_previous):
-            class_of = {}
-            followup_classes_of = {}
-
-            classes_previous = classes_current
-            classes_current = []
-
-            # Generate a mapping from state -> current class
-            for k in range(len(classes_previous)):
-                for state in classes_previous[k]:
-                    class_of[state] = k
-
-            # Here we calculate to what classes a state can lead. For
-            # this we follow all transitions until the current
-            # equivalence class is left.
-            for state in fsm.states():
-                visited = set()
-                followup_class = set()
-                W = stack([state])
-                while W:
-                    # Get one from the working stack
-                    S = W.pop()
-                    if S in visited:
-                        continue
-                    visited.add(S)
-
-                    # Add Current class to followup classes
-                    followup_class.add(class_of[S])
-
-                    # Skip if we've left the region
-                    if class_of[S] != class_of[state]:
-                        continue
-
-                    # Shortcut: We have already computed the border
-                    # for a state, reuse its followup classes border
-                    if S in followup_classes_of:
-                        followup_class.update(followup_classes_of[S])
-                    else:
-                        # Otherwise: follow all transitions
-                        for transition in S.transitions:
-                            W.push(transition.to_state)
-
-                # We're only interested in classes this class can jump to
-                followup_class.discard(class_of[state])
-                # We use list(sorted(...)) here, since full_group_by
-                # relies on equal string representations.
-                followup_classes_of[state] = list(sorted(followup_class))
-
-            key_current = lambda state: followup_classes_of[state]
-
-            for class_previous in classes_previous:
-                states_grouped = full_group_by(class_previous, key = key_current)
-                classes_current.extend(equivalence_class
-                                       for key, equivalence_class in states_grouped)
-
-        return classes_current
-
-    @staticmethod
-    def __quotient(fsm, classes):
-        """This function creates a new FSM from a sage fsm and a list of equivalence classes."""
-        new = fsm.empty_copy()
-        state_mapping = {}
-
-        # Create new states and build state_mapping
-        for class_ in classes:
-            new_label = tuple(class_)
-            new_state = class_[0].relabeled(new_label)
-            new.add_state(new_state)
-            for state in class_:
-                state_mapping[state] = new_state
-
-        # Merge the classes and add all transitions. Every transition
-        # is added only once, duplicated onces are removed from the
-        # graph.
-        for class_ in classes:
-            new_transitions = set()
-            new_state = state_mapping[class_[0]]
-            for c in class_:
-                for transition in fsm.iter_transitions(c):
-                    new_transition = (new_state,
-                                      state_mapping[transition.to_state],
-                                      transition.word_in[0],
-                                      transition.word_out[0])
-                    new_transitions.add(new_transition)
-
-            for t in new_transitions:
-                new.add_transition(
-                        from_state = t[0],
-                        to_state = t[1],
-                        word_in = [t[2]],
-                        word_out = [t[3]])
-        return new
-
-    def minimize(self):
-        """Minimize the finite state automata using the an adapted FSM
-        minimization algorithm.
-        """
-        fsm,event_map,action_map = self.to_sage_fsm()
-
-        # We use our own simpliciation algorithm here
-        ec = self.__equivalence_classes(fsm)
-        new_fsm = self.__quotient(fsm, ec)
-
-        # The resulting fsm MUST be deterministic.
-        assert new_fsm.is_deterministic()
-
-        ret = self.from_sage_fsm(new_fsm,event_map,action_map, self.mapping)
-
-        # Remove Events that have only transitions which are self loops
-        to_del = []
-        for event in ret.events:
-            if all(t.source == t.target for t in event.transitions):
-                to_del.append(event)
-        logging.info("  FSM(minimized): %d self loop events removed", len(to_del))
-        for event in to_del:
-            ret.events.remove(event)
+        ret.initial_state = sage.initial_states()[0].label()[0].label()
+        ret.action_mapping = old_fsm.action_mapping.copy()
+        ret.event_mapping = old_fsm.event_mapping.copy()
+        ret.state_mapping = old_fsm.state_mapping.copy()
 
         return ret
+
+
+    def __str__(self):
+        ret = []
+        max_lengths = [0,0,0,0]
+        table = []
+        for t in self.transitions:
+            row = [t.event, t.source, t.target, t.action]
+            table.append(row)
+            for i, e in enumerate(row):
+                max_lengths[i] = max(max_lengths[i], len(str(e)))
+        for row in table:
+            # Don't ask
+            line = "{0!s:<{4}}\t{1!s:<{5}}\t{2!s:<{6}}\t{3!s:<{7}}".format(*(row + max_lengths))
+            ret.append(line)
+        return "\n".join(ret)
+
 
 
 class FiniteStateMachineBuilder(Analysis, GraphObject):
@@ -424,7 +353,7 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
                 self.fsm.initial_state = transitions[0].source
             event = Event(name = abb, transitions = transitions)
             self.fsm.add_event(event)
-        self.fsm.mapping = map_to_SystemState
+        self.fsm.state_mapping = map_to_SystemState
 
         def count(iter):
             return sum(1 for _ in iter)
@@ -434,8 +363,159 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
                      count(self.fsm.transitions))
 
         self.fsm_unminimized = self.fsm
-        self.fsm = self.fsm.minimize()
+        self.fsm = FiniteStateMachineMinimizer.minimize(self.fsm)
         logging.info("  FSM(minimized): %d states; %d transisitons" ,
                      len(self.fsm.states),
                      count(self.fsm.transitions))
 
+
+class FiniteStateMachineMinimizer:
+    @staticmethod
+    def __equivalence_classes(fsm):
+        """Find equivalence classes for the sage fsm. Two states are in the
+        same equivalence class, if they produce the same dispatch
+        sequence.
+
+        We start with the 0-equivalence:
+          Two states are equal if they have the same running subtask (word_out == current_subtask)
+
+        Furthermore, we split the equivalence classes, according to their:
+          `What are possible next equivalence classes'-key
+
+        This was adapted from `sage_finite_state_machine.equivalence_classes`
+
+        """
+        # initialize with 0-equivalence
+        classes_previous = []
+        key_0 = lambda state: state.word_out
+        states_grouped = full_group_by(fsm.states(), key=key_0)
+        classes_current = [equivalence_class for
+                           (key,equivalence_class) in states_grouped]
+
+        while len(classes_current) != len(classes_previous):
+            class_of = {}
+            followup_classes_of = {}
+
+            classes_previous = classes_current
+            classes_current = []
+
+            # Generate a mapping from state -> current class
+            for k in range(len(classes_previous)):
+                for state in classes_previous[k]:
+                    class_of[state] = k
+
+            # Here we calculate to what classes a state can lead. For
+            # this we follow all transitions until the current
+            # equivalence class is left.
+            for state in fsm.states():
+                visited = set()
+                followup_class = set()
+                W = stack([state])
+                while W:
+                    # Get one from the working stack
+                    S = W.pop()
+                    if S in visited:
+                        continue
+                    visited.add(S)
+
+                    # Add Current class to followup classes
+                    followup_class.add(class_of[S])
+
+                    # Skip if we've left the region
+                    if class_of[S] != class_of[state]:
+                        continue
+
+                    # Shortcut: We have already computed the border
+                    # for a state, reuse its followup classes border
+                    if S in followup_classes_of:
+                        followup_class.update(followup_classes_of[S])
+                    else:
+                        # Otherwise: follow all transitions
+                        for transition in S.transitions:
+                            W.push(transition.to_state)
+
+                # We're only interested in classes this class can jump to
+                followup_class.discard(class_of[state])
+                # We use list(sorted(...)) here, since full_group_by
+                # relies on equal string representations.
+                followup_classes_of[state] = list(sorted(followup_class))
+
+            key_current = lambda state: followup_classes_of[state]
+
+            for class_previous in classes_previous:
+                states_grouped = full_group_by(class_previous, key = key_current)
+                classes_current.extend(equivalence_class
+                                       for key, equivalence_class in states_grouped)
+
+        return classes_current
+
+    @staticmethod
+    def __quotient(fsm, classes):
+        """This function creates a new FSM from a sage fsm and a list of equivalence classes."""
+        new = fsm.empty_copy()
+        state_mapping = {}
+
+        # Create new states and build state_mapping
+        for class_ in classes:
+            new_label = tuple(class_)
+            new_state = class_[0].relabeled(new_label)
+            new.add_state(new_state)
+            for state in class_:
+                state_mapping[state] = new_state
+
+        # Merge the classes and add all transitions. Every transition
+        # is added only once, duplicated onces are removed from the
+        # graph.
+        for class_ in classes:
+            new_transitions = set()
+            new_state = state_mapping[class_[0]]
+            for c in class_:
+                for transition in fsm.iter_transitions(c):
+                    new_transition = (new_state,
+                                      state_mapping[transition.to_state],
+                                      transition.word_in[0],
+                                      transition.word_out[0])
+                    new_transitions.add(new_transition)
+
+            for t in new_transitions:
+                new.add_transition(
+                        from_state = t[0],
+                        to_state = t[1],
+                        word_in = [t[2]],
+                        word_out = [t[3]])
+        return new
+
+    @staticmethod
+    def minimize(old_fsm):
+        """Minimize the finite state automata using the an adapted FSM
+        minimization algorithm.
+        """
+        old_fsm.rename(events = True, actions = True)
+        # For Debugging: self.rename(events = str, actions = str)
+
+        sage = old_fsm.to_sage_fsm()
+
+        # We use our own simpliciation algorithm here
+        ec = FiniteStateMachineMinimizer.__equivalence_classes(sage)
+        new_fsm = FiniteStateMachineMinimizer.__quotient(sage, ec)
+
+        # The resulting fsm MUST be deterministic.
+        assert new_fsm.is_deterministic()
+
+        ret = FiniteStateMachine.from_sage_fsm(old_fsm, new_fsm)
+
+        # Get back the objects
+        ret.rename(events = lambda x: ret.event_mapping[x],
+                   states = True, # Renumber !
+                   actions = lambda x: ret.action_mapping[x])
+
+        # Remove Events that have only transitions which are self loops
+        to_del = []
+        for event in ret.events:
+            if all(t.source == t.target for t in event.transitions):
+                to_del.append(event)
+        logging.info("  FSM(minimized): %d self loop events removed", len(to_del))
+        for event in to_del:
+            ret.events.remove(event)
+
+        return ret

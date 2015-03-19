@@ -173,25 +173,33 @@ class SimpleFSMTemplate(CodeTemplate):
 
     def add_transition_table(self):
         self.syscall_map = {}
+
+        # Rename action labels to their task id
+        def action_rename(action):
+            task_id = action.impl.task_id
+            if task_id == None:
+                print(action.subtask)
+                task_id = 255
+            return task_id
+        self.fsm.rename(actions = action_rename)
+
         # Generate the transition table
         for event in self.fsm.events:
             self.syscall_map[event.name] = event
 
+            # Do not generate a transition table, if there is only one
+            # transition.
             if len(event.transitions) == 1:
                 event.impl.transition_table = None
                 continue
 
-            table = DataObjectArray("os::fsm::SimpleFSM::Transition", "fsm_table_" + event.name.generated_function_name(),
+            table = DataObjectArray("os::fsm::SimpleFSM::Transition",
+                                    "fsm_table_" + event.name.generated_function_name(),
                                     str(len(event.transitions)))
-            inits = []
-            for trans in event.transitions:
-                task_id = trans.action.impl.task_id
-                if task_id == None:
-                    assert event.name.subtask.conf.is_isr
-                    task_id = 255
-                inits.append("{%d, %d, %s}" % (trans.source, trans.target,
-                                               task_id))
-            table.static_initializer = inits
+            table.static_initializer = []
+            for t in event.transitions:
+                table.static_initializer\
+                     .append("{%d, %d, %d}" % (t.source, t.target, t.action))
             event.impl.transition_table = table
 
             self.syscall_fsm.generator.source_file.data_manager\
@@ -215,8 +223,6 @@ class SimpleFSMTemplate(CodeTemplate):
                                                   "void", [str(followup_state)])
 
             task = event.transitions[0].action
-            if task.conf.is_isr:
-                task = None
 
         return task
 
@@ -225,15 +231,9 @@ class SimpleFSMTemplate(CodeTemplate):
             return
         task = self.fsm_event(syscall, userspace, kernelspace)
 
-        if not task:
-            pass
-        elif isinstance(task, Subtask):
-            if task == self.system_graph.idle_subtask:
-                self.syscall_fsm.call_function(kernelspace, "arch::Dispatcher::idle",
-                                               "void", [])
-            else:
-                self.syscall_fsm.call_function(kernelspace, "arch::Dispatcher::Dispatch",
-                                               "void", [task.impl.task_descriptor.name])
+        if type(task) == int:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
+                                           "void", [str(task)])
         else:
             self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
                                            "void", [task.name])
@@ -242,12 +242,9 @@ class SimpleFSMTemplate(CodeTemplate):
         if not syscall in self.syscall_map:
             return
         task = self.fsm_event(syscall, userspace, kernelspace)
-        if not task:
-            pass
-        elif isinstance(task, Subtask):
-            if task != self.system_graph.idle_subtask:
-                self.syscall_fsm.call_function(kernelspace, "arch::Dispatcher::Dispatch",
-                                               "void", [task.impl.task_descriptor.name])
+        if type(task) == int:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
+                                           "void", [str(task)])
         else:
             self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
                                            "void", [task.name])

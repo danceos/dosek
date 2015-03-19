@@ -2,7 +2,7 @@
 namespace os {
 namespace fsm {
 
-const os::scheduler::Task * dispatch_table[] = {
+constexpr const os::scheduler::Task const * const dispatch_table[] = {
 	0,
 {{{!foreach_subtask_sorted|
    &{{{!subtask_desc}}}, /* {{{!subtask_id}}} */
@@ -20,10 +20,10 @@ class SchedulerFSM : public SimpleFSM {
     SchedulerFSM(SimpleFSM::internal_state_t state) : SimpleFSM(state) {}
 
 
-	void dispatch(SimpleFSM::task_t task_id) {
-		if (task_id == 0) {
+	void dispatch(const SimpleFSM::task_t task_id) {
+		if (task_id == IDLE) {
 			arch::Dispatcher::idle();
-		} else if (task_id == 255) {
+		} else if (task_id == NO_DISPATCH) {
 			return;
 		} else if (task_id >= sizeof(dispatch_table)/sizeof(*dispatch_table)) {
 			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
