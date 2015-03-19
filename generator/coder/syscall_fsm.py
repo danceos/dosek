@@ -5,6 +5,7 @@ from .elements import CodeTemplate, Include, VariableDefinition, \
 from generator.tools import unwrap_seq
 from generator.analysis.AtomicBasicBlock import E,S
 from generator.analysis.SystemSemantic import SystemState
+from generator.analysis import Subtask
 import logging
 
 
@@ -16,45 +17,22 @@ class FSMSystemCalls(FullSystemCalls):
         self.fsm_template = SimpleFSMTemplate
 
     def generate_system_code(self):
-        self.generator.source_file.includes.add(Include("syscall.h"))
+        self.generator.source_file.include("syscall.h")
 
         # Grab the finite state machine
         self.fsm = self.system_graph.get_pass("fsm").fsm
 
         # Use the fsm template
-        self.generator.source_file.includes.add(Include("reschedule-ast.h"))
+        self.generator.source_file.include("reschedule-ast.h")
 
-        self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
-        self.generator.source_file.declarations.append(self.fsm_template(self).expand())
+        self.generator.source_file.include("os/scheduler/task.h")
+        self.impl = self.fsm_template(self)
+        self.impl.add_transition_table()
+        self.generator.source_file.declarations.append(self.impl.expand())
 
-        self.generator.source_file.includes.add(Include("os/alarm.h"))
-        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
+        self.generator.source_file.include("os/alarm.h")
+        self.generator.source_file.include("os/util/redundant.h")
         self.generator.source_file.declarations.append(self.alarms(self).expand())
-
-
-
-        self.syscall_map = {}
-        # Generate the transition table
-        for event in self.fsm.events:
-            self.syscall_map[event.name] = event
-            table = DataObjectArray("os::fsm::SimpleFSM::Transition", "fsm_table_" + event.name.generated_function_name(),
-                                    str(len(event.transitions)))
-            inits = []
-            for trans in event.transitions:
-                task_id = trans.action.impl.task_id
-                if task_id == None:
-                    assert event.name.subtask.conf.is_isr
-                    task_id = 255
-                inits.append("{%d, %d, %s}" % (trans.source, trans.target,
-                                               task_id))
-            table.static_initializer = inits
-            event.impl.transition_table = table
-
-            self.generator.source_file.data_manager\
-                .add(table, namespace = ('os', 'fsm'))
-
-        # The state machine instance
-        self.fsm.impl = "fsm_engine"
 
     def StartOS(self, block):
         block.unused_parameter(0)
@@ -82,26 +60,16 @@ class FSMSystemCalls(FullSystemCalls):
                            [dispatch_func.function_name])
         self.call_function(block, "Machine::unreachable", "void", [])
 
-    def fsm_event(self, syscall, userspace, kernelspace):
-        if not syscall in self.syscall_map:
-            return
-        event = self.syscall_map[syscall]
+    # Forward fsm_schedule and fsm_event
+    def fsm_event(self, *args, **kwargs):
+        self.impl.fsm_event(*args, **kwargs)
 
-        transition_table  = event.impl.transition_table.name
-        transition_length = str(len(event.transitions))
+    def fsm_schedule(self, *args, **kwargs):
+        self.impl.fsm_schedule(*args, **kwargs)
 
-        # kernelspace.add(Statement('kout << "%s" << endl' % syscall.path()))
-        task = self.call_function(kernelspace, "os::fsm::fsm_engine.event",
-                               "SimpleFSM::task_t", [transition_table, transition_length])
-        return task
+    def iret(self, *args, **kwargs):
+        self.impl.fsm_iret(*args, **kwargs)
 
-
-    def fsm_schedule(self, syscall, userspace, kernelspace):
-        if not syscall in self.syscall_map:
-            return
-        task = self.fsm_event(syscall, userspace, kernelspace)
-        self.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
-                               "void", [task.name])
 
     def kickoff(self, syscall, userspace, kernelspace):
         self.fsm_event(syscall, userspace, kernelspace)
@@ -113,13 +81,6 @@ class FSMSystemCalls(FullSystemCalls):
         self.call_function(kernelspace, self.task_desc(syscall.subtask) + ".tcb.reset",
                            "void", [])
         self.fsm_schedule(syscall, userspace, kernelspace)
-
-    def iret(self, syscall, userspace, kernelspace):
-        if not syscall in self.syscall_map:
-            return
-        task = self.fsm_event(syscall, userspace, kernelspace)
-        self.call_function(kernelspace, "os::fsm::fsm_engine.iret",
-                               "void", [task.name])
 
 
     ChainTask = TerminateTask
@@ -201,27 +162,112 @@ class FSMSystemCalls(FullSystemCalls):
 
 
 class SimpleFSMTemplate(CodeTemplate):
-    def __init__(self, rules):
-        CodeTemplate.__init__(self, rules.generator, "os/fsm/simple-fsm.h.in")
-        self.rules = rules
+    def __init__(self, syscall_fsm):
+        CodeTemplate.__init__(self, syscall_fsm.generator, "os/fsm/simple-fsm.h.in")
+        self.syscall_fsm = syscall_fsm
         self.system_graph = self.generator.system_graph
 
-        self.rules.generator.source_file.includes.add(Include("os/fsm/simple-fsm.h"))
+        self.syscall_fsm.generator.source_file.include("os/fsm/simple-fsm.h")
 
-        self.fsm = self.rules.fsm
+        self.fsm = self.syscall_fsm.fsm
 
+    def add_transition_table(self):
+        self.syscall_map = {}
+        # Generate the transition table
+        for event in self.fsm.events:
+            self.syscall_map[event.name] = event
+
+            if len(event.transitions) == 1:
+                event.impl.transition_table = None
+                continue
+
+            table = DataObjectArray("os::fsm::SimpleFSM::Transition", "fsm_table_" + event.name.generated_function_name(),
+                                    str(len(event.transitions)))
+            inits = []
+            for trans in event.transitions:
+                task_id = trans.action.impl.task_id
+                if task_id == None:
+                    assert event.name.subtask.conf.is_isr
+                    task_id = 255
+                inits.append("{%d, %d, %s}" % (trans.source, trans.target,
+                                               task_id))
+            table.static_initializer = inits
+            event.impl.transition_table = table
+
+            self.syscall_fsm.generator.source_file.data_manager\
+                .add(table, namespace = ('os', 'fsm'))
+
+    def fsm_event(self, syscall, userspace, kernelspace):
+        if not syscall in self.syscall_map:
+            return
+        event = self.syscall_map[syscall]
+
+        if event.impl.transition_table:
+            transition_table  = event.impl.transition_table.name
+            transition_length = str(len(event.transitions))
+
+            # kernelspace.add(Statement('kout << "%s" << endl' % syscall.path()))
+            task = self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.event",
+                                                  "SimpleFSM::task_t", [transition_table, transition_length])
+        else:
+            followup_state = event.impl.followup_state = event.transitions[0].target
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.set_state",
+                                                  "void", [str(followup_state)])
+
+            task = event.transitions[0].action
+            if task.conf.is_isr:
+                task = None
+
+        return task
+
+    def fsm_schedule(self, syscall, userspace, kernelspace):
+        if not syscall in self.syscall_map:
+            return
+        task = self.fsm_event(syscall, userspace, kernelspace)
+
+        if not task:
+            pass
+        elif isinstance(task, Subtask):
+            if task == self.system_graph.idle_subtask:
+                self.syscall_fsm.call_function(kernelspace, "arch::Dispatcher::idle",
+                                               "void", [])
+            else:
+                self.syscall_fsm.call_function(kernelspace, "arch::Dispatcher::Dispatch",
+                                               "void", [task.impl.task_descriptor.name])
+        else:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
+                                           "void", [task.name])
+
+    def fsm_iret(self, syscall, userspace, kernelspace):
+        if not syscall in self.syscall_map:
+            return
+        task = self.fsm_event(syscall, userspace, kernelspace)
+        if not task:
+            pass
+        elif isinstance(task, Subtask):
+            if task != self.system_graph.idle_subtask:
+                self.syscall_fsm.call_function(kernelspace, "arch::Dispatcher::Dispatch",
+                                               "void", [task.impl.task_descriptor.name])
+        else:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
+                                           "void", [task.name])
+
+    ################################################################
+    # Used in Template Code
+    ################################################################
     def subtask_desc(self, snippet, args):
         return self._subtask.impl.task_descriptor.name
 
     def subtask_id(self, snippet, args):
         return str(self._subtask.impl.task_id)
 
-    def foreach_subtask(self, snippet, args):
+    def foreach_subtask_sorted(self, snippet, args):
         body = args[0]
-        def do(subtask):
+        ret = []
+        for subtask in sorted(self.system_graph.real_subtasks, key=lambda s: s.impl.task_id):
             self._subtask = subtask
-            return self.expand_snippet(body)
-        return self.rules.foreach_subtask(do)
+            ret.append(self.expand_snippet(body))
+        return ret
 
 
 class FSMAlarmTemplate(AlarmTemplate):

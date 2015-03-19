@@ -29,7 +29,7 @@ class X86Arch(GenericArch):
         self.generator.source_file.data_manager.add(stackptr_arr, namespace = ("arch",))
 
     def generate_dataobjects_tcbs(self):
-        self.generator.source_file.includes.add(Include("tcb.h"))
+        self.generator.source_file.include("tcb.h")
 
         tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "")
         tcb_arr.add_static_initializer("0")
@@ -52,7 +52,7 @@ class X86Arch(GenericArch):
         self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
 
     def generate_isr_table(self, isrs):
-        self.generator.source_file.includes.add(Include("machine.h"))
+        self.generator.source_file.include("machine.h")
         for isr in isrs:
             self.generate_isr(isr)
 

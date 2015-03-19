@@ -7,7 +7,7 @@
 """
 
 
-from .IncludeManager import IncludeManager
+from .IncludeManager import IncludeManager, Include
 from .DataObjectManager import DataObjectManager
 from .FunctionManager import FunctionManager
 from generator import tools
@@ -19,6 +19,9 @@ class SourceFile:
         self.data_manager = DataObjectManager()
         self.function_manager = FunctionManager()
         self.definitions = []
+
+    def include(self, filename):
+        self.includes.add(Include(filename))
 
     def source_elements(self):
         return [self.includes.source_elements()] \

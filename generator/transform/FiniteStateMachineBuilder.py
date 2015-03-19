@@ -83,7 +83,7 @@ class FiniteStateMachine:
             assert not act in output_map or output_map[t.target] == act
             output_map[t.target] = act
             actions.append((t.source, t.target, str(t.event), act))
-        m = Transducer(actions)
+        m = Transducer(actions, initial_states = [self.initial_state])
 
         for state in m.states():
             if state.label() in output_map:
@@ -91,10 +91,25 @@ class FiniteStateMachine:
         return m, event_map, action_map
 
     @staticmethod
-    def from_sage_fsm(sage, event_map, action_map):
+    def from_sage_fsm(sage, event_map, action_map, old_mapping):
         events = {}
         states = {}
-        state_count = 1
+        state_to_state = {}
+        mapping = {}
+
+        def trans_state(state_group):
+            state_group = state_group.label()
+
+            if state_group in state_to_state:
+                return state_to_state[state_group]
+            else:
+                one_of = sorted(state_group)[0].label()
+                assert one_of in old_mapping
+                # Get a new label through the size of the array
+                new_label = len(state_to_state)
+                mapping[new_label] = old_mapping[one_of]
+                state_to_state[state_group] = new_label
+                return new_label
 
         for transition in sage.transitions():
             abb = event_map[transition.word_in[0]]
@@ -102,23 +117,17 @@ class FiniteStateMachine:
                 events[abb] = Event(abb, [])
             event = events[abb]
 
-            # Create States if necessary, we use the state name of the
-            # first subsumed state
-            if not transition.from_state in states:
-                states[transition.from_state] = transition.from_state.label()[0].label()
-            if not transition.to_state in states:
-                states[transition.to_state] = transition.to_state.label()[0].label()
-
-            from_state = states[transition.from_state]
-            to_state = states[transition.to_state]
+            from_state = trans_state(transition.from_state)
+            to_state = trans_state(transition.to_state)
             action = action_map[transition.word_out[0]]
-
             event.add_transition(Transition(from_state, to_state, action))
 
         # Assemble a finite state machine
         ret = FiniteStateMachine()
         for event in events.values():
             ret.add_event(event)
+        ret.mapping = mapping
+        ret.initial_state = trans_state(sage.initial_states()[0])
         return ret
 
     @staticmethod
@@ -249,12 +258,7 @@ class FiniteStateMachine:
         # The resulting fsm MUST be deterministic.
         assert new_fsm.is_deterministic()
 
-        ret = self.from_sage_fsm(new_fsm,event_map,action_map)
-        # Copy Mapping and initial state. The initial state has the
-        # same number, since from_sage_fsm does reuse the first state
-        # label in each label group.
-        ret.initial_state = self.initial_state
-        ret.mapping = self.mapping
+        ret = self.from_sage_fsm(new_fsm,event_map,action_map, self.mapping)
 
         # Remove Events that have only transitions which are self loops
         to_del = []

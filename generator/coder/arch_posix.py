@@ -19,7 +19,7 @@ class PosixArch(GenericArch):
         self.generate_dataobjects_tcbs()
 
     def generate_dataobjects_tcbs(self):
-        self.generator.source_file.includes.add(Include("tcb.h"))
+        self.generator.source_file.include("tcb.h")
         for subtask in self.system_graph.real_subtasks:
             initializer = "(&%s, %s, %s, %s)" % (
                 subtask.impl.entry_function.name,
@@ -35,13 +35,13 @@ class PosixArch(GenericArch):
             subtask.impl.tcb_descriptor = tcb
 
     def generate_isr_table(self, isrs):
-        self.generator.source_file.includes.add(Include("machine.h"))
+        self.generator.source_file.include("machine.h")
         for isr in isrs:
             self.generate_isr(isr)
 
     def generate_isr(self, isr):
         # Forward declaration for the user defined function
-        self.generator.source_file.includes.add(Include("irq.h"))
+        self.generator.source_file.include("irq.h")
 
         isr_desc = self.generator.system_graph.get(Subtask, isr.name)
 
@@ -67,7 +67,7 @@ class PosixArch(GenericArch):
                            prepend = True)
 
     def generate_isr_table(self, isrs):
-        self.generator.source_file.includes.add(Include("machine.h"))
+        self.generator.source_file.include("machine.h")
         for isr in isrs:
             self.generate_isr(isr)
 

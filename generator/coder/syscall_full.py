@@ -16,15 +16,15 @@ class FullSystemCalls(BaseCoder):
 
     def generate_system_code(self):
         # Use the tasklist and scheduler that is given by the kind of OS (encoded, unencoded)
-        self.generator.source_file.includes.add(Include("os/scheduler/tasklist.h"))
+        self.generator.source_file.include("os/scheduler/tasklist.h")
         self.generator.source_file.declarations.append(self.os_rules.task_list(self).expand())
 
-        self.generator.source_file.includes.add(Include("os/scheduler/scheduler.h"))
-        self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
+        self.generator.source_file.include("os/scheduler/scheduler.h")
+        self.generator.source_file.include("os/scheduler/task.h")
         self.generator.source_file.declarations.append(self.os_rules.scheduler(self).expand())
 
-        self.generator.source_file.includes.add(Include("os/alarm.h"))
-        self.generator.source_file.includes.add(Include("os/util/redundant.h"))
+        self.generator.source_file.include("os/alarm.h")
+        self.generator.source_file.include("os/util/redundant.h")
         self.generator.source_file.declarations.append(self.alarms(self).expand())
 
 

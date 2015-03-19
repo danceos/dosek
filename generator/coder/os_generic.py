@@ -41,7 +41,7 @@ class GenericOS(BaseCoder):
             self.generator.source_file.data_manager.add(iddesc);
 
     def generate_dataobjects_task_descriptors(self):
-        self.generator.source_file.includes.add(Include("os/scheduler/task.h"))
+        self.generator.source_file.include("os/scheduler/task.h")
         self.system_graph.idle_subtask.impl.task_id = 0
         task_id = 1
         for subtask in self.system_graph.subtasks:
@@ -150,15 +150,15 @@ class GenericOS(BaseCoder):
     def generate_dataobjects_checkedObjects(self):
         if len(list(self.system_graph.checkedObjects)) < 1:
             return
-        self.generator.source_file.includes.add(Include("dependability/dependability_service.h"))
-        self.generator.source_file.includes.add(Include("dependability/depsvc.h"))
+        self.generator.source_file.include("dependability/dependability_service.h")
+        self.generator.source_file.include("dependability/depsvc.h")
 
         co_index = 0;
         initializator = "{\n"
         multiplexer_functions = []
         for co in self.system_graph.checkedObjects:
             if co.header is not None:
-                self.generator.source_file.includes.add(Include(co.header))
+                self.generator.source_file.include(co.header)
             if co.typename is not None:
                 self.generator.source_file.data_manager.add(ExternalDataObject(co.typename, co.name))
             initializator += "    { &" + co.name + ", sizeof(" + co.name + ") },\n"

@@ -31,7 +31,7 @@ class ARMArch(GenericArch):
 
 
     def generate_dataobjects_tcbs(self):
-        self.generator.source_file.includes.add(Include("tcb.h"))
+        self.generator.source_file.include("tcb.h")
 
         tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "")
         tcb_arr.add_static_initializer("0")
@@ -57,8 +57,8 @@ class ARMArch(GenericArch):
         self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
 
     def generate_isr_table(self, isrs):
-        self.generator.source_file.includes.add(Include("machine.h"))
-        self.generator.source_file.includes.add(Include("gic.h"))
+        self.generator.source_file.include("machine.h")
+        self.generator.source_file.include("gic.h")
 
         installed_irq_handlers = {0,      # Dispatch
                                   1,      # Reschedule
@@ -81,8 +81,8 @@ class ARMArch(GenericArch):
 
 
     def generate_isr(self, isr):
-        self.generator.source_file.includes.add(Include("machine.h"))
-        self.generator.source_file.includes.add(Include("gic.h"))
+        self.generator.source_file.include("machine.h")
+        self.generator.source_file.include("gic.h")
         isr_desc = self.generator.system_graph.find(Subtask, isr.name)
         irq_number = isr_desc.conf.isr_device
         handler = FunctionDefinitionBlock('ISR', [str(irq_number)])
