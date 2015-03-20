@@ -63,6 +63,28 @@ class FiniteStateMachine:
             for t in ev.transitions:
                 yield t
 
+    @property
+    def actions(self):
+        return self.action_mapping.keys()
+
+    def copy(self):
+        ret = FiniteStateMachine()
+        ret.initial_state = self.initial_state
+
+        #Copy Mappings
+        ret.action_mapping = self.action_mapping.copy()
+        ret.event_mapping = self.event_mapping.copy()
+        ret.state_mapping = self.state_mapping.copy()
+
+        # Generate new transitions and events
+        for event in self.events:
+            n_event = Event(event.name, [])
+            for t in event.transitions:
+                n_t = Transition(t.source, t.target, t.action)
+                n_event.add_transition(n_t)
+            ret.add_event(n_event)
+        return ret
+
     def add_event(self, event):
         self.events.append(event)
         if not event.name in self.event_mapping:
