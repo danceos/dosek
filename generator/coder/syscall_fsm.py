@@ -10,11 +10,15 @@ import logging
 
 
 class FSMSystemCalls(FullSystemCalls):
-    def __init__(self):
+    def __init__(self, use_pla = False):
         super(FSMSystemCalls, self).__init__()
 
         self.alarms = FSMAlarmTemplate
-        self.fsm_template = SimpleFSMTemplate
+        if use_pla:
+            self.fsm_template = PLA_FSMTemplate
+        else:
+            self.fsm_template = SimpleFSMTemplate
+
 
     def generate_system_code(self):
         self.generator.source_file.include("syscall.h")
@@ -178,7 +182,6 @@ class SimpleFSMTemplate(CodeTemplate):
         def action_rename(action):
             task_id = action.impl.task_id
             if task_id == None:
-                print(action.subtask)
                 task_id = 255
             return task_id
         self.fsm.rename(actions = action_rename)
@@ -266,8 +269,100 @@ class SimpleFSMTemplate(CodeTemplate):
             ret.append(self.expand_snippet(body))
         return ret
 
+class PLA_FSMTemplate(CodeTemplate):
+    def __init__(self, syscall_fsm):
+        CodeTemplate.__init__(self, syscall_fsm.generator, "os/fsm/pla-fsm.h.in")
+        self.syscall_fsm = syscall_fsm
+        self.system_graph = self.generator.system_graph
+        self.logic = self.system_graph.get_pass("LogicMinimizer")
+        self.fsm = self.logic.fsm
+
+    def add_transition_table(self):
+        # Truth table is generated in pla-fsm.h
+        return
+
+
+    def fsm_event(self, syscall, userspace, kernelspace):
+        event = None
+        for ev in self.fsm.events:
+            if self.fsm.event_mapping[ev.name] == syscall:
+                event = ev
+                break
+        if not event:
+            return # No Dispatch
+        # kernelspace.add(Statement('kout << "%s" << endl' % syscall.path()))
+        task = self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.event",
+                                              "unsigned", [str(int(event.name, 2))])
+        return task
+
+    def fsm_schedule(self, syscall, userspace, kernelspace):
+        task = self.fsm_event(syscall, userspace, kernelspace)
+        if not task:
+            return
+        if type(task) == int:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
+                                           "void", [str(task)])
+        else:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
+                                           "void", [task.name])
+
+    def fsm_iret(self, syscall, userspace, kernelspace):
+        task = self.fsm_event(syscall, userspace, kernelspace)
+        if not task:
+            return
+
+        if type(task) == int:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
+                                           "void", [str(task)])
+        else:
+            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
+                                           "void", [task.name])
+
+    ################################################################
+    # Used in Template Code
+    ################################################################
+    def truth_table(self, *args):
+        # Generate the transition table
+        initializer = []
+        for (mask, pattern, output_state, output_action) in self.logic.truth_table:
+            initializer.append("{{{0}, {1}, {2}, {3}}}".format(
+                int(mask, 2),
+                int(pattern, 2),
+                int(output_state, 2),
+                int(output_action, 2)))
+
+        return "{" + (", ".join(initializer)) + "}"
+
+    def mask_pattern_len(self, *args):
+        return str(self.logic.event_len + self.logic.state_len)
+
+    def truth_table_entries(self, *args):
+        return str(len(self.logic.truth_table))
+
+    def initial_state(self, *args):
+        return str(int(self.fsm.initial_state,2))
+
+    def dispatch_table(self, *args):
+        mapping = {}
+        for k, subtask in self.fsm.action_mapping.items():
+            mapping[int(k, 2)] = subtask
+        if not 0 in mapping:
+            mapping[0] = None
+        self.NO_DISPATCH = 0
+
+        initializer = []
+        for k,subtask in sorted(mapping.items(), key = lambda x:x[0]):
+            if not subtask or subtask.conf.is_isr:
+                initializer.append("0 /* NO_DISPATCH */")
+            elif subtask == self.system_graph.idle_subtask:
+                initializer.append("0 /* IDLE */")
+                self.IDLE = k
+            else:
+                initializer.append("&" +subtask.impl.task_descriptor.name)
+        if not hasattr(self, "IDLE"):
+            self.IDLE = len(mapping) + 100
+        return ", ".join(initializer)
 
 class FSMAlarmTemplate(AlarmTemplate):
     def __init__(self, rules):
         AlarmTemplate.__init__(self, rules)
-

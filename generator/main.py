@@ -188,7 +188,7 @@ if __name__ == "__main__":
     else:
         os_rules = EncodedOS()
 
-    assert options.systemcalls in ("full", "specialized", "fsm")
+    assert options.systemcalls in ("full", "specialized", "fsm", "fsm:pla")
 
     if options.systemcalls == "specialized":
         # Only when we want to specialize the system calls, run the
@@ -201,7 +201,13 @@ if __name__ == "__main__":
         logging.info("Global control flow information is provided by %s",
                      global_abb_information.name())
         syscall_rules = SpecializedSystemCalls(global_abb_information)
+    elif options.systemcalls == "fsm:pla":
+        assert options.arch == "posix", "FSM Encoding is only supported for arch=posix"
+        pass_manager.enqueue_analysis("LogicMinimizer")
+        pass_manager.enqueue_analysis("fsm")
+        syscall_rules = FSMSystemCalls(use_pla = True)
     elif options.systemcalls == "fsm":
+        assert options.arch == "posix", "FSM Encoding is only supported for arch=posix"
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls()
     else:

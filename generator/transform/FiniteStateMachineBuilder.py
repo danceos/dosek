@@ -20,7 +20,7 @@ class Transition:
             return self._event.name
 
     def __repr__(self):
-        return "<Transition(%s) %d -> %d: %s>" %(self.event, self.source, self.target, self.action)
+        return "<Transition(%s) %s -> %s: %s>" %(self.event, self.source, self.target, self.action)
 
 
 class Event:

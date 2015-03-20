@@ -1,0 +1,68 @@
+#include "dispatch.h"
+
+namespace os {
+namespace fsm {
+
+constexpr const os::scheduler::Task  * dispatch_table[] = {
+	{{{!dispatch_table}}}
+};
+
+
+class SchedulerFSM {
+ public:
+	struct Row {
+		unsigned mask : {{{!mask_pattern_len}}};
+		unsigned pattern : {{{!mask_pattern_len}}};
+		unsigned output_state : {{{!get:logic.state_len}}};
+		unsigned output_action : {{{!get:logic.action_len}}};
+	} __attribute__((packed));
+
+    enum {
+		IDLE = {{{!get:IDLE}}},
+		NO_DISPATCH = {{{!get:NO_DISPATCH}}},
+	};
+
+	SchedulerFSM(unsigned state) : internal_state(state) {}
+
+	unsigned event(unsigned event) {
+		unsigned input_word = event << {{{!get:logic.state_len}}} | internal_state;
+		unsigned output_state = 0, output_action = 0;
+		for (unsigned i = 0; i < {{{!truth_table_entries}}}; i++) {
+			if ((truth_table[i].mask & input_word) == truth_table[i].pattern) {
+				output_state |= truth_table[i].output_state;
+				output_action |= truth_table[i].output_action;
+			}
+		}
+		internal_state = output_state;
+		return output_action;
+	}
+
+	void dispatch(unsigned task_id) {
+		if (task_id == IDLE) {
+			arch::Dispatcher::idle();
+		} else if (task_id == NO_DISPATCH) {
+			return;
+		} else if (task_id >= sizeof(dispatch_table)/sizeof(*dispatch_table)) {
+			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+		} else {
+			arch::Dispatcher::Dispatch(*dispatch_table[task_id]);
+		}
+	}
+
+	void iret(unsigned task_id) {
+		if (task_id != NO_DISPATCH && task_id != IDLE) {
+           dispatch(task_id);
+	    }
+	}
+
+ private:
+	unsigned internal_state : {{{!get:logic.state_len}}};
+	static Row truth_table[{{{!truth_table_entries}}}];
+};
+
+SchedulerFSM fsm_engine({{{!initial_state}}});
+SchedulerFSM::Row SchedulerFSM::truth_table[] = {{{!truth_table}}};
+
+
+}
+}

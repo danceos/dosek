@@ -15,7 +15,6 @@ class LogicMinimizer(Analysis):
 
     def do(self):
         fsm = self.system_graph.get_pass("fsm").fsm.copy()
-
         self.fsm = self.call_nova(fsm)
 
     def call_nova(self, fsm):
@@ -74,6 +73,8 @@ class LogicMinimizer(Analysis):
             fd.write(".e\n")
 
         stdout = subprocess.check_output(["nova", nova_input]).decode('ascii', 'ignore')
+        with open("%s.nova.stdout" % nova_input, "w+") as fd:
+            fd.write(stdout)
         event_mapping = {}
         state_mapping = {}
         for line in stdout.split("\n"):
@@ -134,5 +135,9 @@ class LogicMinimizer(Analysis):
                     got_output_word |= output_word
                     matches[i] += 1
             assert got_output_word == desired_output_word
+
+        #for transition in fsm.transitions:
+        #    print(transition, fsm.event_mapping[transition.event], fsm.action_mapping[transition.action])
+
         logging.info("%d lines in minimzed truth table", len(self.truth_table))
         return fsm
