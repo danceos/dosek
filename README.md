@@ -14,7 +14,7 @@ implementation concepts for contructing a reliable computing base even
 on unreliable hardware. dOSEK is developed from scratch with
 dependability as the first-class design goal targeting
 safety-critical, embedded applications, the system provides an
-OSEK/AUTOSAR-conform interface (currently BCC1).
+OSEK/AUTOSAR-conform interface (currently ECC1).
 
 Currently, dOSEK supports three platforms:
 
