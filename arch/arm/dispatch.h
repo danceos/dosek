@@ -19,7 +19,7 @@
 
 
 /** \brief Halt the processor when idle */
-//#define IDLE_HALT 1
+#define IDLE_HALT 1
 
 namespace arch {
 
@@ -75,7 +75,7 @@ public:
 
 	/** \brief Syscall to start idle loop (in ring 0) */
 	static forceinline void idle(void) {
-		syscall<true>(&idle_loop);
+		syscall(&idle_loop);
 	}
 
 	/** \brief The idle loop

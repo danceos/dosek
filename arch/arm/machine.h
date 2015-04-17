@@ -179,7 +179,7 @@ struct Machine
 	 */
 	static forceinline void goto_sleep() {
         // TODO: enable BOTH irqs and fast irqs?
-		asm volatile("cpie if\n\twfi");
+		asm volatile("cpsie i\n\twfi");
 	}
 
 
