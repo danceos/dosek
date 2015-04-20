@@ -249,7 +249,7 @@ def cut_out_timer_interrupt(region):
 
 
 def main(options, args):
-    symbols = [x for x in read_symbols(options.elf)
+    symbols = [x for x in read_symbols(options.elf, options.nm)
                if x.addr]
     symbol_map = SymbolMap(symbols)
 
@@ -350,6 +350,8 @@ if __name__ == "__main__":
                       help="python trace plugin path", metavar="OBJDUMP")
     parser.add_option("", "--stats-dict", dest="stats",
                       help="stats.dict.py path", metavar="STATS")
+    parser.add_option("", "--nm", dest="nm", default="/usr/bin/nm",
+                      help="nm binary location", metavar="NM")
 
 
     (options, args) = parser.parse_args()

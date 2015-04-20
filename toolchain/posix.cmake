@@ -1,50 +1,66 @@
-set(CMAKE_C_ARCH "i386")
-set(CMAKE_C_FLAGS "-Wall -m32 -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
-set(CMAKE_ASM_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
-set(CMAKE_ASM-TT_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
+# Generic system
+set(ARCH_PREFIX "")
 
-# Setup LLVM Tooling
+
+message(STATUS "Cross compiler root: ${CROSS_ROOT_PATH}")
+
+# LLVM version.
 SET(LLVM_RECOMMENDED_VERSION 3.4)
 
 if(NOT DEFINED ${LLVM_ROOT})
   # find llvm-config. prefers to the one with version suffix, Ex:llvm-config-3.4
-  find_program(LLVM_CONFIG_EXE NAMES "llvm-config-${LLVM_RECOMMENDED_VERSION}" "llvm-config")
+  find_program(LLVM_CONFIG_EXE NAMES "llvm-config" "llvm-config-${LLVM_RECOMMENDED_VERSION}"
+    HINTS /proj/i4danceos/tools/llvm-${LLVM_RECOMMENDED_VERSION}/bin)
 
   # Get the directory of llvm by using llvm-config. also remove whitespaces.
   execute_process(COMMAND ${LLVM_CONFIG_EXE} --prefix OUTPUT_VARIABLE LLVM_ROOT
                  OUTPUT_STRIP_TRAILING_WHITESPACE )
 endif()
 
+
 message(STATUS "LLVM root: ${LLVM_ROOT}")
+
+# Find a compiler which compiles c source into llvm bitcode.
+# It first finds clang, then it finds llvm-g++ if there is no clang.
+find_program(LLVM_C_COMPILER "clang-${LLVM_RECOMMENDED_VERSION}"
+                NAMES clang
+                HINTS ${LLVM_ROOT}/bin )
+
 
 # Find a compiler which compiles c++ source into llvm bitcode.
 # It first finds clang, then it finds llvm-g++ if there is no clang.
-find_program(LLVM_C_COMPILER "clang-${LLVM_RECOMMENDED_VERSION}"
-                NAMES clang llvm-gcc
-                HINTS ${LLVM_ROOT}/bin )
-
 find_program(LLVM_CXX_COMPILER "clang++-${LLVM_RECOMMENDED_VERSION}"
-                NAMES clang++ llvm-g++
+                NAMES clang++
                 HINTS ${LLVM_ROOT}/bin )
-
 
 # Checks whether a LLVM_COMPILER is found, give a warning if not found.
 # A warning instread of error is beceuse that we don't need clang during
 # building pinavm.
-if(${LLVM_C_COMPILER} STREQUAL "LLVM_COMPILER-NOTFOUND")
-  message(WARNING "Could not find clang or llvm-gcc."
+if(${LLVM_C_COMPILER} STREQUAL "LLVM_C_COMPILER-NOTFOUND")
+  message(WARNING "Could not find clang or llvm-g++."
                 " Please install one of them !")
 endif()
 
-message(STATUS "LLVM C/C++ compiler: ${LLVM_C_COMPILER} ${LLVM_CXX_COMPILER}")
+
+set(CMAKE_C_ARCH "i386")
+set(CMAKE_C_FLAGS "-Wall -m32 -Wextra -Qunused-arguments -Wno-undefined-inline" CACHE STRING "CFLAGS")
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti" CACHE STRING "CXXFLAGS")
+set(CMAKE_ASM_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
+set(CMAKE_ASM-TT_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
+
+find_program(CROSS_AR "llvm-ar" HINTS ${LLVM_ROOT}/bin)
+find_program(CROSS_NM "llvm-nm" HINTS ${LLVM_ROOT}/bin)
+find_program(CROSS_RANLIB "llvm-ranlib" HINTS ${LLVM_ROOT}/bin)
+# Find objdump for pagetable generation
+find_program(CROSS_OBJDUMP "llvm-objdump")
 
 
 set(CCDIR "${LLVM_ROOT}")
 set(CMAKE_C_COMPILER  ${LLVM_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${LLVM_CXX_COMPILER})
-set(CMAKE_RANLIB "${CCDIR}/bin/llvm-ranlib" CACHE INTERNAL STRING)
-set(CMAKE_AR "${CCDIR}/bin/llvm-ar" CACHE INTERNAL STRING)
+set(CMAKE_RANLIB "${CROSS_RANLIB}" CACHE INTERNAL STRING)
+set(CMAKE_AR "${CROSS_AR}" CACHE INTERNAL STRING)
+
 
 SET(CMAKE_FIND_ROOT_PATH ${CCDIR})
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -71,7 +87,7 @@ set(ISA_ASM-ATT_FLAGS "--32" CACHE INTERNAL STRING)
 set(ISA_ASM_FLAGS "-m32" CACHE INTERNAL STRING)
 set(ISA_LD_FLAGS "-m32 -Qunused-arguments" CACHE INTERNAL STRING)
 
-set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker script")
+#set(LD_OUTPUT_FORMAT "elf32-i386" CACHE INTERNAL "LD output format for linker script")
 
 ## The kernel will live at 3GB + 1MB in the virtual
 ##   address space, which will be mapped to 1MB in the

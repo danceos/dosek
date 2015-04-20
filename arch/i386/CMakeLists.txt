@@ -40,7 +40,7 @@ set(SRCS
 	mp.s
 	constructors.cc
 	startup.cc
-	startup.s
+  startup.S
 	gdt.cc
 	idt.cc
 	idt.S
@@ -69,9 +69,6 @@ set(ARCH_INCLUDE_DIRS ${ARCH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INT
 
 # Set linker script template
 set(LINKER_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld.in CACHE INTERNAL STRING)
-
-# Find objdump for pagetable generation
-find_program(OBJDUMP "objdump")
 
 # i386 dOSEK executable macro
 # usage: dosek_executable(ELFFILE ... [DEFINTIONS ...])
@@ -109,7 +106,7 @@ macro(dosek_executable ELFFILE)
 	set(GENERATOR ${PROJECT_SOURCE_DIR}/arch/i386/generate-pagetables.py)
 	add_custom_command(
 		DEPENDS ${PRELINK} ${GENERATOR}
-		COMMAND ${PYTHON} ${GENERATOR} -o ${OBJDUMP} -c ${PAGETABLES} -e ${PRELINK}
+        COMMAND ${PYTHON} ${GENERATOR} -o ${CROSS_OBJDUMP} -c ${PAGETABLES} -e ${PRELINK}
 		COMMENT "Generating static page tables for ${ELFFILE}"
 		OUTPUT ${PAGETABLES}
 	)
@@ -136,7 +133,7 @@ macro(dosek_executable ELFFILE)
 
 	# we use our own linker (python) script, that calls llvm-link, llc and the system linker
 	# setting CMAKE_*_LINK_EXECUTABLE at this point in the CMake run seems a bit unusual, but works as intended
-	set(LINK_EXECUTABLE "${PROJECT_SOURCE_DIR}/toolchain/llvm-link.py --clang ${CMAKE_C_COMPILER} --march x86 --mcpu ${CMAKE_C_ARCH} --llvm-dir ${CCDIR} <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -o <TARGET>")
+    set(LINK_EXECUTABLE "${PROJECT_SOURCE_DIR}/toolchain/llvm-link.py --clang ${CMAKE_C_COMPILER} --march x86 --mcpu ${CMAKE_C_ARCH} --llvm-dir ${CCDIR} --ar ${CMAKE_AR} <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -o <TARGET>")
 	set(CMAKE_C_LINK_EXECUTABLE "${LINK_EXECUTABLE} <CMAKE_C_LINK_FLAGS>")
 	set(CMAKE_CXX_LINK_EXECUTABLE "${LINK_EXECUTABLE} <CMAKE_CXX_LINK_FLAGS>")
 

@@ -6,11 +6,11 @@ import optparse
 import subprocess
 from collections import namedtuple
 
-Symbol = namedtuple("Symbol", ["name", "addr", "size", "segment", "type"])
+Symbol = namedtuple("Symbol", ["name", "addr", "size", "type"])
 
-def safe_int(i):
+def safe_int(i, base=10):
     try:
-        return int(i)
+        return int(i, base)
     except ValueError:
         return None
 
@@ -45,17 +45,16 @@ def read_regions(objdump, elf_file):
     return regions
 
 
-def read_symbols(elffile, nm = "nm"):
-    out =  subprocess.check_output([nm, "-t", "dec", "-S", elffile, "-f", "sysv"])
+def read_symbols(elffile, nm = "llvm-nm"):
+    out =  subprocess.check_output([nm, "--print-size", "--format", "sysv", elffile])
     ret = []
     for line in out.split("\n"):
         if not "|" in line:
             continue
         line = [x.strip() for x in line.split("|")]
         ret.append(Symbol(name = line[0],
-                          addr = safe_int(line[1]),
-                          size = safe_int(line[4]),
-                          segment = line[6],
+                          addr = safe_int(line[1], 16),
+                          size = safe_int(line[4], 16),
                           type = line[3]
                       ))
     return ret
@@ -94,6 +93,8 @@ if __name__ == "__main__":
                       metavar="STATS_DICT", help="the dict with the statistics")
     parser.add_option("", "--elf",
                       metavar="ELF", help="The elf file")
+    parser.add_option("", "--nm",
+                      metavar="NM", help="The nm program (e.g., i386-elf-nm")
 
     (options, args) = parser.parse_args()
 
@@ -101,7 +102,10 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(-1)
 
-    symbols = read_symbols(options.elf)
+    if options.nm:
+        symbols = read_symbols(options.elf, options.nm)
+    else:
+        symbols = read_symbols(options.elf)
     stats = Statistics.load(options.stats_dict)
 
     for abb in stats.find_all("AtomicBasicBlock").values():

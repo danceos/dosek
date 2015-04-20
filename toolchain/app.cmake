@@ -44,6 +44,10 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
   # application (e.g., -DENCODED)
   get_directory_property(definitions DEFINITIONS)
   separate_arguments(definitions)
+
+  # Fix whitespace escaping in CXX FLAGS
+  string(REPLACE " " ";" COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
+
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
     set(llvm_bytecode "${DOSEK_OUTPUT_DIR}/${src}.ll")
@@ -153,8 +157,10 @@ MACRO(DOSEK_BINARY)
   add_custom_command(TARGET ${NAME} POST_BUILD
     COMMENT "Gathering binary statistics for ${NAME}"
     COMMAND ${DOSEK_GENERATOR_DIR}/stats_binary.py
-    --stats-dict ${DOSEK_OUTPUT_DIR}/stats.dict.py
-    --elf ${PROJECT_BINARY_DIR}/${NAME})
+         --stats-dict ${DOSEK_OUTPUT_DIR}/stats.dict.py
+         --elf ${PROJECT_BINARY_DIR}/${NAME}
+         --nm  ${CROSS_NM}
+    )
 
   if((${DOSEK_BINARY_FAIL} STREQUAL "TRUE") OR FAIL_TRACE_ALL)
     DOSEK_BINARY_EXECUTABLE(fail-${NAME} "${DOSEK_BINARY_SOURCES}" ${DOSEK_SYSTEM_DESC} ${DOSEK_VERIFY_SCRIPT} 

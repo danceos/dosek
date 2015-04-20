@@ -133,6 +133,7 @@ macro(fail_targets TNAME ELF TEST)
 			COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR} ${STATS_TRACE}
 				--stats-dict ${STATS_DICT}
 				--elf ${ELF}
+                --nm ${CROSS_NM}
 				--trace ${TRACEFILE}
 				--trace-plugin ${FAIL_TRACE_PLUGIN_PYTHON}
 			COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"

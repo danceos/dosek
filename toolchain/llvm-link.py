@@ -25,16 +25,16 @@ def is_elf_file(file):
     return "ELF" in subprocess.check_output(["file", file])
 
 
-def aggregate_bitcode(archives):
+def aggregate_bitcode(archives, ar):
     elf_object_files = []
     # First we unpack all archive files into seperate folders
-    # (there can be name collissions)
+    # (there can be name collisions)
     count = 0
     for i in archives:
         archive_dir = os.path.join(tempdir, "%d_%s" %(count, os.path.basename(i)))
         count += 1
         os.mkdir(archive_dir)
-        subprocess.check_output(["ar", "x", os.path.abspath(i)],
+        subprocess.check_output([ar, "x", os.path.abspath(i)],
                                 cwd = archive_dir)
 
     llvm_files = []
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("--march", metavar='MARCH', help='Target Architecture for llc [arm|x86]')
     parser.add_argument("--mcpu", metavar='MCPU', help='Target CPU for llc [cortex-a9|i386')
     parser.add_argument("--clang", metavar='CLANG_BINARY', help='Clang binary location')
+    parser.add_argument("--ar", default="/usr/bin/ar", help="ar binary location", metavar="AR")
 
     args, unkown_args = parser.parse_known_args()
     archives = [x for x in unkown_args if x.endswith(".a")]
@@ -111,7 +112,7 @@ if __name__ == "__main__":
 
     try:
         tempdir = tempfile.mkdtemp()
-        (elf_, llvm_) = aggregate_bitcode(archives)
+        (elf_, llvm_) = aggregate_bitcode(archives, args.ar)
         elf_files += elf_
         llvm_files += llvm_
         # Link all bitcode files together
