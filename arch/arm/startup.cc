@@ -44,9 +44,6 @@ extern "C" void arch_startup()
     // TODO
 
 	// setup paging
-	#ifndef MPU_DISABLED
-	MMU::init();
-	#endif
 
     */
 

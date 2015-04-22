@@ -84,14 +84,6 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
     SET(VERIFY_SCRIPT "")
   endif()
 
-  if(NOT dOSEK_ENCODED_SYSTEM)
-    set(DOSEK_GENERATOR_ARGS ${DOSEK_GENERATOR_ARGS} --unencoded)
-  endif()
-
-  if(dOSEK_SPECIALIZE_SYSTEMCALLS)
-    set(DOSEK_GENERATOR_ARGS ${DOSEK_GENERATOR_ARGS} --specialize-systemcalls)
-  endif()
-
   # Check system description file
   file(GLOB XMLDESCS "${CMAKE_CURRENT_SOURCE_DIR}/*.xml")
   file(GLOB OILDESCS "${CMAKE_CURRENT_SOURCE_DIR}/*.oil")
@@ -103,12 +95,12 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
              ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
     COMMAND ${CMAKE_COMMAND} -E remove -f ${DOSEK_OUTPUT_DIR}/gen_*.dot
     COMMAND ${DOSEK_GENERATOR}
+       --config "${PROJECT_BINARY_DIR}/config.dict"
        --system-desc "${SYSTEM_DESC}"
        --merged-bytecode "${DOSEK_SOURCE_SYSTEM}"
        --prefix ${DOSEK_OUTPUT_DIR}
        --name ${NAME}
        --template-base ${PROJECT_SOURCE_DIR}
-       --arch ${DOSEK_ARCHITECTURE}
        ${DOSEK_GENERATOR_ARGS}
      COMMAND
         if [ x"$$EDIT" != x"" ]; then vim ${DOSEK_GENERATED_SOURCE}\; fi

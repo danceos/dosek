@@ -13,13 +13,6 @@ message(STATUS "[${PROJECT_NAME}] Using port ${DEBUG_PORT} for debug stub")
 add_subdirectory(platforms)
 dosek_include_dir(${ARCH_INCLUDE_DIRS})
 
-# Build option to disable MMU protection
-option(dOSEK_MPU_PROTECTION "Use MPU protection" OFF)
-if(NOT dOSEK_MPU_PROTECTION)
-	message(STATUS "[${PROJECT_NAME}] Disabling MPU protection")
-	add_definitions(-DMPU_DISABLED)
-endif()
-
 # Enable emulators
 OPTION(ARM_TARGET_GEM5 "gem5" ON)
 

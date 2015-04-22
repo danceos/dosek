@@ -121,7 +121,7 @@ class EncodedTaskListTemplate(TaskListTemplate):
             subtask.impl.task_id_sig = sig
             subtask.impl.task_prio_sig = sig
 
-        if "RETRYSCHED" in self.generator.conf:
+        if self.generator.conf.dependability.retry_scheduler:
             self.snippets['head_fail'] = self.snippets['head_fail_retry']
         else:
             self.snippets['head_fail'] = self.snippets['head_fail_fail']

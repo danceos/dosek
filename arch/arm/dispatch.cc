@@ -14,7 +14,7 @@ volatile void* startup_sp = 0;
 
 static uint32_t _save_sp = 0;
 
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 os::redundant::MergedDMR<uint32_t> save_sp(_save_sp);
 volatile Encoded_Static<A0, 42> dispatch_task;
 #else
@@ -28,7 +28,7 @@ volatile uint16_t dispatch_task;
  * and performs the actual dispatching in ring 0.
  */
 IRQ_HANDLER(IRQ_DISPATCH) {
-	#ifdef ENCODED
+	#ifdef CONFIG_DEPENDABILITY_ENCODED
 	// decode task ID
 	uint16_t id = dispatch_task.decode();
 	#else
@@ -59,7 +59,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
 		uint32_t ip = (uint32_t) *(sp - 1);
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 		uint32_t ip2 = (uint32_t) *(sp - 2);
 		if (ip != ip2) {
 			CALL_HOOK(FaultDetectedHook, DMRdetected, ip, ip2);

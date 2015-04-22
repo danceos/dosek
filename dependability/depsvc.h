@@ -33,15 +33,15 @@ namespace dep {
 	/** \brief Calculates the crc32 checksum of the given data **/
 	unsigned int crc32(const char *bytes, unsigned int length);
 
-	#ifdef DEPENDABILITY_FAILURE_LOGGING
+#ifdef CONFIG_DEPENDABILITY_FAILURE_LOGGING
 		extern volatile unsigned int failure_counter;
 		extern volatile unsigned int check_counter;
 		#define GET_DEPENDABILITY_FAILURE_COUNT() dep::failure_counter
 		#define GET_DEPENDABILITY_CHECK_COUNT() dep::check_counter
-	#else
+#else
 		#define GET_DEPENDABILITY_FAILURE_COUNT() ~0
 		#define GET_DEPENDABILITY_CHECK_COUNT() 0
-	#endif
+#endif
 }
 
 #endif

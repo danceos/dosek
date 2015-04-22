@@ -39,7 +39,7 @@ forceinline void syscall(F fun) {
 				 "mov r1, sp;" // save stackptr ...
 				 "adr r0, $1f; orr r0, r0, #1;" // Add thumb mode bit
 				 "push {r0};" // save return address ...
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 				 "push {r0};" // .. twice
 #endif
 				 "mov r0, %0;"

@@ -60,7 +60,7 @@ extern "C" void * irq_handler(void * task_sp) {
     // save stack pointer
     uint16_t ssp = save_sp.get();
 	if (ssp != 0) {
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 		save_sp.check();
 		os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp]);
 		SP.set(task_sp);

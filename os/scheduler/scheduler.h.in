@@ -3,7 +3,7 @@ namespace scheduler {
 
 using namespace os::tasks;
 
-#ifdef dOSEK_STATE_REPLICATOR
+#ifdef CONFIG_DEPENDABILITY_STATE_REPLICATION
 extern os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_;
 #else
 extern os::redundant::EmptyReplicator state_replicator_;
@@ -141,8 +141,8 @@ struct Scheduler  {
 };
 
 void Scheduler::Reschedule(void) {
-#ifdef RETRYSCHED
-    const auto current_prio_orig = current_prio;
+#ifdef CONFIG_DEPENDABILITY_RETRY_SCHEDULER
+const auto current_prio_orig = current_prio;
     const auto current_task_orig = current_task;
 
 	// set current (=next) task from task list
@@ -182,7 +182,7 @@ void Scheduler::Reschedule(void) {
 
 Scheduler scheduler_;
 
-#ifdef dOSEK_STATE_REPLICATOR
+#ifdef CONFIG_DEPENDABILITY_STATE_REPLICATON
 os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.tlist);
 #else
 os::redundant::EmptyReplicator state_replicator_;

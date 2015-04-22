@@ -157,10 +157,10 @@ class LLVMPYAnalysis(Analysis):
               if bb.llvmbb is llvmfunc.entry_basic_block:
                   function.set_entry_abb(abb)
 
-              # type If the flag dOSEK_IGNORE_INTERRUPT_SYSCALLS
+              # type If the flag CONFIG_OS_IGNORE_INTERRUPT_SYSCALLS
               # is set, we make all interrupt control system
               # calls to computation blocks.
-              if "dOSEK_IGNORE_INTERRUPT_SYSCALLS" in graph.conf:
+              if graph.conf.os.ignore_interrupt_systemcalls:
                   if bb.syscall in [S.DisableAllInterrupts, S.EnableAllInterrupts,
                                     S.SuspendOSInterrupts, S.ResumeOSInterrupts,
                                     S.SuspendAllInterrupts, S.ResumeAllInterrupts]:

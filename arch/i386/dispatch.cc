@@ -16,7 +16,7 @@ extern TCB * const OS_tcbs[];
 volatile void* startup_sp = 0;
 volatile uint32_t save_sp = 0;
 
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 volatile Encoded_Static<A0, 42> dispatch_task;
 #else
 volatile uint16_t dispatch_task;
@@ -28,7 +28,7 @@ volatile uint16_t dispatch_task;
  * and performs the actual dispatching in ring 0.
  */
 IRQ_HANDLER(IRQ_DISPATCH) {
-	#ifdef ENCODED
+	#ifdef CONFIG_DEPENDABILITY_ENCODED
 	// decode task ID
 	uint16_t id = dispatch_task.decode();
 	#else
@@ -39,7 +39,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	const TCB * const tcb = OS_tcbs[id];
 
 	// set save_sp
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	save_sp = id | ((id) << 16);
 #else
 	save_sp = id;
@@ -58,7 +58,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 		// resume from saved IP on stack
 		// requires new page directory set before!
 		void * _ipv = (void*) *(sp - 1);
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 		const os::redundant::HighParity<void *> ipv(_ipv);
 #else
 		const os::redundant::Plain<void *> ipv(_ipv);

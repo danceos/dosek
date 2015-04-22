@@ -95,9 +95,9 @@ class ConfigurationTreeStack(object):
             assert self.__model and name in self.__model, "Subtree %s is not in model" % name
             return (ConfigurationTreeStack(ret, self.__model[name], self.__with_model), None)
         elif all([not(x) for x in is_config_tree]):
-            assert len(ret) == 1 or all(ret[0] == x for x in ret), "Every value in the tree has to be consistent"
-            assert isinstance(ret[0], self.__model[name].config_type)
-            return (ret[0], self.__model[name])
+            assert len(ret) == 1 or all(ret[1] == x for x in ret[1:]), "Every value in the tree has to be consistent"
+            assert isinstance(ret[-1], self.__model[name].config_type)
+            return (ret[-1], self.__model[name])
         else:
             raise AttributeError("The configuration tree is not valid (leaf and subtree at some position)")
 
@@ -141,11 +141,26 @@ class OneOf(ConfigurationItem, NamespaceDict):
     def __init__(self, symbols = [], **kwargs):
         ConfigurationItem.__init__(self, **kwargs)
         self.default_value = symbols[0]
+        self.symbols = symbols
 
         NamespaceDict.__init__(self, {x:x for x in symbols})
 
+    def to_string(self, value):
+        assert value in self.symbols
+        return value
+
+    def from_string(self, value):
+        assert value in self.symbols
+        return value
+
+class String(ConfigurationItem):
+    config_type = str
+
+    default_value = ""
+
     to_string = lambda self, x: x
     from_string = lambda self, x: x
+
 
 class Boolean(ConfigurationItem):
     def __init__(self, **kwargs):
@@ -172,7 +187,7 @@ class Int():
     from_string = int
 
 
-def config_from_file(fn):
+def from_file(fn):
     with open(fn) as fd:
         return ConfigurationTree(eval(fd.read(), globals()))
 
@@ -187,7 +202,7 @@ class _toCMakeConfig:
             return {True: "ON", False: "OFF"}[value]
         if isinstance(ty, Int):
             return str(value)
-        if isinstance(ty, OneOf):
+        if isinstance(ty, (String, OneOf)):
             return repr(ty.to_string(value))
 
     def cmake_type(self, ty):
@@ -205,6 +220,44 @@ class _toCMakeConfig:
         return x
 
 toCMakeConfig = _toCMakeConfig()
+
+class _toCHeader:
+    def key(self, path):
+        if path[-1] == "self":
+            path = path[:-1]
+        return "CONFIG_" + ("_".join([x.replace("-", "_")  for x in path])).upper()
+
+    def cmake_value(self, value, ty):
+        if isinstance(ty, Boolean):
+            return {True: "1", False: "0"}[value]
+        if isinstance(ty, Int):
+            return str(value)
+        if isinstance(ty, String):
+            return repr(ty.to_string(value)[1:-1] + '"')
+
+    def __call__(self, config):
+        ret = ""
+        for (p, (v, ty)) in config._:
+            macro = self.key(p)
+            if isinstance(ty, Boolean):
+                if v:
+                    ret += "#define %s 1\n" % macro
+                else:
+                    ret += "#undef %s\n" % macro
+            elif isinstance(ty, Int):
+                 "#define %s %d\n" % (macro, v)
+            elif isinstance(ty, OneOf):
+                for sym in ty.symbols:
+                    if sym == v:
+                        ret += "#define %s_%s 1\n" % (macro, sym.upper())
+                    else:
+                        ret += "#define %s_%s 1\n" % (macro, sym.upper())
+        return "#ifndef __CONFIG_HEADER_H\n#define __CONFIG_HEADER_H\n" \
+            + ret \
+            + "#endif\n"
+
+to_c_header = _toCHeader()
+
 to_string = repr
 
 def empty_configuration(model):
@@ -213,13 +266,13 @@ def empty_configuration(model):
         if isinstance(v, ConfigurationTree):
             v = empty_configuration(v)
         else:
-            v = v.default_value
+            v = copy.copy(v.default_value)
         d[k] = v
     return ConfigurationTree(d, readonly = False)
 
 
 
-def into_optparse(model, parser):
+def into_optparse(model, parser, configuration = None):
     class OptParseAction:
         def __init__(self, path, ty, config):
             self.path = path
@@ -255,7 +308,9 @@ def into_optparse(model, parser):
                     yield x
 
     l = []
-    configuration = empty_configuration(model)
+    if configuration is None:
+        configuration = ConfigurationTree(readonly = False)
+
     for prefix, value in find_prefix(iter(model)):
         l.append(("-".join(prefix), value))
     for short_prefix, (long_prefix, (path, ty)) in find_prefix(l, from_beginning = True):
@@ -280,11 +335,7 @@ def into_optparse(model, parser):
 
     return configuration
 
-
-
-
-
-model = config_from_file(os.path.join(os.path.dirname(__file__), "model.py"))
+model = from_file(os.path.join(os.path.dirname(__file__), "model.py"))
 
 if __name__ == "__main__":
     c = empty_configuration(model)

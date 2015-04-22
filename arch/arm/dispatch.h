@@ -26,7 +26,7 @@ namespace arch {
 extern volatile void* startup_sp;
 
 // next task to dispatch (used by dispatch interrupt)
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 extern os::redundant::MergedDMR<uint32_t> save_sp;
 extern volatile Encoded_Static<A0, 42> dispatch_task;
 #else
@@ -38,7 +38,7 @@ class Dispatcher {
 public:
 	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
 		// set task to dispatch
-        #ifdef ENCODED
+        #ifdef CONFIG_DEPENDABILITY_ENCODED
 		dispatch_task.encode(task.id);
         #else
 		dispatch_task = task.id;

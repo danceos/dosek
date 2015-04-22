@@ -29,7 +29,7 @@ extern volatile void* startup_sp;
 extern volatile uint32_t save_sp;
 
 // next task to dispatch (used by dispatch interrupt)
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 extern volatile Encoded_Static<A0, 42> dispatch_task;
 #else
 extern volatile uint16_t dispatch_task;
@@ -39,11 +39,11 @@ class Dispatcher {
 public:
 	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
 		// set task to dispatch
-        #ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 		dispatch_task.encode(task.id);
-        #else
+#else
 		dispatch_task = task.id;
-        #endif
+#endif
 
         // Call PreTaskHook.
         CALL_HOOK(PreTaskHook);

@@ -74,7 +74,7 @@ irq_entry:
     # Push the task's registers to the user stack
     stmdb lr, {r0-lr}^
     sub   lr, lr, #60
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	# XOR task context checksum
 	eor r1, r0,  r1
 	eor r1, r2,  r1
@@ -109,7 +109,7 @@ irq_entry:
     # Save our return point to the user stack
     adr r1, irq_entry_return
     stmdb lr!, {r1}
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
     # Push the return address twice
     stmdb lr, {r1}
 #endif
@@ -122,7 +122,7 @@ irq_entry_return:
     # r0 is the stack pointer we want to return to
     mov lr, r0
 
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	# ignore stored checksum
 	add lr, lr, #4
 	# load store registers

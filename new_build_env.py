@@ -41,8 +41,12 @@ def main():
                       dest='DEPFAILLOG', default="no",
                       help="Log checksum calculation interrupts of the dependability service (default: no)")
 
-    conf_tree = config.into_optparse(config.model, parser)
-    conf = config.ConfigurationTreeStack([conf_tree], config.model)
+    del config.model["app"]
+
+    default_config = config.empty_configuration(config.model)
+    cmdline_config = config.ConfigurationTree(readonly = False)
+    conf_tree = config.into_optparse(config.model, parser, cmdline_config)
+    conf = config.ConfigurationTreeStack([default_config, conf_tree], config.model)
 
     (options, args) = parser.parse_args()
 
@@ -81,21 +85,19 @@ def main():
     with open("config.cmake", "w+") as fd:
         fd.write(config.toCMakeConfig(conf))
 
+    with open("dosek_config.h", "w+") as fd:
+        fd.write(config.to_c_header(conf))
+
+
     with open("config.dict", "w+") as fd:
-        fd.write(pprint.pformat(conf.as_dict()))
+        fd.write(pprint.pformat(cmdline_config))
 
     subprocess.call(["cmake", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
                      '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain_file,
                      "-DCMAKE_BUILD_TYPE=Release",
                      "-G", generator_dict[conf.generator],
-                     "-DdOSEK_ENCODED_SYSTEM=%s" % cmake_bool(conf.dependability.encoded),
-                     "-DdOSEK_MPU_PROTECTION=%s" % cmake_bool(conf.arch.mpu),
-                     "-DdOSEK_SPECIALIZE_SYSTEMCALLS=%s" % cmake_bool(conf.os.specialize),
-                     "-DdOSEK_STATE_ASSERTS=%s" % cmake_bool(conf.dependability.state_asserts),
-                     "-DdOSEK_SSE=%s" % cmake_bool(conf.os.passes.sse),
                      "-DGENERATOR_ARGS='%s'"%options["GENERATOR_ARGS"],
                      "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
-                     "-DDEPENDABILITY_FAILURE_LOGGING=%s" % cmake_bool(conf.dependability.failure_logging),
                      base_dir])
 
 if __name__ == '__main__':

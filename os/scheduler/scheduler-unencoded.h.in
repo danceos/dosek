@@ -3,7 +3,7 @@ namespace scheduler {
 
 using namespace os::tasks;
 
-#ifdef dOSEK_STATE_REPLICATOR
+#ifdef CONFIG_DEPEDABILITY_STATE_REPLICATON
 extern os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_;
 #else
 extern os::redundant::EmptyReplicator state_replicator_;
@@ -164,7 +164,7 @@ extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
     return E_OK;
 }
 
-#ifdef dOSEK_STATE_REPLICATOR
+#ifdef CONFIG_DEPEDABILITY_STATE_REPLICATON
 os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.tlist);
 #else
 os::redundant::EmptyReplicator state_replicator_;

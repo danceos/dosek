@@ -30,8 +30,8 @@ extern "C" void arch_startup()
     syscalls_init();
 
 	// setup paging
-	#ifndef MPU_DISABLED
-	MMU::init();
+	#ifdef CONFIG_ARCH_MPU
+    	MMU::init();
 	#endif
 
 	// setup PIC

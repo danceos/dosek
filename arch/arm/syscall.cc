@@ -27,7 +27,7 @@ extern "C" __attribute__((naked)) void syscall_handler(void *fun, void *sp, uint
 
     // save stack pointer
     uint32_t ssp = save_sp.get();
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	save_sp.check();
 	os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp]);
 	SP.set(sp);

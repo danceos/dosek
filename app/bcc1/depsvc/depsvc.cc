@@ -49,7 +49,7 @@ TASK(CheckedTask) {
 	ReleaseCheckedObject(area);
 	test_trace('0' +  c);
 	if (++c > 5) {
-#ifdef DEPENDABILITY_FAILURE_LOGGING
+#ifdef CONFIG_DEPENDABILITY_FAILURE_LOGGING
 		kout << "Dependability Failure Count: " << GET_DEPENDABILITY_FAILURE_COUNT()
 			 << "/" << GET_DEPENDABILITY_CHECK_COUNT() << endl;
 #endif

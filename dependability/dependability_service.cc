@@ -4,7 +4,7 @@
 
 namespace dep {
 
-	#ifdef DEPENDABILITY_FAILURE_LOGGING
+#ifdef CONFIG_DEPENDABILITY_FAILURE_LOGGING
 			volatile unsigned int failure_counter = 0;
 			volatile unsigned int check_counter   = 0;
 			#define DEPLOG(state)                              \
@@ -16,9 +16,9 @@ namespace dep {
 				/* The two lines above somehow force the change of
 				 * check_counter and failure_counter!?
 				 */
-	#else
+#else
 			#define DEPLOG(state)
-	#endif
+#endif
 
 	Dependability_Scheduler dep_sched;
 	// From generator:

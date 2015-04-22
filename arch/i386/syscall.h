@@ -41,7 +41,7 @@ forceinline void syscall(F fun) {
 	if(!direct) {
 		asm volatile(
 			"push %%ebp;" // save %ebp
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 			"mov %%esp, %%ecx;" // save stackptr ...
 			"popcnt %%ecx, %%edi;" // ... with odd parity ...
 			"xor $0xffffffff, %%edi;"

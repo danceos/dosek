@@ -17,6 +17,7 @@ import re
 import sys
 import logging
 import optparse
+import pprint
 
 
 def split_lls_callback(option, opt, value, parser):
@@ -49,19 +50,19 @@ if __name__ == "__main__":
     from generator.coder import *
     from generator.tools import panic, wrap_typecheck_functions
 
+    import config
+
     # Install the typechecking
     wrap_typecheck_functions()
 
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("", "--system-desc",
-                      metavar="SYSTEM_DESC", help="the system description file (.xml or .oil)")
+                      metavar="SYSTEM_DESC", help="the system description file (.oil)")
     parser.add_option("-p", "--prefix",
                       metavar="DIR", help="where to place the dosek source (prefix)")
-    parser.add_option("-n", "--name",
-                      metavar="STRING", help="system name")
-    parser.add_option("-a", "--arch",
-                      metavar="STRING", help="for which dosek architecture?")
+    parser.add_option("-c", "--config",
+                      metavar="CONF", help="base configuration")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="increase verbosity (specify multiple times for more)",
                       default = 0)
@@ -69,30 +70,16 @@ if __name__ == "__main__":
                       help="Where to search for code templates")
     parser.add_option('', '--verify', dest='verify', default = None,
                       help="verify script for the analysis results")
-    parser.add_option('', '--unencoded', dest='unencoded', default = None,
-                      help="generate unencoded system",
-                      action="store_true")
-
-    parser.add_option('', '--specialize-systemcalls', dest='systemcalls',
-                      action="store_const", const = "specialized",
-                      help="generate specialized systemcalls")
-
-    parser.add_option('', '--system-calls', dest='systemcalls', default = "full",
-                      action="store",
-                      help="What kind of system call implementation is desired?")
-
-    
     parser.add_option('-f', '--add-pass', dest='additional_passes', default = [],
                       action="append",
                       help="additional passes (can also be given by setting SGFLAGS)")
-    parser.add_option('-D', '', dest='code_options', default = [],
-                      action="append",
-                      help="additional options passed to the generator")
     parser.add_option('-s', '--source-bytecode', dest='llfiles',
                       action="callback", type='string', callback=split_lls_callback,
                       help="Analyze .ll files. (Comma separated list of files)")
     parser.add_option("-m", "--merged-bytecode", dest='mergedoutput',
                       metavar="DIR", help="output file of the merged system .ll files")
+
+    app_conf_tree = config.into_optparse(config.model, parser)
 
     # Read additional flags from environment variable SGFLAGS
     if "SGFLAGS" in os.environ:
@@ -104,8 +91,17 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(-1)
 
+    default_conf = config.empty_configuration(config.model)
+    global_conf_tree = config.from_file(options.config)
+    conf = config.ConfigurationTreeStack([default_conf, global_conf_tree, app_conf_tree], config.model)
+
     setup_logging(options.verbose)
-    graph = SystemGraph(options.code_options)
+    if "VERBOSE" in os.environ:
+        setup_logging(3)
+
+
+    logging.debug(pprint.pformat(conf.as_dict()))
+    graph = SystemGraph(conf)
     graph.add_system_objects()
     pass_manager = graph
     pass_manager.read_verify_script(options.verify)
@@ -136,7 +132,6 @@ if __name__ == "__main__":
     else:
         print("No .ll files given")
         sys.exit(-1)
-
 
     # Ensure that each system call is surrounded by computation blocks
     pass_manager.register_analysis(EnsureComputationBlocks())
@@ -172,51 +167,61 @@ if __name__ == "__main__":
     pass_manager.register_analysis(LogicMinimizer())
 
     # Statistics modules
-    pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, options.name)))
+    pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, conf.app.name)))
 
-    if options.arch == "i386":
+
+    if conf.arch.self == "i386":
         arch_rules = X86Arch()
-    elif options.arch == "ARM":
+    elif conf.arch.self == "ARM":
         arch_rules = ARMArch()
-    elif options.arch == "posix":
+    elif conf.arch.self == "posix":
         arch_rules = PosixArch()
     else:
-        panic("Unknown --arch=%s", options.arch)
+        panic("Unknown --arch=%s", conf.arch.self)
 
-    if options.unencoded:
-        os_rules = UnencodedOS()
-    else:
+    if conf.dependability.encoded:
         os_rules = EncodedOS()
+    else:
+        os_rules = UnencodedOS()
 
-    assert options.systemcalls in ("full", "specialized", "fsm", "fsm:pla")
+    if conf.os.systemcalls == "normal":
+        if conf.os.specialize:
+            # Only when we want to specialize the system calls, run the
+            # System-Level analyses
+            pass_manager.enqueue_analysis("SymbolicSystemExecution")
+            pass_manager.enqueue_analysis("SystemStateFlow")
 
-    if options.systemcalls == "specialized":
-        # Only when we want to specialize the system calls, run the
-        # System-Level analyses
-        pass_manager.enqueue_analysis("SymbolicSystemExecution")
-        pass_manager.enqueue_analysis("SystemStateFlow")
-
-        global_cfg = pass_manager.enqueue_analysis("ConstructGlobalCFG")
-        global_abb_information = global_cfg.global_abb_information_provider()
-        logging.info("Global control flow information is provided by %s",
+            global_cfg = pass_manager.enqueue_analysis("ConstructGlobalCFG")
+            global_abb_information = global_cfg.global_abb_information_provider()
+            logging.info("Global control flow information is provided by %s",
                      global_abb_information.name())
-        syscall_rules = SpecializedSystemCalls(global_abb_information)
-    elif options.systemcalls == "fsm:pla":
-        assert options.arch == "posix", "FSM Encoding is only supported for arch=posix"
+            syscall_rules = SpecializedSystemCalls(global_abb_information)
+        else:
+            pass_manager.enqueue_analysis("DynamicPriorityAnalysis")
+            pass_manager.enqueue_analysis("InterruptControlAnalysis")
+            syscall_rules = FullSystemCalls()
+
+    elif conf.os.systemcalls == "fsm_pla":
+        assert conf.arch.self == "posix", "FSM Encoding is only supported for arch=posix"
         pass_manager.enqueue_analysis("LogicMinimizer")
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls(use_pla = True)
-    elif options.systemcalls == "fsm":
-        assert options.arch == "posix", "FSM Encoding is only supported for arch=posix"
+    elif conf.os.systemcalls == "fsm":
+        assert conf.arch.self == "posix", "FSM Encoding is only supported for arch=posix"
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls()
     else:
-        pass_manager.enqueue_analysis("DynamicPriorityAnalysis")
-        pass_manager.enqueue_analysis("InterruptControlAnalysis")
-        syscall_rules = FullSystemCalls()
-
+        assert False
     # From command line
     additional_passes = options.additional_passes
+    if conf.os.passes.sse:
+        additional_passes.append("sse")
+
+    if conf.dependability.state_asserts:
+        additional_passes.append("gen-asserts")
+    if conf.dependability.cfg_regions:
+        additional_passes.append("cfg-regions")
+
 
     for each in additional_passes:
         P = pass_manager.get_pass(each)
@@ -226,11 +231,11 @@ if __name__ == "__main__":
 
     pass_manager.analyze("%s/gen_" % (options.prefix))
 
-    generator = Generator.Generator(graph, options.name,
+    generator = Generator.Generator(graph, conf.app.name,
                                     arch_rules,
                                     os_rules,
                                     syscall_rules,
-                                    options.code_options)
+                                    conf)
 
     generator.template_base = options.template_base
     generator.generate_into(options.prefix)

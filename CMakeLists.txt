@@ -14,8 +14,8 @@ enable_language(ASM)
 enable_language(ASM-ATT)
 
 enable_testing()
-set(PROJECT_VERSION "0.1" CACHE STRING "Project version number")
-set(PROJECT_RELEASE "alpha" CACHE STRING "Project release")
+set(PROJECT_VERSION "1.1" CACHE STRING "Project version number")
+set(PROJECT_RELEASE "staple" CACHE STRING "Project release")
 
 # Enable CTest
 enable_testing()
@@ -29,52 +29,6 @@ endif()
 
 include(${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
 
-OPTION(dOSEK_ENCODED_SYSTEM "Build encoded system" ON)
-if(dOSEK_ENCODED_SYSTEM)
-	message(STATUS "[${PROJECT_NAME}] Building encoded system")
-	add_definitions(-DENCODED)
-else()
-	message(STATUS "[${PROJECT_NAME}] Building UNencoded system")
-endif()
-
-OPTION(dOSEK_RETRY_SCHEDULER "Retry Schedule() on error" OFF)
-if(dOSEK_RETRY_SCHEDULER)
-	if(dOSEK_ENCODED_SYSTEM)
-	    message(STATUS "[${PROJECT_NAME}] Building retry scheduler")
-	    add_definitions(-DRETRYSCHED)
-        set(GENERATOR_ARGS ${GENERATOR_ARGS} -DRETRYSCHED)
-    else()
-        message(FATAL_ERROR "Retry scheduler requires encoded system for fault detection!")
-    endif()
-else()
-endif()
-
-OPTION(dOSEK_STATE_REPLICATOR "OS state replication and correction" OFF)
-if(dOSEK_STATE_REPLICATOR)
-	message(STATUS "[${PROJECT_NAME}] Enabling OS state replication.")
-    add_definitions(-DdOSEK_STATE_REPLICATOR)
-else()
-endif()
-
-
-list(REMOVE_DUPLICATES GENERATOR_ARGS)
-
-OPTION(dOSEK_SSE "Perform symbolic system execution.")
-if(dOSEK_SSE)
-	set(GENERATOR_ARGS ${GENERATOR_ARGS} -fsse)
-	message(STATUS "[${PROJECT_NAME}] Performing symbolic system execution.")
-else()
-	list(REMOVE_ITEM GENERATOR_ARGS -fsse)
-endif()
-
-
-OPTION(dOSEK_STATE_ASSERTS "Generate OS state assertions")
-if(dOSEK_STATE_ASSERTS)
-	set(GENERATOR_ARGS ${GENERATOR_ARGS} -fgen-asserts)
-	message(STATUS "[${PROJECT_NAME}] Generating OS state assertions.")
-else()
-	list(REMOVE_ITEM GENERATOR_ARGS -fgen-asserts)
-endif()
 
 list(REMOVE_DUPLICATES GENERATOR_ARGS)
 
@@ -87,25 +41,11 @@ else()
   set(GENERATOR_ARGS "" CACHE STRING "")
 endif()
 
-OPTION(dOSEK_SPECIALIZE_SYSTEMCALLS "Specialized systemcalls" OFF)
-if(dOSEK_SPECIALIZE_SYSTEMCALLS)
-	message(STATUS "[${PROJECT_NAME}] Specialized Systemcalls: ON")
-	add_definitions(-DSPECIALIZE)
-else()
-	message(STATUS "[${PROJECT_NAME}] Specialized Systemcalls: OFF")
-endif()
-
 option(FAIL_TRACE_ALL "Trace all binaries" OFF)
 if(FAIL_TRACE_ALL)
 	message(STATUS "[${PROJECT_NAME}] Fail Trace All: ON")
 else()
 	message(STATUS "[${PROJECT_NAME}] Fail Trace All: OFF")
-endif()
-
-OPTION(DEPENDABILITY_FAILURE_LOGGING "Dependability Failure Logging" OFF)
-if(DEPENDABILITY_FAILURE_LOGGING)
-	message(STATUS "[${PROJECT_NAME}] Logging Dependability Failures")
-	add_definitions(-DDEPENDABILITY_FAILURE_LOGGING)
 endif()
 
 # Verbose make
@@ -139,6 +79,16 @@ include(helpers)
 # Include source directory
 dosek_include_dir(${PROJECT_SOURCE_DIR})
 dosek_include_dir(${PROJECT_SOURCE_DIR}/os)
+dosek_include_dir(${PROJECT_BINARY_DIR})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${PROJECT_BINARY_DIR}/dosek_config.h")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include ${PROJECT_BINARY_DIR}/dosek_config.h")
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -include ${PROJECT_BINARY_DIR}/dosek_config.h")
+
+
+
+
+list(REMOVE_DUPLICATES GENERATOR_ARGS)
+
 
 # Documentation
 add_subdirectory(toolchain/doxygen)

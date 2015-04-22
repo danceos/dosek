@@ -59,8 +59,8 @@ irq_handler_\num:
 	mov %esp, %ebx # put context pointer in %ebx
 	mov $pagedir_os,%edi # # save OS page directory
 
-#ifdef ENCODED
-	# XOR task context checksum
+#ifdef CONFIG_DEPENDABILITY_ENCODED
+    # XOR task context checksum
 	mov (%ebx), %ecx
 	xor 4(%ebx), %ecx
 	xor 8(%ebx), %ecx
@@ -84,7 +84,7 @@ irq_handler_\num:
 	mov (%eax), %edi # get real userspace eax (pushed above)
 	mov %edi, 28(%ebx) # put userspace eax in saved context
 
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	mov (%ebx), %ecx
 	xor 4(%ebx), %ecx
 	xor 8(%ebx), %ecx
@@ -118,7 +118,7 @@ irq_handler_\num:
 	mov $pagedir_os,%edx # get OS page directory address
 	mov %edx, %cr3 # switch to OS page directory
 
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	mov _ZN4arch7save_spE, %edx # get value of arch::save_sp
 	mov %edx, %ebp
 	shr $16, %ebp
@@ -130,7 +130,7 @@ irq_handler_\num:
 
 	mov _ZN4arch12OS_stackptrsE(,%ebp,4), %edx # get value of OS_stackptrs[save_sp]
 	mov %ebx, (%edx) # save stack pointer to *arch::save_sp
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	and $0x7FFFFFFF, %ebx # remove parity but on stack pointer
 #endif
 	mov %eax, %esp # switch back to interrupt stack
@@ -138,7 +138,7 @@ irq_handler_\num:
 	mov %esp, %esi # put interrupt stack pointer in %esi
 
 2:
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	# push XOR checksum %esi...%esi+20, %ebx...%ebx+32
 	xor (%esi), %ecx
 	xor 4(%esi), %ecx
@@ -247,7 +247,7 @@ handler_exit:
 	# restore interrupt stack pointer from %esi
 	mov %esi, %esp
 
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 	# check checksum
 	xor (%esi), %ecx
 	xor 4(%esi), %ecx

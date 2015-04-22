@@ -12,8 +12,6 @@ message(STATUS "[${PROJECT_NAME}] Using port ${DEBUG_PORT} for debug stub")
 # Enable emulators
 OPTION(X86_TARGET_BOCHS "Bochs" OFF)
 OPTION(X86_TARGET_QEMU "QEMU" OFF)
-OPTION(dOSEK_MPU_PROTECTION "MPU (no-effect)" OFF)
-message(STATUS "[${PROJECT_NAME}] MPU Protection: ${dOSEK_MPU_PROTECTION}")
 
 # setup x86-32 specific sources
 set(SRCS

@@ -61,7 +61,7 @@ void os_main(void) {
 	Machine::switch_mode(Machine::USER);
 
 	kout << "BBBBBB [[[[[[ "
-#ifdef ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 		 << "ENC=1 "
 #else
 		 << "enc=0 "
