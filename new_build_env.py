@@ -5,6 +5,8 @@ import sys
 import logging
 import optparse
 import subprocess
+import pprint
+import config
 
 def setup_logging(log_level):
     """ setup the logging module with the given log_level """
@@ -12,7 +14,7 @@ def setup_logging(log_level):
     l = logging.INFO # default
     if log_level == 1:
         l = logging.DEBUG
-    
+
     logging.basicConfig(level=l)
 
 def cmake_bool(value):
@@ -25,32 +27,22 @@ def main():
 
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage=usage)
-    parser.add_option('-g', '--generator', dest='GENERATOR', default = "make",
-                      help="CMake Generator (make|ninja|eclipse)")
-    parser.add_option('-a', '--arch', dest='ARCH', default = "i386",
-                      help="Architecture (i386|ARM|posix)")
-    parser.add_option('', '--encoded', dest='ENCODED', default = "yes",
-                      help="Build an unencoded system (default: yes)")
-    parser.add_option('', '--mpu', dest='MPU', default = "yes",
-                      help="Enable memory protection (default: yes)")
-    parser.add_option('', '--specialize', dest='SPECIALIZE', default = "no",
-                      help="Use system analysis for specialized system calls (default: no)")
-    parser.add_option('', '--state-asserts', dest='STATE_ASSERTS', default = "no",
-                      help="Generate OS state assertions (default: no)")
-    parser.add_option('', '--sse', dest='SSE', default = "no",
-                      help="Enable symbolic system execution (default: no)")
-    parser.add_option('', '--generator-args', dest='GENERATOR_ARGS', default = "",
-                      help="Arguments for the system generator (default: )")
-    parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
-                      help="Trace all testcases")
-    parser.add_option('-v', '--verbose', dest='verbose', action='count',
-                      help="Increase verbosity (specify multiple times for more)")
     parser.add_option('-c', '--clean', dest='CLEAN', action="store_true",
                       default = False,
                       help="Remove all files from current directory before")
+    parser.add_option('', '--generator-args', dest='GENERATOR_ARGS', default = "",
+                      help="Arguments for the system generator (default: )")
+    parser.add_option('-v', '--verbose', dest='verbose', action='count',
+                      help="Increase verbosity (specify multiple times for more)")
+
+    parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
+                      help="Trace all testcases")
     parser.add_option('', '--dependability_failure_logging',
                       dest='DEPFAILLOG', default="no",
                       help="Log checksum calculation interrupts of the dependability service (default: no)")
+
+    conf_tree = config.into_optparse(config.model, parser)
+    conf = config.ConfigurationTreeStack([conf_tree], config.model)
 
     (options, args) = parser.parse_args()
 
@@ -64,52 +56,47 @@ def main():
                       "ninja": "Eclipse CDT4 - Ninja",
                       "eclipse": "Eclipse CDT4 - Unix Makefiles"}
 
-    options.GENERATOR = generator_dict[options.GENERATOR]
-    options.REPODIR   = base_dir
-    options.dOSEK_ENCODED_SYSTEM = cmake_bool(options.ENCODED == "yes")
-    options.dOSEK_MPU_PROTECTION = cmake_bool(options.MPU == "yes")
-    options.dOSEK_SPECIALIZE_SYSTEMCALLS = cmake_bool(options.SPECIALIZE == "yes")
-    options.dOSEK_STATE_ASSERTS = cmake_bool(options.STATE_ASSERTS == "yes")
-    options.dOSEK_SSE = cmake_bool(options.SSE == "yes")
-    options.FAIL_TRACE_ALL = cmake_bool(options.FAIL_TRACE_ALL == "yes")
-    options.DEPENDABILITY_FAILURE_LOGGING = cmake_bool(options.DEPFAILLOG == "yes")
-
-
-    logging.info("Build System: %s", options.GENERATOR)
-    logging.info("Arch: %s", options.ARCH)
-    logging.info("Encoded System: %s", options.dOSEK_ENCODED_SYSTEM)
-    logging.info("MPU Protection: %s", options.dOSEK_MPU_PROTECTION)
-    logging.info("Specialized Systemcalls: %s", options.dOSEK_SPECIALIZE_SYSTEMCALLS)
-    logging.info("State Asserts: %s", options.dOSEK_STATE_ASSERTS)
-    logging.info("Symbolic System Execution: %s", options.dOSEK_SSE)
+    logging.info("Build System: %s", conf.generator)
+    logging.info("Arch: %s", conf.arch.self)
+    logging.info("Encoded System: %s", conf.dependability.encoded)
+    logging.info("MPU Protection: %s", conf.arch.mpu)
+    logging.info("Specialized Systemcalls: %s", conf.os.specialize)
+    logging.info("State Asserts: %s", conf.dependability.state_asserts)
+    logging.info("Symbolic System Execution: %s", conf.os.passes.sse)
     logging.info("Generator Arguments: %s", options.GENERATOR_ARGS)
     logging.info("Fail Trace All: %s", options.FAIL_TRACE_ALL)
-    logging.info("Dependability Failure Logging: %s", options.DEPENDABILITY_FAILURE_LOGGING)
+    logging.info("Dependability Failure Logging: %s", conf.dependability.failure_logging)
 
 
     # Don't think too much about it
     options = eval(str(options))
-    toolchain_file = "%(REPODIR)s/toolchain/%(ARCH)s.cmake" % dict(options)
+    toolchain_file = "%(REPODIR)s/toolchain/%(ARCH)s.cmake" % {"ARCH": conf.arch.self,
+                                                               "REPODIR": base_dir}
     logging.info("Toolchain File: %s", toolchain_file)
 
     if options["CLEAN"]:
         logging.info("Removing all files in current directory...")
         subprocess.call("rm * -rf", shell=True)
 
+    with open("config.cmake", "w+") as fd:
+        fd.write(config.toCMakeConfig(conf))
+
+    with open("config.dict", "w+") as fd:
+        fd.write(pprint.pformat(conf.as_dict()))
+
     subprocess.call(["cmake", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
                      '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain_file,
                      "-DCMAKE_BUILD_TYPE=Release",
-                     "-G", options["GENERATOR"],
-                     "-DdOSEK_ENCODED_SYSTEM=%s" % options["dOSEK_ENCODED_SYSTEM"],
-                     "-DdOSEK_MPU_PROTECTION=%s" % options["dOSEK_MPU_PROTECTION"],
-                     "-DdOSEK_SPECIALIZE_SYSTEMCALLS=%s" % options["dOSEK_SPECIALIZE_SYSTEMCALLS"],
-                     "-DdOSEK_STATE_ASSERTS=%s" % options["dOSEK_STATE_ASSERTS"],
-                     "-DdOSEK_SSE=%s" % options["dOSEK_SSE"],
+                     "-G", generator_dict[conf.generator],
+                     "-DdOSEK_ENCODED_SYSTEM=%s" % cmake_bool(conf.dependability.encoded),
+                     "-DdOSEK_MPU_PROTECTION=%s" % cmake_bool(conf.arch.mpu),
+                     "-DdOSEK_SPECIALIZE_SYSTEMCALLS=%s" % cmake_bool(conf.os.specialize),
+                     "-DdOSEK_STATE_ASSERTS=%s" % cmake_bool(conf.dependability.state_asserts),
+                     "-DdOSEK_SSE=%s" % cmake_bool(conf.os.passes.sse),
                      "-DGENERATOR_ARGS='%s'"%options["GENERATOR_ARGS"],
                      "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
-                     "-DDEPENDABILITY_FAILURE_LOGGING=%s" % options["DEPENDABILITY_FAILURE_LOGGING"],
-
-                     options["REPODIR"]])
+                     "-DDEPENDABILITY_FAILURE_LOGGING=%s" % cmake_bool(conf.dependability.failure_logging),
+                     base_dir])
 
 if __name__ == '__main__':
     main()

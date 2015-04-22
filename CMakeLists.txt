@@ -27,6 +27,8 @@ if(DEBUGGING)
 	add_definitions(-DDEBUG=1)
 endif()
 
+include(${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
+
 OPTION(dOSEK_ENCODED_SYSTEM "Build encoded system" ON)
 if(dOSEK_ENCODED_SYSTEM)
 	message(STATUS "[${PROJECT_NAME}] Building encoded system")
