@@ -8,6 +8,8 @@ from generator.analysis.SystemSemantic import SystemState
 from generator.analysis import Subtask
 import logging
 
+# config-constraint-: (os.systemcalls == fsm) -> (arch.self == posix)
+# config-constraint-: (os.systemcalls == fsm_pla) -> (arch.self == posix)
 
 class FSMSystemCalls(FullSystemCalls):
     def __init__(self, use_pla = False):

@@ -6,8 +6,8 @@ FILE(GLOB_RECURSE KESO_SOURCES
   RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   "keso_gc_coffebreak/*.cpp")
 
-if(NOT CONFIG_ARCH_MPU)
-if("${CONFIG_OS_SYSTEMCALLS}" MATCHES "normal")
+config_valid(VALID --mpu false --systemcalls normal)
+if(VALID)
 
 DOSEK_BINARY(
   NAME keso_gc_coffebreak
@@ -20,6 +20,6 @@ DOSEK_BINARY(
 )
 
 endif()
-endif()
+
 
 

@@ -113,6 +113,7 @@ add_subdirectory(fail)
 add_subdirectory(os)
 add_subdirectory(dependability)
 add_subdirectory(generator)
+add_subdirectory(config)
 add_subdirectory(app)
 
 # Platform specific custom targets/commands.

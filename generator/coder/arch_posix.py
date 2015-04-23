@@ -7,6 +7,7 @@ class PosixArch(GenericArch):
     def __init__(self):
         super(PosixArch, self).__init__()
 
+    # config-constraint-: (arch.self == posix) -> !arch.mpu
     def generate_linkerscript(self):
         """Posix does not require a linker script"""
         with self.generator.open_file("linker.ld") as fd:

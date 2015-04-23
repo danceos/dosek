@@ -4,6 +4,8 @@ from generator.tools import unwrap_seq
 from generator.analysis.AtomicBasicBlock import E,S
 from generator.analysis.SystemSemantic import SystemState
 
+# config-constraint-: os.specialize
+#                 :-:    -> (os.systemcalls == normal)
 
 class SpecializedSystemCalls(FullSystemCalls):
     def __init__(self, global_abb_info):

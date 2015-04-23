@@ -2,6 +2,8 @@ from generator.analysis import Analysis, E
 from generator.tools import Enum
 import logging
 
+# config-constraint-: dependability.state-asserts -> (os.systemcalls == normal)
+
 class AssertionType(Enum):
     TaskIsReady = 0
     TaskIsSuspended = 1

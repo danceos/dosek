@@ -2,6 +2,8 @@ from .arch_generic import GenericArch
 from .elements import *
 from generator.analysis.Subtask import Subtask
 
+# config-constraint-: (arch.self == ARM) -> !arch.mpu
+
 class ARMArch(GenericArch):
     def __init__(self):
         super(ARMArch, self).__init__()

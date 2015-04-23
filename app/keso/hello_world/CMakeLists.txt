@@ -6,7 +6,9 @@ FILE(GLOB_RECURSE KESO_SOURCES
   RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   "keso_helloworld/*.cpp")
 
-if("${CONFIG_OS_SYSTEMCALLS}" MATCHES "normal")
+config_valid(VALID --systemcalls normal)
+if(VALID)
+
 DOSEK_BINARY(
   NAME keso_helloworld
   SYSTEM_DESC keso_helloworld/keso_main.oil

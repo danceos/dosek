@@ -12,7 +12,7 @@ def setup_logging(log_level):
     """ setup the logging module with the given log_level """
 
     l = logging.INFO # default
-    if log_level == 1:
+    if log_level >= 1:
         l = logging.DEBUG
 
     logging.basicConfig(level=l)
@@ -34,12 +34,8 @@ def main():
                       help="Arguments for the system generator (default: )")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="Increase verbosity (specify multiple times for more)")
-
     parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
                       help="Trace all testcases")
-    parser.add_option('', '--dependability_failure_logging',
-                      dest='DEPFAILLOG', default="no",
-                      help="Log checksum calculation interrupts of the dependability service (default: no)")
 
     del config.model["app"]
 
@@ -77,6 +73,7 @@ def main():
     toolchain_file = "%(REPODIR)s/toolchain/%(ARCH)s.cmake" % {"ARCH": conf.arch.self,
                                                                "REPODIR": base_dir}
     logging.info("Toolchain File: %s", toolchain_file)
+    config.check_constraints(config.constraints, conf)
 
     if options["CLEAN"]:
         logging.info("Removing all files in current directory...")
