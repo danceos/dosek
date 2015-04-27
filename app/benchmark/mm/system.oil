@@ -1,0 +1,35 @@
+
+CPU TestSystem {
+
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+    ISR reboot {
+       CATEGORY = 2;
+       DEVICE = 5;
+    };
+
+    ISR isrA {
+       CATEGORY = 2;
+       DEVICE = 32;
+    };
+
+    ISR isrB {
+        CATEGORY = 2;
+        DEVICE = 33;
+    };
+
+    TASK DummyHandler {
+        SCHEDULE = NONE;
+        PRIORITY = 3;
+        ACTIVATION = 1;
+        AUTOSTART = TRUE;
+    };
+
+};
