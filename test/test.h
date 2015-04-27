@@ -287,13 +287,7 @@ inlinehint void test_main(void)
 	Machine::shutdown();
 }
 
-inlinehint void test_trace(char chr) {
-	//kout << chr;
-    fail_trace = (uint32_t) chr;
-	if (trace_table_idx < 0xff)
-		trace_table[trace_table_idx++] = chr;
-	//kout << trace_table[trace_table_idx-1] << endl;
-}
+extern "C" inlinehint void test_trace(char chr);
 
 #ifdef FAIL
 #define test_trace_assert(...) do{}while(0)

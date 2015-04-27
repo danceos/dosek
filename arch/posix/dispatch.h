@@ -48,10 +48,14 @@ class Dispatcher {
 
 		CALL_HOOK(PreTaskHook);
 
-		if ((from == 0) || !from->is_running()) {
-			to->start();
+		if (to->basic_task) {
+			to->switch_to_basic_task(from);
 		} else {
-			from->switchTo(to);
+			if ((from == 0) || !from->is_running()) {
+				to->start(from);
+			} else {
+				from->switchTo(to);
+			}
 		}
     }
 
@@ -60,11 +64,6 @@ public:
     static void init(void) {
         // setup idle context
 		m_idle.reset();
-
-        //for( int i = 0; i < 10; i++ ) {
-        //    debug << "Preinitializing context #" << i << endl;
-        //    m_mgr.getContext(i).preinit();
-        //}
     }
 
 
@@ -73,11 +72,12 @@ public:
        doDispatch(m_current, &m_idle);
     }
 
+	static forceinline void Destroy(const os::scheduler::Task& task) {
+        task.tcb.reset();
+	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& next) {
-
         const TCB & nextctxt = next.tcb;
-
         // Do not resume yourself...
         if(m_current == &nextctxt)  {
 			debug << "Dispatch to ID " << (int)next.id << " via return" << endl;
@@ -95,10 +95,6 @@ public:
 
 	static forceinline void StartToTask(const os::scheduler::Task& next) {
 		Dispatch(next);
-	}
-
-	static const TCB * getCurrent(void) {
-		return m_current;
 	}
 
 };

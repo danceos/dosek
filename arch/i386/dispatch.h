@@ -59,6 +59,10 @@ public:
 		while(1) Machine::nop();
 	}
 
+	static forceinline void Destroy(const os::scheduler::Task& task) {
+        task.tcb.reset();
+	}
+
 	static forceinline void Dispatch(const os::scheduler::Task& task) {
 		dispatch_syscall(task);
 	}

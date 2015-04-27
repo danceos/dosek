@@ -3,6 +3,7 @@ class SystemImpl:
         self.StartOS = None
 
         self.scheduler = None
+        self.basic_task_stackptr = None
 
 class SubtaskImpl:
     def __init__(self):

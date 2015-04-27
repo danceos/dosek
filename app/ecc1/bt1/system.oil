@@ -1,0 +1,54 @@
+CPU TestSystem {
+
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+    TASK Coord {
+        SCHEDULE = NON;
+        PRIORITY = 1;
+        ACTIVATION = 1;
+        AUTOSTART = TRUE;
+    };
+
+
+    TASK ET1 {
+        SCHEDULE = FULL;
+        PRIORITY = 2;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		EVENT = E1;
+    };
+
+    TASK ET2 {
+        SCHEDULE = FULL;
+        PRIORITY = 10;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		EVENT = E1;
+    };
+
+    TASK BT1 {
+        SCHEDULE = FULL;
+        PRIORITY = 3;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+    TASK BT2 {
+        SCHEDULE = FULL;
+        PRIORITY = 11;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+    };
+
+	EVENT E1 {
+		MASK = AUTO;
+	};
+};
+

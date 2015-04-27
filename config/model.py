@@ -20,6 +20,9 @@ model = ConfigurationTree({
         'systemcalls': OneOf(["normal", "fsm", "fsm_pla"],
                               short_help = "System Call Implementation",),
         'specialize': Boolean(short_help = "Generate Specialized Systemcalls"),
+
+        'basic-tasks': Boolean(short_help = "Should Basic Tasks be optimized?"),
+        # config-constraint-: os.basic-tasks -> (arch.self == posix)
     },
     'dependability' : {
         'encoded': Boolean(short_help = "Encoded OS Operations"),

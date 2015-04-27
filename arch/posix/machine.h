@@ -68,7 +68,16 @@ public:
 		exit(EXIT_FAILURE);
 	}
 
+	/**
+	 * \brief Disable all interrupts
+	 */
+	static forceinline void* get_stackptr() {
+		void* ret;
+		asm volatile ("mov %%esp, %0" : "=r" (ret));
+		return ret;
+    }
 
+	
 	/**
 	 * \brief Disable all interrupts
 	 */

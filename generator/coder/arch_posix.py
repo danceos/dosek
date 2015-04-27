@@ -93,6 +93,8 @@ class PosixArch(GenericArch):
 
         if abb.subtask.conf.is_isr:
             userspace.add(Comment("Called from ISR, no enable interrupts required!"))
+        elif abb.syscall_type.doesTerminateTask():
+            userspace.add(Comment("Return with closed interrupts"))
         else:
             self.call_function(userspace, "Machine::enable_interrupts", "void", [])
 

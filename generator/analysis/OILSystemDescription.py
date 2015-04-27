@@ -342,7 +342,13 @@ class Task(OILObject):
 
     @property
     def basic_task(self):
-        return False
+        if hasattr(self, "BASIC_TASK"):
+            return self.BASIC_TASK
+        return len(self.events) == 0
+
+    @basic_task.setter
+    def basic_task(self, value):
+        self.BASIC_TASK = value
 
     def __str__(self):
         ret = super(Task, self).__str__()

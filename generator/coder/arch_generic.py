@@ -14,13 +14,36 @@ class GenericArch(BaseCoder):
         """Generate the stacks for the tasks, including the task pointers"""
         # Ignore the Idle thread and ISR subtasks
         for subtask in self.system_graph.real_subtasks:
-            stacksize = subtask.get_stack_size()
-            stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
-                                    extern_c = True)
-            self.generator.source_file.data_manager.add(stack)
+            if subtask.conf.basic_task:
+                # With a stacksize of 8, we indicate we're having a
+                # basic task here, that runs on the shared stack
+                stacksize = 8
 
-            stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
-            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+                stack = DataObjectArray("uint8_t", subtask.name + "_dynamic_state", str(stacksize),
+                                        extern_c = True)
+                self.generator.source_file.data_manager.add(stack)
+
+
+                # Get a common stack pointer for all basic tasks
+                if not self.system_graph.impl.basic_task_stackptr:
+                    basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
+                                                  extern_c = True)
+                    stackptr = DataObject("void *", "OS_basic_task_stackptr",
+                                          static_initializer = (basic_stack.name + "+ 4096"))
+                    self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
+                    self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+                    self.system_graph.impl.basic_task_stackptr = stackptr
+                else:
+                    stackptr = self.system_graph.impl.basic_task_stackptr
+            else:
+                stacksize = subtask.get_stack_size()
+
+                stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
+                                        extern_c = True)
+                self.generator.source_file.data_manager.add(stack)
+
+                stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
+                self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
 
 
             subtask.impl.stack = stack

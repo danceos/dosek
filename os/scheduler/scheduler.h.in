@@ -37,7 +37,7 @@ struct Scheduler  {
 	}
 
 	void forceinline SetSuspended_impl(const Task &t) {
-		t.tcb.reset();
+		Dispatcher::Destroy(t);
 
 		tlist.remove(t.id);
 

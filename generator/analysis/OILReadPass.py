@@ -60,6 +60,10 @@ class OILReadPass(Analysis):
 
             graph.stats.add_data(subtask, "is_isr", False, scalar = True)
 
+            # If basic tasks are not allowed, all tasks become extended tasks
+            if not self.system_graph.conf.os.basic_tasks:
+                subtask.conf.basic_task = False
+
             # We use event_ids that are only unique for a single
             # subtask.
             event_id = 0

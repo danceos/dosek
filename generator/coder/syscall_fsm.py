@@ -45,8 +45,8 @@ class FSMSystemCalls(FullSystemCalls):
         for subtask in self.system_graph.real_subtasks:
             # Use Reset the stack pointer for all all tasks
             self.call_function(block,
-                               self.task_desc(subtask) + ".tcb.reset",
-                               "void", [])
+                               "Dispatcher::Destroy",
+                               "void", [self.task_desc(subtask)])
 
 
         # Call the StartupHook

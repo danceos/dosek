@@ -61,4 +61,13 @@ extern "C" {
         test_assert(good);
         test_positive_tests_gt(0);
     }
+
+	void test_trace(char chr) {
+		// kout << chr << endl;
+	    fail_trace = (uint32_t) chr;
+		if (trace_table_idx < 0xff)
+			trace_table[trace_table_idx++] = chr;
+		//kout << trace_table[trace_table_idx-1] << endl;
+	}
+
 }
