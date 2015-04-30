@@ -81,14 +81,14 @@ public:
 	/**
 	 * \brief Disable all interrupts
 	 */
-	static forceinline void disable_interrupts() {
+	static noinline void disable_interrupts() {
 		arch::irq.disable_interrupts();
     }
 
 	/**
 	 * \brief Enable all interrupts
 	 */
-	static forceinline void enable_interrupts() {
+	static noinline void enable_interrupts() {
 		arch::irq.enable_interrupts();
     }
 
@@ -140,6 +140,8 @@ public:
 
 #define __asm_label(a) #a
 #define _asm_label(a) __asm_label(a)
-#define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(void *)0))
+// #define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(void *)0))
+#define asm_label(label)
+
 
 #endif // __MACHINE_H__

@@ -63,15 +63,21 @@ public:
         task.tcb.reset();
 	}
 
-	static forceinline void Dispatch(const os::scheduler::Task& task) {
+	static forceinline void Dispatch(const os::scheduler::Task& task,
+									 const os::scheduler::Task *last = 0) {
+		(void) last;
 		dispatch_syscall(task);
 	}
 
-	static forceinline void ResumeToTask(const os::scheduler::Task& task) {
+	static forceinline void ResumeToTask(const os::scheduler::Task& task,
+										 const os::scheduler::Task *last = 0 ) {
+		(void) last;
 		dispatch_syscall(task);
 	}
 
-	static forceinline void StartToTask(const os::scheduler::Task& task) {
+	static forceinline void StartToTask(const os::scheduler::Task& task,
+										const os::scheduler::Task *last = 0) {
+		(void) last;
 		dispatch_syscall(task);
 	}
 

@@ -76,25 +76,31 @@ public:
         task.tcb.reset();
 	}
 
-	static forceinline void Dispatch(const os::scheduler::Task& next) {
-        const TCB & nextctxt = next.tcb;
+	static forceinline void Dispatch(const os::scheduler::Task &next,
+									 const os::scheduler::Task *current = 0) {
         // Do not resume yourself...
-        if(m_current == &nextctxt)  {
+		// kout << (void*)current << " " << (void*) &next << endl;
+		const TCB *cur = current ? &current->tcb : m_current;
+        if(cur == &next.tcb)  {
 			debug << "Dispatch to ID " << (int)next.id << " via return" << endl;
 			return;
 		}
 
-        debug << "Dispatch to ID: " << (int)next.id << " " << ((void *)&nextctxt) << endl;
+        debug << "Dispatch to ID: " << (int)next.id << " " << ((void *)&next.tcb) << endl;
 
-        doDispatch(m_current, &nextctxt);
+        doDispatch(cur, &next.tcb);
 	}
 
-	static forceinline void ResumeToTask(const os::scheduler::Task& next) {
-		Dispatch(next);
+	static forceinline void ResumeToTask(const os::scheduler::Task &next,
+										 const os::scheduler::Task *current = 0) {
+		//assume(next.tcb.is_running());
+		Dispatch(next, current);
 	}
 
-	static forceinline void StartToTask(const os::scheduler::Task& next) {
-		Dispatch(next);
+	static forceinline void StartToTask(const os::scheduler::Task next,
+										const os::scheduler::Task *current = 0) {
+		//assume(!next.tcb.is_running());
+		Dispatch(next, current);
 	}
 
 };

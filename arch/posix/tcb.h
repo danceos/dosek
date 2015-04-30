@@ -27,16 +27,24 @@ struct TCB {
 
 	const int stacksize;
 
-	inline void ** get_tos(void) const {
-		void **tos = (void **)(((char *)stack) + stacksize);
-		return tos;
+	constexpr inline void ** get_tos(void) const {
+		return (void **)(((char *)stack) + stacksize);
 	}
 
-	inline void* &running_marker(void) const {
+	constexpr inline void* &running_marker(void) const {
 		return *(get_tos() - 1);
 	}
 
-	inline void* &basic_task_frame_pointer(void) const {
+	inline bool is_running(void) const {
+		return running_marker() != (void *) 0xaaaaffff;
+	}
+
+	inline void set_running() const {
+		running_marker() = (void *) 0xa5a5a5a5;
+	}
+
+
+	constexpr inline void* &basic_task_frame_pointer(void) const {
 		return *(get_tos() - 2);
 	}
 
@@ -55,7 +63,7 @@ struct TCB {
 		assert (!is_running ());
 	}
 
-	void switch_to_basic_task(const TCB *old) const {
+	void inlinehint switch_to_basic_task(const TCB *old) const {
 		// printf("\nto basic_task %p -> %p\n", old ? &(old->sp) : NULL, &sp);
 		// We will be running, so we mark ourself as running
 		bool must_start_next = !is_running();
@@ -66,9 +74,10 @@ struct TCB {
 			asm volatile ("mov %1, %%esp;" // to shared stack
 						  "jmp *%0;"      // into task
 						  ::
-						   "r" (fun),
+						   "m" (fun),
 						   "r" (basic_task_frame_pointer())
 						  );
+			Machine::unreachable();
 		} else {
 			// Are we already on the correct stack?
 			if (old->basic_task) {
@@ -88,7 +97,7 @@ struct TCB {
 									  "jmp *%1;"
 									  "1:"
 									  :: "r" (&basic_task_frame_pointer()),
-									   "r" (fun)
+									   "m" (fun)
 									  : "memory");
 					} else {
 						// printf("Replace on Top 0x%x\n", (int)Machine::get_stackptr());
@@ -96,15 +105,16 @@ struct TCB {
 						asm volatile ("mov %0, %%esp;"
 									  "jmp *%1;"
 									  :: "r" (basic_task_frame_pointer()),
-									   "r" (fun)
+									   "m" (fun)
 									  : "memory");
-
+						Machine::unreachable();
 					}
 				} else {
 					// We want to terminate old. We know that the task we want to switch to
 					// lifes directly under old's frame pointer. Therefore we use startTo
 					// printf("Terminate old task %p\n", old->basic_task_frame_pointer());
 					_startTo(&(old->basic_task_frame_pointer()));
+					Machine::unreachable();
 				}
 			} else { // !Shared Stack
 				// We have to switch to the shared stack
@@ -131,8 +141,8 @@ struct TCB {
 								  "1:\n"
 								  ::
 								   "r" (save_sp),
-								   "r" (fun),
-								   "r" (sp)
+								   "m" (fun),
+								   "m" (sp)
 								  : "memory");
 				} else {
 					// The old task is already running on shared
@@ -180,28 +190,19 @@ struct TCB {
                           );
     }
 
-	static noinline void _startTo(void **to) {
+	static inlinehint void _startTo(void **to) {
 		asm __volatile__ ("mov  %0, %%esp\n"
 						  "pop  %%ebp\n"
 						  "pop  %%edi\n"
 						  "pop  %%esi\n"
 						  "pop  %%ebx\n"
 						  "ret"
-						  : 
+						  :
 						  : "m" (*to)
 						  : "memory"
 						  );
+		Machine::unreachable();
     }
-
-
-	inline bool is_running(void) const {
-		return running_marker() != (void *) 0xaaaaffff;
-	}
-
-	inline void set_running() const {
-		running_marker() = (void *) 0xa5a5a5a5;
-	}
-
 
     constexpr TCB(fptr_t f, void *s, void* &sptr, int stacksize)
 		: basic_task(stacksize < 16), fun(f), stack(s), sp(sptr),  stacksize(stacksize) {}

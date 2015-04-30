@@ -48,20 +48,25 @@ class SpecializedSystemCalls(FullSystemCalls):
             # Check wheter the task is surely continued, or surely started
             is_entry_abb = [task.entry_abb == x for x in abb_info.abbs_after]
 
+            dispatch_argument = [self.task_desc(task)]
+            if abb.subtask.is_user_thread:
+                dispatch_argument += ["/* coming from = */ &" + self.task_desc(abb.subtask)]
+
             if all(is_entry_abb): # only jumping to an entry abb
                 assert len(is_entry_abb) == 1
+
                 self.Comment(kernelspace, "OPTIMIZATION: The task is surely no paused. We can surely start it from scratch.")
                 self.call_function(kernelspace, "Dispatcher::StartToTask", "void",
-                                   [self.task_desc(task)])
+                                   dispatch_argument)
                 self.stats.add_data(abb, "opt:Dispatch:StartToTask", True)
             elif all([not x for x in is_entry_abb]): # Only continuing
                 self.Comment(kernelspace, "OPTIMIZATION: The task is surely ready, just resume it.")
                 self.call_function(kernelspace, "Dispatcher::ResumeToTask", "void",
-                                   [self.task_desc(task)])
+                                   dispatch_argument)
                 self.stats.add_data(abb, "opt:Dispatcher:ResumeToTask", True)
             else:
                 self.call_function(kernelspace, "Dispatcher::Dispatch", "void",
-                                   [self.task_desc(task)])
+                                   dispatch_argument)
                 self.stats.add_data(abb, "opt:Dispatcher:general", True)
 
 

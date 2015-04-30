@@ -50,6 +50,8 @@ extern "C" uint32_t color_assert_port;
 #define assert(x) color_assert(x, COLOR_ASSERT_UNKOWN)
 #endif
 
+#define assume(expr) ((expr) ? static_cast<void>(0) : __builtin_unreachable())
+
 //! Compile-time assert for constants as optimized by the compiler
 #define pseudo_static_assert(A, T) { if(!(A)) { asm volatile( "assertion failed: " T ); } }
 
