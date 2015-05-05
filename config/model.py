@@ -1,6 +1,6 @@
 import os
 from .config_tree import *
-from .constraints import find_constraints
+from .constraints import find_constraints, expr
 
 constraints = find_constraints("*.py", basedir = os.path.abspath(os.path.dirname(__file__) + "/.."))
 
@@ -11,6 +11,9 @@ model = ConfigurationTree({
         "self" : OneOf(["i386", "ARM", "posix"],
                        short_help = "CPU Architecture"),
         'mpu': Boolean(short_help = "Use Memory Protection"),
+        'idle-halt': Boolean(short_help = "Idle loop halts processor",
+                             default_value = expr("self == i386 || self == ARM")),
+        # config-constraint-: (arch.self == posix) -> !arch.idle-halt
     },
     'os' : {
         'ignore-interrupt-systemcalls': Boolean(short_help = "Do not analyze DisableInterrupt() etc."),

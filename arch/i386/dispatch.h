@@ -36,7 +36,27 @@ extern volatile uint16_t dispatch_task;
 #endif
 
 class Dispatcher {
-public:
+
+#ifdef CONFIG_ARCH_IDLE_HALT
+	/** \brief The idle loop
+	 *
+	 * Must be run in ring 0 to allow halting the machine
+	 */
+	static noinline void idle_loop() {
+		/* Call the idle loop callback (does end with
+		   Machine::enable_interrupts())*/
+		CALL_HOOK(PreIdleHook);
+
+		// allow all interrupts
+		LAPIC::set_task_prio(0);
+
+		/* enable interrupts and go to sleep */
+		while (true) Machine::goto_sleep();
+
+		Machine::unreachable(); // should never come here
+	}
+#endif
+
 	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
 		// set task to dispatch
 #ifdef CONFIG_DEPENDABILITY_ENCODED
@@ -58,6 +78,8 @@ public:
 		// time.
 		while(1) Machine::nop();
 	}
+
+public:
 
 	static forceinline void Destroy(const os::scheduler::Task& task) {
         task.tcb.reset();
@@ -81,35 +103,13 @@ public:
 		dispatch_syscall(task);
 	}
 
-	#if IDLE_HALT
 
 	/** \brief Syscall to start idle loop (in ring 0) */
 	static forceinline void idle(void) {
+#ifdef CONFIG_ARCH_IDLE_HALT
 		syscall<true>(&idle_loop);
-	}
+#else // IDLE_HALT
 
-	/** \brief The idle loop
-	 *
-	 * Must be run in ring 0 to allow halting the machine
-	 */
-	static noinline void idle_loop() {
-		/* Call the idle loop callback (does end with
-		   Machine::enable_interrupts())*/
-		CALL_HOOK(PreIdleHook);
-
-		// allow all interrupts
-		LAPIC::set_task_prio(0);
-
-		/* enable interrupts and go to sleep */
-		while (true) Machine::goto_sleep();
-
-		Machine::unreachable(); // should never come here
-	}
-
-	#else // IDLE_HALT
-
-	/** \brief Run idle loop */
-	static forceinline void idle(void) {
 		/* Call the idle loop callback (does end with
 		   Machine::enable_interrupts())*/
 		CALL_HOOK(PreIdleHook);
@@ -121,9 +121,9 @@ public:
 		while(true) Machine::nop();
 
 		Machine::unreachable(); // should never come here
+#endif // CONFIG_IDLE_HALT
 	}
 
-	#endif // IDLE_HALT
 };
 
 } // namespace arch

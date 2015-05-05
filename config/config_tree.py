@@ -90,7 +90,15 @@ class ConfigurationTreeStack(object):
                 return val.get(name[1:])
             assert len(name) == 1, val
             return (val, ty)
-        ret = [x[name] for x in self.__stack if name in x]
+        ret = []
+        for x in self.__stack:
+            if not name in x:
+                continue
+            elem = x[name]
+            if hasattr(elem, "evaluate"):
+                elem = elem.evaluate(self)
+            ret += [elem]
+        
         is_config_tree = [isinstance(x, ConfigurationTree) for x in ret]
         if all(is_config_tree):
             assert self.__model and name in self.__model, "Subtree %s is not in model" % name
@@ -130,9 +138,11 @@ class ConfigurationTreeStack(object):
         return ret
 
 class ConfigurationItem:
-    def __init__(self, short_help = None, long_help = None):
+    def __init__(self, short_help = None, long_help = None, default_value = None):
         self.short_help = short_help
         self.long_help = long_help
+        if not default_value is None:
+            self.default_value = default_value
 
 class OneOf(ConfigurationItem, NamespaceDict):
     config_type = str

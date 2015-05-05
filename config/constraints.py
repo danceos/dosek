@@ -170,3 +170,6 @@ def check_constraints(constraints, config, silent = False):
         else:
             if not silent:
                 logging.debug("constraint holds: %s", constraint)
+
+def expr(expression):
+    return parse_constraint(expression)

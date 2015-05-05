@@ -28,10 +28,7 @@ class Dispatcher {
         //int i = 0;
 		CALL_HOOK(PreIdleHook);
         while(true){
-            //debug << "Idle: " << i++ <<endl;
             Machine::nop();
-            // Machine::enable_interrupts(); // idle context should have unmask signals anyway
-            // Machine::halt();
         }
 	}
 
