@@ -16,40 +16,40 @@ foreach(ELF ${EXECUTABLES})
 	set(STARTUP_SCRIPTS ${PROJECT_BINARY_DIR}/startup_scripts)
 	file(MAKE_DIRECTORY ${STARTUP_SCRIPTS})
 
+    # Common arguments
+	set(QEMU_ARGS -kernel ${ELF_ABS} -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -smp 2)
+
 	# GDB init file
+    # Fix whitespace escaping in CXX FLAGS
+    string(REPLACE ";" " " QEMU_ARGS_STR "${QEMU_ARGS}")
 	set(GDBINITFILE ${STARTUP_SCRIPTS}/${SUFFIX}.qemu.gdbinit)
 	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gdbinit.in" ${GDBINITFILE})
 
-	# Common arguments
-	set(QEMU_ARGS -cdrom ${ISOFILE} -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -smp 2)
-
 	# Start QEMU
 	add_custom_target(qrun${DSUFFIX}
-		DEPENDS iso${DSUFFIX} ${ELF}
-		COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386"
+		DEPENDS ${ELF}
+		COMMENT "[${PROJECT_NAME}] Running ${ELF_ABS} in qemu-system-i386"
 		COMMAND ${QEMU} ${QEMU_ARGS}
 	)
 
 	# Start qemu in terminal (for ssh)
 	add_custom_target(qrunterm${DSUFFIX}
-		DEPENDS iso${DSUFFIX} ${ELF}
-		COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 curses mode"
+		DEPENDS ${ELF}
+		COMMENT "[${PROJECT_NAME}] Running ${ELF_ABS} in qemu-system-i386 curses mode"
 		COMMAND ${QEMU} ${QEMU_ARGS} -display curses
 	)
 
 	# Start qemu for tests (only serial console)
 	add_custom_target(qtest${DSUFFIX}
-		DEPENDS iso${DSUFFIX} ${ELF}
-		COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 no  graphic mode."
+		DEPENDS  ${ELF}
+		COMMENT "[${PROJECT_NAME}] Running ${ELF_ABS} in qemu-system-i386 no  graphic mode."
 		COMMAND ${QEMU} ${QEMU_ARGS} -nographic
 	)
 
 	# Start qemu and attach debugger
 	add_custom_target(qdebug${DSUFFIX}
-		DEPENDS iso${DSUFFIX} ${ELF}
-		COMMENT "[${PROJECT_NAME}] Running ${ISOFILE} in qemu-system-i386 debug mode. "
-		COMMAND ${QEMU} ${QEMU_ARGS} -nographic  -gdb tcp::${DEBUG_PORT} -S &
-        COMMAND sleep 1
-		COMMAND ${DEBUGGER} -n -x ${GDBINITFILE} $<TARGET_FILE:${ELF}>
+		DEPENDS  ${ELF}
+		COMMENT "[${PROJECT_NAME}] Running ${ELF} in qemu-system-i386 debug mode. "
+		COMMAND gdb -x "${GDBINITFILE}" ${ELF_ABS}
 	)
 endforeach()

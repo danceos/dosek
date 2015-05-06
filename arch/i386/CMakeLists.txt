@@ -136,8 +136,8 @@ endmacro()
 
 
 macro(dosek_add_test FN)
-    add_test(${FN} qemu-system-i386 -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -nographic -smp 2 -cdrom "${PROJECT_BINARY_DIR}/${FN}.iso")
+    add_test(${FN} qemu-system-i386 -no-reboot  -machine pc,accel=tcg -m ${RAM_SIZE} -nographic -smp 2 -kernel "${PROJECT_BINARY_DIR}/${FN}")
     set_tests_properties(${FN} PROPERTIES PASS_REGULAR_EXPRESSION "SUCCESS.+ALL OK" FAIL_REGULAR_EXPRESSION "FAIL" TIMEOUT 20)
-    add_dependencies( tests iso-${FN} )
+    add_dependencies( tests ${FN} )
 endmacro()
 

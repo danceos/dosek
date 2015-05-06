@@ -1,5 +1,5 @@
 file @ELF_ABS@
-target remote localhost:@DEBUG_PORT@
+target remote | @QEMU@ @QEMU_ARGS_STR@ -gdb stdio -S
 
 define pe
   printf "[vc] %u - [B] %u - [D] %u %% [A] %u = %u (rem %u)\n", $arg0.vc, $arg0.B, $arg0.D, $arg0.A, (($arg0.vc - $arg0.B - $arg0.D) / $arg0.A), (($arg0.vc - $arg0.B - $arg0.D) % $arg0.A)
