@@ -126,7 +126,7 @@ class GenericOS(BaseCoder):
             # In the pre idle hook, we place the kickoff method of the
             # idle subtask
             if hook == "PreIdleHook":
-                self.call_function(hook_function, 
+                self.call_function(hook_function,
                                    self.system_graph.idle_subtask.entry_abb\
                                    .generated_function_name(),
                                    "void", [])

@@ -22,12 +22,12 @@ DeclareEvent(E2);
 
 TEST_MAKE_OS_MAIN( StartOS(0) );
 
-/* This 
+/* This
  */
 
 TASK(H1) {
 	ActivateTask(H2);
-	test_trace('1'); 
+	test_trace('1');
 	WaitEvent(E2);
 	test_trace('}');
 

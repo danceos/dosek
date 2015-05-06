@@ -27,7 +27,7 @@ TEST_MAKE_OS_MAIN( StartOS(0) );
  */
 
 TASK(H1) {
-	test_trace('1'); 
+	test_trace('1');
 	ActivateTask(H3);
 	test_trace('.');
 	ActivateTask(H2);

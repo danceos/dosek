@@ -19,7 +19,7 @@ struct TaskList : public TaskListStatic {
         Event<3, 7, {{{!prio_offset}}}> {{{!event}}};
     }}}
 }}}
-	
+
 	// idle task id/priority
     static constexpr auto scheduler_prio = EC({{{generate:scheduler_prio_sig}}}, {{{!scheduler_prio}}});
 	static constexpr auto idle_id   = EC({{{!idle_id_sig}}}, 0);
@@ -123,7 +123,7 @@ struct TaskList : public TaskListStatic {
     	if (MOD((prio.vc + id.vc), A0) != (sigPrio + sigId)) {
             {{{!head_fail:prio.vc,id.vc}}}
     	}
-    
+
     	/* Recode if sigID got too big */
     	if (sigId > A0 / 2) {
     		id.vc = id.vc - sigId + 3;
@@ -172,7 +172,7 @@ struct TaskList : public TaskListStatic {
 }}}
 {{{!if_not_preemptable|
             // Release the RES_SCHEDULER resource, if we have to block.
-            // For this we compute the blocking term, and invert it, with - 
+            // For this we compute the blocking term, and invert it, with -
             auto blocking_term = EC(4, prio_offset) - Event<1>::must_wait_p({{{!event_list}}});
             // blocking_term = (BLOCK, 0) :: (No blocking condition, blocking condition)
 

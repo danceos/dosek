@@ -76,7 +76,7 @@ Serial::Serial() {
 	UART1->baud_rate_gen = XUARTPS_BRGR_CD_115200;
 
 	/*Enable Rx & Tx*/
-	UART1->control_reg0 = XUARTPS_CR_TXEN | XUARTPS_CR_RXEN | XUARTPS_CR_TXRES | XUARTPS_CR_RXRES; 
+	UART1->control_reg0 = XUARTPS_CR_TXEN | XUARTPS_CR_RXEN | XUARTPS_CR_TXRES | XUARTPS_CR_RXRES;
 }
 
 void Serial::putchar(char character) {

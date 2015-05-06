@@ -131,7 +131,7 @@ class PreciseSystemState(SystemState):
         the system state. Rules for the generation are:
         - task states and continuations are equaly weighted
           - All tasks know adds a score of 0.5
-          - The more continuations there for a state, the less precise it is. 
+          - The more continuations there for a state, the less precise it is.
             The most precise it is when there is one continuation per subtask"""
 
         subtask_score = 0

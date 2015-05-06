@@ -26,7 +26,7 @@ class PassManager:
         while not ws.isEmpty():
             cur  = ws.pop()
             if not cur in passes:
-                passes[cur] = GraphObjectContainer(cur.name(), 'black', 
+                passes[cur] = GraphObjectContainer(cur.name(), 'black',
                                                  data = cur.__doc__)
                 graph.subobjects.append(passes[cur])
                 for requires in cur.requires():

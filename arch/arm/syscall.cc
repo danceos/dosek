@@ -19,7 +19,7 @@ extern "C" __attribute__((naked)) void syscall_handler(void *fun, void *sp, uint
 
     // block ISR2s by raising APIC task priority
     GIC::set_task_prio(IRQ_PRIO_SYSCALL);
-	// kout << "S: " << sp  << " " << (save_sp &0xfff) << " " << (void *) (((uint32_t*)sp)[-1]) 
+	// kout << "S: " << sp  << " " << (save_sp &0xfff) << " " << (void *) (((uint32_t*)sp)[-1])
 	//	 << ":: " << fun << endl;
 
     // Reenable ISR1s

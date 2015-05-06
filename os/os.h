@@ -113,16 +113,16 @@ EXTERN_C_DECL void StartOS(int);
 
 // #define SendMessage(MSG,DATA)				\
 //   OSEKOS_SendMessage(OSEKOS_MESSAGE_##MSG,DATA)
-// 
+//
 // #define ReceiveMessage(MSG,DATA)				\
 //   OSEKOS_ReceiveMessage(OSEKOS_MESSAGE_##MSG,DATA)
-// 
+//
 // #define SendDynamicMessage(MSG,DATA,LENGTH)				\
 //   OSEKOS_SendDynamicMessage(OSEKOS_MESSAGE_##MSG,DATA,LENGTH)
-// 
+//
 // #define ReceiveDynamicMessage(MSG,DATA,LENGTH)				\
 //   OSEKOS_ReceiveDynamicMessage(OSEKOS_MESSAGE_##MSG,DATA,LENGTH)
-// 
+//
 // #define SendZeroMessage(MSG)				\
 //   OSEKOS_SendZeroMessage(OSEKOS_MESSAGE_##MSG)
 

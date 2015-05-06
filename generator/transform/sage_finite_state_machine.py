@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 latex = None
-    
+
 r"""
 Finite State Machines, Automata, Transducers
 
@@ -938,7 +938,7 @@ def FSMLetterSymbol(letter):
         '-'
     """
     return FSMEmptyWordSymbol if letter is None else repr(letter)
- 
+
 
 def FSMWordSymbol(word):
     """

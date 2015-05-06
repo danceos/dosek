@@ -185,7 +185,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             self.states[current] = current
             state_count += 1
             if (state_count % 10000) == 0 and state_count > 0:
-                logging.info(" + already %d states (%d on stack, %d ignored)", 
+                logging.info(" + already %d states (%d on stack, %d ignored)",
                              state_count, len(self.working_stack), ignored_count)
 
             self.state_functor(current)

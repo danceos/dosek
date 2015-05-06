@@ -42,7 +42,7 @@
 //####ECOSGPLCOPYRIGHTEND####
 //=============================================================================
 // ####DESCRITPIONBEGIN####
-// Authors: 
+// Authors:
 // Contributors: Ant Micro
 // Date:         12.07.2012
 // Purpose:      cache control

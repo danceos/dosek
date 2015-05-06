@@ -7,7 +7,7 @@
 #include "machine.h"
 
 void Machine::reset(void) {
-    
+
 }
 
 void Machine:setup_caches(void) {

@@ -9,7 +9,7 @@
  */
 
 /**
- * @file 
+ * @file
  * @ingroup generic
  * @brief Run global constructors at system startup.
  */

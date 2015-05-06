@@ -14,7 +14,7 @@ extern "C" {
 
     void run_constructors(void) {
         //! Call constructors of all global object instances.
-        //! @note Ensure that your linker script places 
+        //! @note Ensure that your linker script places
         //!       all `CTORS` between `__CTORS_START` and
         //! `__CTORS_END`
         for( void (** volatile ctor)() = &__CTORS_START; ctor != &__CTORS_END; ++ctor )

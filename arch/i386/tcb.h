@@ -11,7 +11,7 @@ struct TCB {
 
 	// Are we a basic task
 	bool basic_task;
-	
+
 	// task function
 	fptr_t fun;
 

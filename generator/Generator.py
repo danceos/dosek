@@ -41,7 +41,7 @@ class Generator:
         #S.Schedule: None, # ["StatusType"],
         #S.GetTaskID: None, # ["StatusType", "TaskRefType"],
         #S.GetTaskState: None, # ["StatusType", "TaskType", "TaskStateRefType"],
-        
+
         S.EnableAllInterrupts  : ["void"],
         S.DisableAllInterrupts : ["void"],
         S.ResumeAllInterrupts  : ["void"],

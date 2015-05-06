@@ -38,9 +38,9 @@ public:
 
      */
 
-	/* 
+	/*
 	   This function can only be called by the task itself, therefore
-	   it resets the waiting AND the set flags 
+	   it resets the waiting AND the set flags
 	*/
 	void clear() {
 		event_waiting = EC(B0, 0);
@@ -75,9 +75,9 @@ public:
 		return  (W ^ S) | (S ^ H);
 	}
 
-	/* 
+	/*
 	   Returns EC(0, High) (is waiting!) or EC(0, 0) (this event is
-	   not waiting 
+	   not waiting
 	*/
 	value_coded_t is_waiting() const {
 		value_coded_t W = (event_waiting.vc - B0);
@@ -136,7 +136,7 @@ int main() {
 	event_a.set();
 	event_b.clear();
 
-	
+
 	auto ret = Event<12>::must_wait_p(event_a, event_b);
 
 	std::cout << (ret.vc == (A0 + 12) ? "waiting" : "not-waiting" ) << std::endl;

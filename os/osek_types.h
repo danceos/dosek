@@ -25,7 +25,7 @@ typedef enum  {
 	E_OS_RESOURCE = 6,
 	E_OS_STATE = 7,
 	E_OS_VALUE = 8,
-	E_NOT_OK = 9, 
+	E_NOT_OK = 9,
 } StatusType;
 
 /**

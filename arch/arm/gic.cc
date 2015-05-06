@@ -44,7 +44,7 @@ extern "C" void * irq_handler(void * task_sp) {
 	// asm volatile("mov %0, lr" : "=r"(lr) ::);
 
 	// kout << endl << "#" << " " << task_sp << " " << id
-	// 	 << "% " << (void*)((uint32_t *)task_sp)[-1] 
+	// 	 << "% " << (void*)((uint32_t *)task_sp)[-1]
 	// 	 << ": " << lr
 	// 	 << endl;
 

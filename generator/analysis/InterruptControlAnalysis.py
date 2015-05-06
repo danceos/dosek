@@ -33,7 +33,7 @@ class InterruptControlAnalysis(Analysis):
             All = max(in_state.All, state_before.All)
             OS  = max(in_state.OS, state_before.OS)
             state_before = self.BlockingCounter(All = All, OS = OS)
-        
+
 
         All, OS = state_before
 
@@ -88,5 +88,5 @@ class InterruptControlAnalysis(Analysis):
                 All = 1
                 OS  = 1
             abb.interrupt_block_all = All > 0
-            abb.interrupt_block_os  = OS > 0 
+            abb.interrupt_block_os  = OS > 0
 

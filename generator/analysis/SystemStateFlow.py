@@ -150,8 +150,8 @@ class SystemStateFlow(Analysis):
         for subtask in self.system_graph.subtasks:
             if len(subtask.events) > 0:
                 logging.warn("Skipped State-Flow Analysis, since Events are present")
-                return 
-        
+                return
+
         old_copy_count = SystemState.copy_count
 
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
@@ -187,7 +187,7 @@ class SystemStateFlow(Analysis):
             for abb in isr.wrapped_event.handler.abbs:
                 self.before_abb_states[abb] = isr.collected_states[abb]
 
-    
+
 
         # Record the number of copied system states
         self.system_graph.stats.add_data(self, "copied-system-states",

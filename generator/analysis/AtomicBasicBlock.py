@@ -15,7 +15,7 @@ class AtomicBasicBlock(Node):
         Node.__init__(self, ControlFlowEdge, "ABB%d" %(AtomicBasicBlock.abb_id_counter), color="red")
         self.abb_id = AtomicBasicBlock.abb_id_counter
         AtomicBasicBlock.abb_id_counter += 1
-        
+
         self.system_graph = system_graph
         self.function = None
 

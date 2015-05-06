@@ -35,7 +35,7 @@ class GlobalControlFlowMetric(Analysis):
                     analyzed_edges_count += 1
 
         with open(self.filename, "w+") as fd:
-            fd.write("%s, %d, %d, %d\n" %( 
+            fd.write("%s, %d, %d, %d\n" %(
                 self.filename,
                 all_possible_neighbours_count,
                 higher_priority_count,

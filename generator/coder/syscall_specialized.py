@@ -95,7 +95,7 @@ class SpecializedSystemCalls(FullSystemCalls):
                 self.Comment(kernelspace, "OPTIMIZATION: We do not have to update the current system priority")
                 self.stats.add_data(abb, "opt:SetSystemPriority:not-needed", next_prio)
             else:
-                self.Comment(kernelspace, 
+                self.Comment(kernelspace,
                              "OPTIMIZATION: The system priority is determined."
                              + " Therefore we set it from a constant: %d == %s",
                              next_prio, self.system_graph.who_has_prio(next_prio))
@@ -135,7 +135,7 @@ class SpecializedSystemCalls(FullSystemCalls):
 
 
         tasks = list(abb_info.tasks_after.keys())
-        self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s", 
+        self.Comment(kernelspace, "OPTIMIZATION: Only the following tasks are possible %s",
                      tasks)
         self.stats.add_data(abb, "opt:Schedule:possible-tasks", len(tasks))
 

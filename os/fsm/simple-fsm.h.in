@@ -10,7 +10,7 @@ constexpr const os::scheduler::Task const * const dispatch_table[] = {
 };
 
 
-	
+
 class SchedulerFSM : public SimpleFSM {
  public:
     enum {

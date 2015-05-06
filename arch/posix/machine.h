@@ -77,7 +77,7 @@ public:
 		return ret;
     }
 
-	
+
 	/**
 	 * \brief Disable all interrupts
 	 */

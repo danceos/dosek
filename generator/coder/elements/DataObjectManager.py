@@ -8,7 +8,7 @@
 """
 
 """
-    @file 
+    @file
     @ingroup generator
     @brief Data object cook.
 """
@@ -95,7 +95,7 @@ class DataObjectArray(DataObject):
         prefix = "extern "
         if self.extern_c:
             prefix += '"C" '
-        return Statement(self.declaration_prefix + prefix + self.typename 
+        return Statement(self.declaration_prefix + prefix + self.typename
                          + " " + self.name + "[" + self.elements + "]")
 
     def source_element_initializer(self):

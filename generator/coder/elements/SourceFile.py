@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-    @file 
+    @file
     @ingroup primitives
     @brief Constructs the source file.
 """

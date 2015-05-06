@@ -73,7 +73,7 @@ public:
         task.tcb.reset();
 	}
 
-	
+
 	static forceinline void Destroy(const os::scheduler::Task& task) {
         task.tcb.reset();
 	}

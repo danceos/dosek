@@ -18,7 +18,7 @@ class CodeTemplate:
         self.end   = end
 
         self.env_stack = []
-        
+
         with open(filename, "r") as fd:
             self.content = fd.read()
             self.content = self.content.replace("\t", "    ")
@@ -125,7 +125,7 @@ class CodeTemplate:
                 ret = getattr(self, name)(snippet, **dict(list(zip(snippet.args, args))))
             else:
                 ret = getattr(self, name)(snippet, args)
-            
+
             if type(ret) == list:
                 ret = "".join(ret)
             return ret

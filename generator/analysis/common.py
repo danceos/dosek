@@ -179,7 +179,7 @@ class Node(GraphObject):
 
 
 class Edge:
-    def __init__(self, source, target, level=EdgeType.unspecified, label='', 
+    def __init__(self, source, target, level=EdgeType.unspecified, label='',
                  color = 'black'):
         assert hasattr(source, "graph_dot_id"), source
         assert hasattr(target, "graph_dot_id"), target
