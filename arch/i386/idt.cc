@@ -22,16 +22,14 @@ ISR(unhandled) {
 	asm volatile("" : "=a"(intno));
 
 	// print and halt when debugging
-	#if DEBUG
 	uint32_t ip = cpu->eip;
-	debug << "unhandled interrupt ";
-	debug << dec << intno;
-	debug << " @ 0x";
-	debug << hex << ip;
-	debug << endl;
+	kout << "unhandled interrupt ";
+	kout << dec << intno;
+	kout << " @ 0x";
+	kout << hex << ip;
+	kout << endl;
 
 	asm("hlt");
-	#endif
 
 	#if CONTINUE_UNHANDLED_IRQ
 	// send end-of-interrupt (unless exception)

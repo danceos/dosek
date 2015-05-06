@@ -58,7 +58,7 @@ class Dispatcher {
 #endif
 
 	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
-		// set task to dispatch
+	// set task to dispatch
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 		dispatch_task.encode(task.id);
 #else
@@ -81,8 +81,22 @@ class Dispatcher {
 
 public:
 
-	static forceinline void Destroy(const os::scheduler::Task& task) {
+	static forceinline void Prepare(const os::scheduler::Task& task) {
         task.tcb.reset();
+		// For basic tasks we have to prepare the SP checksum, since
+		// the compiler does not use set_sp, but plain addresses.
+		if (task.tcb.basic_task) {
+			task.tcb.set_sp(task.tcb.get_sp());
+		}
+	}
+
+	static forceinline void Destroy(const os::scheduler::Task& task) {
+		task.tcb.reset();
+		/* If the terminated task is a basic task, we have to reset
+		 * the shared stack pointer */
+		if (/* always static */ task.tcb.basic_task) {
+			task.tcb.set_sp(task.tcb.basic_task_frame_pointer());
+		}
 	}
 
 	static forceinline void Dispatch(const os::scheduler::Task& task,

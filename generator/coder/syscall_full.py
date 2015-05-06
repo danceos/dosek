@@ -44,7 +44,7 @@ class FullSystemCalls(BaseCoder):
                 continue
             # Use Reset the stack pointer for all all tasks
             self.call_function(block,
-                               "Dispatcher::Destroy",
+                               "Dispatcher::Prepare",
                                "void", [self.task_desc(subtask)])
 
             if subtask.conf.autostart:

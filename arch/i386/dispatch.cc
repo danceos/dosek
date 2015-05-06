@@ -13,7 +13,7 @@ namespace arch {
 extern TCB * const OS_tcbs[];
 
 /** \brief Startup stackpointer (save location) */
-volatile void* startup_sp = 0;
+volatile void* startup_sp = 0; // This location is write only
 volatile uint32_t save_sp = 0;
 
 #ifdef CONFIG_DEPENDABILITY_ENCODED
@@ -68,9 +68,29 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 		ip = ipv.get();
 
 		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
-	} else {
-		// start function from beginning
+	} else { // not running: start function from beginning
 		ip = (void*) tcb->fun;
+#ifdef CONFIG_OS_BASIC_TASKS
+		if (tcb->basic_task) {
+			// Mark the task as running. This is only neccessary for basic tasks
+			tcb->set_running();
+			/* Set the task frame pointer */
+			tcb->basic_task_frame_pointer() = sp;
+			/* The current stack pointer does not denote the real
+			 * end of the valid data in dOSEK. Therefore, we make
+			 * room for the return address at this point. The
+			 * Image of the stack looks like this:
+
+			 +----------------+
+			 | Saved Context  |
+			 | ...            |
+			 +----------------+<- get_sp()
+			 | Return Address |
+			 +----------------+
+			*/
+			sp = sp - 1; // room for Return Address
+		}
+#endif // CONFIG_OS_BASIC_TASKS
 	}
 
 	// send end-of-interrupt signal

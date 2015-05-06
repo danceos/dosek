@@ -14,6 +14,7 @@ model = ConfigurationTree({
         'idle-halt': Boolean(short_help = "Idle loop halts processor",
                              default_value = expr("self == i386 || self == ARM")),
         # config-constraint-: (arch.self == posix) -> !arch.idle-halt
+        # config-constraint-: arch.idle-halt -> !arch.mpu
     },
     'os' : {
         'ignore-interrupt-systemcalls': Boolean(short_help = "Do not analyze DisableInterrupt() etc."),
@@ -25,7 +26,7 @@ model = ConfigurationTree({
         'specialize': Boolean(short_help = "Generate Specialized Systemcalls"),
 
         'basic-tasks': Boolean(short_help = "Should Basic Tasks be optimized?"),
-        # config-constraint-: os.basic-tasks -> (arch.self == posix)
+        # config-constraint-: os.basic-tasks -> (arch.self == posix || arch.self == i386)
     },
     'dependability' : {
         'encoded': Boolean(short_help = "Encoded OS Operations"),

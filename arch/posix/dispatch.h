@@ -69,6 +69,11 @@ public:
        doDispatch(m_current, &m_idle);
     }
 
+	static forceinline void Prepare(const os::scheduler::Task& task) {
+        task.tcb.reset();
+	}
+
+	
 	static forceinline void Destroy(const os::scheduler::Task& task) {
         task.tcb.reset();
 	}

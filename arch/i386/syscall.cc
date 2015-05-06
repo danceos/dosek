@@ -41,6 +41,9 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 #endif
 	save_sp = 0; // to detect IRQ from userspace in idt.S
 
+	// This is needed to do kout in the initial system call
+	// asm volatile("push %0; popf; " :: "ia"(0x3200));
+
 	// exit system
 	asm volatile("sysexit" :: "a"(arg1), "b"(arg2), "S"(arg3), "c"(&_estack_os - 2048), "d"(fun));
 	Machine::unreachable();

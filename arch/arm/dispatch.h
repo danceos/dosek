@@ -58,12 +58,11 @@ class Dispatcher {
 
 	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
 		// set task to dispatch
-        #ifdef CONFIG_DEPENDABILITY_ENCODED
+#ifdef CONFIG_DEPENDABILITY_ENCODED
 		dispatch_task.encode(task.id);
-        #else
+#else
 		dispatch_task = task.id;
-        #endif
-
+#endif
         CALL_HOOK(PreTaskHook);
 
         //kout << "dispatch to " << (int) task.id << endl;
@@ -80,6 +79,10 @@ class Dispatcher {
 	}
 
 public:
+
+	static forceinline void Prepare(const os::scheduler::Task& task) {
+        task.tcb.reset();
+	}
 
 	static forceinline void Destroy(const os::scheduler::Task& task) {
         task.tcb.reset();
