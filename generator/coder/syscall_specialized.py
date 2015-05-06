@@ -43,7 +43,7 @@ class SpecializedSystemCalls(FullSystemCalls):
     def Dispatch(self, kernelspace, abb, task):
         abb_info = self.global_abb_info.for_abb(abb)
         if task.name == "Idle":
-            self.call_function(kernelspace, "Dispatcher::idle", "void", [])
+            self.call_function(kernelspace, "Dispatcher::Idle", "void", [])
         else:
             # Check wheter the task is surely continued, or surely started
             is_entry_abb = [task.entry_abb == x for x in abb_info.abbs_after]

@@ -39,7 +39,7 @@ class SchedulerFSM {
 
 	void dispatch(unsigned task_id) {
 		if (task_id == IDLE) {
-			arch::Dispatcher::idle();
+			arch::Dispatcher::Idle();
 		} else if (task_id == NO_DISPATCH) {
 			return;
 		} else if (task_id >= sizeof(dispatch_table)/sizeof(*dispatch_table)) {

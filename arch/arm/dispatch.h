@@ -17,10 +17,6 @@
 #include "tcb.h"
 
 
-
-/** \brief Halt the processor when idle */
-#define IDLE_HALT 1
-
 namespace arch {
 
 extern volatile void* startup_sp;
@@ -107,7 +103,7 @@ public:
 	}
 
 	/** \brief Syscall to start idle loop (in ring 0) */
-	static forceinline void idle(void) {
+	static forceinline void Idle(void) {
 #ifdef CONFIG_ARCH_IDLE_HALT
 		syscall(&idle_loop);
 #else

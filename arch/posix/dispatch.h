@@ -64,7 +64,7 @@ public:
     }
 
 
-	static forceinline void idle(void) {
+	static forceinline void Idle(void) {
        debug << "Enter idle" << endl;
        doDispatch(m_current, &m_idle);
     }

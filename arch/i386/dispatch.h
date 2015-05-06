@@ -119,7 +119,7 @@ public:
 
 
 	/** \brief Syscall to start idle loop (in ring 0) */
-	static forceinline void idle(void) {
+	static forceinline void Idle(void) {
 #ifdef CONFIG_ARCH_IDLE_HALT
 		syscall<true>(&idle_loop);
 #else // IDLE_HALT

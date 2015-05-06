@@ -174,7 +174,7 @@ const auto current_prio_orig = current_prio;
         Dispatcher::Dispatch({{{!subtask_desc}}});
 	} else \
 }}} if(current_task == TaskList::idle_id) {
-            Dispatcher::idle();
+            Dispatcher::Idle();
         } else {
 			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
         }
