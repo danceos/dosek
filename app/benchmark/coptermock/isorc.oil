@@ -1,0 +1,232 @@
+CPU CopterMock {
+
+    OS Coptermock {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+	TASKGROUP SignalGatherGroup {
+		PROMISE = SERIALIZED;
+	};
+
+    TASK InitTask {
+       SCHEDULE = FULL;
+        PRIORITY = 31;
+        ACTIVATION = 1;
+        AUTOSTART = TRUE;
+    };
+
+    TASK SignalGatherInitiateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 9;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = SPIBusResource;
+        TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK SignalGatherWaitTask {
+        SCHEDULE = NON;
+        PRIORITY = 10;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = SPIBusResource;
+        EVENT  = SPIReceiveEvent;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    TASKGROUP SignalGatherTimeoutGroup {
+        PROMISE = SERIALIZED;
+    };
+
+    TASK SignalGatherTimeoutTask {
+        SCHEDULE = FULL;
+        PRIORITY = 11;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = SignalGatherTimeoutGroup;
+    };
+
+    TASK SignalProcessingActuateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 13;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+
+        EVENT = SignalGatherDigital2aEvent;
+        EVENT = SignalGatherDigital2bEvent;
+
+        EVENT = SignalGatherDigital2aTimeoutEvent;
+        EVENT = SignalGatherDigital2bTimeoutEvent;
+
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK SignalProcessingAttitudeTask {
+        SCHEDULE = FULL;
+        PRIORITY = 12;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        
+        EVENT = SignalGatherAnalogEvent;
+        EVENT = SignalGatherDigital1Event;
+        EVENT = SignalGatherDigital1TimeoutEvent;
+
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    /* Actuate Tasks */
+    TASK FlightControlAttitudeTask {
+        SCHEDULE = FULL;
+        PRIORITY = 14;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK FlightControlActuateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 15;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        TASKGROUP = SignalGatherGroup;
+    };
+
+    /* Actuate Tasks */
+    TASKGROUP ActuateGroup {
+	 	PROMISE = SERIALIZED;
+	};
+
+
+    TASK ActuateTask {
+        SCHEDULE = FULL;
+        PRIORITY = 16;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        RESOURCE = SPIBusResource;
+        TASKGROUP = ActuateGroup;
+    };
+
+    TASK MavlinkSendTask {
+        SCHEDULE = FULL;
+        PRIORITY = 0;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        TASKGROUP = ActuateGroup;
+    };
+
+
+    /* Watchdog Task */
+	TASKGROUP WatchdogGroup {
+		PROMISE = SERIALIZED;
+	};
+    TASK CopterControlWatchdogTask {
+        SCHEDULE = NON;
+        PRIORITY = 7;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+		TASKGROUP = WatchdogGroup;
+    };
+
+
+    /* Remote Control Task */
+    TASK CopterControlTask {
+        SCHEDULE = FULL;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        AUTOSTART = FALSE;
+        TASKGROUP = SignalGatherGroup;
+    };
+
+    TASK EthernetTask {
+        SCHEDULE = FULL;
+        PRIORITY = 5;
+        ACTIVATION = 1;
+        EVENT = EthernetReceiveEvent;
+        AUTOSTART = FALSE;
+    };
+
+
+    TASK MavlinkRecvTask {
+        SCHEDULE = FULL;
+        PRIORITY = 4;
+        ACTIVATION = 1;
+        EVENT = MavMsgReceiveEvent;
+        AUTOSTART = FALSE;
+		TASKGROUP = SignalGatherGroup;
+    };
+
+    RESOURCE SPIBusResource {
+        RESOURCEPROPERTY = STANDARD;
+    };
+
+    ALARM SamplingAlarm {
+        COUNTER = one_ms_counter;
+        ACTION = ACTIVATETASK {
+            TASK = SignalGatherInitiateTask;
+        };
+    };
+
+    ALARM SignalGatherTimeoutAlarm {
+        COUNTER = one_ms_counter;
+        ACTION = ACTIVATETASK {
+            TASK = SignalGatherTimeoutTask;
+        };
+    };
+
+    ALARM ActuateAlarm {
+        COUNTER = one_ms_counter;
+        ACTION = ACTIVATETASK {
+            TASK = ActuateTask;
+        };
+    };
+
+    ALARM CopterControlWatchdogAlarm {
+        COUNTER = one_ms_counter;
+        ACTION = ACTIVATETASK {
+            TASK = CopterControlWatchdogTask;
+        };
+    };
+
+    COUNTER one_ms_counter {
+        MAXALLOWEDVALUE = 50000;
+        TICKSPERBASE = 1;
+        MINCYCLE = 1;
+    };
+
+    EVENT MavMsgReceiveEvent {
+        MASK = AUTO;
+    };
+    EVENT EthernetReceiveEvent {
+        MASK = AUTO;
+    };
+    EVENT SPIReceiveEvent {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherAnalogEvent {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherDigital1Event {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherDigital2bEvent {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherDigital2aEvent {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherDigital1TimeoutEvent {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherDigital2bTimeoutEvent {
+        MASK = AUTO;
+    };
+    EVENT SignalGatherDigital2aTimeoutEvent {
+        MASK = AUTO;
+    };
+};
+
