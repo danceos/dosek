@@ -53,7 +53,7 @@ class Generator:
         S.ReleaseResource: ["StatusType", "ResourceType"],
 
         S.SetEvent: ["StatusType", "TaskType", "EventMaskType"],
-        # S.GetEvent: None, # ["StatusType", "TaskType", "EventMaskRefType"],
+        S.GetEvent: ["StatusType", "TaskType", "EventMaskRefType"],
         S.ClearEvent: ["StatusType", "EventMaskType"],
         S.WaitEvent: ["StatusType", "EventMaskType"],
 

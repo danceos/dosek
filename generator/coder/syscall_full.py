@@ -133,6 +133,34 @@ class FullSystemCalls(BaseCoder):
                            "void",
                            [self.get_calling_task_desc(syscall)])
 
+    def GetEvent(self, syscall, userspace, kernelspace):
+        mask = self.call_function(kernelspace, "scheduler_.GetEvent_impl",
+                                  "EventMaskType", [self.task_desc(syscall.arguments[0])])
+
+        return_variable = self.os_rules.get_syscall_return_variable("EventMaskType", 4)
+
+        # Fill return variable
+        kernelspace.add(Statement("%s.set(%s)"%(
+            return_variable.name,
+            mask.name)))
+
+        # Read out the result of the system call
+        post = syscall.impl.post_hook
+        post.add(Statement("%s.check()" %(
+            return_variable.name
+        )))
+        post.add(Statement("*%s = %s.get()" %(
+            userspace.arguments()[1][0], # Name of the first argument
+            return_variable.name
+        )))
+
+        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        self.call_function(kernelspace, "Dispatcher::ResumeToTask",
+                           "void",
+                           [self.get_calling_task_desc(syscall)])
+
+
+
     def SetEvent(self, syscall, userspace, kernelspace):
         userspace.unused_parameter(1)
 
@@ -189,10 +217,11 @@ class FullSystemCalls(BaseCoder):
                            [self.get_calling_task_desc(abb)])
 
         # Read out the result of the system call
-        userspace.add(Statement("%s.check()" %(
+        post = abb.impl.post_hook
+        post.add(Statement("%s.check()" %(
             return_variable.name
         )))
-        userspace.add(Statement("*%s = %s.get()" %(
+        post.add(Statement("*%s = %s.get()" %(
             userspace.arguments()[1][0], # Name of the first argument
             return_variable.name
         )))

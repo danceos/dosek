@@ -51,6 +51,8 @@ typedef uint32_t* TaskRefType;
 typedef uint32_t ResourceType;
 
 typedef unsigned long EventMaskType;
+typedef unsigned long * EventMaskRefType;
+
 
 typedef uint32_t AlarmType;
 

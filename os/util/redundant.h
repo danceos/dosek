@@ -90,7 +90,36 @@ class MergedDMR {
 		 }
 		 return true;
 	 }
- };
+};
+
+template<typename T = uint32_t>
+class DMRWithLinkage {
+	T  data0;
+	T  data1;
+public:
+	DMRWithLinkage(const T &t) : data0(t), data1(t) {};
+	DMRWithLinkage() {};
+
+	inline void set(T x){
+		data0 = x;
+		data1 = x;
+	}
+
+	inline T get() const {
+		return data0;
+	}
+
+	inline bool check() const {
+		if (data0 != data1) {
+			CALL_HOOK(FaultDetectedHook, DMRdetected,
+					  (uint32_t) data0,
+					  (uint32_t) data1);
+			return false;
+		}
+		return true;
+	}
+};
+
 
 class EmptyReplicator {
  public:

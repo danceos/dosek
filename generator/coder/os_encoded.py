@@ -96,7 +96,7 @@ class EncodedOS(UnencodedOS):
                                                      alarm.impl.alarm_id))
         return alarm
 
-    def get_syscall_return_variable(self, Type):
+    def get_syscall_return_variable(self, Type, size = 2):
         """Returns a Variable, that is able to capture the return value of a
            system call. The self.return_variables dict is defined in the super class.
 
@@ -104,8 +104,15 @@ class EncodedOS(UnencodedOS):
         if Type in self.return_variables:
             return self.return_variables[Type]
 
-        var = DataObject("os::redundant::WithLinkage<uint32_t, os::redundant::MergedDMR>",
-                         "syscall_return_%s" % Type)
+        if size == 2:
+            var = DataObject("os::redundant::WithLinkage<uint32_t, os::redundant::MergedDMR>",
+                             "syscall_return_%s" % Type)
+        elif size == 4:
+            var = DataObject("os::redundant::DMRWithLinkage<%s>" % Type, 
+                             "syscall_return_%s" % Type)
+        else:
+            assert False, (Type, size, "Invalid Syscall Return Variable")
+
         self.generator.source_file.data_manager.add(var)
         self.return_variables[Type] = var
         return var

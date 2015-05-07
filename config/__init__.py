@@ -72,7 +72,7 @@ class _toCHeader:
                     if sym == v:
                         ret += "#define %s_%s 1\n" % (macro, sym.upper())
                     else:
-                        ret += "#define %s_%s 1\n" % (macro, sym.upper())
+                        ret += "#undef %s_%s\n" % (macro, sym.upper())
         return "#ifndef __CONFIG_HEADER_H\n#define __CONFIG_HEADER_H\n" \
             + ret \
             + "#endif\n"

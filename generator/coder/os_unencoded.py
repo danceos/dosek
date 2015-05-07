@@ -38,12 +38,14 @@ class UnencodedOS(GenericOS):
                     S.AdvanceCounter,
                     S.SetEvent,
                     S.ClearEvent,
-                    S.WaitEvent]):
+                    S.WaitEvent,
+                    S.GetEvent]):
             # Theese are normal system calls with a general purpose kernelspace
             x = self.arch_rules.generate_kernelspace(abb.impl.userspace, abb, [])
             abb.impl.kernelspace = x.system
             abb.impl.pre_hook    = x.pre_hook
             abb.impl.post_hook   = x.post_hook
+
         # Two arguments
         elif abb.isA(S.SetRelAlarm):
             args = abb.impl.userspace.arguments()
@@ -133,7 +135,7 @@ class UnencodedOS(GenericOS):
     def system_leave_hook(self, abb, hook):
         self.callback_in_valid_passes("system_leave_hook", abb, hook)
 
-    def get_syscall_return_variable(self, Type):
+    def get_syscall_return_variable(self, Type, size = 2):
         """Returns a Variable, that is able to capture the return value of a
            system call.
 
@@ -141,8 +143,13 @@ class UnencodedOS(GenericOS):
         if Type in self.return_variables:
             return self.return_variables[Type]
 
-        var = DataObject("os::redundant::WithLinkage<uint16_t, os::redundant::Plain>",
-                         "syscall_return_%s" % Type)
+        if size == 2:
+            var = DataObject("os::redundant::WithLinkage<uint16_t, os::redundant::Plain>",
+                             "syscall_return_%s" % Type)
+        else:
+            var = DataObject("os::redundant::WithLinkage<%s, os::redundant::Plain>" % Type,
+                             "syscall_return_%s" % Type)
+
         self.generator.source_file.data_manager.add(var)
         self.return_variables[Type] = var
         return var

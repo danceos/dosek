@@ -144,6 +144,7 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.WaitEvent            : scc.do_WaitEvent,
                             S.SetEvent             : scc.do_SetEvent,
                             S.ClearEvent           : scc.do_ClearEvent,
+                            S.GetEvent             : scc.do_computation, # ignore
                             # Alarm handler support
                             S.CheckAlarm      : scc.do_CheckAlarm,
                             S.Idle            : scc.do_Idle,

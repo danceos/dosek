@@ -36,6 +36,11 @@ class AlarmImpl:
         self.name = None
         self.alarm_desc = None
 
+class EventImpl:
+    def __init__(self):
+        self.event_mask   = None
+        self.name = None
+
 class SyscallImplementation:
     def __init__(self):
         self.userspace   = None

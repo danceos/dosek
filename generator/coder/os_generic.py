@@ -40,6 +40,18 @@ class GenericOS(BaseCoder):
                                 extern_c = True)
             self.generator.source_file.data_manager.add(iddesc);
 
+        events = {}
+        for event in self.system_graph.events:
+            event.impl = EventImpl()
+            event.impl.name = event.conf.name
+            event.impl.event_mask = event.event_mask
+
+            iddesc = DataObject("const EventMaskType", "OSEKOS_EVENT_" + event.conf.name,
+                                static_initializer = str(event.impl.event_mask),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.include("os/scheduler/task.h")
         self.system_graph.idle_subtask.impl.task_id = 0

@@ -32,6 +32,9 @@ class OILReadPass(Analysis):
         """
         graph = self.system_graph
         maxprio = 0  # Maximum task prio according to OIL file
+        # We use event_ids that are system wide unique
+        event_id = 0
+
         for task_desc in oil.getTasks():
             # Create or Get the Task (Group)
             task_group = task_desc.taskgroup
@@ -64,9 +67,6 @@ class OILReadPass(Analysis):
             if not self.system_graph.conf.os.basic_tasks:
                 subtask.conf.basic_task = False
 
-            # We use event_ids that are only unique for a single
-            # subtask.
-            event_id = 0
             # Instantiate events for the current task
             for event in task_desc.events.values():
                 event.used = True
@@ -84,7 +84,7 @@ class OILReadPass(Analysis):
                 subtask.event_mask_valid |= Ev.event_mask
                 graph._events[Ev.name] = Ev
                 event_id += 1
-                assert event_id < 32, "No more than 32 Events per Subtask"
+                assert event_id < 32, "No more than 32 Events"
 
         # Events: Assert that every event was used at least once
         for event in oil.getEvents():
@@ -124,7 +124,7 @@ class OILReadPass(Analysis):
         # task group configurations.
         for taskgroup_desc in oil.getTaskGroups():
             task_group = graph.get(Task, taskgroup_desc.name)
-            task_group.promises.update(taskgroup_desc.promises)
+            task_group.set_promises(taskgroup_desc.promises)
 
         # Counters
         for conf in oil.getCounters():

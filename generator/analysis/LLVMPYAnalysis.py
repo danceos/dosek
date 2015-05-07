@@ -259,7 +259,7 @@ class BB(Node):
           for i in range(succnum):
             succ = terminator.getSuccessor(i)
             successors.append(succ)
-        return successors
+        return list(set(successors))
 
     def __extract_event_operand(self, argument):
         if hasattr(argument, "z_ext_value"):
@@ -295,7 +295,7 @@ class BB(Node):
                         # Copy the List
                         args = list(inst.operands[0:-1])
                         # Extract the Event arguments
-                        if self.syscall in (S.WaitEvent, S.ClearEvent, S.GetEvent):
+                        if self.syscall in (S.WaitEvent, S.ClearEvent):
                             args[0] = self.__extract_event_operand(args[0])
                         if self.syscall in (S.SetEvent,):
                             args[1] = self.__extract_event_operand(args[1])

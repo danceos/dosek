@@ -118,7 +118,7 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
 ENDMACRO()
 
 MACRO(DOSEK_BINARY)
-  set(options TEST_ISO FAIL)
+  set(options TEST_ISO FAIL TEST_DISABLE)
   set(oneValueArgs SYSTEM_DESC NAME VERIFY)
   set(multiValuedParameters SOURCES LIBS GENERATOR_ARGS)
   cmake_parse_arguments(DOSEK_BINARY "${options}" "${oneValueArgs}" "${multiValuedParameters}" ${ARGN} )
@@ -146,7 +146,7 @@ MACRO(DOSEK_BINARY)
 
   if(${DOSEK_BINARY_TEST_ISO} STREQUAL "TRUE")
     dosek_add_test(${NAME} )
-  else()
+  elseif(${DOSEK_BINARY_TEST_DISABLE} STREQUAL "FALSE")
     # Add a compile testcase
     add_test(test-${NAME} make ${NAME}-clean ${NAME})
   endif()

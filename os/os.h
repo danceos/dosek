@@ -209,7 +209,7 @@ extern StatusType OSEKOS_SetEvent(TaskType t,EventMaskType e);
  * \param t The TASK owning the EVENT
  * \param e The EVENT the will be set
  **/
-extern StatusType OSEKOS_GetEvent(TaskType t,EventMaskType e);
+extern StatusType OSEKOS_GetEvent(TaskType t, EventMaskRefType e);
 
 /**
  * \brief Clear the given EVENT from the TASKs event mask

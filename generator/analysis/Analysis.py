@@ -235,22 +235,25 @@ class MoveFunctionsToTask(Analysis):
             if subtask:
                 self.stats.add_child(subtask, "abb", abb)
             else:
-                assert abb.isA(S.computation) or abb.isA(S.StartOS)
+                assert abb.isA(S.computation) or abb.isA(S.StartOS), abb.path()
 
         # Find the Event mappings. At this point we have enough
         # information about the calling subtask, to rewrite the *Event
         # arguments to the actual system calls.
         for abb in self.system_graph.abbs:
-            if abb.isA([S.WaitEvent, S.ClearEvent, S.GetEvent, S.SetEvent]):
+            if abb.isA([S.WaitEvent, S.GetEvent, S.ClearEvent, S.SetEvent]):
                 if abb.isA(S.SetEvent):
                     subtask = abb.arguments[0]
                     events = abb.arguments[1]
+                elif abb.isA(S.GetEvent):
+                    abb.arguments = [abb.arguments[0]]
+                    continue
                 else:
                     events = abb.arguments[0]
                     subtask = abb.subtask
                 for idx, event in enumerate(events):
                     if isinstance(event, str):
-                        assert event.startswith("OSEKOS_EVENT_")
+                        assert event.startswith("OSEKOS_EVENT_"), abb.arguments
                         event = event[len("OSEKOS_EVENT_"):]
                         events[idx] = subtask._events[event]
                     elif isinstance(event, int):
