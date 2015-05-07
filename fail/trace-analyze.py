@@ -53,7 +53,7 @@ class SymbolMap(dict):
     translation"""
     def __init__(self, symbols):
         symbols.append(Symbol(addr = 0, size = 1, name = "__OS_syscall_OSEKOS_IncrementCounter",
-                              segment = ".text", type = "OBJECT"))
+                              type = "OBJECT"))
         self.symbols = symbols
         for symbol in symbols:
             if not symbol.size:
@@ -95,6 +95,12 @@ class dOSEKDetector:
             if symbol.name == "irq_resume":
                 self.syscall_end.add(start)
 
+            if symbol.name.startswith(".asm_label.syscall_end"):
+                # We do -1 here, because there is always a one byte
+                # nop before the end marker and we want to capture
+                # that one
+                self.syscall_end.add(start-1)
+
             # When the scheduler is not inline, it will appear as a single function
             if ("Reschedule" in symbol.name and "Scheduler" in symbol.name):
                 self.syscall_endurance.update(range(start, end))
@@ -113,7 +119,8 @@ class dOSEKDetector:
                     if end.name.startswith(end_name):
                         if not end_symbol or end.addr < end_symbol.addr:
                             end_symbol = end
-                assert end_symbol
+                if not end_symbol:
+                    continue
                 zone = range(symbol.addr, end_symbol.addr)
                 #print symbol
                 #print end_symbol
@@ -271,8 +278,11 @@ def main(options, args):
 
     region_iterator = iter(syscall_regions(trace_events, symbol_map))
     delayed_regions = []
+    regions_count = 0
+
 
     while region_iterator or len(delayed_regions):
+        regions_count += 1
         if region_iterator:
             try:
                 syscall_region = next(region_iterator)
@@ -297,11 +307,12 @@ def main(options, args):
 
         for name in names:
             if "__OS_syscall" in name:
-                assert event_type  is None, (names, options.stats)
+                assert event_type  is None, (names, event_type, options.stats)
                 event_type = name
             if name in ("__OS_StartOS_dispatch"):
                 assert event_type  is None, (names, options.stats)
                 event_type = name
+                break
 
         # If it does not contain a syscall, use the userland function
         # names (e.g. the start end markers)
@@ -327,6 +338,7 @@ def main(options, args):
         if event_type == "__OS_syscall_OSEKOS_IncrementCounter":
             IncrementCounter["symbols"] = list(set(IncrementCounter["symbols"]) |  set(names))
 
+    print "Processed %d Systemcalls" % regions_count
     IncrementCounter["generated-codesize"] = 0
     for symbol in IncrementCounter["symbols"]:
         if symbol in symbol_map:
