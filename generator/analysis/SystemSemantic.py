@@ -210,7 +210,7 @@ class SystemCallSemantic:
                     # AddFunction pass, otherwise we would have lost
                     # the information about the abb to return to.
                     return_to = before.current_abb.definite_after(E.function_level)
-                    after.call_stack[calling_task.subtask_id].push(return_to)
+                    after.call_stack[calling_task.subtask_id].append(return_to)
                     # print "Call from %s -> %s" % (block, next_abb)
 
                 after.set_continuation(calling_task, next_abb)

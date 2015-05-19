@@ -6,26 +6,69 @@ from .Event import Event
 from .common import Node, Edge, EdgeType, NodeType
 from .SystemState import SystemState
 
-class PreciseSystemState(SystemState):
+class PreciseSystemState():
     """A precise system state is a system state. It cannot have unknown
       fields, and is optimized for speed in the symbolic system execution."""
+
+    READY = 1
+    SUSPENDED = 2
+    WAITING = 4
+
+    system_graph = None
+
+    __slots__ = ["frozen", "states", "call_stack", "continuations",
+                 "current_abb", "__hash", "__next_states", "__prev_states", "events"]
+
     def __init__(self, system_graph):
-        SystemState.__init__(self, system_graph)
+        PreciseSystemState.system_graph = system_graph
+        self.frozen = False
 
         size = len(self.system_graph.subtasks)
-
-        delattr(self, "events_cleared")
-        delattr(self, "events_set")
-
-        self.events = [0] * size
-        for i in range(0, size):
-            self.continuations[i] = None
-            self.call_stack[i] = list()
-
+        self.states = [0] * size
+        self.continuations = [None] * size
+        self.current_abb = None
         self.__hash = None
+        self.__next_states = []
+        self.__prev_states = []
+        self.events = [0] * size
+        self.call_stack = []
+        for i in range(0, size):
+            self.call_stack.append(list())
+
+    def add_cfg_edge(self, block, ty):
+        self.__next_states.append((ty, block))
+        block.__prev_states.append((ty, self))
+
+    def remove_cfg_edge(self, block, ty):
+        for i, elem in enumerate(self.__next_states):
+            if elem == (ty, block):
+                del self.__next_states[i]
+                break
+
+        for i, elem in enumerate(block.__prev_states):
+            if elem == (ty, self):
+                del block.__prev_states[i]
+                break
+
+    def get_outgoing_nodes(self, ty):
+        return [block for Ty,block in self.__next_states if Ty == ty]
+
+    def get_incoming_nodes(self, ty):
+        return [block for Ty,block in self.__prev_states if Ty == ty]
 
     def new(self):
         return PreciseSystemState(self.system_graph)
+
+    def copy_if_needed(self, multiple=None):
+        if self.frozen:
+            if multiple != None:
+                return [self.copy() for x in range(0, multiple)]
+            else:
+                return self.copy()
+        if multiple != None:
+            return [self] + [self.copy() for x in range(1, multiple)]
+        else:
+            return self
 
     def copy(self):
         # Increase the copy counter
@@ -34,17 +77,53 @@ class PreciseSystemState(SystemState):
         state = self.new()
         state.current_abb = self.current_abb
         def copyto(dst, src):
-            for idx in range(0, len(src)):
-                dst[idx] = src[idx]
+            dst[:] = src
 
         copyto(state.states, self.states)
         copyto(state.continuations, self.continuations)
         copyto(state.events, self.events)
 
         for subtask_id in range(0, len(self.states)):
-            state.call_stack[subtask_id] = stack(self.call_stack[subtask_id])
+            state.call_stack[subtask_id] = list(self.call_stack[subtask_id])
 
         return state
+
+    def get_subtasks(self):
+        """Sorted by priority"""
+        return sorted(self.system_graph.subtasks,
+                      key=lambda x: x.static_priority, reverse = True)
+
+    def get_unordered_subtasks(self):
+        return self.system_graph.subtasks
+
+
+    def set_suspended(self, subtask):
+        assert not self.frozen
+        self.states[subtask.subtask_id] = self.SUSPENDED
+
+    def set_ready(self, subtask):
+        assert not self.frozen
+        self.states[subtask.subtask_id] = self.READY
+
+    def set_waiting(self, subtask):
+        assert not self.frozen
+        self.states[subtask.subtask_id] = self.WAITING
+
+    ## Ready state accessors
+    def is_surely_suspended(self, subtask):
+        return self.states[subtask.subtask_id] == self.SUSPENDED
+
+    def is_surely_ready(self, subtask):
+        return self.states[subtask.subtask_id] == self.READY
+
+    def is_maybe_ready(self, subtask):
+        return self.READY & self.states[subtask.subtask_id]
+
+    def is_maybe_suspended(self, subtask):
+        return self.SUSPENDED & self.states[subtask.subtask_id]
+
+    def is_unsure_ready_state(self, subtask):
+        return False
 
     ## Continuations
     def get_continuations(self, subtask):
@@ -186,7 +265,7 @@ class PreciseSystemState(SystemState):
     def __eq__(self, other):
         if id(self) == id(other):
             return True
-        if not isinstance(other, SystemState):
+        if not isinstance(other, PreciseSystemState):
             return False
         # The Currently Running Task has to be equal
         if not self.current_abb == other.current_abb:
@@ -208,6 +287,53 @@ class PreciseSystemState(SystemState):
 
         return True
 
+    def format_state(self, state):
+        ret = []
+        if state & self.READY:
+            ret.append("RDY")
+        if state & self.SUSPENDED:
+            ret.append("SPD")
+        if state & self.WAITING:
+            ret.append("WAI")
+
+        return "|".join(ret)
+
+    def format_events(self, subtask):
+        ret = []
+        for event in subtask.events:
+            SET = self.is_event_set(subtask, event)
+            CLEARED = self.is_event_cleared(subtask, event)
+            if SET and CLEARED:
+                ret.append("%s:*" % event.conf.name)
+            elif SET:
+                ret.append("%s:1" % event.conf.name)
+            else:
+                assert CLEARED
+                ret.append("%s:0" % event.conf.name)
+        return " ".join(ret)
+
+
+    def definite_after(self, level):
+        nodes = self.get_outgoing_nodes(level)
+        assert len(nodes) == 1
+        return nodes[0]
+
+    def __repr__(self):
+        if self.current_abb:
+            ret = "<PreciseSystemState: %s>\n" %(self.current_abb.path())
+        else:
+            ret = "<PreciseSystemState: -->\n"
+
+        for subtask in self.get_subtasks():
+            ret += "  %02x%02x %s: %s in %s [%s]\n" %(
+                id(self.states[subtask.subtask_id]) % 256,
+                id(self.continuations[subtask.subtask_id]) % 256,
+                subtask, self.format_state(self.states[subtask.subtask_id]),
+                self.continuations[subtask.subtask_id],
+                self.format_events(subtask))
+        ret += "</PreciseSystemState>\n"
+        return ret
+    
     def dump(self):
         ret = {"ABB": str(self.current_abb)}
         for subtask in self.get_unordered_subtasks():
@@ -220,4 +346,3 @@ class PreciseSystemState(SystemState):
             ret[subtask.name] += " " +  self.format_events(subtask)
 
         return ret
-

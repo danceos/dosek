@@ -51,13 +51,27 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         if len(self.states) > 500:
             return []
         ret = []
+        M = {}
         for abb, states in self.states_by_abb.items():
             assert all([x.current_abb == abb for x in states])
+            subobjs = []
+            for state in states:
+                wrapper = GraphObjectContainer(str(state).replace("\n", "\\l"),
+                                               color="green")
+                subobjs.append(wrapper)
+                M[state] = wrapper
             cont = GraphObjectContainer(str(abb), color="red",
-                                        subobjects=list(states))
+                                        subobjects=subobjs)
             cont.data = {"ABB": str(abb), "func": abb.function.name}
             cont.abb = abb
             ret.append(cont)
+
+        for state, wrapper in M.items():
+            for next_state in state.get_outgoing_nodes(StateTransition):
+                cont.edges.append(Edge(wrapper, M[next_state], color="red"))
+            for next_state in state.get_outgoing_nodes(SavedStateTransition):
+                cont.edges.append(Edge(wrapper, M[next_state], color="green"))
+
 
         ret = list(sorted(ret, key=lambda x: x.abb.abb_id))
 

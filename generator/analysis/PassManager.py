@@ -2,9 +2,11 @@ import logging
 import os
 import sys
 import time
+import resource
 from .AtomicBasicBlock import AtomicBasicBlock
 from .common import *
 from generator.tools import stack
+import gc
 
 class PassManager:
     def __init__(self, system_graph):
@@ -131,9 +133,13 @@ class PassManager:
             # Call analyzer pass
             logging.info("PASS: %s", front.name())
             time_before = time.time()
+            mem_before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             front.analyze()
+            gc.collect()
+            mem_delta = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - mem_before
             time_delta = time.time() - time_before
-            logging.info(" + %.2f seconds", time_delta)
+            logging.info(" + %.2f seconds, %.2fMb memory", time_delta, mem_delta/1024.)
+
             if hasattr(front, "statistics"):
                 front.statistics()
 
