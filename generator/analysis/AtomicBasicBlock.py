@@ -29,22 +29,17 @@ class AtomicBasicBlock(Node):
         # This is set by the DynamicPriorityAnalysis
         self.dynamic_priority = None
 
-        # MH stuff, TODO: senseful comment
-        self.called_functions = set()
+        # Function called in this ABB
+        self.directly_called_function = None
+        self.directly_called_function_name = None
+
+
+        # List of all LLVM Basic Block Names
         self.basic_blocks = llvmbbs
 
         # How many sporadic events can fire from here. This field will
         # be filled by SSE and SSF.
         self.sporadic_trigger_count = 0
-
-        # entry_bb and exit_bb are not used anymore after read_llvmpy_analysis
-        self.entry_bb =  None
-        self.exit_bb  = None
-        if self.basic_blocks:
-            self.entry_bb = self.basic_blocks[0] #TODO MUSTFIX!
-            self.exit_bb  = self.basic_blocks[-1] #TODO MUSTFIX!
-            for bb in self.basic_blocks:
-                bb.set_parent_ABB(self)
 
     def isA(self, syscall_type):
         if isinstance(syscall_type, str):
@@ -60,8 +55,11 @@ class AtomicBasicBlock(Node):
 
     @property
     def relevant_callees(self):
-        return [x for x in self.called_functions if x.has_syscall]
-
+        if not self.directly_called_function:
+            return []
+        if self.directly_called_function.has_syscall:
+            return [self.directly_called_function]
+        return []
 
     @property
     def interrupt_block(self):
@@ -72,17 +70,6 @@ class AtomicBasicBlock(Node):
 
     def get_basic_blocks(self):
         return self.basic_blocks
-
-    def get_exit_bb(self):
-        return self.exit_bb
-
-    def set_entry_bb(self, bb):
-        assert(bb in self.basic_blocks)
-        self.entry_abb = bb
-
-    def set_exit_bb(self, bb):
-        assert(bb in self.basic_blocks)
-        self.exit_abb = bb
 
     def make_it_a_syscall(self, syscall_type, arguments):
         assert isinstance(syscall_type, SyscallType)
@@ -164,8 +151,11 @@ class AtomicBasicBlock(Node):
 
 
     def generated_function_name(self):
+        if self.directly_called_function_name:
+            return self.directly_called_function_name
         generated_function = "OSEKOS_%s__ABB%d" %(self.syscall_type.name, self.abb_id)
         return generated_function
+
 
     @property
     def subtask(self):

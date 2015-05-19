@@ -1,5 +1,5 @@
 from .common import Node, Edge, EdgeType, NodeType
-from generator.tools import IntEnum, unique
+from generator.tools import IntEnum, unique, SimpleNamespace
 
 @unique
 class ControlFlowEdgeLevel(IntEnum):
@@ -107,4 +107,14 @@ class SyscallType(IntEnum):
         # if not a syscall, it is a computation block
         return cls["computation"]
 
+    @classmethod
+    def all(cls):
+        return cls.__members__.keys()
+
+
 S = SyscallType
+S.subclass = SimpleNamespace(
+    interrupt_control = {S.DisableAllInterrupts, S.EnableAllInterrupts,
+                         S.SuspendAllInterrupts, S.ResumeAllInterrupts,
+                         S.SuspendOSInterrupts,  S.ResumeOSInterrupts}
+)

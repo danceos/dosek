@@ -220,6 +220,18 @@ class MoveFunctionsToTask(Analysis):
     def requires(self):
         return [CurrentRunningSubtask.name()]
 
+    def __event_mask(self, arg):
+        if isinstance(arg, str):
+            return [arg]
+        if isinstance(arg, Event):
+            return [arg]
+        if isinstance(arg, int):
+            return [arg]
+        ret = []
+        for x in arg:
+            ret += self.__event_mask(x)
+        return ret
+
     def do(self):
         subtask_analysis = self.get_analysis("CurrentRunningSubtask")
         for abb in self.system_graph.abbs:
@@ -235,7 +247,7 @@ class MoveFunctionsToTask(Analysis):
             if subtask:
                 self.stats.add_child(subtask, "abb", abb)
             else:
-                assert abb.isA(S.computation) or abb.isA(S.StartOS), abb.path()
+                assert abb.isA(S.computation) or abb.isA(S.StartOS), (abb.function.is_system_relevant, abb.path())
 
         # Find the Event mappings. At this point we have enough
         # information about the calling subtask, to rewrite the *Event
@@ -244,16 +256,17 @@ class MoveFunctionsToTask(Analysis):
             if abb.isA([S.WaitEvent, S.GetEvent, S.ClearEvent, S.SetEvent]):
                 if abb.isA(S.SetEvent):
                     subtask = abb.arguments[0]
-                    events = abb.arguments[1]
+                    events = self.__event_mask(abb.arguments[1])
                 elif abb.isA(S.GetEvent):
                     abb.arguments = [abb.arguments[0]]
                     continue
                 else:
-                    events = abb.arguments[0]
+                    events = self.__event_mask(abb.arguments[0])
                     subtask = abb.subtask
+
                 for idx, event in enumerate(events):
                     if isinstance(event, str):
-                        assert event.startswith("OSEKOS_EVENT_"), abb.arguments
+                        assert event.startswith("OSEKOS_EVENT_"),event
                         event = event[len("OSEKOS_EVENT_"):]
                         events[idx] = subtask._events[event]
                     elif isinstance(event, int):
@@ -266,7 +279,3 @@ class MoveFunctionsToTask(Analysis):
                         events[idx] = found
                     assert events[idx] in subtask.events, "Subtask %s does not own Event %s" %(subtask, event)
                 abb.arguments = [events]
-
-
-
-

@@ -1,7 +1,7 @@
 from generator.analysis.common import *
 from generator.analysis import Analysis, SavedStateTransition, S, E
 from generator.tools import pairwise
-from types import SimpleNamespace
+from tools import SimpleNamespace
 from collections import namedtuple, defaultdict
 from .sage_finite_state_machine import Transducer, full_group_by, Automaton
 

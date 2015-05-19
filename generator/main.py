@@ -73,6 +73,9 @@ if __name__ == "__main__":
     parser.add_option('-f', '--add-pass', dest='additional_passes', default = [],
                       action="append",
                       help="additional passes (can also be given by setting SGFLAGS)")
+    parser.add_option('', '--extractor', dest='extractor',
+                      action="store", type='string',
+                      help="Analyze .ll files. (Comma separated list of files)")
     parser.add_option('-s', '--source-bytecode', dest='llfiles',
                       action="callback", type='string', callback=split_lls_callback,
                       help="Analyze .ll files. (Comma separated list of files)")
@@ -122,11 +125,7 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     if options.llfiles and len(options.llfiles) > 0:
-        mergedoutfile = open(options.mergedoutput, 'w')
-        if not mergedoutfile:
-            print("Cannot open", options.mergedoutput, "for writing")
-            sys.exit(1)
-        llvmpy_analysis = LLVMPYAnalysis(options.llfiles, mergedoutfile)
+        llvmpy_analysis = LLVMPYAnalysis(options.extractor, options.llfiles, options.mergedoutput)
         pass_manager.register_analysis(llvmpy_analysis)
 
     else:

@@ -12,7 +12,6 @@ class Function(GraphObject):
         self.entry_abb = None
         self.exit_abb = None
         self.has_syscall = False
-        self.llvm_function = None
         self.called_functions = set()
         self.relevant_callees = set()
 
@@ -31,9 +30,6 @@ class Function(GraphObject):
     def syscalls(self):
         return [x for x in self.abbs
                 if not x.isA(S.computation)]
-
-    def set_llvm_function(self, llvm_func):
-        self.llvm_function = llvm_func
 
     def add_atomic_basic_block(self, abb):
         abb.function = self

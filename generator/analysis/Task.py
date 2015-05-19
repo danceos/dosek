@@ -25,7 +25,8 @@ class Task(GraphObject):
             assert False
 
     def set_promises(self, promises):
-        assert list(promises.keys()) == list(self.promises.keys())
+        for promise in promises:
+            assert promise in self.promises
         self.promises.update(promises)
 
     def does_promise(self, promise):

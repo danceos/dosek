@@ -29,7 +29,7 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
   separate_arguments(definitions)
 
   # Fix whitespace escaping in CXX FLAGS
-  string(REPLACE " " ";" COMPILER_FLAGS ${CMAKE_CXX_FLAGS})
+  string(REPLACE " " ";" COMPILER_FLAGS "${CMAKE_CXX_FLAGS} ${ISA_CXX_FLAGS}")
 
   # First we have to compile all source files with clang
   foreach(src ${SOURCES})
@@ -40,7 +40,7 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
         COMMAND ${CMAKE_C_COMPILER}
         ARGS ${COMPILER_FLAGS} 
         ARGS ${definitions}
-        ARGS  -S -emit-llvm -O0 -m32 -std=c++11 ${ISA_CXX_FLAGS} ${DEFINITON_FLAGS} 
+        ARGS  -S -emit-llvm -O0 -m32 -std=c++11 ${DEFINITON_FLAGS} 
         ARGS ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
       MAIN_DEPENDENCY ${src}
       DEPENDS ${src}
@@ -74,11 +74,12 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
 
   # Generating DOSEK System
   add_custom_command(OUTPUT "${DOSEK_GENERATED_SOURCE}"  "${DOSEK_GENERATED_LINKER}" "${DOSEK_SOURCE_SYSTEM}"
-  DEPENDS ${PYTHON_SOURCE} "${SYSTEM_DESC}" ${DOSEK_BINARY_LLVM_BYTECODE} ${SYSDESCS}
-             ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
+    DEPENDS llvm-extractor ${PYTHON_SOURCE} "${SYSTEM_DESC}" ${DOSEK_BINARY_LLVM_BYTECODE} ${SYSDESCS}
+            ${VERIFY_SCRIPT} ${OS_TEMPLATES} ${LINKER_TEMPLATE}
     COMMAND ${CMAKE_COMMAND} -E remove -f ${DOSEK_OUTPUT_DIR}/gen_*.dot
     COMMAND ${DOSEK_GENERATOR}
        --config "${PROJECT_BINARY_DIR}/config.dict"
+       --extractor "${LLVM_EXTRACTOR}"
        --system-desc "${SYSTEM_DESC}"
        --merged-bytecode "${DOSEK_SOURCE_SYSTEM}"
        --prefix ${DOSEK_OUTPUT_DIR}

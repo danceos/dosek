@@ -102,7 +102,6 @@ class ABBMergePass(Analysis):
         # adopt basic blocks
         for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
             for bb in abb.basic_blocks:
-                bb.set_parent_ABB(entry_abb) # set new parent ABB
                 entry_abb.basic_blocks.append(bb) # adopt llvm basic blocks
 
         # adopt outgoing edges
