@@ -60,12 +60,10 @@ inlinehint void test_trace(uint32_t val)\
     fail_trace = val;
 
     #ifndef FAIL
-	Machine::disable_interrupts();
 	static uint32_t  i = 1;
 
     kout << "T " << (int)i++;
     kout << ": " <<  hex << val << dec << endl;
-	Machine::enable_interrupts();
     #endif
 }
 
