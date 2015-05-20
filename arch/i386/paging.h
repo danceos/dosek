@@ -7,9 +7,13 @@
 #ifndef PAGING_H_
 #define PAGING_H_
 
+// Only if paging is enabled
+#ifdef CONFIG_ARCH_MPU
+
 #include "stdint.h"
 
 namespace arch {
+
 
 /** \brief Page table entry describing one 4 KB page */
 class PageTableEntry {
@@ -179,5 +183,5 @@ public:
 };
 
 }
-
+#endif
 #endif /* PAGING_H_ */

@@ -30,9 +30,9 @@ extern "C" void arch_startup()
     syscalls_init();
 
 	// setup paging
-	#ifdef CONFIG_ARCH_MPU
-    	MMU::init();
-	#endif
+#ifdef CONFIG_ARCH_MPU
+	MMU::init();
+#endif
 
 	// setup PIC
 	PIC::init();
@@ -46,12 +46,8 @@ extern "C" void arch_startup()
 	// setup PIT
 	PIT::init();
 
-
     // run constructors of global objects
     run_constructors();
-
-	// TODO: enable interrupts somewhere?
-	// here, before os_main, or in a future StartOS()
 
 	// Proceed to generic initialisation
 	init_generic();

@@ -45,8 +45,10 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	save_sp = id;
 #endif
 
+#ifdef CONFIG_ARCH_MPU
 	// set new page directory
 	MMU::switch_task(id);
+#endif
 
 
 	// push instruction pointer

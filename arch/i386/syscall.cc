@@ -21,8 +21,10 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 	uint32_t arg1, arg2, arg3;
 	asm volatile("" : "=a"(arg1), "=b"(arg2), "=S"(arg3), "=d"(fun), "=D"(sp));
 
+#ifdef CONFIG_ARCH_MPU
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
+#endif
 
 	// block ISR2s by raising APIC task priority
 	LAPIC::set_task_prio(128);
@@ -67,18 +69,22 @@ IRQ_HANDLER(IRQ_SYSCALL) {
 	// reenable ISR1s
 	Machine::enable_interrupts();
 
+#ifdef CONFIG_ARCH_MPU
 	// save page directory
 	uint32_t pd;
 	asm volatile("mov %%cr3, %0" : "=D"(pd));
 
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
+#endif
 
 	// call syscall function with arguments
 	asm volatile("call *%0" :: "r"(fun), "a"(arg1), "b"(arg2), "S"(arg3));
 
+#ifdef CONFIG_ARCH_MPU
 	// restore page directory
 	asm volatile("mov %0, %%cr3" :: "D"(pd));
+#endif
 
 	// reenable ISR2s by resetting APIC task priority
 	Machine::disable_interrupts();

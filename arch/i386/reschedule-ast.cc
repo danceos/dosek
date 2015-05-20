@@ -24,8 +24,10 @@ IRQ_HANDLER(IRQ_RESCHEDULE) {
 	// block ISR2s by raising APIC task priority
 	LAPIC::set_task_prio(128);
 
+#ifdef CONFIG_ARCH_MPU
 	// change to OS page directory
 	PageDirectory::enable(pagedir_os);
+#endif
 
 	// reset save_sp to detect IRQ from non-userspace in idt.S
 	save_sp = 0;

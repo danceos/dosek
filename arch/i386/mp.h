@@ -62,7 +62,9 @@ bool boot_cpu(unsigned int cpu_id, void *bottom_of_stack,
 	/* Disable paging while starting the second cpu.
 	 * Reason: Require write access to the BIOS area for the reset vector and to
 	 *         0x40000 where the relocated mp_setup code is copied. */
+#ifdef CONFIG_ARCH_MPU
 	bool mmu_enabled = MMU::disable();
+#endif
 
 	/* Set variables to communicate with the application cpu */
 	mp_stack = reinterpret_cast<void *>(reinterpret_cast<unsigned int>(bottom_of_stack) + size_of_stack);
@@ -125,10 +127,11 @@ bool boot_cpu(unsigned int cpu_id, void *bottom_of_stack,
 		while (!cpu_started && timeout++ < 10000)
 			boot_delay(1);
 	}
-
+#ifdef CONFIG_ARCH_MPU
 	/* Only restart the MMU if it was previously used! */
 	if (mmu_enabled)
 		MMU::enable();
+#endif
 
 	return cpu_started;
 }

@@ -12,7 +12,9 @@
 #define TYPE_DPL0_TRAP_GATE 0x8F
 #define TYPE_DPL3_IRQ_GATE  0xEE
 
+#ifdef CONFIG_ARCH_MPU
 .weak pagedir_os
+#endif
 
 # IRQ handler macro
 #
@@ -57,7 +59,9 @@ irq_handler_\num:
 	pusha # save all registers
 	leal 32(%esp), %esi # put interrupt stack pointer in %esi
 	mov %esp, %ebx # put context pointer in %ebx
+#ifdef CONFIG_ARCH_MPU
 	mov $pagedir_os,%edi # # save OS page directory
+#endif
 
 #ifdef CONFIG_DEPENDABILITY_ENCODED
     # XOR task context checksum
@@ -113,10 +117,11 @@ irq_handler_\num:
     # stack pointer in %edi
     push %edi
 #endif
-
+#ifdef CONFIG_ARCH_MPU
 	mov %cr3, %edi # save original page directory in %edi
 	mov $pagedir_os,%edx # get OS page directory address
 	mov %edx, %cr3 # switch to OS page directory
+#endif
 
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 	mov _ZN4arch7save_spE, %edx # get value of arch::save_sp
@@ -242,7 +247,9 @@ IRQ \irqno
 .type handler_exit, @function
 handler_exit:
 	# restore page directory
+#ifdef CONFIG_ARCH_MPU
 	mov %edi, %cr3
+#endif
 
 	# restore interrupt stack pointer from %esi
 	mov %esi, %esp

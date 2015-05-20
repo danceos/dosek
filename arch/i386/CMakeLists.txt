@@ -33,11 +33,10 @@ set(SRCS
 	mp.s
 	constructors.cc
 	startup.cc
-  startup.S
+    startup.S
 	gdt.cc
 	idt.cc
 	idt.S
-	paging.cc
 	cga.cc
 	serial.cc
 	output.cc
@@ -50,7 +49,13 @@ set(SRCS
 	reschedule-ast.cc
     machine.cc
     memutil.cc
-)
+    )
+
+# If Paging is disabled, we do not add the paging routines
+if(CONFIG_ARCH_MPU)
+  set(SRCS ${SRCS} paging.cc)
+endif()
+
 
 # Create arch library
 add_library(arch ${SRCS})
@@ -104,8 +109,13 @@ macro(dosek_executable ELFFILE)
 		OUTPUT ${PAGETABLES}
 	)
 
-	# The actual executable
-	add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES} ${PAGETABLES})
+  # The actual executable.
+  # If we build with an pagetable, we add it as a dependency
+if(CONFIG_ARCH_MPU)
+  add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES} ${PAGETABLES})
+else()
+  add_executable(${ELFFILE} ${ADD_EXECUTABLE_OPTIONS} ${SOURCES})
+endif()
 	target_link_libraries(${ELFFILE} ${TARGET_LIBS})
 
 	# set definitions
