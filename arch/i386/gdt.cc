@@ -28,9 +28,11 @@ constexpr GDTDescriptor GDT::descriptors[] __attribute__ ((aligned (8))) = {
 	{}, // null descriptor
 	{0x0, 0xFFFFFFFF, true, false}, // kernel code
 	{0x0, 0xFFFFFFFF, false, false}, // kernel data
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	{0x0, 0xFFFFFFFF, true, true}, // user code
 	{0x0, 0xFFFFFFFF, false, true}, // user data
 	{0x200000, sizeof(struct tss_entry)} // task state segment
+#endif
 };
 
 // the static GDT register
@@ -45,6 +47,7 @@ void GDT::init() {
 	// load static GDT
 	asm volatile("lgdt %0" :: "m"(gdt) : "memory");
 
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	// zero TSS
 	// manual memset(&tss, 0, sizeof(tss)); (addr is volatile to prevent llvm generating a call to memset ...)
 	for(volatile uint32_t* addr = (uint32_t*) &tss; addr < (uint32_t*)&tss+(sizeof(tss)/4); addr++) *addr = 0;
@@ -59,8 +62,11 @@ void GDT::init() {
 	// setup data segments (already for userspace as it does not hurt in kernel mode)
 	Machine::set_data_segment(USER_DATA_SEGMENT);
 
+#endif
+
 	// setup code segment
 	asm volatile("jmp %0, $1f; 1:" :: "i"(KERNEL_CODE_SEGMENT) : "memory");
+
 }
 
 }

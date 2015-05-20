@@ -11,10 +11,15 @@ model = ConfigurationTree({
         "self" : OneOf(["i386", "ARM", "posix"],
                        short_help = "CPU Architecture"),
         'mpu': Boolean(short_help = "Use Memory Protection"),
+
         'idle-halt': Boolean(short_help = "Idle loop halts processor",
                              default_value = expr("self == i386 || self == ARM")),
-        # config-constraint-: (arch.self == posix) -> !arch.idle-halt
-        # config-constraint-: os.basic-tasks -> !arch.mpu
+        # config-constraint-: arch.idle-halt -> !(arch.self == posix)
+
+        'privilege-isolation': Boolean(short_help = "Enable Priviledge isolation",
+                                       default_value = expr("self == i386 || self == ARM")),
+        # config-constraint-: arch.privilege-isolation -> (arch.self == i386 || arch.self == ARM)
+        # config-constraint-: !arch.privilege-isolation -> (arch.self == i386 || arch.self == posix)
     },
     'os' : {
         'ignore-interrupt-systemcalls': Boolean(short_help = "Do not analyze DisableInterrupt() etc."),
@@ -27,6 +32,7 @@ model = ConfigurationTree({
 
         'basic-tasks': Boolean(short_help = "Should Basic Tasks be optimized?"),
         # config-constraint-: os.basic-tasks -> (arch.self == posix || arch.self == i386)
+        # config-constraint-: os.basic-tasks -> !arch.mpu
     },
     'dependability' : {
         'encoded': Boolean(short_help = "Encoded OS Operations"),

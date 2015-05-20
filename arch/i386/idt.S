@@ -77,6 +77,7 @@ irq_handler_\num:
 	jmp 2f # jump over user mode handling
 
 1:
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	# coming from task: save context on userspace/task stack
 	push %eax
 	mov %esp, %eax # save interrupt stackpointer in eax
@@ -85,8 +86,21 @@ irq_handler_\num:
 	push 12(%eax) # save flags on stack
 	pusha # save all registers
 	mov %esp, %ebx # put context pointer in %ebx
+    # Fixup the saved user context. Since we used EAX for the
+    # stack construction.
 	mov (%eax), %edi # get real userspace eax (pushed above)
 	mov %edi, 28(%ebx) # put userspace eax in saved context
+#else
+    # Without privilege isolation we have the following situation at
+	# this point on the user stack
+    # --------
+    # EFLAGS
+    # CS
+    # Saved EIP <- ESP
+    #----------
+    pusha           # Push task context on user task
+    mov %esp, %ebx  # Move Task context pointer into ebx
+#endif
 
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 	mov (%ebx), %ecx
@@ -112,9 +126,11 @@ irq_handler_\num:
 	shl $0x1f, %ebx
 	or %edi, %ebx
 #else
-    # push irq_resume fragment as "new" return address with parity bit
+    # push irq_resume fragment as "new" return address above the task
+	# context pointer
     push $irq_resume
 #endif
+
 #ifdef CONFIG_ARCH_MPU
 	mov %cr3, %edi # save original page directory in %edi
 	mov $pagedir_os,%edx # get OS page directory address
@@ -136,18 +152,29 @@ irq_handler_\num:
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 	and $0x7FFFFFFF, %ebx # remove parity but on stack pointer
 #endif
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	mov %eax, %esp # switch back to interrupt stack
 	pop %eax # pop userspace eax off stack
 	mov %esp, %esi # put interrupt stack pointer in %esi
-
+#else
+    # Switch to kernel stack. Until now we only prepared a context for
+	# the resumption of the task.
+    # State at this moment:
+    # ebx: Saved pointer of the task context
+    # esp: ebx - 4 (there is a resume_irq) address on top
+    leal 32(%ebx), %esi
+    mov $_estack_os, %esp
+#endif
 2:
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 	# push XOR checksum %esi...%esi+20, %ebx...%ebx+32
 	xor (%esi), %ecx
 	xor 4(%esi), %ecx
 	xor 8(%esi), %ecx
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	xor 12(%esi), %ecx #valid?
 	xor 16(%esi), %ecx #valid?
+#endif
 #endif
 
 	# save IRQ number in register (for isr_unhandled)
@@ -244,8 +271,8 @@ IRQ \irqno
 .global handler_exit
 .type handler_exit, @function
 handler_exit:
-	# restore page directory
 #ifdef CONFIG_ARCH_MPU
+	# restore page directory
 	mov %edi, %cr3
 #endif
 
@@ -257,8 +284,10 @@ handler_exit:
 	xor (%esi), %ecx
 	xor 4(%esi), %ecx
 	xor 8(%esi), %ecx
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	xor 12(%esi), %ecx #valid?
 	xor 16(%esi), %ecx #valid?
+#endif
 	xor (%ebx), %ecx
 	xor 4(%ebx), %ecx
 	xor 8(%ebx), %ecx
@@ -295,11 +324,14 @@ handler_exit:
 irq_resume:
 	# restore and remove saved context
 	popa
-
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 	# restore saved flags
 	popf
 
 	# remove and jump back to saved instruction pointer
 	ret
+#else
+    iret # There is only a interrupt context left on the stack
+#endif
 
 .size irq_resume, . - irq_resume

@@ -11,7 +11,7 @@ extern "C" uint8_t _estack_os;
 
 namespace arch {
 
-extern void** OS_stackptrs[];
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 
 /* Syscalls that run in userspace, this are indirect syscall, they
    are intended for longer syscalls */
@@ -33,7 +33,6 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 	Machine::enable_interrupts();
 
 	// save stack pointer
-
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 	uint32_t ssp = save_sp;
 	assert( (ssp & 0xFFFF) == (ssp >> 16) );
@@ -50,7 +49,6 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 	asm volatile("sysexit" :: "a"(arg1), "b"(arg2), "S"(arg3), "c"(&_estack_os - 2048), "d"(fun));
 	Machine::unreachable();
 }
-
 
 
 /** \brief Syscall interrupt handler. This handler is used for direct
@@ -103,5 +101,11 @@ void syscalls_init() {
 	Machine::set_msr(SYSENTER_EIP_MSR, (uint64_t) & sysenter_syscall);
 	Machine::set_msr(SYSENTER_ESP_MSR, (uint64_t)(&_estack_os - 16));
 }
+
+#else // !CONFIG_ARCH_PRIVILEGE_ISOLATION
+void syscalls_init() {
+}
+
+#endif
 
 }; // namespace arch

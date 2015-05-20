@@ -31,8 +31,15 @@ def parseArgs():
                       help="objdump binary location", metavar="OBJDUMP")
     parser.add_option("-c", "--c-file", dest="cfile", default="pagetables.cc",
                       help="generated C++ file", metavar="CCFILE")
+    parser.add_option("", "--config", dest="config",
+                      help="place of the config.dict", metavar="CONFIG")
+
 
     (options, args) = parser.parse_args()
+
+    default_config = config.empty_configuration(config.model)
+    global_config  = config.from_file(options.config)
+    options.config = config.ConfigurationTreeStack([default_config, global_config], config.model)
 
     if not (options.elf_file and options.objdump and options.cfile):
         parser.error("elf-file, c-file and objdump are required")
@@ -188,6 +195,14 @@ def main(options, args):
     for task in tasks:
         task = "task%s" % task
         allowed_task[task] = copy.deepcopy(allowed_common)
+        # Without Privilege Isolation, we have to make the tasks stack
+        # and text segment available for the kernel
+        if not options.config.arch.privilege_isolation:
+            allowed_os += [Region("text_" + task, writeable = False,  usermode = True),
+                           Region("stack_" + task, writeable = True, usermode = True)]
+            allowed_task[task] += [Region("text_os", writeable = False, usermode = True)]
+
+
         # A Task can additionally read its text segment and write its stack
         allowed_task[task] += [ Region("text_" + task, writeable = False,  usermode = True),
                                 Region("data_" + task, writeable = True, usermode = True),
@@ -210,5 +225,9 @@ def main(options, args):
     write_output(options.cfile, ptables, regions["paging"]["start"])
 
 if __name__ == "__main__":
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, os.path.abspath(os.path.join(source_dir, "../..")))
+    import config
+
     (options, pargs) = parseArgs()
     main(options, pargs)

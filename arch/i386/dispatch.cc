@@ -7,6 +7,7 @@
 #include "os/util/assert.h"
 #include "os/util/encoded.h"
 #include "lapic.h"
+#include "dispatch.h"
 
 namespace arch {
 
@@ -15,6 +16,8 @@ extern TCB * const OS_tcbs[];
 /** \brief Startup stackpointer (save location) */
 volatile void* startup_sp = 0; // This location is write only
 volatile uint32_t save_sp = 0;
+
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
 
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 volatile Encoded_Static<A0, 42> dispatch_task;
@@ -50,50 +53,9 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	MMU::switch_task(id);
 #endif
 
-
-	// push instruction pointer
-	void* ip;
-	uint32_t *sp = (uint32_t *) tcb->get_sp();
-	assert(tcb->check_sp());
-
-	if(tcb->is_running()) {
-		// resume from saved IP on stack
-		// requires new page directory set before!
-		void * _ipv = (void*) *(sp - 1);
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-		const os::redundant::HighParity<void *> ipv(_ipv);
-#else
-		const os::redundant::Plain<void *> ipv(_ipv);
-#endif
-
-		assert(ipv.check());
-		ip = ipv.get();
-
-		*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
-	} else { // not running: start function from beginning
-		ip = (void*) tcb->fun;
-#ifdef CONFIG_OS_BASIC_TASKS
-		if (tcb->basic_task) {
-			// Mark the task as running. This is only neccessary for basic tasks
-			tcb->set_running();
-			/* Set the task frame pointer */
-			tcb->basic_task_frame_pointer() = sp;
-			/* The current stack pointer does not denote the real
-			 * end of the valid data in dOSEK. Therefore, we make
-			 * room for the return address at this point. The
-			 * Image of the stack looks like this:
-
-			 +----------------+
-			 | Saved Context  |
-			 | ...            |
-			 +----------------+<- get_sp()
-			 | Return Address |
-			 +----------------+
-			*/
-			sp = sp - 1; // room for Return Address
-		}
-#endif // CONFIG_OS_BASIC_TASKS
-	}
+	void *ip;
+	uint32_t *sp;
+	Dispatcher::resolve_ip_and_sp(tcb, ip, sp);
 
 	// send end-of-interrupt signal
 	LAPIC::send_eoi();
@@ -101,5 +63,7 @@ IRQ_HANDLER(IRQ_DISPATCH) {
 	// exit system at IO privilege level 3 with IRQs disabled
 	Machine::sysexit(ip, sp, 0x3000);
 }
+
+#endif
 
 } // namespace arch

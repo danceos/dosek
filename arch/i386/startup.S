@@ -36,7 +36,7 @@ os_stack:
 .global _start
 .type _start, @function
 _start:
-	# Welcome to kernel mode! 
+	# Welcome to kernel mode!
 	# To set up a stack, we simply set the esp register to point to the top of
 	# our stack (as it grows downwards).
 	movl $.Lstack_top, %esp

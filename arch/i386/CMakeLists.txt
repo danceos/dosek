@@ -104,7 +104,9 @@ macro(dosek_executable ELFFILE)
 	set(GENERATOR ${PROJECT_SOURCE_DIR}/arch/i386/generate-pagetables.py)
 	add_custom_command(
 		DEPENDS ${PRELINK} ${GENERATOR}
-        COMMAND ${PYTHON} ${GENERATOR} -o ${CROSS_OBJDUMP} -c ${PAGETABLES} -e ${PRELINK}
+        COMMAND ${PYTHON} ${GENERATOR}
+               -o ${CROSS_OBJDUMP} -c ${PAGETABLES} -e ${PRELINK}
+               --config "${PROJECT_BINARY_DIR}/config.dict"
 		COMMENT "Generating static page tables for ${ELFFILE}"
 		OUTPUT ${PAGETABLES}
 	)

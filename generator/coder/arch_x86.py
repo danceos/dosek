@@ -22,8 +22,8 @@ class X86Arch(GenericArch):
         """Generate the stacks for the tasks, including the task pointers"""
         super(X86Arch, self).generate_dataobjects_task_stacks()
 
-        stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "")
-        stackptr_arr.add_static_initializer("&startup_sp")
+        stackptr_arr = DataObjectArray("void ** const", "OS_stackptrs", "")
+        stackptr_arr.add_static_initializer("(void**) &startup_sp")
         for subtask in self.system_graph.real_subtasks:
             stackptr_arr.add_static_initializer("&" + subtask.impl.stackptr.name)
         self.generator.source_file.data_manager.add(stackptr_arr, namespace = ("arch",))

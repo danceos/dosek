@@ -57,16 +57,71 @@ class Dispatcher {
 	}
 #endif
 
+public:
+
+	static forceinline void resolve_ip_and_sp(const arch::TCB * tcb, void* &res_ip, uint32_t* &res_sp) {
+		void* ip;
+		uint32_t *sp = (uint32_t *) tcb->get_sp();
+		assert(tcb->check_sp());
+
+
+		if(tcb->is_running()) {
+			// resume from saved IP on stack
+			// requires new page directory set before!
+			void * _ipv = (void*) *(sp - 1);
+#ifdef CONFIG_DEPENDABILITY_ENCODED
+			const os::redundant::HighParity<void *> ipv(_ipv);
+#else
+			const os::redundant::Plain<void *> ipv(_ipv);
+#endif
+
+			assert(ipv.check());
+			ip = ipv.get();
+
+			*(sp - 1) = 0; // clear IP to prevent this from remaining valid in memory
+		} else { // not running: start function from beginning
+			ip = (void*) tcb->fun;
+#ifdef CONFIG_OS_BASIC_TASKS
+			if (tcb->basic_task) {
+				// Mark the task as running. This is only neccessary for basic tasks
+				tcb->set_running();
+				/* Set the task frame pointer */
+				tcb->basic_task_frame_pointer() = sp;
+				/* The current stack pointer does not denote the real
+				 * end of the valid data in dOSEK. Therefore, we make
+				 * room for the return address at this point. The
+				 * Image of the stack looks like this:
+
+				 +----------------+
+				 | Saved Context  |
+				 | ...            |
+				 +----------------+<- get_sp()
+				 | Return Address |
+				 +----------------+
+				*/
+				sp = sp - 1; // room for Return Address
+			}
+#endif // CONFIG_OS_BASIC_TASKS
+		}
+
+		res_sp = sp;
+		res_ip = ip;
+	}
+
+private:
+
 	static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
-	// set task to dispatch
+        // Call PreTaskHook.
+        CALL_HOOK(PreTaskHook);
+
+
+#ifdef CONFIG_ARCH_PRIVILEGE_ISOLATION
+		// set task to dispatch
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 		dispatch_task.encode(task.id);
 #else
 		dispatch_task = task.id;
 #endif
-
-        // Call PreTaskHook.
-        CALL_HOOK(PreTaskHook);
 
 		// request dispatcher AST
 		LAPIC::trigger(IRQ_DISPATCH);
@@ -77,7 +132,37 @@ class Dispatcher {
 		// This is a wait period for qemu to trigger the interrupt in
 		// time.
 		while(1) Machine::nop();
+
+#else // !CONFIG_ARCH_PRIVILEGE_ISOLATION
+		Machine::disable_interrupts();
+
+		// unblock ISR2s by lowering APIC task priority
+		LAPIC::set_task_prio(0);
+
+		// set save_sp
+#ifdef CONFIG_DEPENDABILITY_ENCODED
+		save_sp = task.id | ((task.id) << 16);
+#else
+		save_sp = task.id;
+#endif
+
+#ifdef CONFIG_ARCH_MPU
+		// set new page directory
+		MMU::switch_task(task.id);
+#endif
+		void *ip;
+		uint32_t *sp;
+		resolve_ip_and_sp(&task.tcb, ip, sp);
+
+		asm volatile("mov %0, %%esp; jmp *%1"
+					 : /* no write */
+					 : "r"(sp), "r"(ip)
+					 : "memory");
+		Machine::unreachable();
+#endif // !CONFIG_ARCH_PRIVILEGE_ISOLATION
+
 	}
+
 
 public:
 
