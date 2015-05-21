@@ -114,8 +114,6 @@ irq_handler_\num:
 #else
     # push irq_resume fragment as "new" return address with parity bit
     push $irq_resume
-    # stack pointer in %edi
-    push %edi
 #endif
 #ifdef CONFIG_ARCH_MPU
 	mov %cr3, %edi # save original page directory in %edi
