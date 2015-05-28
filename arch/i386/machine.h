@@ -151,7 +151,7 @@ struct Machine
 	 * \brief Unreachable code
 	 * Will trigger interrupt if this is actually executed.
 	 */
-	static forceinline void unreachable(void) {
+	[[noreturn]] static forceinline  void unreachable(void) {
 		asm volatile("int3");
 		__builtin_unreachable(); // allow compiler optimization
 	}
