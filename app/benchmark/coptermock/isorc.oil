@@ -136,7 +136,7 @@ CPU CopterMock {
     /* Remote Control Task */
     TASK CopterControlTask {
         SCHEDULE = FULL;
-        PRIORITY = 5;
+        PRIORITY = 6;
         ACTIVATION = 1;
         AUTOSTART = FALSE;
         TASKGROUP = SignalGatherGroup;
