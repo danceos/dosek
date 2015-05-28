@@ -15,7 +15,7 @@ enable_language(ASM-ATT)
 
 enable_testing()
 set(PROJECT_VERSION "1.1" CACHE STRING "Project version number")
-set(PROJECT_RELEASE "staple" CACHE STRING "Project release")
+set(PROJECT_RELEASE "stable" CACHE STRING "Project release")
 
 # Enable CTest
 enable_testing()
