@@ -6,7 +6,7 @@ import optparse
 import subprocess
 from collections import namedtuple
 
-Symbol = namedtuple("Symbol", ["name", "addr", "size", "type"])
+Symbol = namedtuple("Symbol", ["name", "addr", "size", "segment", "type"])
 
 def safe_int(i, base=10):
     try:
@@ -45,16 +45,17 @@ def read_regions(objdump, elf_file):
     return regions
 
 
-def read_symbols(elffile, nm = "llvm-nm"):
-    out =  subprocess.check_output([nm, "--print-size", "--format", "sysv", elffile])
+def read_symbols(elffile, nm = "nm"):
+    out =  subprocess.check_output([nm, "-t", "dec", "-C", "-S", "-f", "sysv", elffile])
     ret = []
     for line in out.split("\n"):
         if not "|" in line:
             continue
         line = [x.strip() for x in line.split("|")]
         ret.append(Symbol(name = line[0],
-                          addr = safe_int(line[1], 16),
-                          size = safe_int(line[4], 16),
+                          addr = safe_int(line[1]),
+                          size = safe_int(line[4]),
+                          segment = line[6],
                           type = line[3]
                       ))
     return ret

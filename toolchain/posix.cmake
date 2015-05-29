@@ -49,7 +49,7 @@ set(CMAKE_ASM_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
 set(CMAKE_ASM-TT_FLAGS "-Qunused-arguments" CACHE STRING "ASMFLAGS")
 
 find_program(CROSS_AR "llvm-ar" HINTS ${LLVM_ROOT}/bin)
-find_program(CROSS_NM "llvm-nm" HINTS ${LLVM_ROOT}/bin)
+find_program(CROSS_NM "nm")
 find_program(CROSS_RANLIB "llvm-ranlib" HINTS ${LLVM_ROOT}/bin)
 # Find objdump for pagetable generation
 find_program(CROSS_OBJDUMP "llvm-objdump")

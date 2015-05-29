@@ -7,8 +7,29 @@ from gzip import GzipFile
 from optparse import OptionParser
 from generator.stats_binary import read_symbols, read_regions, Symbol
 from generator.statistics import Statistics
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from random import randint
+
+class MemAccess:
+
+    def __init__(self, writeAccess, trace_event):
+        self.writeAccess = writeAccess
+        self.address = trace_event.memaddr
+        self.size = trace_event.width
+
+    def __str__(self):
+        ret = ""
+        if self.writeAccess:
+            ret += "W "
+        else:
+            ret += "R "
+        ret += str(self.address) + " - Size: " + str(self.size)
+        return ret
+
+
+mem_already_traced = False
+memwrites = defaultdict(list)
+memreads  = defaultdict(list)
 
 
 def open_trace(filename):
@@ -19,9 +40,10 @@ def open_trace(filename):
     f.seek(0,0)
     return f
 
+
 def read_trace(trace_plugin_filename, trace_filename):
     """Generator that iterates over all events in trace"""
-
+    global mem_already_traced
     trace_plugin = imp.load_source("trace", trace_plugin_filename)
     trace_file = open_trace(trace_filename)
     trace_event = trace_plugin.Trace_Event()
@@ -44,8 +66,16 @@ def read_trace(trace_plugin_filename, trace_filename):
         if trace_event.HasField("time_delta"):
             acctime += trace_event.time_delta
 
+        if trace_event.HasField('memaddr') and not mem_already_traced:
+            if trace_event.accesstype == trace_plugin.Trace_Event.WRITE:
+                memwrites[acctime].append(MemAccess(True, trace_event))
+            if trace_event.accesstype == trace_plugin.Trace_Event.READ:
+                memreads[acctime].append(MemAccess(False,trace_event))
+
+
         yield (acctime, trace_event)
     trace_file.close()
+    mem_already_traced = True
 
 
 class SymbolMap(dict):
@@ -53,7 +83,7 @@ class SymbolMap(dict):
     translation"""
     def __init__(self, symbols):
         symbols.append(Symbol(addr = 0, size = 1, name = "__OS_syscall_OSEKOS_IncrementCounter",
-                              type = "OBJECT"))
+                              segment = ".text", type = "OBJECT"))
         self.symbols = symbols
         for symbol in symbols:
             if not symbol.size:
@@ -260,12 +290,31 @@ def main(options, args):
                if x.addr]
     symbol_map = SymbolMap(symbols)
 
+    # Extract OS memory objects
+    os_memory_symbols = set()
+    os_memory_size    = 0
+    for symbol in symbols:
+        if symbol.segment in ('.data', '.bss'):
+            if not symbol.size:
+                continue
+            if not symbol.name.startswith(tuple(["arch::", "os::"])):
+                continue
+            os_memory_symbols.add(symbol)
+            os_memory_size += symbol.size
+
+    # fully run over trace once, to get all memory events.
+    trace_events = read_trace(options.traceplugin, options.trace)
+    t = list(trace_events)
+
+    # Reset trace for region extraction
     trace_events = read_trace(options.traceplugin, options.trace)
     stats = Statistics.load(options.stats)
+
     for abb in stats.find_all("AtomicBasicBlock").values():
         if not 'generated-function' in abb:
             continue
         abb["activations"] = []
+
     sysgraph = stats.find_all("SystemGraph").values()[0]
     IncrementCounter = {"_id": id(main),
                          "_type": "AtomicBasicBlock", 
@@ -279,7 +328,6 @@ def main(options, args):
     region_iterator = iter(syscall_regions(trace_events, symbol_map))
     delayed_regions = []
     regions_count = 0
-
 
     while region_iterator or len(delayed_regions):
         regions_count += 1
@@ -337,6 +385,50 @@ def main(options, args):
 
         if event_type == "__OS_syscall_OSEKOS_IncrementCounter":
             IncrementCounter["symbols"] = list(set(IncrementCounter["symbols"]) |  set(names))
+
+    ## Re-Visit all abbs and add memory accesses
+    # helper to extract accessed symbols within a trace time range
+    def extract_bytes(sysrange, accesses):
+        sizes = list()    # List: for summing up the accessed memory
+        addresses = set() # Set: for subsuming actually accessed addresses
+        # lol: list of memory access lists
+        lol = [accesses[addr] for addr in sysrange if addr in accesses]
+        #flatten to a single list
+        accesses = [ y for x in lol for y in x ]
+        # Add each single accessed byte address and sizes.
+        for x in accesses:
+            if x.address in symbol_map and symbol_map[x.address] in os_memory_symbols:
+                sizes.append(x.size)
+                addresses.update(range(x.address, x.address + x.size))
+        return sizes, addresses
+
+    # Overall written/read addresses
+    total_written_addresses = set()
+    total_read_addresses = set()
+
+    for abb in stats.find_all("AtomicBasicBlock").values():
+        # Written/read bytes per ABB
+        written_bytes = list()
+        read_bytes = list()
+        if 'activations' in abb:
+            for acts in abb['activations']:
+                sysrange  = range(acts['start-time'], acts['end-time'])
+                (ss, addrs) = extract_bytes(sysrange, memwrites)
+                written_bytes.extend(ss)
+                total_written_addresses.update(addrs)
+
+                (ss, addrs) = extract_bytes(sysrange, memreads)
+                read_bytes.extend(ss)
+                total_read_addresses.update(addrs)
+
+        abb['written_os_bytes'] = sum(written_bytes)
+        abb['write_accesses'] = len(written_bytes)
+        abb['read_os_bytes'] = sum(read_bytes)
+        abb['read_accesses'] = len(read_bytes)
+
+    print "Written addresses: ",  len(total_written_addresses)
+    print "Read addresses: ",  len(total_read_addresses)
+    ## done.
 
     print "Processed %d Systemcalls" % regions_count
     IncrementCounter["generated-codesize"] = 0

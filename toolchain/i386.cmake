@@ -37,7 +37,7 @@ if(${LLVM_C_COMPILER} STREQUAL "LLVM_C_COMPILER-NOTFOUND")
                 " Please install one of them !")
 endif()
 
-message(STATUS "LLVM compiler: ${LLVM_COMPILER}")
+message(STATUS "LLVM compiler: ${LLVM_C_COMPILER}")
 
 
 if (${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Darwin")
@@ -63,7 +63,7 @@ elseif(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
   set(CROSS_RANLIB ${LLVM_ROOT}/bin/llvm-ranlib)
   set(CROSS_AR ${LLVM_ROOT}/bin/llvm-ar)
   find_program(CROSS_OBJDUMP objdump)
-  find_program(CROSS_NM "${ARCH_PREFIX}nm")
+  find_program(CROSS_NM "${ARCH_PREFIX}nm" "nm")
 else()
   message(FATAL "Host system not found :(")
 endif()

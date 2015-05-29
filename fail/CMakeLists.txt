@@ -82,7 +82,6 @@ file(REMOVE ${GIT_REV_FILE}.tmp) # discard dummy output file
 macro(fail_get_variant TNAME TEST)
   set(FAIL_VARIANT "${PROJECT_NAME}-${GIT_REV}/")
   set(FAIL_BENCHMARK "${TNAME}-${TEST}")
-
   if(CONFIG_ARCH_MPU)
 	set(FAIL_VARIANT "${FAIL_VARIANT}+mpu")
   endif()
@@ -201,7 +200,7 @@ macro(fail_test TEST TESTELF)
 
     # TODO: make architecture independent
 	set(BOCHSRC "${PROJECT_BINARY_DIR}/startup_scripts/bochsrc-fail-${TEST}-nogui")
-    
+
 
 	# Tracing
 	set(TRACEFILE "${FAIL_DIR}/trace.pb")
@@ -225,10 +224,11 @@ macro(fail_test TEST TESTELF)
 		COMMAND ${PYTHON} ${STATS_BINARY}
 			--stats-dict ${STATS_DICT}
 			--elf ${ELF}
+			--nm ${CROSS_NM}
 		COMMAND PYTHONPATH=${PROJECT_SOURCE_DIR} ${STATS_TRACE}
 			--stats-dict ${STATS_DICT}
 			--elf ${ELF}
-            --nm ${CROSS_NM}
+			--nm ${CROSS_NM}
 			--trace ${TRACEFILE}
 			--trace-plugin ${FAIL_TRACE_PLUGIN_PYTHON}
 		COMMENT "Tracing ${ELF} for ${FAIL_VARIANT}/${BENCHMARK}"
