@@ -214,7 +214,7 @@ macro(fail_test TEST TESTELF)
     find_program(GIT "git")
 	add_custom_command(
 	  DEPENDS ${ELF} iso-fail-${TEST} ${GIT_REV_FILE} fail-trace-plugin-python ${STATS_BINARY} ${STATS_TRACE}
-	  COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${FAIL_DIR}/.gitrev -g ${GIT}
+	  COMMAND ${PYTHON} ${CHECK_WORKSPACE} -w ${PROJECT_SOURCE_DIR} -o ${PROJECT_BINARY_DIR}/.gitrev -g ${GIT}
 	  COMMAND ${CMAKE_COMMAND} -E remove_directory ${STATEDIR}
 	  COMMAND ${FAIL_TRACE} -f ${BOCHSRC} -q
 			-Wf,--start-symbol=test
