@@ -10,6 +10,7 @@
 #include "machine.h"
 #include "lapic.h"
 #include "output.h"
+#include "hooks.h"
 
 #define CONTINUE_UNHANDLED_IRQ 0
 
@@ -21,6 +22,11 @@ ISR(unhandled) {
 	uint32_t intno;
 	asm volatile("" : "=a"(intno));
 
+	// send end-of-interrupt (unless exception)
+	if(intno > 31) LAPIC::send_eoi();
+
+	CALL_HOOK(FaultDetectedHook, TRAPdetected, intno, cpu->eip);
+
 	// print and halt when debugging
 	uint32_t ip = cpu->eip;
 	kout << "unhandled interrupt ";
@@ -29,21 +35,14 @@ ISR(unhandled) {
 	kout << hex << ip;
 	kout << endl;
 
-	asm("hlt");
-
-	#if CONTINUE_UNHANDLED_IRQ
-	// send end-of-interrupt (unless exception)
-	if(intno > 31) LAPIC::send_eoi();
-	#else // CONTINUE_UNHANDLED_IRQ
-	// panic on unhandled interrupts
-	Machine::panic();
-	#endif // CONTINUE_UNHANDLED_IRQ
+	Machine::halt();
 }
 
 
 
 // NMI error handler
 IRQ_HANDLER(2) {
+	CALL_HOOK(FaultDetectedHook, TRAPdetected, 0, 0);
 	// TODO: anything useful left to do?
 	debug << "PANIC" << endl;
 
