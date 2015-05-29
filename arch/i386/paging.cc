@@ -5,6 +5,7 @@
  */
 
 #include "paging.h"
+#include "hooks.h"
 
 namespace arch {
 
@@ -22,7 +23,7 @@ void MMU::init() {
 }
 
 // Pagefault interrupt handler printing details for debugging
-#if DEBUG
+#ifdef CONFIG_ARCH_MPU
 #include "idt.h"
 #include "output.h"
 #include "os/util/inline.h"
@@ -38,6 +39,8 @@ ISR(14) {
 	asm("mov %%cr2, %0" : "=r"(fault_addr));
 	asm("mov %%cr3, %0" : "=r"(cr3));
 
+	CALL_HOOK(FaultDetectedHook, MPUdetected, fault_addr, cr3);
+
 	debug << "PAGE FAULT for 0x" << hex << fault_addr;
 	debug << ", IP @ 0x" << cpu->eip;
 	debug << ", PD @ 0x" << cr3;
@@ -47,4 +50,4 @@ ISR(14) {
 }
 
 }
-#endif // DEBUG
+#endif // CONFIG_ARCH_CPU

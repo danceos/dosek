@@ -76,6 +76,7 @@ typedef enum DetectedFault_t {
 	STATE_ASSERTdetected = 9,
 	RETRY_ERRORdetected = 10,
 	TMRdetected = 11,
+	MPUdetected = 12,
 } DetectedFault_t;
 
 
