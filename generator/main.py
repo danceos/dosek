@@ -151,6 +151,7 @@ if __name__ == "__main__":
     # Task-Level: Dynamic Priority spreading pass
     pass_manager.register_analysis(PrioritySpreadingPass())
     pass_manager.register_analysis(DynamicPriorityAnalysis())
+    pass_manager.register_analysis(ApplicationFSM())
 
     # System-Level: Analysis
     pass_manager.register_analysis(SystemStateFlow())

@@ -24,6 +24,7 @@ from .SystemGraph import SystemGraph
 from .SystemSemantic import *
 from .SystemStateFlow import *
 from .DominanceAnalysis import *
+from .ApplicationFSM import *
 
 
 from .Task import Task
