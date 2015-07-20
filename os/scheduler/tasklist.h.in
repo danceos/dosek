@@ -188,7 +188,7 @@ struct TaskList : public TaskListStatic {
 		}
 	}
 
-	template<typename T, typename S>
+	template<const bool * possible_tasks = nullptr, typename T, typename S>
 	forceinline value_coded_t head(T& id, S& prio) const {
 		B_t sigId = id.getB();
 		B_t sigPrio = prio.getB();
@@ -211,32 +211,34 @@ struct TaskList : public TaskListStatic {
         prio.vc = {{{!subtask}}}_prio.vc + (sigPrio - {{{!subtask}}}_prio.getB());
     }}}\
     {{{!if_comp_idx_gt_zero|
-      	// {{{!subtask}}} >= prio?
-        auto {{{!subtask}}}_delta = Event<>::must_wait_p({{{!event_list}}});
-        auto {{{!subtask}}}_prio = {{{!subtask}}} - {{{!subtask}}}_delta;
-        //         kout << "{{{!subtask}}} " << {{{!subtask}}}.vc / A0  << " " << ({{{!subtask}}}_delta.vc / A0) << endl;
-        updateMax(sigPrio, sigId, 3, &prio, {{{!subtask}}}_prio, &id, EC({{{!subtask_id_sig}}}, {{{!subtask_id}}}));
-    	if (MOD((prio.vc + id.vc), A0) != (sigPrio + sigId)) {
-            {{{!head_fail:prio.vc,id.vc}}}
-    	}
+		if (possible_tasks == nullptr || possible_tasks[{{{!subtask_id}}}]) {
+			// {{{!subtask}}} >= prio?
+			auto {{{!subtask}}}_delta = Event<>::must_wait_p({{{!event_list}}});
+			auto {{{!subtask}}}_prio = {{{!subtask}}} - {{{!subtask}}}_delta;
+			//         kout << "{{{!subtask}}} " << {{{!subtask}}}.vc / A0  << " " << ({{{!subtask}}}_delta.vc / A0) << endl;
+			updateMax(sigPrio, sigId, 3, &prio, {{{!subtask}}}_prio, &id, EC({{{!subtask_id_sig}}}, {{{!subtask_id}}}));
+			if (MOD((prio.vc + id.vc), A0) != (sigPrio + sigId)) {
+				{{{!head_fail:prio.vc,id.vc}}}
+			}
 
-    	/* Recode if sigID got too big */
-    	if (sigId > A0 / 2) {
-    		id.vc = id.vc - sigId + 3;
-    		sigId = 3;
-    	}
+			/* Recode if sigID got too big */
+			if (sigId > A0 / 2) {
+				id.vc = id.vc - sigId + 3;
+				sigId = 3;
+			}
+		}
     }}}\
 }}}
 {{{generate:head_update_max_cascade}}}
 
 {{{!if_comp_idx_eq_zero|
-        id=idle_id;
-        prio=idle_prio;
+        id = idle_id;
+        prio = idle_prio;
 }}}
 {{{!if_comp_idx_gt_zero|
-    	// restore idle_id if idle_id >= prio
-    	updateMax(sigPrio, sigId, 3, &prio, idle_prio, &id, idle_id);
-        // last comparison, needs no assert
+		// restore idle_id if idle_id >= prio
+		updateMax(sigPrio, sigId, 3, &prio, idle_prio, &id, idle_id);
+		// last comparison, needs no assert
 }}}
 
 		pseudo_static_assert(sigId > 0, "constant sigId not optimized away completely");

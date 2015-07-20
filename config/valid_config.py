@@ -16,6 +16,11 @@ if __name__ == "__main__":
     parser.add_option('-c', '--config',
                       help="Base configuration")
 
+    parser.add_option('-e', '--equal',
+                      help="Configured values must be equal",
+                      action='store_true', default=False)
+
+
     default_config = empty_configuration(model)
     cmdline_config = ConfigurationTree(readonly = False)
     into_optparse(model, parser, cmdline_config)
@@ -24,12 +29,23 @@ if __name__ == "__main__":
 
     if options.config:
         global_config  = from_file(options.config)
+        actual_conf = ConfigurationTreeStack([default_config, global_config], model)
         conf = ConfigurationTreeStack([default_config, global_config, cmdline_config], model)
+
     else:
+        actual_conf = ConfigurationTreeStack([default_config], model)
         conf = ConfigurationTreeStack([default_config, cmdline_config], model)
+
+    if options.equal:
+        for path, value in cmdline_config:
+            actual_value = actual_conf.get(path)[0]
+            if actual_value != value:
+                sys.exit(1)
+        sys.exit(0)
 
     try:
         check_constraints(constraints, conf, silent = True)
     except:
         sys.exit(1)
+
 

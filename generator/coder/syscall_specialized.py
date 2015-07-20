@@ -1,5 +1,5 @@
 from .syscall_full import FullSystemCalls
-from .elements import Statement, Comment
+from .elements import Statement, Comment, DataObjectArray
 from generator.tools import unwrap_seq
 from generator.analysis.AtomicBasicBlock import E,S
 from generator.analysis.SystemSemantic import SystemState
@@ -139,9 +139,32 @@ class SpecializedSystemCalls(FullSystemCalls):
                      tasks)
         self.stats.add_data(abb, "opt:Schedule:possible-tasks", len(tasks))
 
-        self.call_function(kernelspace,
-                           "scheduler_.Reschedule",
-                           "void", [])
+        self.Reschedule(kernelspace, tasks)
+
+    def Reschedule(self, block, possible_tasks):
+        if self.system_graph.conf.os.inline_scheduler:
+            # Build an Array with N+1 entries
+            array = ["false"] * (len(self.system_graph.real_subtasks) + 1)
+            for subtask in possible_tasks:
+                if not subtask in self.system_graph.real_subtasks:
+                    continue
+                array[subtask.impl.task_id] = "true"
+            # We need an external reference if we want to use 
+            var = DataObjectArray("constexpr const bool",
+                                  "possible_tasks_%s" % id(block),
+                                  "")
+            var.source_element_declaration = lambda: ""
+            var.static_initializer = array
+            self.generator.source_file.data_manager.add(var)
+
+            block.add(Comment(str(var.static_initializer)))
+            self.call_function(block,
+                               "scheduler_.PartialReschedule<%s>" % var.name,
+                               "void", [])
+        else:
+            self.call_function(block,
+                               "scheduler_.Reschedule",
+                               "void", [])
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
@@ -163,9 +186,7 @@ class SpecializedSystemCalls(FullSystemCalls):
                             "opt:ASTSchedule:possible-tasks", len(maybe_ready))
 
         if(len(maybe_ready) > 0):
-            self.call_function(kernelspace,
-                               "scheduler_.Reschedule",
-                               "void", [])
+            self.Reschedule(kernelspace, maybe_ready)
         else:
             self.call_function(kernelspace,
                                "Machine::unreachable",

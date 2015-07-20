@@ -78,18 +78,21 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-    forceinline void head(Task::id_t& id, Task::prio_t& prio) const {
+	template<const bool* possible_tasks = nullptr>
+	forceinline void head(Task::id_t& id, Task::prio_t& prio) const {
         // start with idle id/priority
         id = idle_id;
         prio = idle_prio;
 
 {{{!foreach_subtask|
+		if (possible_tasks == nullptr || possible_tasks[{{{!subtask_id}}}]) {
         if({{{!subtask}}} > prio {{{!if_events|\
          && (({{{!subtask}}}_events_waiting == 0) || ({{{!subtask}}}_events_waiting & {{{!subtask}}}_events_set) != 0)\
         }}}) {
             prio = {{{!subtask}}};
             id = {{{!subtask_id}}};
         }
+		}
 }}}
     }
 

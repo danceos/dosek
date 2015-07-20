@@ -77,13 +77,22 @@ class FullSystemCalls(BaseCoder):
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.call_function(kernelspace, "scheduler_.Reschedule",
-                           "void", [])
+        if self.system_graph.conf.os.inline_scheduler:
+            self.call_function(kernelspace, "scheduler_.InlinedReschedule",
+                               "void", [])
+        else:
+            self.call_function(kernelspace, "scheduler_.Reschedule",
+                               "void", [])
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.call_function(kernelspace, "scheduler_.Reschedule",
-                           "void", [])
+        if self.system_graph.conf.os.inline_scheduler:
+            self.call_function(kernelspace, "scheduler_.InlinedReschedule",
+                               "void", [])
+        else:
+            self.call_function(kernelspace, "scheduler_.Reschedule",
+                               "void", [])
+
 
     def kickoff(self, syscall, userspace, kernelspace):
         userspace.attributes.append("inlinehint")

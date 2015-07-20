@@ -1,4 +1,6 @@
-if(BUILD_ARM)
+config_valid(VALID --equal --arch ARM --inline-scheduler=no)
+if(VALID)
+
   DOSEK_BINARY(
     NAME zedboard
     SYSTEM_DESC system.oil

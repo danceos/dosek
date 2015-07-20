@@ -15,13 +15,31 @@ struct Scheduler {
 
 	os::scheduler::TaskList::current_prio_t current_prio;
 	os::scheduler::TaskList::current_task_t current_task;
-	
-    noinline void Reschedule(void);
+
+	template<const bool *possible_tasks = nullptr>
+	forceinline void PartialReschedule() {
+		tlist.head<possible_tasks>(current_task, current_prio);
+
+		dispatchToCurrentTask();
+	}
+
+	forceinline void InlinedReschedule(void) {
+		// update current_task
+		tlist.head(current_task, current_prio);
+		// dispatch
+		dispatchToCurrentTask();
+	}
+
+	noinline void Reschedule(void);
 
 	forceinline void Schedule_impl(void) {
         if(in_syscall()) {
             // in syscall: reschedule directly
-            Reschedule();
+#ifdef CONFIG_OS_INLINE_SCHEDULER
+			InlinedReschedule();
+#else
+			Reschedule();
+#endif
         } else {
             // not in syscall (probably in ISR): request reschedule AST
             // Calls also Reschedule()
@@ -127,28 +145,35 @@ struct Scheduler {
         return tlist.decode_task_id(current_task);
     }
 
-};
-
-void Scheduler::Reschedule() {
-	tlist.head(current_task, current_prio);
-
-	// dispatch or enter idle
-{{{!foreach_subtask|
-   if(current_task == {{{!subtask_id}}}) {
-{{{!if_not_preemptable|
-        // promote non-preemptable task to RES_SCHEDULER
-        tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
-        current_prio = tlist.scheduler_prio;
-        state_replicator_.update();
-}}}\
-        Dispatcher::Dispatch({{{!subtask_desc}}});
-	} else \
-}}} if(current_task == TaskList::idle_id) {
-		Dispatcher::Idle();
+	void dispatchToCurrentTask(void) {
+		// dispatch or enter idle
+		{{{!foreach_subtask|
+		if(current_task == {{{!subtask_id}}}) {
+			{{{!if_not_preemptable|
+							// promote non-preemptable task to RES_SCHEDULER
+							tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
+						current_prio = tlist.scheduler_prio;
+						state_replicator_.update();
+					}}}													\
+			Dispatcher::Dispatch({{{!subtask_desc}}});
+		} else															\
+		}}} if(current_task == TaskList::idle_id) {
+			Dispatcher::Idle();
 	} else {
 		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
 	}
 }
+
+
+};
+
+void Scheduler::Reschedule() {
+	// update current_task
+	tlist.head(current_task, current_prio);
+	// dispatch
+	dispatchToCurrentTask();
+}
+
 
 Scheduler scheduler_;
 
