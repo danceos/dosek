@@ -6,7 +6,6 @@
 #ifndef __SCHEDULER_H__
 #define __SCHEDULER_H__
 
-#include "scheduler/tasklist.h"
 #include "syscall.h"
 #include "dispatch.h"
 #include "reschedule-ast.h"

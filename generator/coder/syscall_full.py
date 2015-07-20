@@ -16,7 +16,6 @@ class FullSystemCalls(BaseCoder):
 
     def generate_system_code(self):
         # Use the tasklist and scheduler that is given by the kind of OS (encoded, unencoded)
-        self.generator.source_file.include("os/scheduler/tasklist.h")
         self.generator.source_file.declarations.append(self.os_rules.task_list(self).expand())
 
         self.generator.source_file.include("os/scheduler/scheduler.h")

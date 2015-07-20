@@ -8,12 +8,16 @@ class UnencodedTaskListStatic {};
 
 /* Simpler array based task queue */
 struct TaskList : public UnencodedTaskListStatic {
-    typedef uint8_t id_t;
-    typedef uint8_t prio_t;
 	typedef uint32_t event_mask_t;
 
+	typedef Task::prio_t current_prio_t;
+	typedef Task::id_t current_task_t;
+
+	static constexpr auto scheduler_prio = {{{!scheduler_prio}}};
+
+
 {{{!foreach_subtask|
-	prio_t {{{!subtask}}};
+    Task::prio_t {{{!subtask}}};
     {{{!if_events|\
     event_mask_t {{{!subtask}}}_events_waiting;
 	event_mask_t {{{!subtask}}}_events_set;
@@ -21,8 +25,8 @@ struct TaskList : public UnencodedTaskListStatic {
 }}}
 
     // idle task id/priority
-    static constexpr id_t idle_id     = 0;
-    static constexpr prio_t idle_prio = 0;
+    static constexpr Task::id_t idle_id     = 0;
+	static constexpr Task::prio_t idle_prio = 0;
 
     TaskList() : UnencodedTaskListStatic()
     {{{!foreach_subtask|
@@ -33,7 +37,7 @@ struct TaskList : public UnencodedTaskListStatic {
 	}}}
     { /* empty constructor */ }
 
-    forceinline uint32_t isReady(const prio_t id) {
+    forceinline uint32_t isReady(const Task::id_t id) {
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
             return {{{!subtask}}};
@@ -45,7 +49,7 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     /** Set priority of task id to prio **/
-    forceinline void set(const prio_t id, const prio_t prio) {
+    forceinline void set(const Task::id_t id, const Task::prio_t prio) {
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
            {{{!subtask}}} = prio;
@@ -58,7 +62,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
 
     /** Set priority of task id to prio **/
-    forceinline void activate(const prio_t id, const prio_t prio) {
+    forceinline void activate(const Task::id_t id, const Task::prio_t prio) {
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
 			if ({{{!subtask}}} < prio) {
@@ -74,7 +78,7 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-    forceinline void head(id_t& id, prio_t& prio) const {
+    forceinline void head(Task::id_t& id, Task::prio_t& prio) const {
         // start with idle id/priority
         id = idle_id;
         prio = idle_prio;
@@ -90,7 +94,7 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     /** Wait for a specific event mask **/
-    forceinline void wait_events(const prio_t id, const event_mask_t mask) {
+    forceinline void wait_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
 {{{!foreach_subtask|\
@@ -111,7 +115,7 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     /** Set Events **/
-    forceinline void set_events(const prio_t id, const event_mask_t mask) {
+    forceinline void set_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
 {{{!foreach_subtask|\
@@ -126,7 +130,7 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     /** Clear Events **/
-    forceinline void clear_events(const prio_t id, const event_mask_t mask) {
+    forceinline void clear_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
 {{{!foreach_subtask|\
@@ -140,12 +144,12 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-    forceinline void remove(const id_t& id) {
+    forceinline void remove(const Task::id_t& id) {
         set(id, 0);
     }
 
     /** Get Events **/
-    forceinline event_mask_t get_events(const id_t id) {
+    forceinline event_mask_t get_events(const Task::id_t id) {
         (void) id;
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
@@ -157,6 +161,19 @@ struct TaskList : public UnencodedTaskListStatic {
           }
           return 0;
     }
+
+	static Task::id_t decode_task_id(Task::id_t id){
+		return id;
+	}
+
+	static Task::id_t encode_task_id(Task::id_t id){
+		return id;
+	}
+
+	static Task::prio_t encode_task_prio(Task::prio_t prio){
+		return prio;
+	}
+
 
 };
 

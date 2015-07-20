@@ -51,7 +51,6 @@ class EncodedOS(UnencodedOS):
     def __init__(self):
         super(EncodedOS, self).__init__()
         self.task_list = EncodedTaskListTemplate
-        self.scheduler = EncodedSchedulerTemplate
         self.counter_signatures = {}
 
     def generate_system_code(self):
@@ -201,16 +200,10 @@ class EncodedTaskListTemplate(TaskListTemplate):
         RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
         return str(RES_SCHEDULER.conf.static_priority + 1)
 
-
-class EncodedSchedulerTemplate(SchedulerTemplate):
-    def template_file(self):
-        return "os/scheduler/scheduler.h.in"
-
-    def arbitrary_new_signature(self, snippet, args):
-        return str(self.generator.signature_generator.new())
-
     def current_task_sig(self, snippet, args):
         return str(self.system_graph.impl.scheduler.current_task_sig)
     def current_prio_sig(self, snippet, args):
         return str(self.system_graph.impl.scheduler.current_prio_sig)
+
+
 

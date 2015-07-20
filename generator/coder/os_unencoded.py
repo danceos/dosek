@@ -191,6 +191,11 @@ class TaskListTemplate(CodeTemplate):
             return self.expand_snippet(args[0])
         return ""
 
+    def scheduler_prio(self, snippet, args):
+        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        return str(RES_SCHEDULER.conf.static_priority)
+
+
 
 class SchedulerTemplate(CodeTemplate):
     def __init__(self, rules):
@@ -199,7 +204,7 @@ class SchedulerTemplate(CodeTemplate):
         self.system_graph = self.generator.system_graph
 
     def template_file(self):
-        return "os/scheduler/scheduler-unencoded.h.in"
+        return "os/scheduler/scheduler.h.in"
 
     def subtask_desc(self, snippet, args):
         return self._subtask.impl.task_descriptor.name
@@ -218,8 +223,4 @@ class SchedulerTemplate(CodeTemplate):
         if not self._subtask.conf.preemptable:
             return self.expand_snippet(args[0])
         return ""
-
-    def scheduler_prio(self, snippet, args):
-        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
-        return str(RES_SCHEDULER.conf.static_priority)
 

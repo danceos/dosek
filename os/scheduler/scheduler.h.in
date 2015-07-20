@@ -3,23 +3,22 @@ namespace scheduler {
 
 using namespace os::tasks;
 
-#ifdef CONFIG_DEPENDABILITY_STATE_REPLICATION
+#ifdef CONFIG_DEPENDABILITY_STATE_REPLICATON
 extern os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_;
 #else
 extern os::redundant::EmptyReplicator state_replicator_;
 #endif
 
-struct Scheduler  {
-    os::scheduler::TaskList tlist;
 
-    Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio;
-    Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task;
+struct Scheduler {
+	os::scheduler::TaskList tlist;
 
-
+	os::scheduler::TaskList::current_prio_t current_prio;
+	os::scheduler::TaskList::current_task_t current_task;
+	
     noinline void Reschedule(void);
 
-
-    forceinline void Schedule_impl(void) {
+	forceinline void Schedule_impl(void) {
         if(in_syscall()) {
             // in syscall: reschedule directly
             Reschedule();
@@ -30,85 +29,48 @@ struct Scheduler  {
         }
     }
 
-	void forceinline SetReady_impl(const Task &task) {
-		tlist.activate(task.id, EC(2, task.prio));
+    forceinline void SetReady_impl(const Task &task) {
+		tlist.activate(task.id, task.prio);
+		state_replicator_.update();
+    }
 
-        state_replicator_.update();
-	}
 
-	void forceinline SetSuspended_impl(const Task &t) {
+    forceinline void SetSuspended_impl(const Task &t) {
 		Dispatcher::Destroy(t);
-
 		tlist.remove(t.id);
-
-        state_replicator_.update();
-	}
-
-    forceinline Task::id_t getCurrentTaskID(void) const {
-        return current_task.decode();
+		state_replicator_.update();
     }
 
-    forceinline void ActivateTask_impl(const Task &to) {
-        state_replicator_.check();
-
-		SetReady_impl(to);
-		Schedule_impl();
-    }
-
-    forceinline void ChainTask_impl(const Task &from, const Task &to) {
-        state_replicator_.check();
-
-        SetSuspended_impl(from);
-		SetReady_impl(to);
-		Schedule_impl();
-    }
-
-    forceinline void TerminateTask_impl(const Task &from) {
-        state_replicator_.check();
-
-        SetSuspended_impl(from);
+    forceinline void ActivateTask_impl(const Task &task) {
+		state_replicator_.check();
+		SetReady_impl(task);
         Schedule_impl();
     }
 
-    forceinline void GetResource_impl(const Task &current_task, const int new_prio) {
+    forceinline void ChainTask_impl(const Task &from, const Task &to) {
 		state_replicator_.check();
-
-		SetPriority(current_task, new_prio);
-		SetSystemPriority(new_prio);
+		SetSuspended_impl(from);
+		SetReady_impl(to);
+        Schedule_impl();
     }
 
-    forceinline void ReleaseResource_impl(const Task &current_task, const int new_prio) {
+    forceinline void TerminateTask_impl(const Task &from) {
 		state_replicator_.check();
-
-		SetPriority(current_task, new_prio);
-		SetSystemPriority(new_prio);
+		SetSuspended_impl(from);
 		Schedule_impl();
     }
 
-    forceinline void SetReadyFromSuspended_impl(const Task &task) {
-		SetPriority(task, task.prio);
-
-		// Clear all Events
-		tlist.clear_events(task.id, ~0);
-
-        state_replicator_.update();
+    forceinline void GetResource_impl(const Task &current_task, const Task::prio_t new_prio) {
+		state_replicator_.check();
+		SetPriority(current_task, new_prio);
+		SetSystemPriority(new_prio);
     }
 
-	// Low level interface to the task list
-	forceinline void SetCurrentTask(const Task &task) {
-		if (task.preemptable == false) {
-			// promote non-preemptable task to RES_SCHEDULER
-			tlist.set(task.id, tlist.scheduler_prio);
-			current_prio = tlist.scheduler_prio;
-			state_replicator_.update();
-		}
-		current_task = task.enc_id<1>();
-
-	}
-
-	forceinline void SetSystemPriority(const int new_prio) {
-		auto new_prio_encoded = EC(2, new_prio);
-		current_prio = new_prio_encoded;
+    forceinline void ReleaseResource_impl(const Task &current_task, const Task::prio_t new_prio) {
+		state_replicator_.check();
+		SetPriority(current_task, new_prio);
+		SetSystemPriority(new_prio);
+		Schedule_impl();
 	}
 
 	forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
@@ -124,63 +86,76 @@ struct Scheduler  {
 	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
 		tlist.clear_events(current_task.id, event_mask);
 	}
+
 	forceinline uint32_t GetEvent_impl(const Task &current_task) {
 		return tlist.get_events(current_task.id);
 	}
 
-	forceinline void SetPriority(const Task &task, const int new_prio) {
-		auto new_prio_encoded = EC(2, new_prio);
-		tlist.set(task.id, new_prio_encoded);
+    forceinline void SetReadyFromSuspended_impl(const Task &task) {
+		SetPriority(task, task.prio);
+		// Clear all Events
+		tlist.clear_events(task.id, ~0);
 
+		state_replicator_.update();
+    }
+
+	// Low level interface to the task list
+	forceinline void SetCurrentTask(const Task &task) {
+		if (task.preemptable == false) {
+			// promote non-preemptable task to RES_SCHEDULER
+			tlist.set(task.id, tlist.scheduler_prio);
+			current_prio = tlist.scheduler_prio;
+			state_replicator_.update();
+        }
+		current_task = tlist.encode_task_id(task.id);
+	}
+
+	forceinline void SetSystemPriority(const Task::prio_t new_prio) {
+		current_prio = tlist.encode_task_prio(new_prio);
+	}
+
+	forceinline void SetPriority(const Task &task, const Task::prio_t new_prio) {
+		tlist.set(task.id, new_prio);
         state_replicator_.update();
 	}
 
 	forceinline uint32_t isReady(const Task &task) {
 		return tlist.isReady(task.id);
 	}
+
+    forceinline Task::id_t getCurrent_TaskID(void) const {
+        return tlist.decode_task_id(current_task);
+    }
+
 };
 
-void Scheduler::Reschedule(void) {
-#ifdef CONFIG_DEPENDABILITY_RETRY_SCHEDULER
-const auto current_prio_orig = current_prio;
-    const auto current_task_orig = current_task;
-
-	// set current (=next) task from task list
-	if (tlist.head(current_task, current_prio) != 0) { // retry
-		current_task = current_task_orig;
-		current_prio = current_prio_orig;
-		if (tlist.head(current_task, current_prio) != 0) {
-			CALL_HOOK(FaultDetectedHook, RETRY_ERRORdetected, 0, 0);
-		}
-	}
-#else
-	// set current (=next) task from task list
+void Scheduler::Reschedule() {
 	tlist.head(current_task, current_prio);
-#endif
-
-	current_task.check();
-	current_prio.check();
 
 	// dispatch or enter idle
-	// TODO: generated signature
 {{{!foreach_subtask|
-   if (current_task == {{{!subtask_id}}}) {
+   if(current_task == {{{!subtask_id}}}) {
 {{{!if_not_preemptable|
         // promote non-preemptable task to RES_SCHEDULER
         tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
-        state_replicator_.update();
         current_prio = tlist.scheduler_prio;
-}}}
+        state_replicator_.update();
+}}}\
         Dispatcher::Dispatch({{{!subtask_desc}}});
 	} else \
 }}} if(current_task == TaskList::idle_id) {
-            Dispatcher::Idle();
-        } else {
-			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
-        }
-    }
+		Dispatcher::Idle();
+	} else {
+		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+	}
+}
 
 Scheduler scheduler_;
+
+extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
+    *a = scheduler_.getCurrent_TaskID();
+    return E_OK;
+}
 
 #ifdef CONFIG_DEPENDABILITY_STATE_REPLICATON
 os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.tlist);
@@ -188,11 +163,5 @@ os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.
 os::redundant::EmptyReplicator state_replicator_;
 #endif
 
-extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
-    *a = scheduler_.getCurrentTaskID();
-    return E_OK;
-}
-
-
-}; // namespace scheduler
-}; // namespace os
+}; // scheduler
+}; // os

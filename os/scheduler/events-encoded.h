@@ -1,5 +1,4 @@
 #include "os/util/encoded.h"
-#include "os/scheduler/tasklist.h"
 
 
 template<int B0 = 3, int B1 = 7, int High = 1>
@@ -97,6 +96,13 @@ public:
 		return ret;
 	}
 
+	bool operator==(const Event<B0, B1, High> &rhs) const {
+		if (rhs.event_waiting.vc != event_waiting.vc) return false;
+		if (rhs.event_set.vc != event_set.vc) return false;
+		return true;
+	}
+
+
 private:
 
 	/* This is a variadic template to combine the blocking state of
@@ -123,7 +129,9 @@ private:
 	static value_coded_t combine_blocked(Ev event, Types... args) {
 		return event.is_blocked() & combine_blocked(args...);
 	}
+
 };
+
 
 #if 0
 Event<3, 7, 1> event_a;

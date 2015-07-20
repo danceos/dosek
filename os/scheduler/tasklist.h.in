@@ -6,11 +6,99 @@
 
 namespace os { namespace scheduler {
 
+struct TaskListStatic {
+	// Effect: (a,x) = max{((a,x), (b,y)} with (a,x) <= (b,y) <=> a <= b
+	// subtracts signature B0 from a,x and adds signature sig to catch lost updates
+	template<typename CP, typename OP, typename CI, typename OI>
+	forceinline void updateMax(B_t& sigPrio, B_t& sigId, const B_t sig,
+			CP * const current_prio, const OP & other_prio,
+			CI * const current_id, const OI & other_id) const {
+		pseudo_static_assert(other_prio.getB() > sigPrio,  "signature of b must be greater than signature of a");
+		asm_label("updateMax");
+
+		// unencoded comparison
+		bool result;
+		result = (current_prio->vc - sigPrio) <= (other_prio.vc - other_prio.getB());
+
+		// encoded check of comparison
+		// a>b  => diff = 2^32 - (a.vc - b.vc)
+		// a<=b => diff = b.vc - a.vc
+		value_coded_t diff = other_prio.vc - current_prio->vc;
+		static const volatile A_t ta = CP::A; // prevent  -> *,>>,+ optimization
+		value_coded_t sigCond = diff %% ta;
+		const value_coded_t sigPos = other_prio.getB() - sigPrio;
+		const value_coded_t sigNeg = (CP::MAXMODA + sigPos) %% CP::A;
+		pseudo_static_assert(sigPos != sigNeg, "sigPos and sigNeg must differ");
+
+		if(result) {
+			current_prio->vc = sigPrio + (other_prio.vc - other_prio.getB()) + sig - sigPos;
+			current_id->vc = sigId + other_id.vc + sig - other_id.getB();
+		} else {
+			current_prio->vc += (sigPos - sigNeg) + (sig - sigPos);
+			current_id->vc += (sigPos - sigNeg) + sig;
+		}
+
+		// return finished control flow signature
+		current_prio->vc += sigCond;
+		current_id->vc += sigCond;
+
+		//return sig + sigCond;
+		sigPrio += sig;
+		sigId += sig + sigPos;
+	}
+
+	// Effect: a = max{a, b} with a <= b
+	// subtracts signature B0 from a,x and adds signature B1 to catch lost updates
+	template<B_t B0, B_t B1, typename T, typename S>
+	forceinline value_coded_t updateMax(T& a, const S& b) const {
+
+		// control flow signature
+		value_coded_t result;
+
+		// unencoded comparison
+		result = ((a.vc - B0) - T::B) <= (b.vc - S::B);
+
+		// encoded check of comparison
+		value_coded_t diff = b.vc - (a.vc - B0); // this>t  => diff = 2^m - (vc - t.vc)
+												 // this<=t => diff = t.vc - vc
+		static const volatile A_t ta = T::A; // prevent %% -> *,>>,+ optimization
+		value_coded_t sigCond = diff %% ta;
+		const value_coded_t sigPos = S::B - T::B;
+		const value_coded_t sigNeg = (T::MAXMODA + sigPos) %% T::A;
+
+		if(result) {
+			// a=b with added signature B1
+			a.vc = b.vc + (T::B - S::B) + B1;
+
+			// set control flow signature (expected: sigCond == sigPos)
+			result += (T::A - 1) + B1;
+		} else {
+			// remove old B-1, add new B signature to "unmodified" a,x
+			a.vc = a.vc - B0 + B1;
+
+			// set control flow signature (expected: sigCond == sigNeg)
+			result += (sigPos - sigNeg) + B1;
+		}
+
+		// return finished control flow signature
+		result += sigCond;
+		return result;
+	}
+
+
+	template<typename T, typename S>
+	static constexpr value_coded_t updateMax_signature(value_coded_t B1, __attribute__ ((unused)) T& prio, __attribute__ ((unused)) S& task) {
+		return (S::B - T::B + B1) %% S::A;
+	}
+
+};
+
 struct TaskList : public TaskListStatic {
-    typedef uint8_t id_t;
+
 	typedef uint32_t event_mask_t;
 
-
+	typedef Encoded_Static<A0, {{{generate:current_prio_sig}}}> current_prio_t;
+    typedef Encoded_Static<A0, {{{generate:current_task_sig}}}> current_task_t;
 
 	// encoded task priorities
 {{{!foreach_subtask|
@@ -28,8 +116,8 @@ struct TaskList : public TaskListStatic {
 
 
 	TaskList() : TaskListStatic()
-    {{{!foreach_subtask|
-        , {{{!subtask}}}({{{!prio_offset}}})\
+    {{{!foreach_subtask| ,
+        {{{!subtask}}}({{{!prio_offset}}})\
         {{{!foreach_event|\
            , {{{!event}}}()\
         }}}
@@ -38,7 +126,7 @@ struct TaskList : public TaskListStatic {
 
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
-	forceinline value_coded_t isReady(const id_t id) {
+	forceinline value_coded_t isReady(const Task::id_t id) {
 {{{!foreach_subtask|
             if(id == {{{!subtask_id}}}) {
 			    return ({{{!subtask}}}.vc) ^ (EC({{{!subtask_prio_sig}}}, prio_offset).vc);
@@ -52,8 +140,14 @@ struct TaskList : public TaskListStatic {
 
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
+
+	forceinline value_coded_t set(const Task::id_t id, const Task::prio_t prio) {
+		auto newprio = EC(1, prio);
+		return set(id, newprio);
+	}
+
 	template<typename S>
-	forceinline value_coded_t set(const id_t id, const S prio) {
+	forceinline value_coded_t set(const Task::id_t id, const S prio) {
 {{{!foreach_subtask|
         if(id == {{{!subtask_id}}}) {
 	          {{{!subtask}}} = prio + EC(1, prio_offset);
@@ -65,10 +159,12 @@ struct TaskList : public TaskListStatic {
 		 }
 	}
 
+
+
 	/** Set priority of task id to prio **/
 	// returns an encoded 0 with the signature (B) of the modified task - prio.B
-	template<typename S>
-	forceinline value_coded_t activate(const id_t id, const S newprio) {
+	forceinline value_coded_t activate(const Task::id_t id, const Task::prio_t newprio_) {
+		auto newprio = EC(2, newprio_);
 {{{!foreach_subtask|
         if(id == {{{!subtask_id}}}) {
               auto old_prio = {{{!subtask}}};
@@ -155,13 +251,13 @@ struct TaskList : public TaskListStatic {
 		return 0;
 	}
 
-	forceinline value_coded_t remove(const id_t id) {
+	forceinline value_coded_t remove(const Task::id_t id) {
 		// The signature here is arbitrary, and won't be exposed.
 		return set(id, EC(3, 0));
 	}
 
     /** Wait for a specific event mask **/
-    forceinline void wait_events(const id_t id, const event_mask_t mask) {
+    forceinline void wait_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
 {{{!foreach_subtask|\
@@ -210,7 +306,7 @@ struct TaskList : public TaskListStatic {
     }
 
     /** Set Events **/
-    forceinline void set_events(const id_t id, const event_mask_t mask) {
+    forceinline void set_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
 {{{!foreach_subtask|\
@@ -225,7 +321,7 @@ struct TaskList : public TaskListStatic {
     }
 
     /** Clear Events **/
-    forceinline void clear_events(const id_t id, const event_mask_t mask) {
+    forceinline void clear_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
 {{{!foreach_subtask|\
@@ -240,7 +336,7 @@ struct TaskList : public TaskListStatic {
     }
 
     /** Get Events **/
-    forceinline event_mask_t get_events(const id_t id) {
+    forceinline event_mask_t get_events(const Task::id_t id) {
         (void) id;
         event_mask_t ret = 0;
 {{{!foreach_subtask|\
@@ -254,6 +350,18 @@ struct TaskList : public TaskListStatic {
        return ret;
     }
 
+	template<typename T>
+	static Task::id_t decode_task_id(T id){
+		return id.decode();
+	}
+
+	static auto encode_task_id(Task::id_t id) -> decltype(EC(1,1)) {
+		return EC(1, id);
+	}
+
+	static auto encode_task_prio(Task::id_t id) -> decltype(EC(1,1)) {
+		return EC(1, id);
+	}
 
 
 };
@@ -262,6 +370,9 @@ struct TaskList : public TaskListStatic {
 bool operator==(const TaskList& lhs, const TaskList& rhs) {
 {{{!foreach_subtask|
     if(lhs.{{{!subtask}}}.vc != rhs.{{{!subtask}}}.vc) return false;
+	{{{!foreach_event|
+	if(!(lhs.{{{!event}}} == rhs.{{{!event}}})) return false;
+    }}}
 }}}
     return true;
 }
