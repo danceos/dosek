@@ -426,8 +426,12 @@ def main(options, args):
         abb['read_os_bytes'] = sum(read_bytes)
         abb['read_accesses'] = len(read_bytes)
 
-    print "Written addresses: ",  len(total_written_addresses)
-    print "Read addresses: ",  len(total_read_addresses)
+    for sg in stats.find_all("SystemGraph").values():
+        print "Written addresses: ",  len(total_written_addresses)
+        print "Read addresses: ",  len(total_read_addresses)
+        sg['total written addresses'] = len(total_written_addresses)
+        sg['total read addresses'] = len(total_read_addresses)
+
     ## done.
 
     print "Processed %d Systemcalls" % regions_count
