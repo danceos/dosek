@@ -110,7 +110,7 @@ extern "C" {
 }
 
 
-inlinehint void test_start()
+static forceinline void test_start()
 {
 	// update global status variables
 	experiment_number++;
@@ -121,12 +121,12 @@ inlinehint void test_start()
 	kout.setcolor(Color::YELLOW, Color::BLACK);
 }
 
-inlinehint void test_start_check() {
+static forceinline void test_start_check() {
 	interrupts_suspended = Machine::interrupts_enabled();
 	Machine::disable_interrupts();
 }
 
-inlinehint void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal)
+static forceinline void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal)
 {
 	if((equal && real_value == expected_value) || (!equal && real_value != expected_value)) {
 		kout.setcolor(Color::GREEN, Color::BLACK);
@@ -141,35 +141,35 @@ inlinehint void test_equality(expected_value_t real_value, const expected_value_
 	}
 }
 
-inlinehint void test_eq(expected_value_t real_value, const expected_value_t expected_value) {
+static forceinline void test_eq(expected_value_t real_value, const expected_value_t expected_value) {
 	test_equality(real_value, expected_value, true);
 }
 
-inlinehint void test_ne(expected_value_t real_value, const expected_value_t expected_value) {
+static forceinline void test_ne(expected_value_t real_value, const expected_value_t expected_value) {
 	test_equality(real_value, expected_value, false);
 }
 
 /* Store and retrieve expected results */
 
-inlinehint void test_expect_store(unsigned char id, expected_value_t value) {
+static forceinline void test_expect_store(unsigned char id, expected_value_t value) {
 	expected_values[id] = value;
 }
 
-inlinehint void test_expect_eq(unsigned char id, const expected_value_t expected_value) {
+static forceinline void test_expect_eq(unsigned char id, const expected_value_t expected_value) {
 	test_equality(expected_values[id], expected_value, true);
 }
 
-inlinehint void test_expect_ne(unsigned char id, const expected_value_t expected_value) {
+static forceinline void test_expect_ne(unsigned char id, const expected_value_t expected_value) {
 	test_equality(expected_values[id], expected_value, false);
 }
 
-inlinehint void test_assert(bool result) {
+static forceinline void test_assert(bool result) {
 	test_equality(result, true, true);
 }
 
 
 
-inlinehint void __test_positive_tests(int pos_tests, int sign) {
+static forceinline void __test_positive_tests(int pos_tests, int sign) {
 	int delta = positive_tests - pos_tests;
 	if ((sign < 0 && delta < 0)
 		|| (sign == 0 && delta == 0)
@@ -193,15 +193,15 @@ inlinehint void __test_positive_tests(int pos_tests, int sign) {
 	}
 }
 
-inlinehint void test_positive_tests_eq(int positive_tests) {
+static forceinline void test_positive_tests_eq(int positive_tests) {
 	__test_positive_tests(positive_tests, 0);
 }
 
-inlinehint void test_positive_tests_lt(int positive_tests) {
+static forceinline void test_positive_tests_lt(int positive_tests) {
 	__test_positive_tests(positive_tests, -1);
 }
 
-inlinehint void test_positive_tests_gt(int positive_tests) {
+static forceinline void test_positive_tests_gt(int positive_tests) {
 	__test_positive_tests(positive_tests, 1);
 }
 
@@ -209,7 +209,7 @@ inlinehint void test_positive_tests_gt(int positive_tests) {
 // run one test with unencoded result
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
-inlinehint void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected) {
+static forceinline void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected) {
 	test_expect_store(0, expected);
 
 	/* Start the testcase (including marker_start() */
@@ -228,7 +228,7 @@ inlinehint void run_checkable_function(void (* volatile testfun)(void), expected
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
 template<typename T>
-inlinehint void run_checkable_function(void (* volatile testfun)(void), T& result_var, value_t expected) {
+static forceinline void run_checkable_function(void (* volatile testfun)(void), T& result_var, value_t expected) {
 	test_expect_store(0, expected);
 
 	/* Start the testcase (including marker_start() */
@@ -254,7 +254,7 @@ extern void test_prepare();
 __attribute__((weak_import))
 extern void test();
 
-inlinehint void test_init(void) {
+static forceinline void test_init(void) {
 	// prepare tests
 	trace_table_idx = 0;
 	experiment_number = 0;
@@ -266,7 +266,7 @@ inlinehint void test_init(void) {
 
 
 
-inlinehint void test_main(void)
+static forceinline void test_main(void)
 {
 	debug.setcolor(Color::RED, Color::WHITE);
 	debug << "dOSEK start" << endl;

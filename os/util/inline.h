@@ -19,7 +19,7 @@
 
 
 #define noinline __attribute__ ((noinline))
-#define forceinline __inline__ __attribute__((always_inline)) __attribute__((section (".text.inlined")))
-#define inlinehint forceinline __attribute__((used))
+#define forceinline inlinehint inline
+#define inlinehint __attribute__((always_inline))
 
 #endif /* __INLINE_H__ */

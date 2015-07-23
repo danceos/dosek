@@ -65,7 +65,7 @@ def llvm_link(files, output):
 
 def llvm_opt(input, output):
     check_output([os.path.join(args.llvm_dir, "bin", "opt"),
-                  "-std-compile-opts", "-inlinehint-threshold=2000000000", "-o", output, input])
+                  "-std-compile-opts", "-always-inline", "-o", output, input])
     return output
 
 def llvm_llc(file, output, flags):
@@ -77,7 +77,7 @@ def start_ld(flags, objects, output):
     #             + flags + ["-c", "-o", output + ".obj"])
 
     check_output([args.clang, "-Wl,--start-group"] + objects + ["-Wl,--end-group"]
-                 + flags + ["-o", output])
+                 + flags + ["-o", output, "-Wl,-gc-sections"])
 
 if __name__ == "__main__":
     import argparse
