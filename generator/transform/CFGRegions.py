@@ -64,6 +64,12 @@ class CFGRegions(Analysis):
             logging.debug("Region %s: 0x%x", region, region_mask)
             # Generate new mask for next region
             region_mask <<= 1
+        ignore_mask = 0
+        while region_mask < (1 << self.maximal_regions):
+            ignore_mask |= region_mask
+            region_mask <<= 1
+        self.ignore_mask = ignore_mask
+
 
     def generate_bitmasks(self):
         """Generates the enter/check/leave bitmasks"""
@@ -97,7 +103,7 @@ class CFGRegions(Analysis):
         if _type == "enter":
             ret = self.enter_mask.get(abb, [])
         elif _type == "leave":
-            ret = self.leave_mask[abb]
+            ret = self.leave_mask[abb] + [hex(self.ignore_mask)]
         elif _type == "check":
             ret = self.check_mask[abb]
         assert not ret is None, "Invalid argument"
