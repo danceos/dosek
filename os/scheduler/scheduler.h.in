@@ -145,7 +145,7 @@ struct Scheduler {
         return tlist.decode_task_id(current_task);
     }
 
-	void dispatchToCurrentTask(void) {
+	forceinline void dispatchToCurrentTask(void) {
 		// dispatch or enter idle
 		{{{!foreach_subtask|
 		if(current_task == {{{!subtask_id}}}) {
