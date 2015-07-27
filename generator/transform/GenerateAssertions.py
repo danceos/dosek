@@ -1,4 +1,4 @@
-from generator.analysis import Analysis, E
+from generator.analysis import Analysis, E, S
 from generator.tools import Enum
 import logging
 
@@ -61,6 +61,11 @@ class GenerateAssertionsPass(Analysis):
 
     def state_asserts(self, abb, state):
         ret = []
+
+        # Do not put assertions into the timer interrupt kickoff.
+        # FIXME: This is a workaround for wrong timer interrupt handling in the SSE.
+        if abb.isA(S.kickoff) and abb.subtask == abb.system_graph.AlarmHandlerSubtask:
+            return []
 
         for subtask in self.system_graph.subtasks:
             # Only for real tasks

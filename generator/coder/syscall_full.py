@@ -314,48 +314,34 @@ class FullSystemCalls(BaseCoder):
 
     # Assertions
     def do_assertions(self, block, assertions):
-        should_equal_zero = []
-        should_unequal_zero = []
+        conds = []
         for a in assertions:
-            x = self.__do_assertion(a)
-            if type(x[0]) == bool:
-                assertions = [x]
-            else:
-                (assertions, prepare) = x
+            (prepare, c) = self.__do_assertion(a)
+            if prepare:
                 block.add(prepare)
-
-            for equal_zero, cond in assertions:
-                if equal_zero:
-                    should_equal_zero.append(cond)
-                else:
-                    should_unequal_zero.append(cond)
+            conds += ["!%s" % x for x in c]
 
         call_hook = Statement("CALL_HOOK(FaultDetectedHook, STATE_ASSERTdetected, __LINE__, 0)")
-        if should_equal_zero:
-            check = Block("if ((%s) != 0)" % "  | ".join(should_equal_zero))
+        if conds:
+            check = Block("if (%s)" % "  || ".join(conds))
             check.add(call_hook)
             block.add(check)
-        if should_unequal_zero:
-            check = Block("if ((%s) == 0)" % " * ".join(should_unequal_zero))
-            check.add(call_hook)
-            block.add(check)
-
 
     def __do_assertion(self, assertion):
         task = assertion.get_arguments()[0]
 
         if assertion.isA(AssertionType.TaskIsSuspended):
-            cond = "scheduler_.isReady(%s)" % self.task_desc(task)
-            return (True, cond)
+            cond = "!scheduler_.isReady(%s)" % self.task_desc(task)
+            return (None, [cond])
         elif assertion.isA(AssertionType.TaskIsReady):
             cond = "scheduler_.isReady(%s)" % self.task_desc(task)
-            return (False, cond)
+            return (None, [cond])
         elif assertion.isA(AssertionType.TaskWasKickoffed):
             cond = "%s.tcb.is_running()" % self.task_desc(task)
-            return (False, cond)
+            return (None, [cond])
         elif assertion.isA(AssertionType.TaskWasNotKickoffed):
-            cond =  "%s.tcb.is_running()" % self.task_desc(task)
-            return (True, cond)
+            cond =  "!%s.tcb.is_running()" % self.task_desc(task)
+            return (None, [cond])
         elif assertion.isA(AssertionType.EventsCheck):
             event_cleared = assertion.get_arguments()[1]
             event_set = assertion.get_arguments()[2]
@@ -366,19 +352,13 @@ class FullSystemCalls(BaseCoder):
             if event_cleared:
                 # Mask Should equal to zero
                 mask = Event.combine_event_masks(event_cleared)
-                conds.append((True, "({var} & {mask})".format(var=var, mask=mask)))
+                conds.append("(({var} & {mask}) == 0)".format(var=var, mask=mask))
             if event_set:
                 # Mask Should equal to zero
                 mask = Event.combine_event_masks(event_set)
-                conds.append((True, "(({var} & {mask}) ^ {mask})".format(var=var, mask=mask)))
+                conds.append("((({var} & {mask}) ^ {mask}) == 0)".format(var=var, mask=mask))
 
-            return (conds, prepare)
-        elif assertion.isA(AssertionType.EventsCleared):
-            cond =  "(scheduler_.GetEvent_impt({task}) & {mask}) == 0".format(
-                task = self.task_desc(event_list[0].subtask),
-                mask = Event.combine_event_masks(event_list)
-                )
-            return (True, cond)
+            return (prepare, conds)
         else:
             panic("Unsupported assert type %s", assertion)
 
