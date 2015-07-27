@@ -319,13 +319,15 @@ class FullSystemCalls(BaseCoder):
             (prepare, c) = self.__do_assertion(a)
             if prepare:
                 block.add(prepare)
-            conds += ["!%s" % x for x in c]
+            conds += ["%s" % x for x in c]
 
+        for c in conds:
+            block.add(Statement("color_assert(%s, COLOR_ASSERT_SYSTEM_STATE)" % c))
         call_hook = Statement("CALL_HOOK(FaultDetectedHook, STATE_ASSERTdetected, __LINE__, 0)")
-        if conds:
-            check = Block("if (%s)" % "  || ".join(conds))
-            check.add(call_hook)
-            block.add(check)
+        # if conds:
+        #    check = Block("if (%s)" % "  || ".join(conds))
+        #    check.add(call_hook)
+        #    block.add(check)
 
     def __do_assertion(self, assertion):
         task = assertion.get_arguments()[0]
