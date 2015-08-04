@@ -1,4 +1,5 @@
 add_subdirectory(extractor)
+add_subdirectory(attributor)
 
 set(PYTHON_MODULES_TEST
     coder/elements/template
