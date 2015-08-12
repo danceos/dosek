@@ -23,11 +23,13 @@ class SymbolicSystemExecution(Analysis, GraphObject):
     """
     pass_alias = "sse"
 
-    def __init__(self):
+    def __init__(self, use_app_fsm = False):
         Analysis.__init__(self)
         GraphObject.__init__(self, "SymbolicSystemState", root = True)
         self.states = None
         self.states_by_abb = None
+        # Should the application fsm pass be used as a basis
+        self.use_app_fsm = use_app_fsm
 
         # A member for the RunningTask analysis
         self.running_task = None
@@ -42,6 +44,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
 
     def requires(self):
         # We require all possible system edges to be contructed
+        if self.use_app_fsm:
+            return ["ApplicationFSM"]
         return ["DynamicPriorityAnalysis", "InterruptControlAnalysis"]
 
     def get_edge_filter(self):
@@ -62,22 +66,22 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                 M[state] = wrapper
             cont = GraphObjectContainer(str(abb), color="red",
                                         subobjects=subobjs)
-            cont.data = {"ABB": str(abb), "func": abb.function.name}
+            cont.data = {"ABB": abb.path()}
             cont.abb = abb
             ret.append(cont)
 
         for state, wrapper in M.items():
             for next_state in state.get_outgoing_nodes(StateTransition):
                 cont.edges.append(Edge(wrapper, M[next_state], color="red"))
-            for next_state in state.get_outgoing_nodes(SavedStateTransition):
-                cont.edges.append(Edge(wrapper, M[next_state], color="green"))
+            for next_state, label in state.get_outgoing_edges(SavedStateTransition):
+                cont.edges.append(Edge(wrapper, M[next_state], color="green", label=label))
 
 
         ret = list(sorted(ret, key=lambda x: x.abb.abb_id))
 
         return ret
 
-    def state_transition(self, source_block, source_state, target_block, target_state):
+    def state_transition(self, syscall, source_block, source_state, target_block, target_state):
         # print(source_block.path(),"->", target_block.path())
         # Do not allow self loops
         #if source_state == target_state:
@@ -88,26 +92,40 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             assert False
         if target_state in self.states:
             real_instance = self.states[target_state]
-            source_state.add_cfg_edge(real_instance, StateTransition)
+            source_state.add_cfg_edge(real_instance, StateTransition, label=syscall)
         else:
-            self.working_stack.push((source_state, target_state))
+            self.working_stack.push((syscall, source_state, target_state))
 
     def state_functor(self, state):
-        # Do the System Call
-        after_states = self.system_call_semantic.do_SystemCall(
-            state.current_abb, state, self.transitions)
+        def state_functor__(state_ptr):
+            after_states = self.system_call_semantic.do_SystemCall(
+                state_ptr.current_abb, state_ptr, self.transitions)
 
-        # Schedule on each possible block
-        for next_state in after_states:
-            self.system_call_semantic.schedule(state.current_abb, next_state,
-                                               lambda source, target, new_state: \
-                                                 self.state_transition(source, state, target, new_state))
+            # Schedule on each possible block
+            for syscall, next_state in after_states:
+                edges =   list(self.system_call_semantic.schedule(state_ptr.current_abb, next_state.copy()))
+                for (source, target, new_state) in edges:
+                    assert new_state.frozen
+                    # Re-step system state, if syscall is None. (Happens in CheckAlarm for use_app_fsm)
+                    if syscall == None:
+                        for (syscall, _, target, new_state) in state_functor__(new_state):
+                            yield (syscall, source, target, new_state)
+                    else:
+                        yield (syscall, source, target, new_state)
 
-    def do_computation_with_sporadic_events(self, block, before):
-        after_states = self.system_call_semantic.do_computation_with_callstack(block, before)
+        for (syscall, source, target, new_state) in state_functor__(state):
+            # otherwise: Add state transition
+            self.state_transition(syscall, source, state, target, new_state)
 
+    def do_computation_with_sporadic_events(self, cont, before, syscall):
+        after_states = self.system_call_semantic.do_computation_with_callstack(cont, before, syscall)
+        return after_states + self.do_sporadic_events(cont, before, syscall)
+
+    def do_sporadic_events(self, cont, before, syscall):
+        after_states = []
         # Handle sporadic events
         events = 0
+
         sporadic_events = list(self.system_graph.isrs)
         if self.system_graph.AlarmHandlerSubtask:
             sporadic_events.append(self.system_graph.AlarmHandlerSubtask)
@@ -117,18 +135,30 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                 continue
 
             after = sporadic_event.trigger(before)
-            after_states.append(after)
+            after_states.append((syscall, after))
             events += 1
-        block.sporadic_trigger_count = events
+        cont.sporadic_trigger_count = events
 
         return after_states
+
+    def do_CheckIRQ(self, cont, before, syscall):
+        after_states = self.do_sporadic_events(cont, before, syscall)
+        ret = []
+        for checkirq, kickoff_state in after_states:
+            # We return None here as the issuing systemcall, in order
+            # to redo the systemcall immediately. This results in no
+            # CheckIRQ edges!
+            ret.append( (None, kickoff_state) )
+
+        return ret
+
 
     def do(self):
         old_copy_count = SystemState.copy_count
         self.running_task = self.get_analysis(CurrentRunningSubtask.name())
 
         # Instantiate a new system call semantic
-        self.system_call_semantic = SystemCallSemantic(self.system_graph, self.running_task)
+        self.system_call_semantic = SystemCallSemantic(self.system_graph, self.use_app_fsm)
         scc = self.system_call_semantic
 
         self.transitions = {S.StartOS         : scc.do_StartOS,
@@ -161,6 +191,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
                             S.GetEvent             : scc.do_computation, # ignore
                             # Alarm handler support
                             S.CheckAlarm      : scc.do_CheckAlarm,
+                            # IRQ Support for ApplicationFSM
+                            S.CheckIRQ        : self.do_CheckIRQ,
                             S.Idle            : scc.do_Idle,
                             S.iret            : scc.do_TerminateTask}
 
@@ -176,25 +208,25 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # first part of the tuple is none, we have the starting
         # condition.
         self.working_stack = stack()
-        self.working_stack.push((None, before_StartOS))
+        self.working_stack.push((None, None, before_StartOS))
 
         state_count = 0
         ignored_count = 0
         while not self.working_stack.isEmpty():
             # Current is a system state and its state predecessor
-            before_current, current = self.working_stack.pop()
+            old_syscall, before_current, current = self.working_stack.pop()
 
             # State was already marked as done!
             if current in self.states:
                 # Although it was already done, we have to add the edge
                 # noted in the working stack.
                 current = self.states[current]
-                before_current.add_cfg_edge(current, StateTransition)
+                before_current.add_cfg_edge(current, StateTransition, label = old_syscall)
                 ignored_count += 1
                 continue
             elif before_current:
                 # Add the state edge
-                before_current.add_cfg_edge(current, StateTransition)
+                before_current.add_cfg_edge(current, StateTransition, label = old_syscall)
             # The current state is marked as done. This dictionary is
             # used to translate all equal system states to a single instance/object.
             self.states[current] = current
@@ -211,11 +243,12 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # Before we transform the state graph, we copy the original
         # state graph away
         for outgoing_state in self.states:
-            for incoming_state in outgoing_state.get_outgoing_nodes(StateTransition):
-                outgoing_state.add_cfg_edge(incoming_state, SavedStateTransition)
+            for incoming_state, label in outgoing_state.get_outgoing_edges(StateTransition):
+                outgoing_state.add_cfg_edge(incoming_state, SavedStateTransition, label=label)
 
         # Cut out the isr transitions to match the SSF GCFG
-        self.transform_isr_transitions()
+        if not self.use_app_fsm:
+            self.transform_isr_transitions()
 
         # Group States by ABB
         self.states_by_abb = group_by(self.states, "current_abb")
@@ -233,9 +266,9 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         # level to interrupt level. We connect the interrupt handler
         # continuation with the block that activates the interrupt.
         def is_isr_state(state):
-            if not state.current_abb.function.subtask:
+            if not state.current_abb.subtask:
                 return False
-            return state.current_abb.function.subtask.conf.is_isr
+            return state.current_abb.subtask.conf.is_isr
         del_edges = []
         add_edges = []
         for app_level in [x for x in self.states if not is_isr_state(x)]:
@@ -264,6 +297,8 @@ class SymbolicSystemExecution(Analysis, GraphObject):
             source.add_cfg_edge(target, StateTransition)
 
     def statistics(self):
+        if self.use_app_fsm:
+            return
         ################################################################
         # Statistics
         ################################################################
@@ -315,10 +350,21 @@ class SymbolicSystemExecution(Analysis, GraphObject):
         state_ids = set([id(X) for X in self.states])
         for sse_state in self.states:
             followup_states = set()
+            # All incomin nodes have to be valid states
             for X in sse_state.get_incoming_nodes(SavedStateTransition):
                 assert id(X) in state_ids, X
+            # All outgoing nodes have to be states, and every state
+            # may only be once there.
             for X in sse_state.get_outgoing_nodes(SavedStateTransition):
-                assert not id(X) in followup_states
+                # With FSM-SSE: We can have the same sse_state as
+                # successor through multiple different systemcalls.
+                #     ---- TerminateTask/ABB12 ---
+                #    /                            \
+                #  S1                               S2
+                #   \                              /
+                #    ----- TerminateTask/ABB11 ----
+                assert not id(X) in followup_states or self.use_app_fsm, \
+                    "Doubled followup state"+ str(sse_state) + str(sse_state.current_abb.possible_systemcalls) + str(X)
                 followup_states.add(id(X))
                 assert id(X) in state_ids, X
 

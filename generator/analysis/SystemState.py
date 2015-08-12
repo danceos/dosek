@@ -27,6 +27,7 @@ class SystemState(Node):
         self.continuations = [None] * size
         self.events_cleared = [0] * size
         self.events_set = [0] * size
+        self.events_waiting = [0] * size
         self.call_stack = [None] * size
 
         for i  in range(0, size):
@@ -99,6 +100,9 @@ class SystemState(Node):
     def is_surely_ready(self, subtask):
         return self.states[subtask.subtask_id] == self.READY
 
+    def is_surely_waiting(self, subtask):
+        return self.states[subtask.subtask_id] == self.WAITING
+
     def is_maybe_ready(self, subtask):
         return self.READY & self.states[subtask.subtask_id]
 
@@ -118,6 +122,9 @@ class SystemState(Node):
         """Returns two bitmasks: (Event is cleared, Event is set)"""
         return (self.events_cleared[subtask.subtask_id],
                 self.events_set[subtask.subtask_id])
+
+    def get_block_list(self, subtask):
+        return (self.events_waiting[subtask.subtask_id])
 
     def is_event_set(self, subtask, event):
         return (self.events_set[subtask.subtask_id] & event.event_mask) != 0
@@ -141,7 +148,7 @@ class SystemState(Node):
 
     def remove_continuation(self, subtask, abb):
         assert not self.frozen
-        assert abb in self.continuations[subtask.subtask_id]
+        assert abb in self.continuations[subtask.subtask_id], (abb, self.continuations[subtask.subtask_id])
         self.continuations[subtask.subtask_id].discard(abb)
 
     def add_continuation(self, subtask, abb):

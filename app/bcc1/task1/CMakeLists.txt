@@ -7,6 +7,11 @@ DOSEK_BINARY(
   a.cc
 )
 
+# This has to be done, since FSM is currently build with the APP-FSM
+# method and not the CFG->GCFG method for SSE.
+config_valid(VALID --systemcalls normal)
+if(VALID)
+
 DOSEK_BINARY(
   NAME bcc1_task1a_sse
   SYSTEM_DESC system.oil
@@ -15,7 +20,8 @@ DOSEK_BINARY(
   GENERATOR_ARGS -fgen-asserts -fsse
   TEST_ISO
   a.cc
-)
+  )
+endif()
 
 DOSEK_BINARY(
   NAME bcc1_task1b

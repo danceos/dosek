@@ -105,11 +105,11 @@ class Node(GraphObject):
                     if edge.level in self.current_edge_filter]
         return self.outgoing_edges
 
-    def add_cfg_edge(self, target, level):
+    def add_cfg_edge(self, target, level, label=''):
         self.check_edge_filter(level)
         assert not target in self.get_outgoing_edges(level), \
             "Cannot add edge of the same type twice"
-        edge = self.edge_factory(self, target, level)
+        edge = self.edge_factory(self, target, level, label=label)
         self.outgoing_edges.append(edge)
         target.incoming_edges.append(edge)
 

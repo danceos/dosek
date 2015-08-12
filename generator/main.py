@@ -202,12 +202,12 @@ if __name__ == "__main__":
             syscall_rules = FullSystemCalls()
 
     elif conf.os.systemcalls == "fsm_pla":
-        assert conf.arch.self == "posix", "FSM Encoding is only supported for arch=posix"
+        pass_manager.get_pass("sse").use_app_fsm = True
         pass_manager.enqueue_analysis("LogicMinimizer")
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls(use_pla = True)
     elif conf.os.systemcalls == "fsm":
-        assert conf.arch.self == "posix", "FSM Encoding is only supported for arch=posix"
+        pass_manager.get_pass("sse").use_app_fsm = True
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls()
     else:

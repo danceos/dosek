@@ -86,8 +86,8 @@ class SystemStateFlow(Analysis):
             wrapped_isr = SSF_SporadicEvent(isr, self.system_call_semantic)
             self.sporadic_events.append(wrapped_isr)
 
-    def do_computation_with_sporadic_events(self, block, before):
-        after_states = self.system_call_semantic.do_computation(block, before)
+    def do_computation_with_sporadic_events(self, block, before, syscall):
+        after_states = self.system_call_semantic.do_computation(block, before, syscall)
 
         # Handle sporadic events
         events = 0
@@ -139,8 +139,10 @@ class SystemStateFlow(Analysis):
              S.Idle            : scc.do_Idle})
 
         # Schedule depending on the possible output state
-        for after in after_states:
-            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+        for (sycall, after_state) in after_states:
+            edges = self.system_call_semantic.schedule_imprecise(block, after_state)
+            for (source, target, new_state) in edges:
+                self.set_state_on_edge(source, target, new_state)
 
         self.debug("}}}")
 
@@ -159,7 +161,7 @@ class SystemStateFlow(Analysis):
         self.edge_states = {}
         # ABB -> SystemState
 
-        self.system_call_semantic = SystemCallSemantic(self.system_graph, self.running_task)
+        self.system_call_semantic = SystemCallSemantic(self.system_graph)
 
         self.install_sporadic_events()
 
@@ -289,7 +291,7 @@ class SSF_SporadicEvent(SporadicEvent):
     def can_trigger(self, state):
         return self.wrapped_event.can_trigger(state)
 
-    def do_iret(self, block, before):
+    def do_iret(self, block, before, syscall):
         # When there is no further local abb node, we have reached the
         # end of the interrupt handler
         self.irq_exit_state.merge_with(before)
@@ -318,8 +320,10 @@ class SSF_SporadicEvent(SporadicEvent):
              S.CheckAlarm      : self.system_call_semantic.do_CheckAlarm,
              S.iret: self.do_iret})
         # Schedule depending on the possible output states
-        for after in after_states:
-            self.system_call_semantic.schedule(block, after, self.set_state_on_edge)
+        for (syscall, after_state) in after_states:
+            edges = self.system_call_semantic.schedule_imprecise(block, after_state)
+            for (source, target, new_state) in edges:
+                self.set_state_on_edge(source, target, new_state)
 
         # This has to be done after the system call handling, since
         # new irq links could have been introduced
@@ -368,7 +372,7 @@ class SSF_SporadicEvent(SporadicEvent):
                 # the entry_abb
                 ret_state.add_continuation(subtask, subtask.entry_abb)
 
-        return ret_state
+        return (None, ret_state)
 
     def fixup_before_states(self):
         for abb in self.wrapped_event.handler.abbs:

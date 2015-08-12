@@ -41,13 +41,18 @@ class SporadicEvent:
         assert state.is_surely_suspended(self.handler), (state, self.handler)
 
         # Save current IP
-        current_subtask = state.current_abb.function.subtask
+        current_subtask = state.current_abb.subtask
         copy_state.set_continuation(current_subtask, state.current_abb)
 
         # Dispatch to Event Handler
-        copy_state.set_continuation(self.handler, self.handler.entry_abb)
+        entry_abb = self.handler.entry_abb
+        # If we use the APP-FSM method to do the SSE, then we have
+        # this field available in the handler (== ISR Subtask)
+        if hasattr(self.handler, "ApplicationFSMIterator"):
+            entry_abb = self.handler.ApplicationFSMIterator(self.handler, self.handler.fsm.initial_state)
+        copy_state.set_continuation(self.handler, entry_abb)
         copy_state.set_ready(self.handler)
-        copy_state.current_abb = self.handler.entry_abb
+        copy_state.current_abb = entry_abb
         return copy_state
 
 

@@ -36,8 +36,8 @@ class ControlFlowEdge(Edge):
        that stay on the task level (aka. always on the same stack/same task
        context)"""
 
-    def __init__(self, source, target, level = E.task_level):
-        Edge.__init__(self, source, target, level, color = E.color(level))
+    def __init__(self, source, target, level = E.task_level, label =''):
+        Edge.__init__(self, source, target, level, color = E.color(level), label='')
 
 @unique
 class SyscallType(IntEnum):
@@ -48,7 +48,8 @@ class SyscallType(IntEnum):
     StartOS = 2
     Idle = 3
     CheckAlarm = 4
-    iret = 5
+    CheckIRQ = 5
+    iret = 6
 
     # real system calls
     kickoff = 19

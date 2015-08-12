@@ -1,5 +1,5 @@
 from generator.analysis.common import *
-from generator.analysis import Analysis, SavedStateTransition, S, E
+from generator.analysis import Analysis, SavedStateTransition, S
 from generator.tools import pairwise
 from collections import namedtuple, defaultdict
 from datastructures.sage_finite_state_machine import Transducer, full_group_by, Automaton
@@ -53,10 +53,20 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
 
     def graph_edges(self):
         ret = []
-        for P in self.fsm.events:
+        fsm = self.fsm
+        #fsm.rename(events = lambda x: fsm.event_mapping[x],
+        #           actions = lambda x: fsm.action_mapping[x])
+
+
+        def subtask(state):
+            if state in fsm.state_mapping:
+                if fsm.state_mapping[state].current_subtask:
+                    return fsm.state_mapping[state].current_subtask.name
+            return "XXX"
+        for P in fsm.events:
             for T in P.transitions:
-                ret.append(self.SimpleEdge(source = T.source,
-                                           target = T.target,
+                ret.append(self.SimpleEdge(source = "%s_%s" % (subtask(T.source), T.source),
+                                           target = "%s_%s" % (subtask(T.target), T.target),
                                            label = str(P.name) + "\\n| " + str(T.action)))
         return ret
 
@@ -89,8 +99,34 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
                 changed = True
         return ec
 
+    def do_from_app_fsm(self):
+        # Construct the Event/Transition Model
+        self.fsm = FiniteStateMachine()
+
+        events = defaultdict(list)
+        for start_state in self.sse.states:
+            for next_state, label in start_state.get_outgoing_edges(SavedStateTransition):
+                initial_ec = next_state.current_subtask
+                if label.isA(S.CheckIRQ):
+                    initial_ec = start_state.current_subtask
+
+                events[label] += [Transition(start_state, next_state, initial_ec)]
+        for abb, transitions in events.items():
+            event = Event(name = abb, transitions = transitions)
+            if abb.isA(S.StartOS):
+                assert len(transitions) == 1
+                self.fsm.initial_state = transitions[0].source
+
+            self.fsm.add_event(event)
+
+        self.fsm.rename(states = True)
+        self.__minimize()
+
     def do(self):
         self.sse = self.system_graph.get_pass("SymbolicSystemExecution")
+        if self.sse.use_app_fsm:
+            self.do_from_app_fsm()
+            return
 
         def isSyscall(state):
             return not state.current_abb.isA([S.computation, S.CheckAlarm])
@@ -112,7 +148,7 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
             # A system call block!
             if isSyscall(sse_state):
                 syscall_states.add(state)
-
+        
         # For each system call ret block, we find those states that
         # are equivalent to the return state
         remapped = set()
@@ -159,6 +195,9 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
             self.fsm.add_event(event)
         self.fsm.state_mapping = map_to_SystemState
 
+        self.__minimize()
+
+    def __minimize(self):
         def count(iter):
             return sum(1 for _ in iter)
 
@@ -171,7 +210,6 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
         logging.info("  FSM(minimized): %d states; %d transisitons" ,
                      len(self.fsm.states),
                      count(self.fsm.transitions))
-
 
 class FiniteStateMachineMinimizer:
     @staticmethod
@@ -195,6 +233,7 @@ class FiniteStateMachineMinimizer:
         states_grouped = full_group_by(fsm.states(), key=key_0)
         classes_current = [equivalence_class for
                            (key,equivalence_class) in states_grouped]
+
 
         while len(classes_current) != len(classes_previous):
             class_of = {}
@@ -287,7 +326,7 @@ class FiniteStateMachineMinimizer:
                         to_state = t[1],
                         word_in = [t[2]],
                         word_out = [t[3]])
-        return new
+        return new, state_mapping
 
     @staticmethod
     def minimize(old_fsm):
@@ -296,12 +335,11 @@ class FiniteStateMachineMinimizer:
         """
         old_fsm.rename(events = True, actions = True)
         # For Debugging: self.rename(events = str, actions = str)
-
         sage = old_fsm.to_sage_fsm()
 
         # We use our own simpliciation algorithm here
         ec = FiniteStateMachineMinimizer.__equivalence_classes(sage)
-        new_fsm = FiniteStateMachineMinimizer.__quotient(sage, ec)
+        new_fsm, state_mapping = FiniteStateMachineMinimizer.__quotient(sage, ec)
 
         # The resulting fsm MUST be deterministic.
         assert new_fsm.is_deterministic()

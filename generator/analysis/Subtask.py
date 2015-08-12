@@ -18,6 +18,8 @@ class Subtask(Function, SystemObject):
         self._events = {}
         # A mask that is the combination of all event masks
         self.event_mask_valid = 0
+        # Field is used by ApplicationFSM
+        self.fsm = None
 
     def find(self, cls, name):
         if issubclass(cls, Event):

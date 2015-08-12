@@ -1,3 +1,4 @@
+import logging
 from .Analysis import Analysis
 from .Subtask  import Subtask
 
@@ -34,6 +35,7 @@ class PrioritySpreadingPass(Analysis):
             p[0] = prio
             p[1].conf.static_priority = prio
             self.prio_to_participant[prio] = p[1]
+            logging.debug("Prio %d: %s", prio, p[1])
             prio += 1
 
         assert participants[0][1] == self.system_graph.get(Subtask, "Idle")

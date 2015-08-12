@@ -19,45 +19,51 @@ class PreciseSystemState():
     __slots__ = ["frozen", "states", "call_stack", "continuations",
                  "current_abb", "__hash", "__next_states", "__prev_states", "events"]
 
-    def __init__(self, system_graph):
+    def __init__(self, system_graph, init = True):
         PreciseSystemState.system_graph = system_graph
         self.frozen = False
+        self.__hash = None
+        self.__next_states = []
+        self.__prev_states = []
+
+        if not init:
+            return
 
         size = len(self.system_graph.subtasks)
         self.states = [0] * size
         self.continuations = [None] * size
         self.current_abb = None
-        self.__hash = None
-        self.__next_states = []
-        self.__prev_states = []
         self.events = [0] * size
         self.call_stack = []
         for i in range(0, size):
             self.call_stack.append(list())
 
-    def add_cfg_edge(self, block, ty):
-        self.__next_states.append((ty, block))
-        block.__prev_states.append((ty, self))
+    def new(self):
+        return PreciseSystemState(self.system_graph)
+
+    def add_cfg_edge(self, block, ty, label = None):
+        self.__next_states.append((ty, block, label))
+        block.__prev_states.append((ty, self, label))
 
     def remove_cfg_edge(self, block, ty):
         for i, elem in enumerate(self.__next_states):
-            if elem == (ty, block):
+            if tuple(elem[0:2]) == (ty, block):
                 del self.__next_states[i]
                 break
 
         for i, elem in enumerate(block.__prev_states):
-            if elem == (ty, self):
+            if tuple(elem[0:2]) == (ty, self):
                 del block.__prev_states[i]
                 break
 
     def get_outgoing_nodes(self, ty):
-        return [block for Ty,block in self.__next_states if Ty == ty]
+        return [block for Ty,block,label in self.__next_states if Ty == ty]
 
     def get_incoming_nodes(self, ty):
-        return [block for Ty,block in self.__prev_states if Ty == ty]
+        return [block for Ty,block,label in self.__prev_states if Ty == ty]
 
-    def new(self):
-        return PreciseSystemState(self.system_graph)
+    def get_outgoing_edges(self, ty):
+        return [(block, label) for Ty,block,label in self.__next_states if Ty == ty]
 
     def copy_if_needed(self, multiple=None):
         if self.frozen:
@@ -74,17 +80,18 @@ class PreciseSystemState():
         # Increase the copy counter
         SystemState.copy_count += 1
 
-        state = self.new()
+        # For faster copying, we use the do-not-init constructor and
+        # do everything ourselves here.
+        state = PreciseSystemState(self.system_graph, init = False)
         state.current_abb = self.current_abb
-        def copyto(dst, src):
-            dst[:] = src
 
-        copyto(state.states, self.states)
-        copyto(state.continuations, self.continuations)
-        copyto(state.events, self.events)
-
+        # Shallow copies
+        state.states = self.states[:]
+        state.continuations = self.continuations[:]
+        state.events = self.events[:]
+        state.call_stack = []
         for subtask_id in range(0, len(self.states)):
-            state.call_stack[subtask_id] = list(self.call_stack[subtask_id])
+            state.call_stack.append(self.call_stack[subtask_id][:])
 
         return state
 
@@ -116,6 +123,9 @@ class PreciseSystemState():
     def is_surely_ready(self, subtask):
         return self.states[subtask.subtask_id] == self.READY
 
+    def is_surely_waiting(self, subtask):
+        return self.states[subtask.subtask_id] == self.WAITING
+
     def is_maybe_ready(self, subtask):
         return self.READY & self.states[subtask.subtask_id]
 
@@ -129,8 +139,12 @@ class PreciseSystemState():
     def get_continuations(self, subtask):
         if type(subtask) == int:
             return set([self.continuations[subtask]])
-
         return set([self.continuations[subtask.subtask_id]])
+
+    def get_continuation(self, subtask):
+        if type(subtask) == int:
+            return self.continuations[subtask]
+        return self.continuations[subtask.subtask_id]
 
     def set_continuation(self, subtask, abb):
         assert not self.frozen
@@ -160,36 +174,72 @@ class PreciseSystemState():
         return self.call_stack[subtask.subtask_id]
 
     # Events
+    def __events(self, subtask, set_events = None, set_block_list = None):
+        events = self.events[subtask.subtask_id] & 0xffff
+        block_list = (self.events[subtask.subtask_id] >> 16) & 0xffff
+        if not set_events is None:
+            assert (set_events & 0xffff == set_events)
+            self.events[subtask.subtask_id] = (set_events | (block_list << 16))
+            events = set_events
+        if not set_block_list is None:
+            assert (set_block_list & 0xffff == set_block_list)
+            self.events[subtask.subtask_id] = (events | (set_block_list << 16))
+            block_list = set_block_list
+
+        return (events, block_list)
+
     def get_events(self, subtask):
         """Return a tuple (None, set)"""
-        events = self.events[subtask.subtask_id]
+        events, _ = self.__events(subtask)
         return (subtask.event_mask_valid ^ events, events)
 
     def set_events(self, subtask, event_list):
         mask = Event.combine_event_masks(event_list)
-        self.events[subtask.subtask_id] |= mask
+        self.__events(subtask, set_events = mask)
 
     def clear_events(self, subtask, event_list):
         mask = Event.combine_event_masks(event_list)
-        self.events[subtask.subtask_id] &= ~mask
+        events, bl = self.__events(subtask)
+        events &= ~mask
+        assert bl == 0
+        self.__events(subtask, set_events = events)
 
-    def maybe_waiting(self, subtask, event_list):
-        """Returns True, if the task may block be waiting at this point"""
+    def clear_block_list(self, subtask):
+        self.__events(subtask, set_block_list = 0)
+
+    def set_block_list(self, subtask, event_list):
         mask = Event.combine_event_masks(event_list)
-        if (self.events[subtask.subtask_id] & mask) == 0:
+        self.__events(subtask, set_block_list = mask)
+
+    def get_block_list(self, subtask):
+        events, bl = self.__events(subtask)
+        return bl
+
+    def maybe_waiting(self, subtask):
+        """Returns True, if the task may block be waiting at this point"""
+        events, block_list = self.__events(subtask)
+        if (block_list & events) == 0:
             return True
         return False
 
-    def maybe_not_waiting(self, subtask, event_list):
+    def maybe_not_waiting(self, subtask):
         """Returns True, if the task may be continue without blocking"""
         # In the precise system state, this is the exact opposite
-        return not self.maybe_waiting(subtask, event_list)
+        return not self.maybe_waiting(subtask)
 
     def is_event_set(self, subtask, event):
-        return (self.events[subtask.subtask_id] & event.event_mask) != 0
+        events, block_list = self.__events(subtask)
+
+        return (events & event.event_mask) != 0
+
+    def is_event_waiting(self, subtask, event):
+        events, block_list = self.__events(subtask)
+        return (block_list & event.event_mask) != 0
 
     def is_event_cleared(self, subtask, event):
-        return (self.events[subtask.subtask_id] & event.event_mask) == 0
+        events, block_list = self.__events(subtask)
+
+        return (events & event.event_mask) == 0
 
     ## Continuation accesors
     def was_surely_not_kickoffed(self, subtask):
@@ -235,7 +285,7 @@ class PreciseSystemState():
 
     @property
     def current_subtask(self):
-        return self.current_abb.function.subtask
+        return self.current_abb.subtask
 
     def merge_with(self, other):
         """Returns a newly created state that is the result of the merge of
@@ -303,6 +353,7 @@ class PreciseSystemState():
         for event in subtask.events:
             SET = self.is_event_set(subtask, event)
             CLEARED = self.is_event_cleared(subtask, event)
+            WAITING = self.is_event_waiting(subtask, event)
             if SET and CLEARED:
                 ret.append("%s:*" % event.conf.name)
             elif SET:
@@ -310,6 +361,8 @@ class PreciseSystemState():
             else:
                 assert CLEARED
                 ret.append("%s:0" % event.conf.name)
+            if WAITING:
+                ret.append("W")
         return " ".join(ret)
 
 

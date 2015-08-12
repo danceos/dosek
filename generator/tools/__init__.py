@@ -53,8 +53,19 @@ def wrap_in_list(seq):
 class stack(list):
     def push(self, item):
         self.append(item)
+    def pull(self):
+        return self.pop()
     def isEmpty(self):
         return not self
+
+class queue(list):
+    def push(self, item):
+        self.insert(0, item)
+    def pull(self):
+        return self.pop()
+    def isEmpty(self):
+        return not self
+
 
 def select_distinct(seq, field):
     ret = set()
