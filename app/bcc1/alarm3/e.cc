@@ -1,5 +1,6 @@
 #include "os.h"
 #include "test/test.h"
+#include "alarm3_common.h"
 
 DeclareTask(H1);
 DeclareTask(H2);
@@ -19,7 +20,7 @@ TASK(H2) {
 	TerminateTask();
 }
 
-volatile unsigned long long counter = 0;
+volatile bool stop;
 #ifndef FAIL
 const unsigned long long max_count = 200000000;
 #else
@@ -27,8 +28,9 @@ const unsigned long long max_count = 1;
 #endif
 
 TASK(H3) {
-	test_trace('3');
-    counter = max_count + 1;
+	if (stop == false)
+		test_trace('3');
+    stop = true;
 	TerminateTask();
 }
 
@@ -43,8 +45,8 @@ TASK(H5) {
     SuspendAllInterrupts();
 	test_trace('{');
 
-    for (counter = 0; counter < max_count; counter++) {}
-    if (counter == max_count) {
+    WAIT_FOR_IRQ();
+    if (stop == false) { // We ran into the timeout
         test_trace('+');
         ResumeAllInterrupts();
         test_trace('}');
@@ -53,7 +55,7 @@ TASK(H5) {
         ResumeAllInterrupts();
         test_trace('}');
     }
-    for (counter = 0; counter < max_count; counter++) {}
+    WAIT_FOR_IRQ();
     test_trace('x');
 	TerminateTask();
 }

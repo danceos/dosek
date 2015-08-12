@@ -1,5 +1,6 @@
 #include "os.h"
 #include "test/test.h"
+#include "alarm3_common.h"
 
 DeclareTask(H1);
 DeclareTask(H2);
@@ -24,13 +25,12 @@ const unsigned long long max_count = 200000000;
 #else
 const unsigned long long max_count = 1;
 #endif
-volatile unsigned long long counter = max_count + 1;
-
-char irq_marker = 'x';
+volatile bool stop = false;
 
 TASK(H3) {
-	irq_marker = '3';
-	counter = max_count + 1;
+	if (stop == false)
+		test_trace('3');
+	stop = true;
 	TerminateTask();
 }
 
@@ -42,18 +42,15 @@ TASK(H4) {
 TASK(H5) {
 	test_trace('5');
     test_trace('[');
-    for (counter = 0; counter < max_count; counter++) {}
-	test_trace(irq_marker);
+    WAIT_FOR_IRQ();
 	test_trace(']');
 
     DisableAllInterrupts();
 	test_trace('{');
-    for (counter = 0; counter < max_count; counter++) {}
+	WAIT_FOR_IRQ();
 	test_trace('}');
-	irq_marker = 'y';
     EnableAllInterrupts();
-    for (counter = 0; counter < max_count; counter++) {}
-	test_trace(irq_marker);
+	WAIT_FOR_IRQ();
 	test_trace('x');
 	TerminateTask();
 }

@@ -43,3 +43,9 @@ DOSEK_BINARY(
   e.cc
 )
 
+
+set_tests_properties(bcc1_alarm3a PROPERTIES  TIMEOUT 30)
+set_tests_properties(bcc1_alarm3b PROPERTIES  TIMEOUT 30)
+set_tests_properties(bcc1_alarm3c PROPERTIES  TIMEOUT 30)
+set_tests_properties(bcc1_alarm3d PROPERTIES  TIMEOUT 30)
+set_tests_properties(bcc1_alarm3e PROPERTIES  TIMEOUT 30)
