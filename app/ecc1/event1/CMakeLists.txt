@@ -43,3 +43,11 @@ DOSEK_BINARY(
   e.cc
 )
 
+DOSEK_BINARY(
+  NAME ecc1_event1f
+  SYSTEM_DESC system.oil
+  LIBS libtest
+  TEST_ISO
+  f.cc
+)
+

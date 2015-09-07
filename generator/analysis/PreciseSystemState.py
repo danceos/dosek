@@ -195,7 +195,9 @@ class PreciseSystemState():
 
     def set_events(self, subtask, event_list):
         mask = Event.combine_event_masks(event_list)
-        self.__events(subtask, set_events = mask)
+        events, bl = self.__events(subtask)
+        events |= mask
+        self.__events(subtask, set_events = events)
 
     def clear_events(self, subtask, event_list):
         mask = Event.combine_event_masks(event_list)
@@ -362,7 +364,7 @@ class PreciseSystemState():
                 assert CLEARED
                 ret.append("%s:0" % event.conf.name)
             if WAITING:
-                ret.append("W")
+                ret[-1] += ":W"
         return " ".join(ret)
 
 

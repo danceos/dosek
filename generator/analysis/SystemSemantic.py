@@ -133,6 +133,7 @@ class SystemCallSemantic:
             after.set_continuation(calling_task, next_cont)
             ret.append((syscall, after))
 
+        assert len(ret) == 1, "Can be removed in future versions (SSF-Event)"
         return ret
 
     def do_SetEvent(self, cont, before, syscall):
