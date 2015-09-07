@@ -345,6 +345,7 @@ struct TaskList : public TaskListStatic {
         if (id == {{{!subtask_id}}}) {
 {{{!foreach_event|
             if ({{{!event}}}.get()) ret |= {{{!event_mask}}};
+            {{{!event}}}.check();
 }}}
         } else \
 }}}       {

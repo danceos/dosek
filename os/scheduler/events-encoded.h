@@ -62,12 +62,20 @@ public:
 		event_waiting = EC(B1, 0);
 	}
 
+	void check() const {
+		event_waiting.check();
+		event_set.check();
+	}
+
+
 	/* This is blocked function, either returns EC(0, High) or 0
 	   depending on the two flags variables. This is a branchless
 	   version, please look at the transition diagram above to
 	   understand what is happending here.
 	*/
 	value_coded_t  is_blocked() const {
+		check();
+
 		value_coded_t W = (event_waiting.vc - B0);
 		value_coded_t S = (event_set.vc - B1);
 		constexpr value_coded_t H = (High * A0);
@@ -134,8 +142,14 @@ private:
 
 
 #if 0
+#include <iostream>
+
 Event<3, 7, 1> event_a;
-Event<4, 9, 1> event_b;
+Event<3, 7, 1> event_b;
+
+extern "C" void __OS_HOOK_FaultDetectedHook(DetectedFault_t a, uint32_t b, uint32_t c) {
+	std::cout << "detected" << std::endl;
+}
 
 int main() {
 
@@ -144,8 +158,9 @@ int main() {
 	event_a.set();
 	event_b.clear();
 
+//	std::cout << "D:" << event_a.destroy() << std::endl;
 
-	auto ret = Event<12>::must_wait_p(event_a, event_b);
+	auto ret = Event<3>::must_wait_p(event_a, event_b);
 
 	std::cout << (ret.vc == (A0 + 12) ? "waiting" : "not-waiting" ) << std::endl;
 
