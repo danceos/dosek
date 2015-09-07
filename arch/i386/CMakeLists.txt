@@ -138,7 +138,7 @@ endif()
 
 	# we use our own linker (python) script, that calls llvm-link, llc and the system linker
 	# setting CMAKE_*_LINK_EXECUTABLE at this point in the CMake run seems a bit unusual, but works as intended
-    set(LINK_EXECUTABLE "${PROJECT_SOURCE_DIR}/toolchain/llvm-link.py --clang ${CMAKE_C_COMPILER} --march x86 --mcpu ${CMAKE_C_ARCH} --llvm-dir ${CCDIR} --ar ${CMAKE_AR} <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -o <TARGET>")
+    set(LINK_EXECUTABLE "${PROJECT_SOURCE_DIR}/toolchain/llvm-link.py --clang ${CMAKE_C_COMPILER} --march x86 --mcpu ${CMAKE_C_ARCH} -mattr=+popcnt --llvm-dir ${CCDIR} --ar ${CMAKE_AR} <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -o <TARGET>")
 	set(CMAKE_C_LINK_EXECUTABLE "${LINK_EXECUTABLE} <CMAKE_C_LINK_FLAGS>")
 	set(CMAKE_CXX_LINK_EXECUTABLE "${LINK_EXECUTABLE} <CMAKE_CXX_LINK_FLAGS>")
 

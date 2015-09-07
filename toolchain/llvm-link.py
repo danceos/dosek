@@ -95,10 +95,12 @@ if __name__ == "__main__":
     archives = [x for x in unkown_args if x.endswith(".a")]
     elf_files = [x for x in unkown_args if is_elf_file(x)]
     llvm_files = [x for x in unkown_args if is_llvm_file(x)]
+    compiler_flags = [x for x in unkown_args if x.startswith("-mattr")]
+
 
     # Remove file arguments from unkown args
     linker_flags = [x for x in unkown_args
-                   if not(x in archives + elf_files + llvm_files)]
+                   if not(x in archives + elf_files + llvm_files + compiler_flags)]
 
     if args.march:
         llc_march = "-march=" + args.march
@@ -119,6 +121,7 @@ if __name__ == "__main__":
         bitcode     = llvm_link(llvm_files, args.linker_prefix + "-stage1.bc")
         bitcode_opt = llvm_opt(bitcode, args.linker_prefix + "-stage2.bc")
         llc_flags = [llc_march, llc_mcpu, "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
+        llc_flags += compiler_flags
         llc_flags = [x for x in llc_flags if not x == ""]
         system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj", llc_flags)
 
