@@ -35,8 +35,8 @@ extern "C" __attribute__((naked)) void sysenter_syscall() {
 	// save stack pointer
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 	uint32_t ssp = save_sp;
-	assert( (ssp & 0xFFFF) == (ssp >> 16) );
 	*OS_stackptrs[ssp & 0xFFFF] = sp;
+	assert( (ssp & 0xFFFF) == (ssp >> 16) );
 #else
 	*OS_stackptrs[save_sp] = sp;
 #endif
