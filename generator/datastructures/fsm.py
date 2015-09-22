@@ -178,6 +178,12 @@ class FiniteStateMachine:
 
         for state in m.states():
             if state.label() in output_map:
+                # We use the actual dispatched subtask here as color
+                # of the state. Afterwards, the color for ISR states
+                # the output_word is the dispatched real task. The
+                # color is set to the subtask_id of the ISR Task.
+                subtask = self.state_mapping[state.label()].current_subtask
+                state.color = subtask.subtask_id
                 state.word_out = [output_map[state.label()]]
         return m
 
@@ -206,6 +212,14 @@ class FiniteStateMachine:
 
         return ret
 
+    def dump_as_dot(self):
+        ret = "digraph G {"
+        for t in self.transitions:
+            ret += '\t%d -> %d [label="%s\n%s"];\n'%(
+                t.source, t.target, t.event, t.action
+            )
+        ret += "}"
+        return ret
 
     def __str__(self):
         ret = []

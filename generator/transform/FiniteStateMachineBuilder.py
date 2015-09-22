@@ -61,7 +61,7 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
         def subtask(state):
             if state in fsm.state_mapping:
                 if fsm.state_mapping[state].current_subtask:
-                    return fsm.state_mapping[state].current_subtask.name
+                    return self.interrupted_subtask(fsm.state_mapping[state]).name
             return "XXX"
         for P in fsm.events:
             for T in P.transitions:
@@ -99,6 +99,26 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
                 changed = True
         return ec
 
+    def interrupted_subtask(self, state, visited = None):
+        """Returns the currently running subtask, if the state is a non-ISR
+           state. If it is a ISR state, the function returns the interrupted task.
+        """
+        if visited is None:
+            visited = set()
+        if not state.current_subtask.conf.is_isr:
+            return state.current_subtask
+        else:
+            for pred in state.get_incoming_nodes(SavedStateTransition):
+                # Already visited
+                if pred in visited:
+                    continue
+                visited.add(pred)
+                subtask = self.interrupted_subtask(pred, visited)
+                # We found an non-isr predecessor?
+                if subtask:
+                    return subtask
+        return None
+
     def do_from_app_fsm(self):
         # Construct the Event/Transition Model
         self.fsm = FiniteStateMachine()
@@ -106,11 +126,13 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
         events = defaultdict(list)
         for start_state in self.sse.states:
             for next_state, label in start_state.get_outgoing_edges(SavedStateTransition):
-                initial_ec = next_state.current_subtask
+                # As action for the state, we use the interrupted subtask
                 if label.isA(S.CheckIRQ):
-                    initial_ec = start_state.current_subtask
+                    action = self.interrupted_subtask(start_state)
+                else:
+                    action = self.interrupted_subtask(next_state)
 
-                events[label] += [Transition(start_state, next_state, initial_ec)]
+                events[label] += [Transition(start_state, next_state, action)]
         for abb, transitions in events.items():
             event = Event(name = abb, transitions = transitions)
             if abb.isA(S.StartOS):
@@ -179,10 +201,16 @@ class FiniteStateMachineBuilder(Analysis, GraphObject):
             # representant for the whole equivalence class
             istate = states[id(sse_state)]
             ostate = states[id(next_sse_state)]
-            action = next_sse_state.current_abb.subtask
+            action = self.interrupted_subtask(next_sse_state)
             transition = Transition(source = istate, target = ostate, action = action)
             transition_count += 1
             transitions_by_abb[abb].append(transition)
+            # If we chose the kickoff state (with current running
+            # subtask already set to the interrupt handler, choose
+            # another one)
+            if sse_state.current_abb.isA(S.kickoff) \
+               and sse_state.current_subtask.conf.is_isr:
+                sse_state = sse_state.definite_before(SavedStateTransition)
             map_to_SystemState[istate] = sse_state
 
         # Construct the Event/Transition Model
@@ -229,7 +257,9 @@ class FiniteStateMachineMinimizer:
         """
         # initialize with 0-equivalence
         classes_previous = []
-        key_0 = lambda state: state.word_out
+        # word_out: interupted task (is never ISR)
+        # color: actual running task (might be ISR)
+        key_0 = lambda state: (state.word_out, state.color)
         states_grouped = full_group_by(fsm.states(), key=key_0)
         classes_current = [equivalence_class for
                            (key,equivalence_class) in states_grouped]
@@ -282,7 +312,6 @@ class FiniteStateMachineMinimizer:
                 # We use list(sorted(...)) here, since full_group_by
                 # relies on equal string representations.
                 followup_classes_of[state] = list(sorted(followup_class))
-
             key_current = lambda state: followup_classes_of[state]
 
             for class_previous in classes_previous:
@@ -341,10 +370,27 @@ class FiniteStateMachineMinimizer:
         ec = FiniteStateMachineMinimizer.__equivalence_classes(sage)
         new_fsm, state_mapping = FiniteStateMachineMinimizer.__quotient(sage, ec)
 
-        # The resulting fsm MUST be deterministic.
-        assert new_fsm.is_deterministic()
-
         ret = FiniteStateMachine.from_sage_fsm(old_fsm, new_fsm)
+        # The resulting fsm MUST be deterministic.
+        if not new_fsm.is_deterministic():
+            # Get back the objects
+            ret.rename(events = lambda x: ret.event_mapping[x],
+                       actions = lambda x: ret.action_mapping[x])
+            for event in ret.events:
+                in_states = {}
+                for t in event.transitions:
+                    if t.source in in_states:
+                        print(event.name.path())
+                        print(in_states[t.source])
+                        print(t)
+                        print(ret.state_mapping[t.source])
+                        print(ret.state_mapping[t.target])
+                        print(ret.state_mapping[in_states[t.source].target])
+
+                    in_states[t.source] = t
+
+            assert False, "FSM is not deterministic"
+
 
         # Get back the objects
         ret.rename(events = lambda x: ret.event_mapping[x],

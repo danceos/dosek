@@ -73,10 +73,6 @@ class FSMSystemCalls(FullSystemCalls):
     def fsm_schedule(self, *args, **kwargs):
         self.impl.fsm_schedule(*args, **kwargs)
 
-    def iret(self, *args, **kwargs):
-        self.impl.fsm_iret(*args, **kwargs)
-
-
     def kickoff(self, syscall, userspace, kernelspace):
         self.fsm_event(syscall, userspace, kernelspace)
         if not syscall.subtask.conf.is_isr:
@@ -96,6 +92,8 @@ class FSMSystemCalls(FullSystemCalls):
     SetEvent = fsm_schedule
     GetResource = fsm_schedule
     ReleaseResource = fsm_schedule
+    iret = fsm_schedule
+
 
     def ASTSchedule(self, function):
         pass
@@ -243,17 +241,6 @@ class SimpleFSMTemplate(CodeTemplate):
             self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
                                            "void", [task.name])
 
-    def fsm_iret(self, syscall, userspace, kernelspace):
-        if not syscall in self.syscall_map:
-            return
-        task = self.fsm_event(syscall, userspace, kernelspace)
-        if type(task) == int:
-            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
-                                           "void", [str(task)])
-        else:
-            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
-                                           "void", [task.name])
-
     ################################################################
     # Used in Template Code
     ################################################################
@@ -283,7 +270,6 @@ class PLA_FSMTemplate(CodeTemplate):
         # Truth table is generated in pla-fsm.h
         return
 
-
     def fsm_event(self, syscall, userspace, kernelspace):
         event = None
         for ev in self.fsm.events:
@@ -306,18 +292,6 @@ class PLA_FSMTemplate(CodeTemplate):
                                            "void", [str(task)])
         else:
             self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.dispatch",
-                                           "void", [task.name])
-
-    def fsm_iret(self, syscall, userspace, kernelspace):
-        task = self.fsm_event(syscall, userspace, kernelspace)
-        if not task:
-            return
-
-        if type(task) == int:
-            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
-                                           "void", [str(task)])
-        else:
-            self.syscall_fsm.call_function(kernelspace, "os::fsm::fsm_engine.iret",
                                            "void", [task.name])
 
     ################################################################
@@ -350,13 +324,10 @@ class PLA_FSMTemplate(CodeTemplate):
             mapping[int(k, 2)] = subtask
         if not 0 in mapping:
             mapping[0] = None
-        self.NO_DISPATCH = 0
 
         initializer = []
         for k,subtask in sorted(mapping.items(), key = lambda x:x[0]):
-            if not subtask or subtask.conf.is_isr:
-                initializer.append("0 /* NO_DISPATCH */")
-            elif subtask == self.system_graph.idle_subtask:
+            if subtask == self.system_graph.idle_subtask:
                 initializer.append("0 /* IDLE */")
                 self.IDLE = k
             else:

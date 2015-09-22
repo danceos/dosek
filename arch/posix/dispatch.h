@@ -39,7 +39,7 @@ class Dispatcher {
 		/* If we do not reset the idle loop, when leaving it the
 		   PreIdleHook is not called correctly on the next dispatch
 		   to idle */
-		if (from == &m_idle) {
+		if (from == &m_idle && to != &m_idle) {
 			m_idle.reset();
 		}
 

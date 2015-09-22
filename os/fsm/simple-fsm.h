@@ -35,7 +35,6 @@ class SimpleFSM {
 		for (unsigned i = 0; i < transition_length; i++) {
 			if (transition_table[i].source == state) {
 				state = transition_table[i].target;
-				// kout << "new_state " << state << endl;
 				return transition_table[i].next_task;
 			}
 		}

@@ -19,7 +19,6 @@ class SchedulerFSM {
 
     enum {
 		IDLE = {{{!get:IDLE}}},
-		NO_DISPATCH = {{{!get:NO_DISPATCH}}},
 	};
 
 	SchedulerFSM(unsigned state) : internal_state(state) {}
@@ -40,19 +39,11 @@ class SchedulerFSM {
 	void dispatch(unsigned task_id) {
 		if (task_id == IDLE) {
 			arch::Dispatcher::Idle();
-		} else if (task_id == NO_DISPATCH) {
-			return;
 		} else if (task_id >= sizeof(dispatch_table)/sizeof(*dispatch_table)) {
 			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
 		} else {
 			arch::Dispatcher::Dispatch(*dispatch_table[task_id]);
 		}
-	}
-
-	void iret(unsigned task_id) {
-		if (task_id != NO_DISPATCH && task_id != IDLE) {
-           dispatch(task_id);
-	    }
 	}
 
  private:

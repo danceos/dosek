@@ -373,6 +373,11 @@ class PreciseSystemState():
         assert len(nodes) == 1
         return nodes[0]
 
+    def definite_before(self, level):
+        nodes = self.get_incoming_nodes(level)
+        assert len(nodes) == 1
+        return nodes[0]
+
     def __repr__(self):
         if self.current_abb:
             ret = "<PreciseSystemState: %s>\n" %(self.current_abb.path())

@@ -10,6 +10,8 @@ class LogicMinimizer(Analysis):
     def __init__(self):
         super(LogicMinimizer, self).__init__()
 
+        self.minimized_truth_table_path = None
+
     def requires(self):
         return ["fsm"]
 
@@ -18,19 +20,17 @@ class LogicMinimizer(Analysis):
         self.fsm = self.call_nova(fsm)
 
     def call_nova(self, fsm):
+        assert self.system_graph.idle_subtask.subtask_id == 0
         class isr_renamer:
             def __init__(self):
                 self.mapping = {}
-                self.__i = 1
+                self.__i = 0
             def __call__(self, action):
-                if action.conf.is_isr:
-                    return 0
-                    #return None
-                else:
-                    if not action in self.mapping:
-                        self.mapping[action] = self.__i
-                        self.__i += 1
-                    return self.mapping[action]
+                assert not action.conf.is_isr
+                if not action in self.mapping:
+                    self.mapping[action] = self.__i
+                    self.__i += 1
+                return self.mapping[action]
             def max_int(self):
                 return self.__i
 
@@ -56,6 +56,7 @@ class LogicMinimizer(Analysis):
         event_rename = binstring_renamer(len(fsm.events), 'e')
         state_rename = binstring_renamer(len(fsm.states), 's')
         action_rename = binstring_renamer(isr_rename.max_int())
+        assert isr_rename.max_int() > 0
 
         # Rename to Bitstring
         fsm.rename(events = event_rename,
@@ -65,7 +66,7 @@ class LogicMinimizer(Analysis):
         nova_input = "%snova.fsm" % self.system_graph.basefilename
         with open(nova_input, "w+") as fd:
             fd.write(".i {0}\n".format(event_rename.bitwidth))
-            fd.write(".o {0}\n".format(action_rename.bitwidth))
+            fd.write(".o {0}\n".format(max(1, action_rename.bitwidth)))
             fd.write(".s {0}\n".format(len(fsm.states)))
             fd.write(".symbolic input\n".format(len(fsm.states)))
 
@@ -99,12 +100,13 @@ class LogicMinimizer(Analysis):
 
         event_len = len(fsm.events[0].name)
         state_len = len(fsm.initial_state)
-        action_len = action_rename.bitwidth
+        action_len = max(1, action_rename.bitwidth)
         self.event_len, self.state_len, self.action_len \
             = (event_len, state_len, action_len)
 
         self.truth_table = []
         # Read in the minimzed truth table
+        self.minimized_truth_table_path = "%s.esp" % nova_input
         with open("%s.esp" % nova_input) as esp:
             for line in esp.readlines():
                 line = [x for x in line if x in "01-"]
@@ -134,7 +136,7 @@ class LogicMinimizer(Analysis):
                 if (input_word & mask_word) == pattern_word:
                     got_output_word |= output_word
                     matches[i] += 1
-            assert got_output_word == desired_output_word
+            assert got_output_word == desired_output_word, (transition, input_word, (got_output_word, desired_output_word))
 
         #for transition in fsm.transitions:
         #    print(transition, fsm.event_mapping[transition.event], fsm.action_mapping[transition.action])
