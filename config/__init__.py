@@ -24,7 +24,7 @@ class _toCMakeConfig:
         if isinstance(ty, Int):
             return str(value)
         if isinstance(ty, (String, OneOf)):
-            return repr(ty.to_string(value))
+            return '"%s"' %( repr(ty.to_string(value))[1:-1])
 
     def cmake_type(self, ty):
         return {Boolean: "BOOL",
@@ -70,7 +70,7 @@ class _toCHeader:
             elif isinstance(ty, OneOf):
                 for sym in ty.symbols:
                     if sym == v:
-                        ret += "#define %s_%s 1\n" % (macro, sym.upper())
+                        ret += "#define %s_%s 1\n" % (macro, sym.upper().replace("-", "_"))
                     else:
                         ret += "#undef %s_%s\n" % (macro, sym.upper())
         return "#ifndef __CONFIG_HEADER_H\n#define __CONFIG_HEADER_H\n" \

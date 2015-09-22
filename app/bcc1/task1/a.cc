@@ -23,13 +23,14 @@ DeclareTask(Handler13);
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(Handler11) {
-	volatile int i = 1;
-	while (i <  200000) i++;
+	kout << "Handler11" << endl;
+	// volatile int i = 1;
+	// while (i <  200000) i++;
 
 	test_trace('a');
 	ActivateTask(Handler12);
-	i = 0;
-	while (i <  200000) i++;
+	// i = 0;
+	// while (i <  200000) i++;
 	test_trace('b');
 	ActivateTask(Handler13);
 	test_trace('c');
@@ -48,6 +49,7 @@ TASK(Handler13) {
 }
 
 void PreIdleHook() {
+	kout << "idle" << endl;
 	/* The testcase has finished, check the output */
 	test_trace_assert("ab3c2");
 	test_finish();

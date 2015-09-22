@@ -117,7 +117,7 @@ static forceinline void test_start()
 	positive_tests = 0;
 
 	kout.setcolor(Color::WHITE, Color::BLACK);
-	kout << endl << "Test " << (unsigned) experiment_number << ": " << endl;
+	kout << "Test " << (unsigned) experiment_number << ": " << endl;
 	kout.setcolor(Color::YELLOW, Color::BLACK);
 }
 
@@ -176,7 +176,7 @@ static forceinline void __test_positive_tests(int pos_tests, int sign) {
 		|| (sign > 0 && delta > 0)) {
 
 		kout.setcolor(Color::GREEN, Color::BLACK);
-		kout << "SUCCESS " << experiment_number << endl;
+		kout << "SUCCESS " << 1 << " " << (experiment_number * 4) << ":" << experiment_number << endl;
 		kout.setcolor(Color::WHITE, Color::BLACK);
 	} else {
 		global_all_ok = false;
@@ -278,13 +278,12 @@ static forceinline void test_main(void)
 	// run tests
 	test();
 
-	// finish tests
-	test_finish();
+	/* // finish tests */
+	/* test_finish(); */
 
-	// halt system
-	debug.setcolor(Color::RED, Color::WHITE);
-	debug << "dOSEK halt" << endl;
-	Machine::shutdown();
+	/* // halt system */
+	/* debug.setcolor(Color::RED, Color::WHITE); */
+	/* debug << "dOSEK halt" << endl; */
 }
 
 extern "C" inlinehint void test_trace(char chr);

@@ -48,6 +48,7 @@ public:
 	O_Stream<T>& operator<<(int ival);
 	O_Stream<T>& operator<<(long ival);
 	O_Stream<T>& operator<<(unsigned long ival);
+	O_Stream<T>& operator<<(unsigned long long ival);
 	// @}
 
 	/**
@@ -212,6 +213,12 @@ template<typename T>
 O_Stream<T>& O_Stream<T>::operator << (unsigned long value) {
 	return itoa(value);
 }
+
+template<typename T>
+O_Stream<T>& O_Stream<T>::operator << (unsigned long long value) {
+	return itoa(value);
+}
+
 
 template<typename T>
 O_Stream<T>& O_Stream<T>::operator << (long value) {

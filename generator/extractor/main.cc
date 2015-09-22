@@ -12,6 +12,19 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define llvm33 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MAJOR == 3)
+#define llvm34 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MAJOR == 4)
+
+#if __STDC_VERSION__ >= 201112L || __cplusplus >= 201103L
+typedef struct {
+	long long __clang_max_align_nonce1
+	   __attribute__((__aligned__(__alignof__(long long))));
+	long double __clang_max_align_nonce2
+	__attribute__((__aligned__(__alignof__(long double))));
+	} max_align_t;
+#define __CLANG_MAX_ALIGN_T_DEFINED
+#endif
+
 //3.6 #include <llvm/Linker/Linker.h>
 //3.6 #include <llvm/IR/Verifier.h>
 //3.6 #include <llvm/IR/CFG.h>
@@ -340,7 +353,12 @@ int main(int argc, char **argv) {
     if (DumpAsm) errs() << "Here's the assembly:\n" << *Composite;
 
     std::string EC;
+#if llvm33
+	tool_output_file Out(OutputFilename.c_str(), EC,
+						 raw_fd_ostream::F_Binary);
+#elif llvm34
     tool_output_file Out(OutputFilename.c_str(), EC, sys::fs::F_None);
+#endif
     if (EC != "") {
         errs() << EC << '\n';
         return 1;

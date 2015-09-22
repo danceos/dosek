@@ -35,13 +35,17 @@ class LogicMinimizer(Analysis):
                 return self.__i
 
         isr_rename = isr_renamer()
+        # idle subtask must be action = 0
+        isr_rename(self.system_graph.idle_subtask)
+        assert isr_rename.mapping[self.system_graph.idle_subtask] == 0
         fsm.rename(events = True, actions = isr_rename)
 
         # Generate Bitstrings
         class binstring_renamer:
-            def __init__(self, max_items, prefix = ''):
+            def __init__(self, max_items, prefix = '', tag = None):
                 self.bitwidth = math.ceil(math.log2(max_items))
                 self.__i = 0
+                self.tag = tag
                 self.prefix = prefix
             def __call__(self, x):
                 if type(x) == int:
@@ -51,9 +55,13 @@ class LogicMinimizer(Analysis):
                 else:
                     l = self.__i
                     self.__i += 1
-                return "{2}{0:0{1}b}".format(l, self.bitwidth, self.prefix)
+                tag = ""
+                if self.tag:
+                    tag = "_"+ "".join([c for c in str(self.tag(x)) if c.isalnum()])+"_"
+                return "{2}{3}{0:0{1}b}".format(l, self.bitwidth, self.prefix, tag)
 
-        event_rename = binstring_renamer(len(fsm.events), 'e')
+        event_rename = binstring_renamer(len(fsm.events), 'e',
+                                         tag = lambda x: fsm.event_mapping[x])
         state_rename = binstring_renamer(len(fsm.states), 's')
         action_rename = binstring_renamer(isr_rename.max_int())
         assert isr_rename.max_int() > 0

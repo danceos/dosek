@@ -36,7 +36,7 @@ class BaseCoder:
             ret += func(subtask)
         return ret
 
-    def call_function(self, block, function, rettype, arguments, prepend = False):
+    def call_function(self, block, function, rettype="void", arguments=None, prepend = False):
         """Generates a call to a function and stores the result in an
            variable, if it isn't void"""
         ret_var = VariableDefinition.new(self.generator, rettype)
@@ -45,6 +45,8 @@ class BaseCoder:
             name = ret_var.name
         else:
             name = None
+        if arguments is None:
+            arguments = []
         if prepend:
             block.prepend( FunctionCall(function, arguments, name))
         else:

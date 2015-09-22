@@ -72,6 +72,11 @@ def llvm_llc(file, output, flags):
     check_output([os.path.join(args.llvm_dir, "bin", "llc")] + flags + ["-o", output, file])
     return output
 
+def start_as(AS, file, args, output):
+    check_output([AS, file] + args + ["-o", output])
+    return output
+
+
 def start_ld(flags, objects, output):
     # check_output([os.path.join(args.llvm_dir, "bin", "clang")] + ["-Wl,--start-group"] + objects + ["-Wl,--end-group"]
     #             + flags + ["-c", "-o", output + ".obj"])
@@ -90,12 +95,15 @@ if __name__ == "__main__":
     parser.add_argument("--mcpu", metavar='MCPU', help='Target CPU for llc [cortex-a9|i386')
     parser.add_argument("--clang", metavar='CLANG_BINARY', help='Clang binary location')
     parser.add_argument("--ar", default="/usr/bin/ar", help="ar binary location", metavar="AR")
+    parser.add_argument("--use-as", default=None, help="use the given assembler", metavar="AR")
+
 
     args, unkown_args = parser.parse_known_args()
     archives = [x for x in unkown_args if x.endswith(".a")]
     elf_files = [x for x in unkown_args if is_elf_file(x)]
     llvm_files = [x for x in unkown_args if is_llvm_file(x)]
     compiler_flags = [x for x in unkown_args if x.startswith("-mattr")]
+
 
 
     # Remove file arguments from unkown args
@@ -117,13 +125,22 @@ if __name__ == "__main__":
         (elf_, llvm_) = aggregate_bitcode(archives, args.ar)
         elf_files += elf_
         llvm_files += llvm_
+        print "ELF:", elf_files
+        print "LLVM:", llvm_files
+
         # Link all bitcode files together
         bitcode     = llvm_link(llvm_files, args.linker_prefix + "-stage1.bc")
         bitcode_opt = llvm_opt(bitcode, args.linker_prefix + "-stage2.bc")
-        llc_flags = [llc_march, llc_mcpu, "-filetype=obj", "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
+        llc_flags = [llc_march, llc_mcpu, "-ffunction-sections", "-fdata-sections", "-nozero-initialized-in-bss"]
         llc_flags += compiler_flags
         llc_flags = [x for x in llc_flags if not x == ""]
-        system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj", llc_flags)
+        if args.use_as:
+            asm = llvm_llc(bitcode_opt, args.linker_prefix + ".asm", llc_flags)
+            as_args = [x[4:] for x in unkown_args if x.startswith("-Wa,")]
+            system_object = start_as(args.use_as, asm, as_args, args.linker_prefix + ".obj")
+        else:
+            llc_flags += ["-filetype=obj"]
+            system_object = llvm_llc(bitcode_opt, args.linker_prefix + ".obj", llc_flags)
 
         start_ld(linker_flags, [system_object] + elf_files, args.output)
     finally:

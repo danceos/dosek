@@ -176,13 +176,19 @@ if __name__ == "__main__":
         arch_rules = ARMArch()
     elif conf.arch.self == "posix":
         arch_rules = PosixArch()
+    elif conf.arch.self == "osek-v":
+        arch_rules = OSEKVArch()
+        os_rules = WiredOS()
     else:
         panic("Unknown --arch=%s", conf.arch.self)
 
-    if conf.dependability.encoded:
-        os_rules = EncodedOS()
-    else:
-        os_rules = UnencodedOS()
+    # config-constraint-: (arch.self == osek-v) -> !dependability.encoded
+    # config-constraint-: (arch.self == osek-v) -> !os.specialize
+    if conf.arch.self != "osek-v":
+        if conf.dependability.encoded:
+            os_rules = EncodedOS()
+        else:
+            os_rules = UnencodedOS()
 
     if conf.os.systemcalls == "normal":
         if conf.os.specialize:
@@ -200,7 +206,6 @@ if __name__ == "__main__":
             pass_manager.enqueue_analysis("DynamicPriorityAnalysis")
             pass_manager.enqueue_analysis("InterruptControlAnalysis")
             syscall_rules = FullSystemCalls()
-
     elif conf.os.systemcalls == "fsm_pla":
         pass_manager.get_pass("sse").use_app_fsm = True
         pass_manager.enqueue_analysis("LogicMinimizer")
@@ -210,6 +215,12 @@ if __name__ == "__main__":
         pass_manager.get_pass("sse").use_app_fsm = True
         pass_manager.enqueue_analysis("fsm")
         syscall_rules = FSMSystemCalls()
+    # config-constraint-: (arch.self == osek-v) -> (os.systemcalls == wired)
+    elif conf.os.systemcalls == "wired":
+        pass_manager.get_pass("sse").use_app_fsm = True
+        pass_manager.enqueue_analysis("LogicMinimizer")
+        pass_manager.enqueue_analysis("fsm")
+        syscall_rules = WiredSystemCalls()
     else:
         assert False
     # From command line

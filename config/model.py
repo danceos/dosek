@@ -8,7 +8,7 @@ model = ConfigurationTree({
     'generator': OneOf(["make", "ninja", "eclipse"],
                        short_help = "Build System"),
     'arch': {
-        "self" : OneOf(["i386", "ARM", "posix"],
+        "self" : OneOf(["i386", "ARM", "posix", "osek-v"],
                        short_help = "CPU Architecture"),
         'mpu': Boolean(short_help = "Use Memory Protection"),
 
@@ -19,14 +19,14 @@ model = ConfigurationTree({
         'privilege-isolation': Boolean(short_help = "Enable Priviledge isolation",
                                        default_value = expr("self == i386 || self == ARM")),
         # config-constraint-: arch.privilege-isolation -> (arch.self == i386 || arch.self == ARM)
-        # config-constraint-: !arch.privilege-isolation -> (arch.self == i386 || arch.self == posix)
+        # config-constraint-: !arch.privilege-isolation -> (arch.self == i386 || arch.self == posix || arch.self == osek-v)
     },
     'os' : {
         'ignore-interrupt-systemcalls': Boolean(short_help = "Do not analyze DisableInterrupt() etc."),
         'passes': {
             'sse': Boolean(short_help = 'Enable SSE Analysis'),
         },
-        'systemcalls': OneOf(["normal", "fsm", "fsm_pla"],
+        'systemcalls': OneOf(["normal", "fsm", "fsm_pla", "wired"],
                               short_help = "System Call Implementation",),
         'specialize': Boolean(short_help = "Generate Specialized Systemcalls"),
         'inline-scheduler': Boolean(short_help = "Partial Scheduler", default_value = True),

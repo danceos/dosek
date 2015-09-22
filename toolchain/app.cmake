@@ -40,7 +40,7 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
         COMMAND ${CMAKE_C_COMPILER}
         ARGS ${COMPILER_FLAGS} 
         ARGS ${definitions}
-        ARGS  -S -emit-llvm -O0 -m32 -std=c++11 ${DEFINITON_FLAGS} 
+        ARGS  -S -emit-llvm -O0 -m32 -std=c++11 ${DEFINITON_FLAGS}
         ARGS ${INCLUDEDIRS_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/${src} -o ${llvm_bytecode}
       MAIN_DEPENDENCY ${src}
       DEPENDS ${src}

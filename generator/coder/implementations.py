@@ -16,6 +16,8 @@ class SubtaskImpl:
         self.task_id = None
         self.task_descriptor = None
         self.tcb_descriptor = None
+        self.present = None
+
 
         self.generated_functions = []
 

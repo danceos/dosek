@@ -96,6 +96,9 @@ class GenericOS(BaseCoder):
                            ))
 
     def generate_dataobjects_counters_and_alarms(self):
+        self.generator.source_file.include("os/counter.h")
+        self.generator.source_file.include("os/alarm.h")
+
         for ctr in self.generator.system_graph.counters:
             assert ctr.conf.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 

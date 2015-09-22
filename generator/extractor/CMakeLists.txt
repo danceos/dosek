@@ -12,7 +12,6 @@ execute_process(COMMAND ${LLVM_CONFIG_EXE} --libs all
                 OUTPUT_VARIABLE LLVM_LIBS
                 OUTPUT_STRIP_TRAILING_WHITESPACE )
 
-
 include_directories(${LLVM_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "-fno-rtti -std=c++11 ${LLVM_CXX_FLAGS}")

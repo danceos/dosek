@@ -171,12 +171,13 @@ extern StatusType OSEKOS_ActivateTask(TaskType t);
  * \brief Terminate the calling TASK and immediately activate another TASK
  * \param t The TASK to be activated
  **/
+#if CONFIG_ARCH_OSEK_V
+extern StatusType OSEKOS_ChainTask(TaskType t);
+extern StatusType OSEKOS_TerminateTask();
+#else
 extern __attribute__((noreturn)) StatusType OSEKOS_ChainTask(TaskType t);
-
-/**
- * \brief Terminate the current TASK
- **/
 extern __attribute__((noreturn)) StatusType OSEKOS_TerminateTask();
+#endif
 
 extern StatusType OSEKOS_Schedule();
 
