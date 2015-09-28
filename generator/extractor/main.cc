@@ -12,9 +12,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define llvm33 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MAJOR == 3)
-#define llvm34 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MAJOR == 4)
 
+#define llvm33 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 3)
+#define llvm34 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 4)
+
+#ifndef __CLANG_MAX_ALIGN_T_DEFINED
 #if __STDC_VERSION__ >= 201112L || __cplusplus >= 201103L
 typedef struct {
 	long long __clang_max_align_nonce1
@@ -23,6 +25,7 @@ typedef struct {
 	__attribute__((__aligned__(__alignof__(long double))));
 	} max_align_t;
 #define __CLANG_MAX_ALIGN_T_DEFINED
+#endif
 #endif
 
 //3.6 #include <llvm/Linker/Linker.h>

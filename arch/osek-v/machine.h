@@ -85,7 +85,12 @@ public:
 	 * The static ACPI values used work for QEMU and Bochs but probably not on real PCs!
 	 */
 	static forceinline void shutdown(void) {
-		do { write_csr(mtohost, 1); } while(1);
+		asm volatile (
+			"1:\n"
+			"   csrwi mtohost, 1\n"
+			"   j 1b\n"
+			);
+
 	}
 
 	static forceinline void * exchange_saved_ip(unsigned id, void *pc) {

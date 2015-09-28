@@ -19,6 +19,13 @@ class WiredSystemCalls(BaseCoder):
         self.syscall_map = {}
         self.alarms = AlarmTemplate
 
+    def task_desc(self, subtask):
+        """Returns a string that generates the task id"""
+        task_desc = subtask.impl.task_descriptor.name
+        return task_desc
+
+    def get_calling_task_desc(self, abb):
+        return self.task_desc(abb.function.subtask)
 
     def generate_system_code(self):
         self.generator.source_file.include("output.h")
@@ -142,52 +149,59 @@ class WiredSystemCalls(BaseCoder):
     # Do not overwrite: AcquireCheckedObject
     # Do not overwrite: ReleaseCheckedObject
 
-    # def SetRelAlarm(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.SetRelAlarm(self, syscall, userspace, kernelspace)
-    # 
-    # def GetAlarm(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.GetAlarm(self, syscall, userspace, kernelspace)
-    # 
-    # def CancelAlarm(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.CancelAlarm(self, syscall, userspace, kernelspace)
-    # 
-    # def DisableAllInterrupts(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.DisableAllInterrupts(self, syscall, userspace, kernelspace)
-    # 
-    # def SuspendAllInterrupts(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.SuspendAllInterrupts(self, syscall, userspace, kernelspace)
-    # 
-    # def SuspendOSInterrupts(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.SuspendOSInterrupts(self, syscall, userspace, kernelspace)
-    # 
-    # def EnableAllInterrupts(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.EnableAllInterrupts(self, syscall, userspace, kernelspace)
-    # 
-    # def ResumeAllInterrupts(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.ResumeAllInterrupts(self, syscall, userspace, kernelspace)
-    # 
-    # def ResumeOSInterrupts(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.ResumeOSInterrupts(self, syscall, userspace, kernelspace)
-    # 
-    # def AcquireCheckedObject(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.AcquireCheckedObject(self, syscall, userspace, kernelspace)
-    # 
-    # def ReleaseCheckedObject(self, syscall, userspace, kernelspace):
-    #     self.fsm_event(syscall, userspace, kernelspace)
-    #     FullSystemCalls.ReleaseCheckedObject(self, syscall, userspace, kernelspace)
+    def SetRelAlarm(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.SetRelAlarm(self, syscall, userspace, kernelspace)
+
+    def GetAlarm(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.GetAlarm(self, syscall, userspace, kernelspace)
+
+    def CancelAlarm(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.CancelAlarm(self, syscall, userspace, kernelspace)
+
+    def DisableAllInterrupts(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.DisableAllInterrupts(self, syscall, userspace, kernelspace)
+
+    def SuspendAllInterrupts(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.SuspendAllInterrupts(self, syscall, userspace, kernelspace)
+
+    def SuspendOSInterrupts(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.SuspendOSInterrupts(self, syscall, userspace, kernelspace)
+
+    def EnableAllInterrupts(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.EnableAllInterrupts(self, syscall, userspace, kernelspace)
+
+    def ResumeAllInterrupts(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.ResumeAllInterrupts(self, syscall, userspace, kernelspace)
+
+    def ResumeOSInterrupts(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.ResumeOSInterrupts(self, syscall, userspace, kernelspace)
+
+    def AcquireCheckedObject(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.AcquireCheckedObject(self, syscall, userspace, kernelspace)
+
+    def ReleaseCheckedObject(self, syscall, userspace, kernelspace):
+        self.fsm_schedule(syscall, userspace, kernelspace)
+        FullSystemCalls.ReleaseCheckedObject(self, syscall, userspace, kernelspace)
 
     def do_assertions(self, block, assertions):
         """We do not support assertions for a FSM kernel"""
         logging.error("Assertions are not implemented for the FSM coder")
+
+    def enable_irq(self, *args):
+        FullSystemCalls.enable_irq(self, *args)
+
+    def disable_irq(self, *args):
+        FullSystemCalls.disable_irq(self, *args)
+
 
 

@@ -13,7 +13,7 @@ void Timer::init() {
 
 void Timer::reload() {
 	uintptr_t time = Machine::read_csr(mtime);
-	Machine::write_csr(mtimecmp, time + 2);
+	Machine::write_csr(mtimecmp, time + 50);
 }
 
 void Timer::tick() {

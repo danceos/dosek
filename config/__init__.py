@@ -46,7 +46,8 @@ class _toCHeader:
     def key(self, path):
         if path[-1] == "self":
             path = path[:-1]
-        return "CONFIG_" + ("_".join([x.replace("-", "_")  for x in path])).upper()
+        ret = "CONFIG_" + ("_".join([x.replace("-", "_")  for x in path])).upper()
+        return ret
 
     def cmake_value(self, value, ty):
         if isinstance(ty, Boolean):
@@ -72,7 +73,7 @@ class _toCHeader:
                     if sym == v:
                         ret += "#define %s_%s 1\n" % (macro, sym.upper().replace("-", "_"))
                     else:
-                        ret += "#undef %s_%s\n" % (macro, sym.upper())
+                        ret += "#undef %s_%s\n" % (macro, sym.upper().replace("-", "_"))
         return "#ifndef __CONFIG_HEADER_H\n#define __CONFIG_HEADER_H\n" \
             + ret \
             + "#endif\n"

@@ -25,6 +25,8 @@ class OSEKVArch(GenericArch):
         self.generate_dataobjects_task_descriptors()
         self.generate_rocket_config()
 
+        # For dummy ResumeToTask
+        self.generator.source_file.include("dispatch.h")
 
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.include("os/scheduler/task.h")
@@ -132,3 +134,4 @@ class OSEKVArch(GenericArch):
     def get_syscall_argument(self, block, i):
         name, typename = block.arguments()[i]
         return VariableDefinition(typename, name)
+

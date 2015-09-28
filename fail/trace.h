@@ -45,14 +45,6 @@ inlinehint void test_main(void)
 
     // run tests
     test();
-
-    // finish tests
-    test_finish();
-
-    // halt system
-    debug.setcolor(Color::RED, Color::WHITE);
-    debug << "dOSEK halt" << endl;
-    Machine::shutdown();
 }
 
 inlinehint void test_trace(uint32_t val)\

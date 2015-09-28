@@ -32,7 +32,6 @@ extern "C" void interrupt_handler(long long mcause, uintptr_t sp) {
 			kout << "htif interrupt " << hex << fromhost << endl;
 			bad_trap();
 		} else if (device == 1) {
-			kout << ":";
 			arch::Timer::tick();
 			return;
 		} else if (device == 0) {
