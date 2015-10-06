@@ -166,6 +166,9 @@ if __name__ == "__main__":
     pass_manager.register_analysis(FiniteStateMachineBuilder())
     pass_manager.register_analysis(LogicMinimizer())
 
+    pass_manager.register_analysis(StaticAlarms())
+
+
     # Statistics modules
     pass_manager.register_analysis(GlobalControlFlowMetric("%s/%s_metric" % (options.prefix, conf.app.name)))
 
@@ -220,6 +223,7 @@ if __name__ == "__main__":
         pass_manager.get_pass("sse").use_app_fsm = True
         pass_manager.enqueue_analysis("LogicMinimizer")
         pass_manager.enqueue_analysis("fsm")
+        pass_manager.enqueue_analysis("static-alarms")
         syscall_rules = WiredSystemCalls()
     else:
         assert False

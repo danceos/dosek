@@ -14,7 +14,6 @@ class OSEKVArch(GenericArch):
         with self.generator.open_file("linker.ld") as fd:
             fd.write("IGNORED IN OSEK-V")
 
-    
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
         self.logic = self.system_graph.get_pass("LogicMinimizer")
@@ -62,15 +61,41 @@ class OSEKVArch(GenericArch):
             subtask.impl.task_id = task_id
 
     def generate_rocket_config(self):
+        static_alarm_pass = self.system_graph.get_pass("static-alarms")
+        alarms = {}
+        # Generate rocket configuration for static alarms
+        if len(static_alarm_pass.static_alarms) > 0:
+            static_alarms = []
+            entry_abb = self.system_graph.AlarmHandlerSubtask.entry_abb
+            exit_abb = self.system_graph.AlarmHandlerSubtask.exit_abb
+
+            for alarm in self.system_graph.AlarmHandlerSubtask.alarms:
+                if not alarm in static_alarm_pass.static_alarms:
+                    continue
+                config = static_alarm_pass.static_alarms[alarm]
+                # namedtuple -> OrderedDict -> dict
+                config = dict(config._asdict())
+                config["name"] = alarm.name
+                config["fsm_signal"] = self.syscall_rules.fsm_event_number(alarm.carried_syscall)
+                static_alarms.append(config)
+            alarm_entry_signal = self.syscall_rules.fsm_event_number(entry_abb)
+            alarm_exit_signal = self.syscall_rules.fsm_event_number(exit_abb)
+            alarms = {"basePeriod":      static_alarm_pass.base_period,
+                      "staticAlarms":    static_alarms,
+                      "entrySignal":     alarm_entry_signal,
+                      "exitSignal":      alarm_exit_signal,
+                      "count":           len(static_alarms)}
+
         with self.generator.open_file("rocket.config") as fd:
             config = {
                 "coreHartCount":   1 << self.logic.action_len,
                 "coreOSEKSyscallWidth": self.logic.event_len,
                 "coreOSEKStateWidth":   self.logic.state_len,
                 "coreOSEKInitialState": int(self.logic.fsm.initial_state, 2),
-                "coreHartCombinatorics":self.logic.minimized_truth_table_path
+                "coreHartCombinatorics":self.logic.minimized_truth_table_path,
+                "alarms": alarms,
             }
-            fd.write(json.dumps(config))
+            fd.write(json.dumps(config,indent=2, sort_keys=True))
 
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("interrupt.h")

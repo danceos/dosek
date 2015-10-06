@@ -79,20 +79,24 @@ class WiredSystemCalls(BaseCoder):
     def ShutdownOS(self, block):
         FullSystemCalls.ShutdownOS(self, block)
 
-    def fsm_schedule(self, syscall, userspace, kernelspace):
+    def fsm_event_number(self, syscall):
+        fsm = self.system_graph.get_pass("LogicMinimizer").fsm
         event = None
-        for ev in self.fsm.events:
-            if self.fsm.event_mapping[ev.name] == syscall:
+        for ev in fsm.events:
+            if fsm.event_mapping[ev.name] == syscall:
                 event = ev
                 break
         if event is None:
-            print(syscall, None)
             return
+        return int(event.name, 2)
 
-        bitstr = event.name
+    def fsm_schedule(self, syscall, userspace, kernelspace):
+        number = self.fsm_event_number(syscall)
+        if number is None:
+            return (syscall, None)
         self.call_function(kernelspace, "Machine::syscall",
-                           "void", [str(int(bitstr, 2))])
-        print(syscall, int(bitstr,2))
+                           "void", [str(number)])
+        print(syscall, number)
 
 
     def kickoff(self, syscall, userspace, kernelspace):

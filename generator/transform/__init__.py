@@ -4,3 +4,5 @@ from .FiniteStateMachineBuilder import *
 from .CFGRegions import CFGRegions
 from .GenerateAssertions import *
 from .LogicMinimizer import LogicMinimizer
+from .StaticAlarms import StaticAlarms
+
