@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from generator.analysis.Analysis import Analysis
 from generator.analysis.AtomicBasicBlock import E, S
 from generator.coder.elements import DataObject, Include
@@ -37,16 +39,21 @@ class StaticAlarms(Analysis):
                 static_alarms[alarm] = False
 
         # Only the static alarms
-        alarms_static = [k for k,v in static_alarms.items() if v]
+        static_alarms = [k for k,v in static_alarms.items() if v]
 
         base_period = None
+        self.useless_alarms = set()
         for alarm in static_alarms:
             if not alarm.conf.armed:
+                self.useless_alarms.add(alarm)
+                logging.info("  Remove Alarm %s, since is not armed and no syscall references it",
+                             alarm.conf.name)
                 continue
             if not base_period:
                 base_period = alarm.conf.reltime
             base_period = gcd(base_period, alarm.conf.reltime)
             base_period = gcd(base_period, alarm.conf.cycletime)
+            logging.info("  Static Alarm: %s (t0 + %d + n × %d)", alarm.conf.name, alarm.conf.reltime, alarm.conf.cycletime)
 
         self.base_period = base_period
         self.static_alarms = {}
@@ -58,3 +65,9 @@ class StaticAlarms(Analysis):
                 cycletime = alarm.conf.cycletime//self.base_period,
             )
 
+    # Accessors for the analysis results
+    def is_static(self, alarm):
+        return alarm in self.static_alarms
+
+    def is_useless(self, alarm):
+        return alarm in self.useless_alarms

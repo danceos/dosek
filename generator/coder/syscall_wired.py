@@ -17,7 +17,6 @@ class WiredSystemCalls(BaseCoder):
     def __init__(self, use_pla = False):
         super(WiredSystemCalls, self).__init__()
         self.syscall_map = {}
-        self.alarms = AlarmTemplate
 
     def task_desc(self, subtask):
         """Returns a string that generates the task id"""
@@ -32,12 +31,18 @@ class WiredSystemCalls(BaseCoder):
 
         self.logic = self.system_graph.get_pass("LogicMinimizer")
         self.fsm = self.logic.fsm
+        self.static_alarm_pass = self.system_graph.get_pass("StaticAlarms")
+
 
         # Generate the transition table
         for event in self.fsm.events:
             self.syscall_map[event.name] = event
 
-        self.generator.source_file.declarations.append(self.alarms(self).expand())
+        # Remove all static and all useless alarm implementations
+        alarm_filter = lambda alarm: not (self.static_alarm_pass.is_static(alarm) or \
+                                          self.static_alarm_pass.is_useless(alarm))
+        self.alarm_subsystem = AlarmTemplate(self, alarm_filter)
+        self.generator.source_file.declarations.append(self.alarm_subsystem.expand())
 
 
     def StartOS(self, kernelspace):
@@ -63,7 +68,7 @@ class WiredSystemCalls(BaseCoder):
                                "void",
                                ["(void *) (((char *)%s) + sizeof(%s) - 16)" % (sp, sp)])
 
-            
+
             WHILE = Block("while (1)")
             wrapper.add(WHILE)
             self.call_function(WHILE, subtask.function_name, "void", [])
@@ -73,6 +78,10 @@ class WiredSystemCalls(BaseCoder):
                                "void",
                                [str(subtask.impl.task_id), "(void*) &" +wrapper.function_name])
 
+        # Enable the timer, if the alarm subsystem is enabled
+        if self.alarm_subsystem.subsystem_enabled:
+            self.generator.source_file.include("timer.h")
+            self.call_function(kernelspace, "arch::Timer::init")
         StartOS = self.system_graph.get(GraphFunction, "StartOS")
         self.fsm_schedule(StartOS.entry_abb, None, kernelspace)
 

@@ -365,13 +365,23 @@ class FullSystemCalls(BaseCoder):
             panic("Unsupported assert type %s", assertion)
 
 class AlarmTemplate(CodeTemplate):
-    def __init__(self, rules):
+    def __init__(self, rules, alarm_filter = None):
         CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
         self.rules = rules
+        self.alarm_filter = alarm_filter
         self.system_graph = self.generator.system_graph
 
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.rules.foreach_subtask
+
+        # Check if there are any counters/alarms which have to be implemented
+        self.subsystem_enabled = False
+        if self.alarm_filter:
+            if any(self.alarm_filter(x) for x in self.system_graph.alarms):
+                self.subsystem_enabled = True
+        else:
+            if len(self.system_graph.alarms) > 0:
+                self.subsystem_enabled = True
 
     def increase_counters(self, snippet, args):
         ret = []
@@ -379,6 +389,11 @@ class AlarmTemplate(CodeTemplate):
             # Softcounters are ignored by the hardware interrupt
             if counter.conf.softcounter:
                 continue
+            # Ignore all counters, that have no alarm attached, which
+            # is actually implemented
+            if self.alarm_filter:
+                if all(self.alarm_filter(x) is False for x in counter.alarms):
+                    continue
             ret += self.expand_snippet("increase_counter",
                                        name = counter.impl.name)
         return ret
@@ -387,6 +402,8 @@ class AlarmTemplate(CodeTemplate):
     def check_alarms(self, snippet, args):
         if not self.system_graph.AlarmHandlerSubtask:
             return []
+        if self.subsystem_enabled is False:
+            return []
         ret = []
         # The AlarmHandlerSubtask carries a _sorted_ list of alarms
         kickoff    = self.system_graph.AlarmHandlerSubtask.entry_abb
@@ -394,6 +411,9 @@ class AlarmTemplate(CodeTemplate):
 
         ret += ["        " + kickoff.generated_function_name() + "();\n"]
         for alarm in self.system_graph.AlarmHandlerSubtask.alarms:
+            # When the alarm filter says no, we do not add a check
+            if self.alarm_filter and self.alarm_filter(alarm) is False:
+                continue
             ret += ["    AlarmCheck%s();\n" % alarm.impl.name]
         ret += ["        " + iret.generated_function_name() + "();\n"]
         return ret
@@ -411,6 +431,10 @@ class AlarmTemplate(CodeTemplate):
     def generate_check_alarms(self, snippet, args):
         ret = []
         for alarm in self.system_graph.alarms:
+            # If we have an alarm filter, and the alarm filter says
+            # no, we do not generate an CheckAlarm() function.
+            if self.alarm_filter and self.alarm_filter(alarm) is False:
+                continue
             callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
             has_callback  = (self.system_graph.find(GraphFunction, callback_name) != None)
             args = {"alarm": alarm.impl.name}

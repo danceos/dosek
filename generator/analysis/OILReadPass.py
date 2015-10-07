@@ -128,7 +128,7 @@ class OILReadPass(Analysis):
 
         # Counters
         for conf in oil.getCounters():
-            graph._counters[conf.name] = Counter(conf.name, conf)
+            graph._counters[conf.name] = Counter(graph, conf.name, conf)
 
 
         # Alarms

@@ -70,7 +70,7 @@ class OSEKVArch(GenericArch):
             exit_abb = self.system_graph.AlarmHandlerSubtask.exit_abb
 
             for alarm in self.system_graph.AlarmHandlerSubtask.alarms:
-                if not alarm in static_alarm_pass.static_alarms:
+                if not static_alarm_pass.is_static(alarm):
                     continue
                 config = static_alarm_pass.static_alarms[alarm]
                 # namedtuple -> OrderedDict -> dict

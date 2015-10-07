@@ -6,8 +6,14 @@ class Counter(SystemObject):
     """SystemObject representing an counter. The .conf is an
        OILObject(Counter) and the .impl is an DataObject.
     """
-    def __init__(self, name, configuration):
+    def __init__(self, system_graph, name, configuration):
         super(Counter, self).__init__(name, configuration)
+        self.system_graph = system_graph
+
+    @property
+    def alarms(self):
+        return [x for x in self.system_graph.alarms
+                if x.conf.counter == self]
 
 class SporadicEvent:
     def __init__(self, system_graph, name, task, handler):

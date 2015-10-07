@@ -18,7 +18,7 @@ extern "C" {
 		//// Should be MIP_MSIE (same constant)
 		Machine::set_csr_bit(mie, MIP_MSIP);
 
-		arch::Timer::init();
+		// arch::Timer::init is called in StartOS
 
 		init_generic();
 	}
