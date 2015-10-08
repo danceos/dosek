@@ -5,6 +5,7 @@ from generator.analysis.AtomicBasicBlock import E, S
 from generator.coder.elements import DataObject, Include
 from collections import namedtuple
 from fractions import gcd
+from functools import reduce
 import logging
 
 class StaticAlarms(Analysis):
@@ -29,7 +30,10 @@ class StaticAlarms(Analysis):
         for abb in self.system_graph.abbs:
             # All manipulated alarms and counters are non-static
             if abb.isA([S.SetRelAlarm, S.CancelAlarm]):
-                static_alarms[abb.arguments[0]] = False
+                alarm = abb.arguments[0]
+                static_alarms[alarm] = False
+                static_counters[alarm.conf.counter] = False
+
             if abb.isA([S.AdvanceCounter]):
                 static_counters[abb.arguments[0]] = False
 
@@ -65,9 +69,19 @@ class StaticAlarms(Analysis):
                 cycletime = alarm.conf.cycletime//self.base_period,
             )
 
+        # Among all dynamic counters, what is the base prescaler value
+        self.static_counters = [k for k,v in static_counters.items() if v is True]
+        dynamic_counters = [k for k,v in static_counters.items() if v is False]
+        if dynamic_counters:
+            self.dynamic_counter_prescaler = reduce(gcd, [c.conf.TICKSPERBASE for c in dynamic_counters])
+        else:
+            self.dynamic_counter_prescaler = 1
+        logging.info("  Dynamic Counters: IRQ every %d ticks", self.dynamic_counter_prescaler)
+
+
     # Accessors for the analysis results
-    def is_static(self, alarm):
-        return alarm in self.static_alarms
+    def is_static(self, alarm_or_counter):
+        return alarm_or_counter in self.static_alarms or alarm_or_counter in self.static_counters
 
     def is_useless(self, alarm):
         return alarm in self.useless_alarms

@@ -140,6 +140,35 @@ class WiredOS(GenericOS):
     def system_leave_hook(self, abb, hook):
         self.callback_in_valid_passes("system_leave_hook", abb, hook)
 
+
+    def generate_counter(self, ctr):
+        static_alarm_pass = self.system_graph.get_pass("StaticAlarms")
+        if static_alarm_pass.is_static(ctr):
+            return None
+        return DataObject("UnencodedCounter",
+                             "OS_%s_counter" % (ctr.name),
+                             "(%d, %d, %d)" % (ctr.conf.maxallowedvalue,
+                                               ctr.conf.ticksperbase,
+                                               ctr.conf.mincycle))
+
+    def generate_alarm(self, alarm, counter, task):
+        static_alarm_pass = self.system_graph.get_pass("StaticAlarms")
+        if static_alarm_pass.is_static(alarm):
+            return None
+
+        period = static_alarm_pass.dynamic_counter_prescaler
+
+        return DataObject("UnencodedAlarm<&%s>" % counter.impl.name,
+                           "OS_%s_alarm" %( alarm.conf.name),
+                           "(%s, %s, %d, %d, %d)" % \
+                          (task,
+                           str(alarm.conf.armed).lower(),
+                           (alarm.conf.reltime + period - 1) / period,
+                           (alarm.conf.cycletime + period - 1) / period,
+                           alarm.impl.alarm_id,
+                          ))
+
+
     def get_syscall_return_variable(self, Type, size = 2):
         """Returns a Variable, that is able to capture the return value of a
            system call.

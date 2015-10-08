@@ -151,7 +151,7 @@ CPU CopterMock {
     };
 
     ALARM CopterControlWatchdogAlarm {
-        COUNTER = C1;
+        COUNTER = C100;
         ACTION = ACTIVATETASK {
             TASK = CopterControlWatchdogTask;
         };
@@ -160,6 +160,12 @@ CPU CopterMock {
     COUNTER C1 {
         MAXALLOWEDVALUE = 50000;
         TICKSPERBASE = 1;
+        MINCYCLE = 1;
+    };
+
+    COUNTER C100 {
+        MAXALLOWEDVALUE = 20;
+        TICKSPERBASE = 10;
         MINCYCLE = 1;
     };
 

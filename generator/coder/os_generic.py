@@ -104,9 +104,10 @@ class GenericOS(BaseCoder):
 
             impl = self.generate_counter(ctr)
 
-            # Add and save counter Implementation
-            self.generator.source_file.data_manager.add(impl, namespace = ("os",))
-            ctr.impl = impl
+            if impl:
+                # Add and save counter Implementation
+                self.generator.source_file.data_manager.add(impl, namespace = ("os",))
+                ctr.impl = impl
 
         alarm_id = 1
         for alarm in self.generator.system_graph.alarms:
@@ -118,11 +119,11 @@ class GenericOS(BaseCoder):
             alarm_id += 1
 
             impl = self.generate_alarm(alarm, alarm.conf.counter, task)
-
-            # Add and save alarm implementation
-            self.generator.source_file.data_manager.add(impl, namespace = ("os",))
-            alarm.impl.name = impl.name
-            alarm.impl.alarm_desc = impl
+            if impl:
+                # Add and save alarm implementation
+                self.generator.source_file.data_manager.add(impl, namespace = ("os",))
+                alarm.impl.name = impl.name
+                alarm.impl.alarm_desc = impl
 
     def generate_system_code(self):
         pass

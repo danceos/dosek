@@ -81,7 +81,8 @@ class WiredSystemCalls(BaseCoder):
         # Enable the timer, if the alarm subsystem is enabled
         if self.alarm_subsystem.subsystem_enabled:
             self.generator.source_file.include("timer.h")
-            self.call_function(kernelspace, "arch::Timer::init")
+            self.call_function(kernelspace, "arch::Timer::init", "void",
+                               [str(self.static_alarm_pass.dynamic_counter_prescaler)])
         StartOS = self.system_graph.get(GraphFunction, "StartOS")
         self.fsm_schedule(StartOS.entry_abb, None, kernelspace)
 
@@ -164,11 +165,21 @@ class WiredSystemCalls(BaseCoder):
 
     def SetRelAlarm(self, syscall, userspace, kernelspace):
         self.fsm_schedule(syscall, userspace, kernelspace)
+        prescaler = self.static_alarm_pass.dynamic_counter_prescaler
+        if prescaler != 1:
+            reltime = self.arch_rules.get_syscall_argument(kernelspace, 0)
+            cycle = self.arch_rules.get_syscall_argument(kernelspace, 1)
+            kernelspace.add(Statement("{var} = ({var} + {prescaler} - 1) / {prescaler}"\
+                                      .format(var=reltime.name, prescaler=prescaler)))
+            kernelspace.add(Statement("{var} = ({var} + {prescaler} - 1) / {prescaler}"\
+                                      .format(var=cycle.name, prescaler=prescaler)))
         FullSystemCalls.SetRelAlarm(self, syscall, userspace, kernelspace)
 
     def GetAlarm(self, syscall, userspace, kernelspace):
         self.fsm_schedule(syscall, userspace, kernelspace)
         FullSystemCalls.GetAlarm(self, syscall, userspace, kernelspace)
+        # FIXME: Should implement prescaler
+        assert self.static_alarm_pass.dynamic_counter_prescaler == 1, "Scaling of results not implemented"
 
     def CancelAlarm(self, syscall, userspace, kernelspace):
         self.fsm_schedule(syscall, userspace, kernelspace)
