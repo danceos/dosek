@@ -11,7 +11,7 @@ foreach(ELF ${EXECUTABLES})
 	file(MAKE_DIRECTORY ${STARTUP_SCRIPTS})
 
 	# Grub
-	find_program(GRUB_MKRESCUE "grub-mkrescue")
+	find_program(GRUB_MKRESCUE NAMES "grub-mkrescue" "grub2-mkrescue")
 	if(NOT GRUB_MKRESCUE)
 		message(FATAL_ERROR "grub-mkrescue not found, cannot create bootable iso :(")
 	endif()
