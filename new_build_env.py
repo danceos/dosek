@@ -30,8 +30,6 @@ def main():
     parser.add_option('-c', '--clean', dest='CLEAN', action="store_true",
                       default = False,
                       help="Remove all files from current directory before")
-    parser.add_option('', '--generator-args', dest='GENERATOR_ARGS', default = "",
-                      help="Arguments for the system generator (default: )")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="Increase verbosity (specify multiple times for more)")
     parser.add_option('', '--fail-trace-all', dest='FAIL_TRACE_ALL', default = "no",
@@ -63,7 +61,6 @@ def main():
     logging.info("Specialized Systemcalls: %s", conf.os.specialize)
     logging.info("State Asserts: %s", conf.dependability.state_asserts)
     logging.info("Symbolic System Execution: %s", conf.os.passes.sse)
-    logging.info("Generator Arguments: %s", options.GENERATOR_ARGS)
     logging.info("Fail Trace All: %s", options.FAIL_TRACE_ALL)
     logging.info("Dependability Failure Logging: %s", conf.dependability.failure_logging)
 
@@ -93,7 +90,6 @@ def main():
                      '-DCMAKE_TOOLCHAIN_FILE=%s' % toolchain_file,
                      "-DCMAKE_BUILD_TYPE=Release",
                      "-G", generator_dict[conf.generator],
-                     "-DGENERATOR_ARGS='%s'"%options["GENERATOR_ARGS"],
                      "-DFAIL_TRACE_ALL=%s" % options["FAIL_TRACE_ALL"],
                      base_dir])
 

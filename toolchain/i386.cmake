@@ -7,12 +7,17 @@ SET(LLVM_RECOMMENDED_VERSION 3.4)
 
 if(NOT DEFINED ${LLVM_ROOT})
   # find llvm-config. prefers to the one with version suffix, Ex:llvm-config-3.4
-  find_program(LLVM_CONFIG_EXE NAMES  "llvm-config" "llvm-config-${LLVM_RECOMMENDED_VERSION}"
-    HINTS /proj/i4danceos/tools/llvm-${LLVM_RECOMMENDED_VERSION}/bin)
+    # find llvm-config. prefers to the one with version suffix, Ex:llvm-config-3.4
+  find_program(LLVM_CONFIG_EXE NAMES "llvm-config-${LLVM_RECOMMENDED_VERSION}"
+    PATHS /proj/i4danceos/tools/llvm-${LLVM_RECOMMENDED_VERSION}/bin)
+  if (NOT LLVM_CONFIG_EXE)
+    find_program(LLVM_CONFIG_EXE NAMES "llvm-config"
+      PATHS /proj/i4danceos/tools/llvm-${LLVM_RECOMMENDED_VERSION}/bin)
+  endif()
 
   # Get the directory of llvm by using llvm-config. also remove whitespaces.
   execute_process(COMMAND ${LLVM_CONFIG_EXE} --prefix OUTPUT_VARIABLE LLVM_ROOT
-                 OUTPUT_STRIP_TRAILING_WHITESPACE )
+    OUTPUT_STRIP_TRAILING_WHITESPACE )
 endif()
 
 message(STATUS "LLVM root: ${LLVM_ROOT}")

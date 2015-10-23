@@ -24,5 +24,4 @@ add_executable(llvm-extractor main.cc)
 # Link against LLVM libraries
 target_link_libraries(llvm-extractor ${LLVM_LIBS} dl pthread curses)
 
-GET_TARGET_PROPERTY(LLVM_EXTRACTOR_ llvm-extractor LOCATION)
-SET(LLVM_EXTRACTOR ${LLVM_EXTRACTOR_} CACHE INTERNAL "")
+SET(LLVM_EXTRACTOR "$<TARGET_FILE:llvm-extractor>" CACHE INTERNAL "")

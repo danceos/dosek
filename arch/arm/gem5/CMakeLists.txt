@@ -10,10 +10,7 @@ set(DEBUGGER "/srv/scratch/siflluka/gdb/gdb-7.7.1/gdb/gdb")
 
 # Create additional targets for all executables
 foreach(ELF ${EXECUTABLES})
-	GET_FILENAME_COMPONENT(SUFFIX ${ELF} NAME_WE)
-	set(DSUFFIX "-${SUFFIX}")
-
-	get_target_property(ELF_ABS ${ELF} LOCATION)
+	set(ELF_ABS ${PROJECT_BINARY_DIR}/${ELF})
 
 	set(STARTUP_SCRIPTS ${PROJECT_BINARY_DIR}/startup_scripts)
 	file(MAKE_DIRECTORY ${STARTUP_SCRIPTS})
@@ -29,7 +26,7 @@ foreach(ELF ${EXECUTABLES})
 	set(GEM5_ARGS ${GEM5_CONFIG} --kernel ${ELF_ABS} --bootloader ${BOOTLOADER}) #  --mem-size=${RAM_SIZE}MB
 
 	# Start gem5
-	add_custom_target(run${DSUFFIX}
+	add_custom_target(run-gem5-${ELF}
 		DEPENDS ${ELF}
 		COMMENT "[${PROJECT_NAME}] Running ${ELF} in gem5"
 		COMMAND ${GEM5} ${GEM5_ARGS}
@@ -37,7 +34,7 @@ foreach(ELF ${EXECUTABLES})
 	)
 
 	# Start gem5 for tests (only serial console)
-	add_custom_target(test${DSUFFIX}
+	add_custom_target(test-gem5-${ELF}
 		DEPENDS ${ELF}
 		COMMENT "[${PROJECT_NAME}] Running ${ELF} in gem5 serial mode."
 		COMMAND ${GEM5} ${GEM5_ARGS} &
@@ -46,7 +43,7 @@ foreach(ELF ${EXECUTABLES})
 	)
 
 	# Start gem5 and attach debugger
-	add_custom_target(debug${DSUFFIX}
+	add_custom_target(debug-gem5-${ELF}
 		DEPENDS ${ELF}
 		COMMENT "[${PROJECT_NAME}] Running ${ELF} in gem5 debug mode. "
 		COMMAND ${GEM5} ${GEM5_ARGS} &
@@ -55,7 +52,7 @@ foreach(ELF ${EXECUTABLES})
 	)
 
 	# Start debugger attach to gem5
-	add_custom_target(debugger${DSUFFIX}
+	add_custom_target(debugger-gem5-${ELF}
 		DEPENDS ${ELF}
 		COMMENT "[${PROJECT_NAME}] Starting debugger for ${ELF}."
 		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}

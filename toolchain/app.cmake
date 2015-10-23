@@ -25,7 +25,7 @@ MACRO(DOSEK_BINARY_EXECUTABLE NAME SOURCES SYSTEM_DESC VERIFY_SCRIPT DEFINITIONS
 
   # Get the definitions to forward the ADD_DEFINITIONS to the
   # application (e.g., -DENCODED)
-  get_directory_property(definitions DEFINITIONS)
+  get_directory_property(definitions COMPILE_DEFINITIONS)
   separate_arguments(definitions)
 
   # Fix whitespace escaping in CXX FLAGS

@@ -29,18 +29,6 @@ endif()
 
 include(${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
 
-
-list(REMOVE_DUPLICATES GENERATOR_ARGS)
-
-if(GENERATOR_ARGS)
-	message(STATUS "[${PROJECT_NAME}] Additional Generator Arguments: ${GENERATOR_ARGS}")
-    string (REPLACE ";" " " _TMP_STR "${GENERATOR_ARGS}")
-    add_definitions(-DGENERATOR_ARGS="${_TMP_STR}")
-else()
-  add_definitions(-DGENERATOR_ARGS="")
-  set(GENERATOR_ARGS "" CACHE STRING "")
-endif()
-
 option(FAIL_TRACE_ALL "Trace all binaries" OFF)
 if(FAIL_TRACE_ALL)
 	message(STATUS "[${PROJECT_NAME}] Fail Trace All: ON")
@@ -83,11 +71,6 @@ dosek_include_dir(${PROJECT_BINARY_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${PROJECT_BINARY_DIR}/dosek_config.h")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include ${PROJECT_BINARY_DIR}/dosek_config.h")
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -include ${PROJECT_BINARY_DIR}/dosek_config.h")
-
-
-
-
-list(REMOVE_DUPLICATES GENERATOR_ARGS)
 
 
 # Documentation
