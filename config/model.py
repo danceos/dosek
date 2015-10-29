@@ -20,6 +20,9 @@ model = ConfigurationTree({
                                        default_value = expr("self == i386 || self == ARM")),
         # config-constraint-: arch.privilege-isolation -> (arch.self == i386 || arch.self == ARM)
         # config-constraint-: !arch.privilege-isolation -> (arch.self == i386 || arch.self == posix || arch.self == osek-v)
+
+        'static-alarms': Boolean(default_value = expr("self == osek-v"), short_help="Make alarms static for OSEK-V")
+        #config-constraint-: arch.static-alarms -> (arch.self == osek-v)
     },
     'os' : {
         'ignore-interrupt-systemcalls': Boolean(short_help = "Do not analyze DisableInterrupt() etc."),

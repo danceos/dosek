@@ -19,6 +19,9 @@ class StaticAlarms(Analysis):
 
     AlarmConfiguration = namedtuple("AlarmConfiguration", ["reltime", "cycletime"])
 
+    def __init__(self, *args, **kwargs):
+        Analysis.__init__(self, *args, **kwargs)
+
     def requires(self):
         return ["llvmpy"]
 
@@ -41,6 +44,14 @@ class StaticAlarms(Analysis):
         for alarm in static_alarms:
             if not static_counters[alarm.conf.counter]:
                 static_alarms[alarm] = False
+
+        # If we should NOT mark any alarm as static, clear the
+        # static_alarms array here
+        if not self.system_graph.conf.arch.static_alarms:
+            for k in static_alarms:
+                static_alarms[k] = False
+            for k in static_counters:
+                static_counters[k] = False
 
         # Only the static alarms
         static_alarms = [k for k,v in static_alarms.items() if v]
