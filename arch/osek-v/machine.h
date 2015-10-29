@@ -167,8 +167,8 @@ public:
 
 #define __asm_label(a) #a
 #define _asm_label(a) __asm_label(a)
-// #define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(void *)0))
-#define asm_label(label)
+#define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(void *)0))
+// #define asm_label(label)
 
 
 #endif // __MACHINE_H__
