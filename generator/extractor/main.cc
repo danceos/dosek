@@ -15,16 +15,19 @@
 
 #define llvm33 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 3)
 #define llvm34 (LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 4)
+#include "dosek_config.h"
 
+#ifdef CONFIG_ARCH_OSEK_V
 #ifndef __CLANG_MAX_ALIGN_T_DEFINED
 #if __STDC_VERSION__ >= 201112L || __cplusplus >= 201103L
 typedef struct {
 	long long __clang_max_align_nonce1
-	   __attribute__((__aligned__(__alignof__(long long))));
+	__attribute__((__aligned__(__alignof__(long long))));
 	long double __clang_max_align_nonce2
 	__attribute__((__aligned__(__alignof__(long double))));
-	} max_align_t;
+} max_align_t;
 #define __CLANG_MAX_ALIGN_T_DEFINED
+#endif
 #endif
 #endif
 
