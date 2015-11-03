@@ -83,7 +83,7 @@ def parse_constraint(string):
             return " || ".join([repr(x) for x in self.__args])
 
 
-    grammar = infixNotation( Word(alphanums+"._-").setParseAction(Option),
+    grammar = infixNotation( Word(alphanums+"._-/").setParseAction(Option),
                               [
                                   ("==", 2, opAssoc.LEFT, Equal),
                                   ("!", 1,  opAssoc.RIGHT, Not),

@@ -78,10 +78,14 @@ class ConfigurationTree(NamespaceDict):
 
 
 class ConfigurationTreeStack(object):
-    def __init__(self, stack, model = None, with_model = False):
+    def __init__(self, stack, model = None, with_model = False, top = True):
         self.__with_model = with_model
         self.__model = model
         self.__stack = stack
+        if top is True:
+            self.__top = self
+        else:
+            self.__top = top
 
     def get(self, name):
         if type(name) in (tuple, list):
@@ -90,6 +94,8 @@ class ConfigurationTreeStack(object):
                 return val.get(name[1:])
             assert len(name) == 1, val
             return (val, ty)
+        if name.startswith("/"):
+            return self.__top.get(name[1:])
         ret = []
         for x in self.__stack:
             if not name in x:
@@ -102,7 +108,7 @@ class ConfigurationTreeStack(object):
         is_config_tree = [isinstance(x, ConfigurationTree) for x in ret]
         if all(is_config_tree):
             assert self.__model and name in self.__model, "Subtree %s is not in model" % name
-            return (ConfigurationTreeStack(ret, self.__model[name], self.__with_model), None)
+            return (ConfigurationTreeStack(ret, self.__model[name], self.__with_model, self.__top), None)
         elif all([not(x) for x in is_config_tree]):
             assert len(ret) == 1 or all(ret[1] == x for x in ret[1:]), "Every value in the tree has to be consistent"
             assert isinstance(ret[-1], self.__model[name].config_type)
@@ -124,7 +130,7 @@ class ConfigurationTreeStack(object):
 
     def __getattr__(self, name):
         if name == "_":
-            ret = ConfigurationTreeStack(self.__stack, self.__model, True)
+            ret = ConfigurationTreeStack(self.__stack, self.__model, True, self.__top)
             return ret
         ret = self.get(name)
         if self.__with_model and ret[1] != None:
