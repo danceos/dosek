@@ -31,6 +31,18 @@ class OSEKVArch(GenericArch):
             self.generate_rocket_config()
         else:
             self.generate_dataobjects_tcbs()
+            # Generate dummy rocket config
+            with self.generator.open_file("rocket.config") as fd:
+                config = {
+                    "coreHartCount":   1,
+                    "coreOSEKSyscallWidth": 1,
+                    "coreOSEKStateWidth":   1,
+                    "coreOSEKInitialState": 0,
+                    "coreHartCombinatorics": None,
+                    "alarms": {},
+                }
+                fd.write(json.dumps(config,indent=2, sort_keys=True))
+
 
         self.generator.source_file.include("dispatch.h")
 
