@@ -152,7 +152,7 @@ class ClassicTMR  {
             return true;
         }
 
-		kout << "Trying to fix" << endl;
+		//kout << "Trying to fix" << endl;
 		fault_detected_port = 42;
         if(orig == rep1) {  // rep2 wrong
             rep2 = orig;    // fix
@@ -169,7 +169,7 @@ class ClassicTMR  {
             return true;
         }
 
-        kout << "TMR: oO :( " << endl;
+        // kout << "TMR: oO :( " << endl;
 		return false;
 	 }
  };

@@ -5,6 +5,7 @@ set(SRCS
   constructors.cc
   interrupt.cc
   timer.cc
+  dispatch.cc
 )
 
 # Create arch library

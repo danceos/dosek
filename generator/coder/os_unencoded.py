@@ -105,7 +105,8 @@ class UnencodedOS(GenericOS):
         pre_hook    = None
         post_hook   = None
 
-        self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
+        if not abb.subtask.conf.is_isr:
+            self.arch_rules.asm_marker(userspace, "syscall_start_%s" % userspace.name)
 
         self.__instantiate_kernelspace(abb)
 
@@ -120,7 +121,8 @@ class UnencodedOS(GenericOS):
         else:
             assert False, "Not yet supported %s"% abb.syscall_type
 
-        self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
+        if not abb.subtask.conf.is_isr:
+            self.arch_rules.asm_marker(userspace, "syscall_end_%s" % userspace.name)
 
         # Fill up the hooks
         self.system_enter_hook(abb, abb.impl.pre_hook)

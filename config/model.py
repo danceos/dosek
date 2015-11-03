@@ -32,7 +32,8 @@ model = ConfigurationTree({
         'systemcalls': OneOf(["normal", "fsm", "fsm_pla", "wired"],
                               short_help = "System Call Implementation",),
         'specialize': Boolean(short_help = "Generate Specialized Systemcalls"),
-        'inline-scheduler': Boolean(short_help = "Partial Scheduler", default_value = True),
+        'inline-scheduler': Boolean(short_help = "Partial Scheduler",
+                                    default_value = expr("!(/arch.self == osek-v)")),
 
         'basic-tasks': Boolean(short_help = "Should Basic Tasks be optimized?"),
         # config-constraint-: os.basic-tasks -> (arch.self == posix || arch.self == i386)

@@ -163,6 +163,11 @@ public:
 	static forceinline void sync() {
 		asm volatile ("fence");
 	}
+
+	static forceinline void sleep() {
+		asm volatile ("wfi");
+	}
+
 };
 
 #define __asm_label(a) #a

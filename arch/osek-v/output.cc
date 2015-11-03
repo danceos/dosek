@@ -5,6 +5,7 @@
 HTIFOutputStream kout;
 
 void noinline HTIFOutputStream::putchar(char ch) {
+	// bool enabled = Machine::disable_interrupts();
 	while (Machine::swap_csr(mtohost, TOHOST_CMD(1, 1, ch)) != 0);
 	while (1) {
 		uintptr_t fromhost = Machine::read_csr(mfromhost);
@@ -16,4 +17,7 @@ void noinline HTIFOutputStream::putchar(char ch) {
 		Machine::write_csr(mfromhost, 0);
 		break;
 	}
+	// if (enabled)
+	//	Machine::enable_interrupts();
+
 }

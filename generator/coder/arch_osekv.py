@@ -16,18 +16,56 @@ class OSEKVArch(GenericArch):
 
     def generate_dataobjects(self):
         """Generate all dataobjects for the system"""
-        self.logic = self.system_graph.get_pass("LogicMinimizer")
-        self.generate_dataobjects_task_stacks() # From SimpleArch
+        conf_wired = self.system_graph.conf.os.systemcalls == "wired"
+        if conf_wired:
+            self.logic = self.system_graph.get_pass("LogicMinimizer")
+
+        # Generate Stacks
+        self.generate_dataobjects_task_stacks()
         for subtask in self.system_graph.real_subtasks:
             subtask.impl.stack.allocation_prefix +=" __attribute__((aligned(16))) "
-        self.generate_dataobjects_task_entries()
-        self.generate_dataobjects_task_descriptors()
-        self.generate_rocket_config()
 
-        # For dummy ResumeToTask
+        self.generate_dataobjects_task_entries()
+        if conf_wired:
+            self.generate_wired_task_descriptors()
+            self.generate_rocket_config()
+        else:
+            self.generate_dataobjects_tcbs()
+
         self.generator.source_file.include("dispatch.h")
 
-    def generate_dataobjects_task_descriptors(self):
+    def generate_dataobjects_tcbs(self):
+        self.generator.source_file.include("tcb.h")
+
+        tcb_arr = DataObjectArray("const TCB * const", "OS_tcbs", "")
+        tcb_arr.add_static_initializer("0")
+
+        for subtask in self.system_graph.subtasks:
+            # Ignore the Idle thread
+            if not subtask.is_real_thread():
+                continue
+            # Dynamic state area
+            dynamic_state = DataObject("arch::TCB::dynamic_state", "OS_" + subtask.name + "_tcb_dynamic")
+            self.generator.source_file.data_manager.add(dynamic_state, namespace = ("arch",))
+
+            # Static TCB
+            initializer = "(&%s, %s, %s, %s)" % (
+                subtask.impl.entry_function.name,
+                subtask.impl.stack.name,
+                dynamic_state.name,
+                subtask.impl.stacksize
+            )
+
+            desc = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
+                              initializer)
+            desc.allocation_prefix = "constexpr "
+            self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
+            subtask.impl.tcb_descriptor = desc
+            tcb_arr.add_static_initializer("&" + desc.name)
+
+        self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
+
+    def generate_wired_task_descriptors(self):
         self.generator.source_file.include("os/scheduler/task.h")
         self.generator.source_file.include("tcb.h")
         self.system_graph.idle_subtask.impl.task_id = 0
