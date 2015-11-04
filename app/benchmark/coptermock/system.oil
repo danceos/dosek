@@ -164,7 +164,7 @@ CPU CopterMock {
     };
 
     COUNTER C100 {
-        MAXALLOWEDVALUE = 20;
+        MAXALLOWEDVALUE = 1000;
         TICKSPERBASE = 10;
         MINCYCLE = 1;
     };

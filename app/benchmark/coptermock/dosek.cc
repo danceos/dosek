@@ -129,7 +129,7 @@ TASK(CopterControlTask) {
 	if (round < 5) {
 		CancelAlarm(CopterControlWatchdogAlarm);
 		test_trace(0x94);
-		SetRelAlarm(CopterControlWatchdogAlarm, 100, 100);
+		SetRelAlarm(CopterControlWatchdogAlarm, 110, 100);
 	}
 	test_trace(0x95);
 
@@ -137,9 +137,14 @@ TASK(CopterControlTask) {
 }
 
 ISR2(MavlinkRecvHandler) {
+#ifndef CONFIG_ARCH_OSEK_V
 	test_trace(0xA1);
+#endif
+
 	ActivateTask(CopterControlTask);
+#ifndef CONFIG_ARCH_OSEK_V
 	test_trace(0xA2);
+#endif
 }
 
 TASK(CopterControlWatchdogTask) {
